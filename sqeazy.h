@@ -1,8 +1,8 @@
-#ifndef SQEASY_H_   /* Include guard */
-#define SQEASY_H_
+#ifndef SQEAZY_H_   /* Include guard */
+#define SQEAZY_H_
 
 /*
-*	Sqeasy - Fast and flexible volume compression library
+*	Sqeazy - Fast and flexible volume compression library
 *
 * 	Header file
 *
