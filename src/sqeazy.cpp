@@ -1,4 +1,5 @@
 #define SQEAZY_CPP_
+#include "sqeazy_impl.hpp"
 
 /*
 *	Sqeazy - Fast and flexible volume compression library
@@ -8,7 +9,16 @@
 *	Note: endianess is little by default.
 */
 
-int SQY_RasterDiffEncode_3D_UI16(int width, int height, int depth, const char* src, char* dst){return 42;}
+int SQY_RasterDiffEncode_3D_UI16(int width, int height, int depth, const char* src, char* dst){
+  
+  typedef unsigned short value_type;
+
+  return sqeazy::diff_scheme<value_type>::encode(width, height, depth, 
+						 reinterpret_cast<const value_type*>(src),
+						 reinterpret_cast<value_type*>(dst)
+						 );
+    
+}
 
 int SQY_RasterDiffDecode_3D_UI16(int width, int height, int depth, const char* src, char* dst){return 42;}
 
