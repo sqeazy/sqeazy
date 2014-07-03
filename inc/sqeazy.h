@@ -7,7 +7,7 @@
 * 	Header file
 *
 *	Note: endianess is little by default.
-/**/
+*/
 
 
 /*
@@ -20,7 +20,7 @@
 *	Decoding:
 *	SQY_LZ4Decode -> SQY_RLEDecode_UI8 -> SQY_BitSwap4Decode_UI16 -> SQY_RasterDiffDecode_3D_UI16
 *
-/**/
+*/
 
 
 

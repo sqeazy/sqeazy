@@ -12,7 +12,7 @@ struct add_one {
     return _in + 1;
   }
 
-  void apply( const T* _in, T* _out, const unsigned long& _size) {
+  static void apply( const T* _in, T* _out, const unsigned long& _size) {
     const T* begin = _in;
     const T* end = begin + _size;
     
@@ -41,8 +41,7 @@ BOOST_AUTO_TEST_CASE( without_applyer )
 
   std::fill(test_out.begin(), test_out.end(),0);
   
-  add_one_to_ints test;
-  test.apply(&test_in[0], &test_out[0], 42);
+  add_one_to_ints::apply(&test_in[0], &test_out[0], 42);
   
   BOOST_CHECK_EQUAL(std::accumulate(test_out.begin(), test_out.end(),0),42);
 }
