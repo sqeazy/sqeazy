@@ -11,16 +11,28 @@
 
 int SQY_RasterDiffEncode_3D_UI16(int width, int height, int depth, const char* src, char* dst){
   
-  typedef unsigned short value_type;
+  typedef unsigned short raw_type;
+  typedef short compressed_type;
 
-  return sqeazy::diff_scheme<value_type>::encode(width, height, depth, 
-						 reinterpret_cast<const value_type*>(src),
-						 reinterpret_cast<value_type*>(dst)
+  return sqeazy::diff_scheme<raw_type>::encode(width, height, depth, 
+						 reinterpret_cast<const raw_type*>(src),
+						 reinterpret_cast<compressed_type*>(dst)
 						 );
     
 }
 
-int SQY_RasterDiffDecode_3D_UI16(int width, int height, int depth, const char* src, char* dst){return 42;}
+int SQY_RasterDiffDecode_3D_UI16(int width, int height, int depth, const char* src, char* dst){
+  
+  typedef unsigned short raw_type;
+  typedef short compressed_type;
+
+  return sqeazy::diff_scheme<raw_type>::decode(width, height, depth, 
+					       reinterpret_cast<const compressed_type*>(src),
+					       reinterpret_cast<raw_type*>(dst)
+					       );
+
+  
+}
 
 
 int SQY_BitSwap4Encode_UI16(const char* src, char* dst, long length){return 42;}

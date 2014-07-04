@@ -34,41 +34,161 @@ namespace sqeazy {
     
   };
 
-  template <typename T, unsigned neighborhood_size = 3>
+  template < unsigned extent = 3>
+  struct last_plane_neighborhood {
+   
+    static const unsigned axis_length = extent;
+    static const unsigned axis_half   = extent/2;
+ 
+    //the indexing assumed is :
+    //axis_begin[0] = x_axis_begin
+    //axis_begin[1] = y_axis_begin
+    //axis_begin[2] = z_axis_begin
+
+    //this is the inclusive start
+    static const int z_offset_begin = -1;
+    static const int y_offset_begin = -axis_half;
+    static const int x_offset_begin = -axis_half;
+    
+    //this is the exclusive end, so the index one past the last element
+    static const int z_offset_end = z_offset_begin+1;
+    static const int y_offset_end = axis_half+1;
+    static const int x_offset_end = axis_half+1;
+    
+    static const int traversed = (z_offset_end-z_offset_begin)*(y_offset_end-y_offset_begin)*(x_offset_end-x_offset_begin);
+  };
+
+  template < unsigned extent = 3>
+  struct last_pixels_in_cube_neighborhood {
+   
+    static const unsigned axis_length = extent;
+    static const unsigned axis_half   = extent/2;
+ 
+    //the indexing assumed is :
+    //axis_begin[0] = x_axis_begin
+    //axis_begin[1] = y_axis_begin
+    //axis_begin[2] = z_axis_begin
+
+    //this is the inclusive start
+    static const int z_offset_begin = -axis_half;
+    static const int y_offset_begin = -axis_half;
+    static const int x_offset_begin = -axis_half;
+    
+    //this is the exclusive end, so the index one past the last element
+    static const int z_offset_end = axis_half+1;
+    static const int y_offset_end = axis_half+1;
+    static const int x_offset_end = axis_half+1;
+    
+    static const int traversed = (z_offset_end-z_offset_begin)*(y_offset_end-y_offset_begin)*(x_offset_end-x_offset_begin);
+
+    
+    
+  };
+
+  template <typename Neighborhood, typename T, typename U>
+  T sum(const T* _ptr, const U& _index, 
+	const unsigned& _width, 
+	const unsigned& _height,  
+	const unsigned& _depth){
+
+    typedef typename remove_unsigned<T>::type coord_t;
+
+    U length = _width*_height*_depth;
+    U frame = _width*_height;
+    U sum_index = 0;
+    unsigned long z_sum_index = 0;
+    unsigned long y_sum_index = 0;
+    unsigned long x_sum_index = 0;
+    T sum = 0;
+    
+    coord_t z_pos = _index/frame;
+	
+    unsigned long frame__index = _index - z_pos*frame;
+
+    coord_t y_pos = frame__index/_width;
+    coord_t x_pos = _index - (z_pos*frame + y_pos*_width);
+
+    for(long z_offset = Neighborhood::z_offset_begin;z_offset<Neighborhood::z_offset_end;++z_offset){
+	  
+      if((z_pos + z_offset)>=Neighborhood::axis_half && (z_pos + z_offset)<_depth-Neighborhood::axis_half)
+	z_sum_index =  (z_pos + z_offset)*frame ;
+      else
+	z_sum_index = length;
+	  
+      for(long y_offset = Neighborhood::y_offset_begin;y_offset<Neighborhood::y_offset_end;++y_offset){
+
+	if((y_pos + y_offset)>=Neighborhood::axis_half && (y_pos + y_offset)<_height-Neighborhood::axis_half)
+	  y_sum_index =  (y_pos + y_offset)*_width ;
+	else
+	  y_sum_index = length;
+
+	for(long x_offset = Neighborhood::x_offset_begin;x_offset<Neighborhood::x_offset_end;++x_offset){
+
+	  if((x_pos + x_offset)>=Neighborhood::axis_half && (x_pos + x_offset)<_width-Neighborhood::axis_half)
+	    x_sum_index = x_pos + x_offset;
+	  else
+	    x_sum_index = length;
+
+	  sum_index = z_sum_index + y_sum_index + x_sum_index;
+	      
+	  if(sum_index<length)
+	    sum += _ptr[sum_index];
+	  else
+	    sum += 0;
+
+	}
+      }
+    }
+    
+    return sum;
+  }
+
+  template <typename T, typename Neighborhood = last_plane_neighborhood<3> >
   struct diff_scheme {
     
-    typedef T value_type;
-    typedef add_unsigned<twice_as_wide<T>::type>::type sum_type;
-    typedef size_t size_type;
+    typedef T raw_type;
+    typedef typename remove_unsigned<T>::type compressed_type;
+    typedef typename add_unsigned<typename twice_as_wide<T>::type >::type sum_type;
+    typedef unsigned size_type;
 
-    static const unsigned nb_size = neighborhood_size;
-    static const unsigned nb_half = neighborhood_size/2;
-
-        
     static const error_code encode(const size_type& _width,
 				   const size_type& _height,
 				   const size_type& _depth,
-				   const value_type* _input,
-				   value_type* _output) 
+				   const raw_type* _input,
+				   compressed_type* _output) 
     {
+      sum_type local_sum = 0;
       unsigned long length = _width*_height*_depth;
-      sum_type sum = 0;
-      
       
       for(unsigned long index = 0;index < length;++index){
 	
-	for(unsigned long z_offset = -nb_half;z_offset<=0;++z_offset){
-	  for(unsigned long y_offset = -nb_half;y_offset<=0;++y_offset){
-	    for(unsigned long x_offset = -nb_half;x_offset<=nb_half;++x_offset){
-	      
-	    }
-	  }
-	}
+	local_sum = sum<Neighborhood>(_input,index,_width, _height,_depth);
 	
+	_output[index] = _input[index] - local_sum/Neighborhood::traversed;
       }
       
       return SUCCESS;
     }
+
+    static const error_code decode(const size_type& _width,
+				   const size_type& _height,
+				   const size_type& _depth,
+				   const compressed_type* _input,
+				   raw_type* _output) 
+    {
+      unsigned long length = _width*_height*_depth;
+
+      sum_type local_sum = 0;
+
+      for(unsigned long index = 0;index < length;++index){
+	local_sum = sum<Neighborhood>(_input,index,_width, _height,_depth);
+	
+	_output[index] = _input[index] + local_sum/Neighborhood::traversed;
+      }
+      
+      return SUCCESS;
+    }
+
     
   };
 
