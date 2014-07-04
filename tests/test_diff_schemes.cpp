@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE( encode_check_magic_values )
   
   
   BOOST_CHECK_EQUAL(incrementing_cube[0],to_play_with[0]);
-  BOOST_CHECK_NE(incrementing_cube[size - 1],to_play_with[size - 1]);
+  BOOST_CHECK_EQUAL(incrementing_cube[size - 1],to_play_with[size - 1]);
   BOOST_CHECK_EQUAL(retcode,0);
 }
 

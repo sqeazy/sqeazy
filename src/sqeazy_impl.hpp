@@ -103,28 +103,28 @@ namespace sqeazy {
     
     coord_t z_pos = _index/frame;
 	
-    unsigned long frame__index = _index - z_pos*frame;
+    U frame_index = _index - z_pos*frame;
 
-    coord_t y_pos = frame__index/_width;
+    coord_t y_pos = frame_index/_width;
     coord_t x_pos = _index - (z_pos*frame + y_pos*_width);
 
     for(long z_offset = Neighborhood::z_offset_begin;z_offset<Neighborhood::z_offset_end;++z_offset){
 	  
-      if((z_pos + z_offset)>=Neighborhood::axis_half && (z_pos + z_offset)<_depth-Neighborhood::axis_half)
+      if((z_pos)>=Neighborhood::axis_half && (z_pos)<_depth-Neighborhood::axis_half)
 	z_sum_index =  (z_pos + z_offset)*frame ;
       else
 	z_sum_index = length;
 	  
       for(long y_offset = Neighborhood::y_offset_begin;y_offset<Neighborhood::y_offset_end;++y_offset){
 
-	if((y_pos + y_offset)>=Neighborhood::axis_half && (y_pos + y_offset)<_height-Neighborhood::axis_half)
+	if((y_pos)>=Neighborhood::axis_half && (y_pos)<_height-Neighborhood::axis_half)
 	  y_sum_index =  (y_pos + y_offset)*_width ;
 	else
 	  y_sum_index = length;
 
 	for(long x_offset = Neighborhood::x_offset_begin;x_offset<Neighborhood::x_offset_end;++x_offset){
 
-	  if((x_pos + x_offset)>=Neighborhood::axis_half && (x_pos + x_offset)<_width-Neighborhood::axis_half)
+	  if((x_pos)>=Neighborhood::axis_half && (x_pos)<_width-Neighborhood::axis_half)
 	    x_sum_index = x_pos + x_offset;
 	  else
 	    x_sum_index = length;
