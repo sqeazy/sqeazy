@@ -95,9 +95,18 @@ SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${HOST_COMPILER_RELEASE_
 SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${HOST_COMPILER_RELEASE_FLAGS} ")
 MESSAGE(">> using release build flags: ${HOST_COMPILER_RELEASE_FLAGS}")
 
-
+check_cxx_compiler_flag(-std=c++11 HAS_CPP11_COMPILERFLAG)
 # add subdirectories
-ADD_SUBDIRECTORY(src)
+
+ADD_SUBDIRECTORY(src) # source code of the library
+
+IF(HAS_CPP11_COMPILERFLAG)
+ADD_SUBDIRECTORY(bench) # source code of the benchmark suite
+export(TARGETS bench ${PROJECT_NAME}
+  FILE "${PROJECT_BINARY_DIR}/sqeazy-targets.cmake")
+ELSE()
+MESSAGE(WARNING ">> unable to build benchmark suite due to missing C++11 support")
+ENDIF()
 
 FIND_PACKAGE (Boost 1.42 COMPONENTS system filesystem unit_test_framework thread REQUIRED)
 IF(Boost_FOUND)
