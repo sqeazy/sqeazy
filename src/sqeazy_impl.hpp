@@ -1,6 +1,8 @@
 #ifndef _SQEAZY_IMPL_H_
 #define _SQEAZY_IMPL_H_
 
+#include <algorithm>
+
 namespace sqeazy {
 
   template <typename T> struct remove_unsigned { typedef T type; };
@@ -110,21 +112,21 @@ namespace sqeazy {
 
     for(long z_offset = Neighborhood::z_offset_begin;z_offset<Neighborhood::z_offset_end;++z_offset){
 	  
-      if((z_pos)>=Neighborhood::axis_half && (z_pos)<_depth-Neighborhood::axis_half)
+      if((z_pos + z_offset)>-1 && (z_pos + z_offset)<_depth)
 	z_sum_index =  (z_pos + z_offset)*frame ;
       else
 	z_sum_index = length;
 	  
       for(long y_offset = Neighborhood::y_offset_begin;y_offset<Neighborhood::y_offset_end;++y_offset){
 
-	if((y_pos)>=Neighborhood::axis_half && (y_pos)<_height-Neighborhood::axis_half)
+	if((y_pos + y_offset)>-1 && (y_pos + y_offset)<_height)
 	  y_sum_index =  (y_pos + y_offset)*_width ;
 	else
 	  y_sum_index = length;
 
 	for(long x_offset = Neighborhood::x_offset_begin;x_offset<Neighborhood::x_offset_end;++x_offset){
 
-	  if((x_pos)>=Neighborhood::axis_half && (x_pos)<_width-Neighborhood::axis_half)
+	  if((x_pos + x_offset)>-1 && (x_pos + x_offset)<_width)
 	    x_sum_index = x_pos + x_offset;
 	  else
 	    x_sum_index = length;
@@ -178,10 +180,11 @@ namespace sqeazy {
     {
       unsigned long length = _width*_height*_depth;
 
+      std::copy(_input,_input + length, _output);
+      
       sum_type local_sum = 0;
-
       for(unsigned long index = 0;index < length;++index){
-	local_sum = sum<Neighborhood>(_input,index,_width, _height,_depth);
+	local_sum = sum<Neighborhood>(_output,index,_width, _height,_depth);
 	
 	_output[index] = _input[index] + local_sum/Neighborhood::traversed;
       }

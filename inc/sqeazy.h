@@ -1,6 +1,12 @@
 #ifndef SQEAZY_H_   /* Include guard */
 #define SQEAZY_H_
 
+#ifdef _WIN32
+#define SQY_FUNCTION_PREFIX extern "C" __declspec(dllexport)
+#else
+#define SQY_FUNCTION_PREFIX extern "C"
+#endif
+
 /*
 *	Sqeazy - Fast and flexible volume compression library
 *
@@ -44,7 +50,7 @@
 
 	extensions 1: if src==dst the function is capable of doing in-place processing.	
 */
-int SQY_RasterDiffEncode_3D_UI16(int width, int height, int depth, const char* src, char* dst);
+SQY_FUNCTION_PREFIX int SQY_RasterDiffEncode_3D_UI16(int width, int height, int depth, const char* src, char* dst);
 
 /*
 	SQY_RasterDiffDecode_3D_UI16 - Raster differencing scheme on 3D unsigned 16 bit int data.
@@ -63,7 +69,7 @@ int SQY_RasterDiffEncode_3D_UI16(int width, int height, int depth, const char* s
 
 	extensions 1: if src==dst the function is capable of doing in-place processing.	
 */
-int SQY_RasterDiffDecode_3D_UI16(int width, int height, int depth, const char* src, char* dst);
+SQY_FUNCTION_PREFIX int SQY_RasterDiffDecode_3D_UI16(int width, int height, int depth, const char* src, char* dst);
 
 
 //#############################################################################
@@ -85,7 +91,7 @@ int SQY_RasterDiffDecode_3D_UI16(int width, int height, int depth, const char* s
 
 	extensions 1: if src==dst the function is capable of doing in-place processing.	
 */
-int SQY_BitSwap4Encode_UI16(const char* src, char* dst, long length);
+SQY_FUNCTION_PREFIX int SQY_BitSwap4Encode_UI16(const char* src, char* dst, long length);
 
 /*
 	SQY_BitSwap4Decode_UI16 - 4 Bit swapping scheme on unsigned 16 bit int data.
@@ -100,7 +106,7 @@ int SQY_BitSwap4Encode_UI16(const char* src, char* dst, long length);
 
 	extensions 1: if src==dst the function is capable of doing in-place processing.	
 */
-int SQY_BitSwap4Decode_UI16(const char* src, char* dst, long length);
+SQY_FUNCTION_PREFIX int SQY_BitSwap4Decode_UI16(const char* src, char* dst, long length);
 
 /*
 	SQY_BitSwap8Encode_UI16 - 8 Bit swapping scheme on unsigned 16 bit int data.
@@ -117,7 +123,7 @@ int SQY_BitSwap4Decode_UI16(const char* src, char* dst, long length);
 
 	extensions 1: if src==dst the function is capable of doing in-place processing.	
 */
-int SQY_BitSwap8Encode_UI16(const char* src, char* dst, long length);
+SQY_FUNCTION_PREFIX int SQY_BitSwap8Encode_UI16(const char* src, char* dst, long length);
 
 /*
 	SQY_BitSwap8Decode_UI16 - 8 Bit swapping scheme on unsigned 16 bit int data.
@@ -132,7 +138,7 @@ int SQY_BitSwap8Encode_UI16(const char* src, char* dst, long length);
 
 	extensions 1: if src==dst the function is capable of doing in-place processing.	
 */
-int SQY_BitSwap8Decode_UI16(const char* src, char* dst, long length);
+SQY_FUNCTION_PREFIX int SQY_BitSwap8Decode_UI16(const char* src, char* dst, long length);
 
 
 //#############################################################################
@@ -174,7 +180,7 @@ int SQY_BitSwap8Decode_UI16(const char* src, char* dst, long length);
 
 	extensions 1: if src==dst the function is capable of doing in-place processing.	
 */
-int SQY_RLEEncode_UI8(const char* src, char* dst, long length, long minrunlength);
+SQY_FUNCTION_PREFIX int SQY_RLEEncode_UI8(const char* src, char* dst, long length, long minrunlength);
 
 
 /*
@@ -190,7 +196,7 @@ int SQY_RLEEncode_UI8(const char* src, char* dst, long length, long minrunlength
 
 	Returns 0 if success, another code if there was an error (error codes provided below)	
 */
-int SQY_RLEDecode_UI8(const char* src, char* dst, long length);
+SQY_FUNCTION_PREFIX int SQY_RLEDecode_UI8(const char* src, char* dst, long length);
 
 
 //#############################################################################
@@ -218,7 +224,7 @@ int SQY_RLEDecode_UI8(const char* src, char* dst, long length);
 			error 1 -  destination buffer is not large enough
 
 */
-int SQY_LZ4Encode(const char* src, long srclength, char* dst, long* dstlength);
+SQY_FUNCTION_PREFIX int SQY_LZ4Encode(const char* src, long srclength, char* dst, long* dstlength);
 
 
 
@@ -233,7 +239,7 @@ int SQY_LZ4Encode(const char* src, long srclength, char* dst, long* dstlength);
 
 	Returns 0 if success, another code if there was an error (error codes provided below)
 */
-int SQY_LZ4Length(const char* buffer, long* length);
+SQY_FUNCTION_PREFIX int SQY_LZ4Length(const char* buffer, long* length);
 
 /*
 	SQY_LZ4Decode - Decompress using LZ4.
@@ -252,7 +258,7 @@ int SQY_LZ4Length(const char* buffer, long* length);
 	Returns 0 if success, another code if there was an error (error codes provided below)
 
 */
-int SQY_LZ4Decode(const char* src, long srclength, char* dst);
+SQY_FUNCTION_PREFIX int SQY_LZ4Decode(const char* src, long srclength, char* dst);
 
 
 #endif

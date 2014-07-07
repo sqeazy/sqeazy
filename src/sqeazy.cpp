@@ -1,4 +1,5 @@
 #define SQEAZY_CPP_
+#include "sqeazy.h"
 #include "sqeazy_impl.hpp"
 
 /*
