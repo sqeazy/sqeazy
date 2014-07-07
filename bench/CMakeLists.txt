@@ -8,7 +8,8 @@ INCLUDE_DIRECTORIES(.)
 
 add_executable(bench bench.cpp)
 target_link_libraries(bench ${PROJECT_NAME})
-
+SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++11")
+SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -std=c++11")
 
 # FIND_PACKAGE(TIFF REQUIRED)
 # IF(TIFF_FOUND)
