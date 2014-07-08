@@ -5,6 +5,7 @@
 #include <limits>
 
 template <typename T = unsigned short, 
+	  //obtained by `getconf -a /usr|grep -i CACHE` on a Intel(R) Core(TM) i7-3520M
 	  const unsigned L1_size_in_byte_as_exponent = 15,
 	  const unsigned L2_size_in_byte_as_exponent = 18,
 	  const unsigned L3_size_in_byte_as_exponent = 22
@@ -28,7 +29,7 @@ struct data_fixture{
   }
 
   data_fixture():
-    sin_data(),
+    sin_data(size,0),
     output_data(sin_data)
   {
 
@@ -37,26 +38,30 @@ struct data_fixture{
 
   //copy-constructor: reinit everything (don't copy)
   data_fixture(const data_fixture& _rhs):
-    sin_data(),
+    sin_data(size,0),
     output_data(sin_data){
 
-    fill_self();
+    *this = _rhs;
     
   }
 
   //assignment: reinit everything (don't copy)
   data_fixture& operator=(const data_fixture& _rhs){
 
-    if(this!=*_rhs){
-      fill_self();
-      std::copy(sin_data.begin(), sin_data.end(), output_data.begin());
+    if(this!=&_rhs){
+      
+      std::copy(_rhs.sin_data.begin(), _rhs.sin_data.end(), sin_data.begin());
+      std::copy(_rhs.output_data.begin(), _rhs.output_data.end(), output_data.begin());
+
     }
     
     return *this;
     
   }
   
-  
+  unsigned long sin_data_in_byte() const {
+    return sin_data.size()*sizeof(T);
+  }
 };
 
 

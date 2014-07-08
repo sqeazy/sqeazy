@@ -50,7 +50,7 @@ void perform(std::function<int(int,int,int,const char*,char*)> _func,
   double variance = sample_variance(microsecond_timings.begin(), 
 				    microsecond_timings.end(),mean);
   
-  std::cout << "50x runs: " << mean << " +/- " << variance << " ms\n";
+  std::cout << "50x runs: " << mean << " +/- " << variance << " ms (var = "<< variance/mean <<" * mean); throughput: "<< (_ref.sin_data_in_byte()*1e6)/(mean*(1 << 20))<<" MB/s\n";
   
 }
 
@@ -60,9 +60,11 @@ int main(int argc, char *argv[])
 
   data_fixture<> reference;
   
-  std::function<int(int,int,int,const char*,char*)> raster_diff_encode_ushort = SQY_RasterDiffEncode_3D_UI16;
-  perform(raster_diff_encode_ushort,reference);
+  std::cout << "SQY_RasterDiffEncode_3D_UI16 of " << reference.sin_data_in_byte()/(1<<20) << " MB\n";
+  perform(std::function<int(int,int,int,const char*,char*)>(SQY_RasterDiffEncode_3D_UI16),reference);
   
+  std::cout << "SQY_RasterDiffDecode_3D_UI16 of " << reference.sin_data_in_byte()/(1<<20) << " MB\n";
+  perform(std::function<int(int,int,int,const char*,char*)>(SQY_RasterDiffDecode_3D_UI16),reference);
   
   return 0;
 }
