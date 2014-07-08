@@ -77,14 +77,40 @@ namespace sqeazy {
     static const int x_offset_begin = -axis_half;
     
     //this is the exclusive end, so the index one past the last element
-    static const int z_offset_end = axis_half+1;
-    static const int y_offset_end = axis_half+1;
-    static const int x_offset_end = axis_half+1;
+    static const int z_offset_end = 1;
+    static const int y_offset_end = 1;
+    static const int x_offset_end = 1;
     
     static const int traversed = (z_offset_end-z_offset_begin)*(y_offset_end-y_offset_begin)*(x_offset_end-x_offset_begin);
 
     
     
+  };
+
+  template < unsigned extent = 4>
+  struct cube_neighborhood_excluding_pixel {
+   
+    static const unsigned axis_length = extent;
+    static const unsigned axis_half   = extent/2;
+ 
+    //the indexing assumed is :
+    //axis_begin[0] = x_axis_begin
+    //axis_begin[1] = y_axis_begin
+    //axis_begin[2] = z_axis_begin
+
+    //this is the inclusive start
+    static const int z_offset_begin = -axis_length;
+    static const int y_offset_begin = -axis_length;
+    static const int x_offset_begin = -axis_length;
+    
+    //this is the exclusive end, so the index one past the last element
+    static const int z_offset_end = 0;
+    static const int y_offset_end = 0;
+    static const int x_offset_end = 0;
+    
+    static const int traversed = (z_offset_end-z_offset_begin)*(y_offset_end-y_offset_begin)*(x_offset_end-x_offset_begin);
+
+        
   };
 
   template <typename Neighborhood, typename T, typename U>

@@ -51,7 +51,7 @@
 	extensions 1: if src==dst the function is capable of doing in-place processing.	
 */
 SQY_FUNCTION_PREFIX int SQY_RasterDiffEncode_3D_UI16(int width, int height, int depth, const char* src, char* dst);
-
+SQY_FUNCTION_PREFIX int SQY_ExperimentalEncode_3D_UI16(int width, int height, int depth, const char* src, char* dst);
 /*
 	SQY_RasterDiffDecode_3D_UI16 - Raster differencing scheme on 3D unsigned 16 bit int data.
 

@@ -60,10 +60,14 @@ int main(int argc, char *argv[])
 
   data_fixture<> reference;
   
-  std::cout << "SQY_RasterDiffEncode_3D_UI16 of " << reference.sin_data_in_byte()/(1<<20) << " MB\n";
+  std::cout << "SQY_RasterDiffEncode_3D_UI16 of "
+	    << reference.axis_length <<"x"<< reference.axis_length <<"x"<< reference.axis_length 
+	    <<" = " << reference.sin_data_in_byte()/(1<<20) << " MB\n";
   perform(std::function<int(int,int,int,const char*,char*)>(SQY_RasterDiffEncode_3D_UI16),reference);
   
-  std::cout << "SQY_RasterDiffDecode_3D_UI16 of " << reference.sin_data_in_byte()/(1<<20) << " MB\n";
+  std::cout << "SQY_RasterDiffDecode_3D_UI16 of "
+	    << reference.axis_length <<"x"<< reference.axis_length <<"x"<< reference.axis_length 
+	    <<" = " << reference.sin_data_in_byte()/(1<<20) << " MB\n";
   perform(std::function<int(int,int,int,const char*,char*)>(SQY_RasterDiffDecode_3D_UI16),reference);
   
   return 0;
