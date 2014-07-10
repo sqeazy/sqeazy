@@ -37,7 +37,16 @@ int SQY_RasterDiffDecode_3D_UI16(int width, int height, int depth, const char* s
 }
 
 
-int SQY_BitSwap4Encode_UI16(const char* src, char* dst, long length){return 42;}
+int SQY_BitSwap4Encode_UI16(const char* src, char* dst, long length){ 
+
+  typedef unsigned short raw_type;
+
+  return sqeazy::bitswap_scheme<raw_type>::encode(reinterpret_cast<const raw_type*>(src),
+						  reinterpret_cast<raw_type*>(dst),
+						  length
+						  );
+
+}
 
 int SQY_BitSwap4Decode_UI16(const char* src, char* dst, long length){return 42;}
 

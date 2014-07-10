@@ -32,7 +32,7 @@ namespace sqeazy {
   enum error_code {
     
     SUCCESS = 0,
-    FAILED = 1
+    FAILURE = 1
     
   };
 
@@ -216,6 +216,51 @@ namespace sqeazy {
       }
       
       return SUCCESS;
+    }
+
+    
+  };
+
+  template < typename T, const unsigned num_segments = 4, const unsigned num_bits_per_segment = 4  >
+  struct bitswap_scheme {
+    
+    typedef T raw_type;
+    typedef unsigned size_type;
+
+    static const raw_type masks[num_segments] = {};
+
+    static const error_code encode(const raw_type* _input,
+				   raw_type* _output,
+				   const size_type& _length) 
+    {
+      
+      size_type segments_length = _length/num_segments;
+      char* segment_arrays[num_segments];
+      static const unsigned num_bits = sizeof(T)*8;
+
+      for(size_type seg_index = 0;seg_index<num_segments;++seg_index)
+	segment_arrays[seg_index] = &(reinterpret_cast<char*>(_output)[seg_index*(segments_length/sizeof(raw_type)*sizeof(char))]);
+
+
+      for(size_type index = 0;index < _length;++index){
+	
+	for(size_type seg_index = 0;seg_index<num_segments;++seg_index){
+	  raw_type mask = ~(~0 << (num_bits + 1));
+	  (n >> start) & mask
+	}
+	_output[index] = _input[index];
+      }
+      
+      return SUCCESS;
+    }
+
+    static const error_code decode(const raw_type* _input,
+				   raw_type* _output,
+				   const size_type& _length) 
+    {
+
+      
+      return FAILURE;
     }
 
     

@@ -12,6 +12,9 @@ target_link_libraries(test_apply boost_system boost_filesystem boost_unit_test_f
 add_executable(test_diff_schemes test_diff_schemes.cpp)
 target_link_libraries(test_diff_schemes ${PROJECT_NAME} boost_system boost_filesystem boost_unit_test_framework)
 
+add_executable(test_bitswap_schemes test_bitswap_schemes.cpp)
+target_link_libraries(test_bitswap_schemes ${PROJECT_NAME} boost_system boost_filesystem boost_unit_test_framework)
+
 # FIND_PACKAGE(TIFF REQUIRED)
 # IF(TIFF_FOUND)
 # add_executable(test_view_from_disk_fixture test_view_from_disk_fixture.cpp)
