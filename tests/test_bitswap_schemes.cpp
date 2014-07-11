@@ -40,8 +40,12 @@ BOOST_AUTO_TEST_CASE( encode_constant_correct )
 					output,
 					uint16_cube_of_8::size);
   
-  unsigned expected_sum = uint16_cube_of_8::size;
+  const unsigned expected_sum = uint16_cube_of_8::size;
+  const unsigned end_three_quarters = .75*uint16_cube_of_8::size;
+  BOOST_CHECK_EQUAL(to_play_with[0],0);
+
   BOOST_CHECK_NE(std::accumulate(&to_play_with[0],&to_play_with[0] + uint16_cube_of_8::size,0),expected_sum);
+  BOOST_CHECK_EQUAL(std::accumulate(&to_play_with[0],&to_play_with[0] + end_three_quarters,0),0);
 
 }
 
