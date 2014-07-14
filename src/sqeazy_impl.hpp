@@ -221,31 +221,44 @@ namespace sqeazy {
     
   };
 
+  template < typename T>
+  T setbits_of_integertype(const T& destination, const T& source, unsigned at, unsigned numbits)
+  {
+    T ones = ((1<<(numbits))-1)<<at;
+    return (ones|destination)^((~source<<at)&ones);
+  }
+
   template < typename T, const unsigned num_segments = 4  >
   struct bitswap_scheme {
     
     typedef T raw_type;
     typedef unsigned size_type;
+    
+    static const unsigned raw_type_num_bits = sizeof(T)*8;
+    static const unsigned raw_type_num_bits_per_segment = raw_type_num_bits/num_segments;
 
+    
     static const error_code encode(const raw_type* _input,
 				   raw_type* _output,
 				   const size_type& _length) 
     {
       
       const unsigned segment_length = _length/num_segments;
-      static const unsigned raw_type_num_bits = sizeof(T)*8;
-      static const unsigned raw_type_num_bits_per_segment = raw_type_num_bits/num_segments;
-
-
-      raw_type mask = ~(~0 << (raw_type_num_bits_per_segment + 1));
+      const raw_type mask = ~(~0 << (raw_type_num_bits_per_segment));
 
       for(size_type seg_index = 0;seg_index<num_segments;++seg_index){
 
-	size_type start_bit_index = seg_index*raw_type_num_bits_per_segment;
+	size_type input_bit_offset = seg_index*raw_type_num_bits_per_segment;
 
 	for(size_type index = 0;index < _length;++index){
-	  raw_type bits_of_interest = (_input[index] >> start_bit_index) & mask;
-	  _output[((num_segments-seg_index)*segment_length) + (index/num_segments)] += bits_of_interest << ((index % num_segments)*raw_type_num_bits_per_segment);
+	  
+	  raw_type extracted_bits = (_input[index] >> input_bit_offset) & mask;
+	  size_type output_bit_offset = ((index % num_segments)*raw_type_num_bits_per_segment);
+	  size_type output_index = ((num_segments-1-seg_index)*segment_length) + (index/num_segments);
+	  //_output[output_index] |= extracted_bits << output_bit_offset;
+	  _output[output_index] = setbits_of_integertype(_output[output_index],extracted_bits,
+							 output_bit_offset,
+							 raw_type_num_bits_per_segment);
 	}
       }
       
@@ -256,14 +269,32 @@ namespace sqeazy {
 				   raw_type* _output,
 				   const size_type& _length) 
     {
-
       
-      return FAILURE;
+      const unsigned segment_length = _length/num_segments;
+      const raw_type mask = ~(~0 << (raw_type_num_bits_per_segment));
+	    
+      for(size_type seg_index = 0;seg_index<num_segments;++seg_index){
+	for(size_type index = 0;index < _length;++index){
+
+	  size_type input_bit_offset = (index % num_segments)*raw_type_num_bits_per_segment;
+
+	  size_type input_index = ((num_segments-1-seg_index)*segment_length) + index/num_segments;
+	  raw_type extracted_bits = (_input[input_index] >> input_bit_offset) & mask;
+
+	  size_type output_bit_offset = seg_index*raw_type_num_bits_per_segment;
+	  
+	  //_output[index] |= extracted_bits << output_bit_offset;
+	  _output[index] = setbits_of_integertype(_output[index],extracted_bits,
+						  output_bit_offset,raw_type_num_bits_per_segment);
+	}
+      }
+	    
+      return SUCCESS;
     }
 
     
   };
 
-}
+} //sqeazy
 
 #endif /* _SQEAZY_IMPL_H_ */
