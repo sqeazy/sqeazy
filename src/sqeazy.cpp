@@ -69,11 +69,36 @@ int SQY_RLEEncode_UI8(const char* src, char* dst, long length, long minrunlength
 
 int SQY_RLEDecode_UI8(const char* src, char* dst, long length){return 42;}
 
-int SQY_LZ4Encode(const char* src, long srclength, char* dst, long* dstlength){return 42;}
+
+#include "lz4.h"
+
+int SQY_LZ4Encode(const char* src, long srclength, char* dst, long* dstlength){
+
+  int retcode = LZ4_compress(src,dst,srclength);
+  
+  if(retcode){
+    *dstlength = retcode;
+    return 0;
+  }
+  else{
+    *dstlength = 0;
+    return -1;
+  }
+}
 
 
-int SQY_LZ4Length(const char* buffer, long* length){return 42;}
+int SQY_LZ4Length(const char* buffer, long* length){
+  
+  return LZ4_compressBound(*length);
+
+}
 
 
-int SQY_LZ4Decode(const char* src, long srclength, char* dst){return 42;}
+int SQY_LZ4Decode(const char* src, long srclength, char* dst){
+
+  int maxOutputSize = LZ4_compressBound(srclength);
+  int retcode = LZ4_decompress_safe(src,dst,srclength, maxOutputSize);
+  
+  return retcode;
+}
 
