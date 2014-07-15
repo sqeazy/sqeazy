@@ -5,5 +5,7 @@
 #  TESTS
 #  Independent_suite)
 
-add_test(NAME multi_array_fixture COMMAND multi_array_fixture)
-add_test(NAME cpu_convolve COMMAND cpu_convolve)
+add_test(NAME diff_schemes COMMAND test_diff_schemes)
+add_test(NAME bitswap_schemes COMMAND test_bitswap_schemes)
+add_test(NAME lz4_encoding COMMAND test_lz4_encoding)
+

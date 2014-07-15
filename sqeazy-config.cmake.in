@@ -9,9 +9,9 @@ get_filename_component(SQEAZY_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 set(SQEAZY_INCLUDE_DIRS "@CONF_INCLUDE_DIRS@")
 
 # Our library dependencies (contains definitions for IMPORTED targets)
-include("${SQEAZY_CMAKE_DIR}/multiview-targets.cmake")
+include("${SQEAZY_CMAKE_DIR}/sqeazy-targets.cmake")
 
-# These are IMPORTED targets created by multiviewnative-targets.cmake
+# These are IMPORTED targets created by sqeazy-targets.cmake
 IF(UNIX)
   IF(APPLE)
     get_filename_component(SQEAZY_INCLUDE_DIRS "${SQEAZY_CMAKE_DIR}/../../include" ABSOLUTE)
@@ -24,8 +24,8 @@ IF(UNIX)
   ENDIF(APPLE)
 ENDIF(UNIX)
 
-# These are IMPORTED targets created by multiviewnative-targets.cmake
-set(SQEAZY_LIBRARIES "${SQEAZY_LIB_DIRS}/libMultiviewNative.so")
+# These are IMPORTED targets created by sqeazy-targets.cmake
+set(SQEAZY_LIBRARIES "${SQEAZY_LIB_DIRS}/libsqeazy.so")
 
 set(SQEAZY_VERSION  "@SQEAZY_VERSION@")
 set(SQEAZY_VERSION_MAJOR  "@SQEAZY_VERSION_MAJOR@")
