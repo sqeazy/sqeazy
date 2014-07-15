@@ -255,7 +255,7 @@ namespace sqeazy {
 	  raw_type extracted_bits = (_input[index] >> input_bit_offset) & mask;
 	  size_type output_bit_offset = ((index % num_segments)*raw_type_num_bits_per_segment);
 	  size_type output_index = ((num_segments-1-seg_index)*segment_length) + (index/num_segments);
-	  //_output[output_index] |= extracted_bits << output_bit_offset;
+
 	  _output[output_index] = setbits_of_integertype(_output[output_index],extracted_bits,
 							 output_bit_offset,
 							 raw_type_num_bits_per_segment);
@@ -283,7 +283,7 @@ namespace sqeazy {
 
 	  size_type output_bit_offset = seg_index*raw_type_num_bits_per_segment;
 	  
-	  //_output[index] |= extracted_bits << output_bit_offset;
+
 	  _output[index] = setbits_of_integertype(_output[index],extracted_bits,
 						  output_bit_offset,raw_type_num_bits_per_segment);
 	}
