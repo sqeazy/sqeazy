@@ -173,7 +173,7 @@ struct tiff_fixture{
     for(int axis_id = 0;axis_id<_self.axis_lengths.size();++axis_id){
       _cout << _self.axis_length(axis_id) << ((axis_id < _self.axis_lengths.size()-1) ? "x" : " ");
     }
-    _cout <<" uint16 = " << _self.data_in_byte()/(1<<20) << " MB";
+    _cout <<" uint16 = " << _self.data_in_byte()/(1<<20) << " MB ";
     return _cout;
   }
 
