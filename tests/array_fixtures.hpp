@@ -18,6 +18,8 @@ namespace sqeazy {
     
     static const unsigned axis_length = dim;
     static const unsigned size = dim*dim*dim;
+    static const unsigned size_in_byte = dim*dim*dim*sizeof(T);
+
     T constant_cube[size];
     T incrementing_cube[size];
     T to_play_with[size];

@@ -43,7 +43,7 @@ int SQY_BitSwap4Encode_UI16(const char* src, char* dst, long length){
 
   return sqeazy::bitswap_scheme<raw_type>::encode(reinterpret_cast<const raw_type*>(src),
 						  reinterpret_cast<raw_type*>(dst),
-						  length
+						  length/sizeof(raw_type)
 						  );
 
 }
@@ -53,7 +53,7 @@ int SQY_BitSwap4Decode_UI16(const char* src, char* dst, long length){
   typedef unsigned short raw_type;
   return sqeazy::bitswap_scheme<raw_type>::decode(reinterpret_cast<const raw_type*>(src),
 						  reinterpret_cast<raw_type*>(dst),
-						  length
+						  length/sizeof(raw_type)
 						  );
 }
 
@@ -62,7 +62,7 @@ int SQY_BitSwap8Encode_UI16(const char* src, char* dst, long length){
     typedef unsigned short raw_type;
     return sqeazy::bitswap_scheme<raw_type,2>::encode(reinterpret_cast<const raw_type*>(src),
 						      reinterpret_cast<raw_type*>(dst),
-						      length
+						      length/sizeof(raw_type)
 						      );
 }
 
@@ -72,7 +72,7 @@ int SQY_BitSwap8Decode_UI16(const char* src, char* dst, long length){
   typedef unsigned short raw_type;
   return sqeazy::bitswap_scheme<raw_type,2>::decode(reinterpret_cast<const raw_type*>(src),
 						    reinterpret_cast<raw_type*>(dst),
-						    length
+						    length/sizeof(raw_type)
 						    );
 }
 

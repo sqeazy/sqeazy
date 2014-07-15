@@ -24,7 +24,7 @@ BOOST_AUTO_TEST_CASE( encode_success )
 
   int retcode = SQY_BitSwap4Encode_UI16(input,
 					output,
-					uint16_cube_of_8::size);
+					uint16_cube_of_8::size_in_byte);
   
   BOOST_CHECK_EQUAL(retcode,0);
   BOOST_CHECK_NE(constant_cube[0],to_play_with[0]);
@@ -38,7 +38,7 @@ BOOST_AUTO_TEST_CASE( encode_constant_correct )
 
   int retcode = SQY_BitSwap4Encode_UI16(input,
 					output,
-					uint16_cube_of_8::size);
+					uint16_cube_of_8::size_in_byte);
 
   //constant cube has all elements set to 1
   //BitSwap4Encode splits each element into 4 pieces: Ai, Bi, Ci, Di
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE( decode_success )
 
   int retcode = SQY_BitSwap4Decode_UI16(input,
 					output_casted,
-					uint16_cube_of_8::size);
+					uint16_cube_of_8::size_in_byte);
   
   BOOST_CHECK_EQUAL(retcode,0);
   BOOST_CHECK_NE(to_play_with[0],output[0]);
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE( is_synthetic_input_valid )
 
   int retcode = SQY_BitSwap4Encode_UI16(input,
 					output_casted,
-					uint16_cube_of_8::size);
+					uint16_cube_of_8::size_in_byte);
   
   BOOST_CHECK_EQUAL(retcode,0);
   BOOST_CHECK_EQUAL(to_play_with[0],output[0]);
@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE( decode_exact )
 
   int retcode = SQY_BitSwap4Decode_UI16(input,
 					output_casted,
-					uint16_cube_of_8::size);
+					uint16_cube_of_8::size_in_byte);
   
   BOOST_CHECK_EQUAL(retcode,0);
   BOOST_CHECK_EQUAL(output[0],constant_cube[0]);
@@ -140,13 +140,13 @@ BOOST_AUTO_TEST_CASE( decode_encoded )
 
   SQY_BitSwap4Encode_UI16(reinterpret_cast<const char*>(&constant_cube[0]),
 			  intermediate_casted,
-			  uint16_cube_of_8::size);
+			  uint16_cube_of_8::size_in_byte);
   
   const char* input = reinterpret_cast<const char*>(&intermediate[0]);
 
   int retcode = SQY_BitSwap4Decode_UI16(input,
 					reinterpret_cast<char*>(&to_play_with[0]),
-					uint16_cube_of_8::size);
+					uint16_cube_of_8::size_in_byte);
   
   BOOST_CHECK_EQUAL(retcode,0);
   BOOST_CHECK_EQUAL(to_play_with[0],constant_cube[0]);
@@ -164,13 +164,13 @@ BOOST_AUTO_TEST_CASE( decode_encoded_incrementing )
 
   SQY_BitSwap4Encode_UI16(reinterpret_cast<const char*>(&incrementing_cube[0]),
 			  intermediate_casted,
-			  uint16_cube_of_8::size);
+			  uint16_cube_of_8::size_in_byte);
   
   const char* input = reinterpret_cast<const char*>(&intermediate[0]);
 
   int retcode = SQY_BitSwap4Decode_UI16(input,
 					reinterpret_cast<char*>(&to_play_with[0]),
-					uint16_cube_of_8::size);
+					uint16_cube_of_8::size_in_byte);
   
   BOOST_CHECK_EQUAL(retcode,0);
   BOOST_CHECK_EQUAL(to_play_with[0],incrementing_cube[0]);
@@ -191,7 +191,7 @@ BOOST_AUTO_TEST_CASE( encode_success )
 
   int retcode = SQY_BitSwap8Encode_UI16(input,
 					output,
-					uint16_cube_of_8::size);
+					uint16_cube_of_8::size_in_byte);
   
   BOOST_CHECK_EQUAL(retcode,0);
   BOOST_CHECK_NE(constant_cube[0],to_play_with[0]);
@@ -205,7 +205,7 @@ BOOST_AUTO_TEST_CASE( encode_constant_correct )
 
   int retcode = SQY_BitSwap8Encode_UI16(input,
 					output,
-					uint16_cube_of_8::size);
+					uint16_cube_of_8::size_in_byte);
 
   //constant cube has all elements set to 1
   //BitSwap4Encode splits each element into 2 pieces: Ai, Bi
@@ -240,7 +240,7 @@ BOOST_AUTO_TEST_CASE( decode_exact )
 
   int retcode = SQY_BitSwap8Decode_UI16(input,
 					output_casted,
-					uint16_cube_of_8::size);
+					uint16_cube_of_8::size_in_byte);
   
   BOOST_CHECK_EQUAL(retcode,0);
   BOOST_CHECK_EQUAL(output[0],constant_cube[0]);
@@ -258,13 +258,13 @@ BOOST_AUTO_TEST_CASE( decode_encoded )
 
   SQY_BitSwap8Encode_UI16(reinterpret_cast<const char*>(&constant_cube[0]),
 			  intermediate_casted,
-			  uint16_cube_of_8::size);
+			  uint16_cube_of_8::size_in_byte);
   
   const char* input = reinterpret_cast<const char*>(&intermediate[0]);
 
   int retcode = SQY_BitSwap8Decode_UI16(input,
 					reinterpret_cast<char*>(&to_play_with[0]),
-					uint16_cube_of_8::size);
+					uint16_cube_of_8::size_in_byte);
   
   BOOST_CHECK_EQUAL(retcode,0);
   BOOST_CHECK_EQUAL(to_play_with[0],constant_cube[0]);
