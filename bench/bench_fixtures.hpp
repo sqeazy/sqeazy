@@ -3,32 +3,36 @@
 #include <vector>
 #include <cmath>
 #include <limits>
+#include <fstream>
+#include <sstream>
+#include <stdexcept>
 
 template <typename T = unsigned short, 
 	  //obtained by `getconf -a /usr|grep -i CACHE` on a Intel(R) Core(TM) i7-3520M
-	  const unsigned L1_size_in_byte_as_exponent = 15,
-	  const unsigned L2_size_in_byte_as_exponent = 18,
-	  const unsigned L3_size_in_byte_as_exponent = 22
+	  const unsigned cache_size_in_byte_as_exponent = 22
 	  >
-struct data_fixture{
+struct synthetic_fixture{
 
-  static const unsigned long size = (1 << (L3_size_in_byte_as_exponent+1))/sizeof(T);
-  static const unsigned long axis_length = 1 << ((L3_size_in_byte_as_exponent+1)/3);
+  static const unsigned long size = (1 << (cache_size_in_byte_as_exponent+1))/sizeof(T);
+  static const unsigned long size_in_byte = sizeof(T)*size;
 
   std::vector<T> sin_data = std::vector<T>(size,0);
   std::vector<T> output_data;
 
-  constexpr static const float scale = .25f*std::numeric_limits<T>::max();
-  constexpr static const float factor_frequency = .25f*axis_length;
+  unsigned long axis_length() const {
+    return std::pow(size,1.f/3.f);
+  }
 
   void fill_self(){
+    float factor_frequency = .25f*axis_length();
+    static const float scale = .25f*std::numeric_limits<T>::max();
     unsigned index = 0;
     for( T& _element : sin_data ){
       _element = scale*std::sin(factor_frequency*index++);
     }
   }
 
-  data_fixture():
+  synthetic_fixture():
     sin_data(size,0),
     output_data(sin_data)
   {
@@ -37,7 +41,7 @@ struct data_fixture{
   }
 
   //copy-constructor: reinit everything (don't copy)
-  data_fixture(const data_fixture& _rhs):
+  synthetic_fixture(const synthetic_fixture& _rhs):
     sin_data(size,0),
     output_data(sin_data){
 
@@ -46,7 +50,7 @@ struct data_fixture{
   }
 
   //assignment: reinit everything (don't copy)
-  data_fixture& operator=(const data_fixture& _rhs){
+  synthetic_fixture& operator=(const synthetic_fixture& _rhs){
 
     if(this!=&_rhs){
       
@@ -59,8 +63,122 @@ struct data_fixture{
     
   }
   
-  unsigned long sin_data_in_byte() const {
+  unsigned long data_in_byte() const {
     return sin_data.size()*sizeof(T);
+  }
+
+  friend std::ostream& operator<<(std::ostream& _cout, const synthetic_fixture& _self){
+    _cout << _self.axis_length() <<"x"<< _self.axis_length() <<"x"<< _self.axis_length()
+	  <<" uint16 = " << _self.data_in_byte()/(1<<20) << " MB";
+    return _cout;
+  }
+};
+
+bool file_exists(const std::string& _path){
+  std::ifstream f(_path.c_str());
+  if (f.good()) {
+    f.close();
+    return true;
+  } else {
+    f.close();
+    return false;
+  }
+}
+
+#include "tiff_utils.h"
+
+template <typename T = unsigned short>
+struct tiff_fixture{
+
+  std::string file_loc;
+  std::vector<T> tiff_data;
+  std::vector<T> output_data;
+  std::vector<unsigned> axis_lengths;
+
+  unsigned long axis_length(const int& _axis_ref) const {
+    return axis_lengths.at(_axis_ref);
+  }
+
+  void fill_from(const std::string& _path){
+    if(!file_exists(_path) || _path.empty()){
+      std::stringstream msg("");
+      msg << "unable to load file at path " << _path << "\n";
+      throw std::runtime_error(msg.str().c_str());
+    }
+
+    TIFF* stack_tiff   = TIFFOpen( _path.c_str() , "r" );
+    std::vector<tdir_t> stack_tdirs   ;
+    sqeazy::get_tiff_dirs(stack_tiff,   stack_tdirs  );
+
+    axis_lengths = sqeazy::extract_tiff_to_vector(stack_tiff,   stack_tdirs  , tiff_data     );
+    TIFFClose(stack_tiff);
+      
+    if(tiff_data.size()>0){
+      std::cout << *this << "successfully loaded \n";
+    }
+
+  }
+
+  void swap(tiff_fixture& _first, tiff_fixture& _second){
+    std::swap(_first.file_loc, _second.file_loc);
+    std::swap(_first.tiff_data, _second.tiff_data);
+    std::swap(_first.output_data, _second.output_data);
+    std::swap(_first.axis_length, _second.axis_length);
+  }
+
+  tiff_fixture():
+    file_loc(""),
+    tiff_data(),
+    output_data(),
+    axis_lengths()
+  {
+
+  }
+
+  tiff_fixture(const std::string& _fileloc):
+    file_loc(_fileloc),
+    tiff_data(),
+    output_data(),
+    axis_lengths()
+  {
+    fill_from(_fileloc);
+  }
+
+
+  //copy-constructor: reinit everything (don't copy)
+  tiff_fixture(const tiff_fixture& _rhs):
+    file_loc(_rhs.file_loc),
+    tiff_data(),
+    output_data(),
+    axis_lengths(){
+
+    *this = _rhs;
+    
+  }
+
+  
+  tiff_fixture& operator=(tiff_fixture _rhs){
+
+    swap(*this,_rhs);
+    return *this;
+    
+  }
+  
+  unsigned long data_in_byte() const {
+    return tiff_data.size()*sizeof(T);
+  }
+
+  friend std::ostream& operator<<(std::ostream& _cout, const tiff_fixture& _self){
+    _cout << "loaded " << _self.file_loc << " as ";
+    for(int axis_id = 0;axis_id<_self.axis_lengths.size();++axis_id){
+      _cout << _self.axis_length(axis_id) << ((axis_id < _self.axis_lengths.size()-1) ? "x" : " ");
+    }
+    _cout <<" uint16 = " << _self.data_in_byte()/(1<<20) << " MB";
+    return _cout;
+  }
+
+  bool empty() const {
+    return tiff_data.empty();
   }
 };
 

@@ -6,17 +6,15 @@ INCLUDE_DIRECTORIES(.)
 # LINK_DIRECTORIES(${Boost_LIBRARY_DIRS}) 
 # ENDIF()
 
+
+FIND_PACKAGE(TIFF REQUIRED)
+IF(TIFF_FOUND)
 add_executable(bench bench.cpp)
-target_link_libraries(bench ${PROJECT_NAME})
+target_link_libraries(bench ${PROJECT_NAME} tiff)
 SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++11")
 SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -std=c++11")
-
-# FIND_PACKAGE(TIFF REQUIRED)
-# IF(TIFF_FOUND)
-# add_executable(test_view_from_disk_fixture test_view_from_disk_fixture.cpp)
-# target_link_libraries(test_view_from_disk_fixture boost_system boost_filesystem boost_unit_test_framework tiff)
-# ELSE(TIFF_FOUND)
-# WARNING("Skipping tests based on reference images, libtiff not found\!")
-# ENDIF(TIFF_FOUND)
+ELSE(TIFF_FOUND)
+WARNING("Skipping tests based on reference images, libtiff not found\!")
+ENDIF(TIFF_FOUND)
 
 
