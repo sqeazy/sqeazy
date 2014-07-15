@@ -59,9 +59,7 @@ int diff_decode(const std::vector<std::string>& _args){
 int pipe_encode_on_file(const std::vector<std::string>& _args, long& _input_size, long& _output_size){
 
   tiff_fixture<unsigned short> reference(_args[1]);
-  std::cout << "input data: "
-      	    << reference <<"\n";
-
+  
   if(reference.empty())
     return 1;
 
@@ -138,8 +136,9 @@ int pipe_encode(const std::vector<std::string>& _args){
     retcode = pipe_encode_on_synthetic(_args, input_buffer_size_in_byte, output_buffer_size_in_byte);
   }
 
-  std::cout << "output buffer size: " << output_buffer_size_in_byte 
-	    << " compression ration output/input = " << double(output_buffer_size_in_byte)/double(input_buffer_size_in_byte)
+  std::cout << "file = " << _args[1] << ", "
+	    << ", output buffer size = " << output_buffer_size_in_byte << " ("<< output_buffer_size_in_byte/(1<<20) <<" MB)"
+	    << ", compression ratio output/input = " << double(output_buffer_size_in_byte)/double(input_buffer_size_in_byte)
 	    <<"\n";
   
   return retcode;
@@ -161,7 +160,6 @@ int main(int argc, char *argv[])
   
   int retcode = 0;
   if(argc>1 && prog_flow.find(argv[1])!=prog_flow.end()){
-    
     retcode = prog_flow[argv[1]](arguments);
   }
   else{
