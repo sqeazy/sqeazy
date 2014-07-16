@@ -95,3 +95,45 @@ BOOST_AUTO_TEST_CASE( decode_encoded )
 
 
 BOOST_AUTO_TEST_SUITE_END()
+
+
+BOOST_FIXTURE_TEST_SUITE( lz4_study, sqeazy::lz4_fixture<unsigned short> )
+
+BOOST_AUTO_TEST_CASE( encoded_and_print_length )
+{
+
+  std::map<std::string, std::vector<value_type>* >::iterator begin = data.begin();
+  std::map<std::string, std::vector<value_type>* >::iterator end = data.end();
+
+  for(;begin!=end;++begin){
+    
+    long input_length = begin->second->size()*sizeof(value_type);
+    const char* input = reinterpret_cast<char*>(&(*(begin->second))[0]);
+    unsigned expected_size = SQY_LZ4Length(input, &input_length);
+    
+    char* compressed = new char[expected_size];
+    long output_length = begin->second->size()*sizeof(value_type);
+    int retcode = SQY_LZ4Encode(input,
+				input_length,
+				compressed,
+				&output_length
+				);
+
+    std::cout << "compressed " << begin->first.c_str() << "("<< begin->second->size()<< " elements) reduced from " << input_length << " B to " << output_length << " B, ratio out/in: " << output_length/float(input_length) << "\n";
+      
+    delete [] compressed;
+    
+  }
+
+  for(begin=data.begin();begin!=end;++begin){
+    
+    std::cout << begin->first.c_str() << "\t[0:32]\t";
+    for(int i = 0;i<32;++i){
+      std::cout << begin->second->at(i) << " ";
+    }
+    std::cout << "\n";
+  }
+}
+
+
+BOOST_AUTO_TEST_SUITE_END()
