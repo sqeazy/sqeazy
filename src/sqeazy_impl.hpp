@@ -57,6 +57,9 @@ namespace sqeazy {
     {
       sum_type local_sum = 0;
       unsigned long length = _width*_height*_depth;
+
+      std::copy(_input, _input + length, _output);//crossing fingers due to possible type mismatch
+      std::vector<size_type> offsets = sqeazy::compute_offsets<Neighborhood>(_width,_height,_depth);
       
       for(unsigned long index = 0;index < length;++index){
 	

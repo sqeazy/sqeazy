@@ -243,3 +243,5 @@ BOOST_AUTO_TEST_CASE( encode_decode_incrementing_injective )
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+
