@@ -61,7 +61,10 @@ BOOST_AUTO_TEST_CASE( encode_check_magic_values )
   
   
   BOOST_CHECK_EQUAL(incrementing_cube[0],to_play_with[0]);
-  BOOST_CHECK_NE(incrementing_cube[size - 1],to_play_with[size - 1]);
+  const unsigned first_index = uint16_cube_of_8::axis_length*uint16_cube_of_8::axis_length+uint16_cube_of_8::axis_length+1;
+  BOOST_CHECK_NE(incrementing_cube[first_index],to_play_with[first_index]);
+  const unsigned center_index = size/2;
+  BOOST_CHECK_NE(incrementing_cube[center_index],to_play_with[center_index]);
   BOOST_CHECK_EQUAL(retcode,0);
 }
 

@@ -30,11 +30,27 @@ BOOST_FIXTURE_TEST_SUITE( offset_calculation, uint16_cube_of_8 )
 BOOST_AUTO_TEST_CASE( offset_called )
 {
   const unsigned axis_size = axis_length;
-  std::vector<unsigned> offsets = sqeazy::compute_offsets<sqeazy::last_pixels_in_cube_neighborhood<3> >(axis_size, 
-													axis_size,
-													axis_size);
+  std::vector<unsigned> offsets;
+
+  sqeazy::halo<sqeazy::last_pixels_in_cube_neighborhood<3> , unsigned> geometry(axis_size,axis_size,axis_size);
+  geometry.compute_offsets_in_x(offsets);
   
   BOOST_CHECK_GT(offsets.size(),0);
+  unsigned expected = (axis_size-2)*(axis_size-2);
+  BOOST_CHECK_EQUAL(offsets.size(),expected);
 }
 
+
+BOOST_AUTO_TEST_CASE( offset_exact )
+{
+  const unsigned axis_size = axis_length;
+  std::vector<unsigned> offsets;
+  
+  sqeazy::halo<sqeazy::last_pixels_in_cube_neighborhood<3> , unsigned> geometry(axis_size,axis_size,axis_size);
+  geometry.compute_offsets_in_x(offsets);
+  
+  BOOST_CHECK_EQUAL(offsets.at(0),axis_size*axis_size + axis_size + 1);
+  BOOST_CHECK_EQUAL(offsets.at(1),axis_size*axis_size + 2*axis_size + 1);
+  BOOST_CHECK_EQUAL(offsets.back(),(axis_size-1-1)*axis_size*axis_size + ((axis_size-1-1))*axis_size + 1);
+}
 BOOST_AUTO_TEST_SUITE_END()
