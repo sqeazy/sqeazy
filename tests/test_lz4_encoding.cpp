@@ -113,15 +113,17 @@ BOOST_AUTO_TEST_CASE( encoded_and_print_length )
     
     char* compressed = new char[expected_size];
     long output_length = begin->second->size()*sizeof(value_type);
-    int retcode = SQY_LZ4Encode(input,
-				input_length,
-				compressed,
-				&output_length
-				);
+    SQY_LZ4Encode(input,
+		  input_length,
+		  compressed,
+		  &output_length
+		  );
 
     std::cout << "compressed " << begin->first.c_str() << "("<< begin->second->size()<< " elements) reduced from " << input_length << " B to " << output_length << " B, ratio out/in: " << output_length/float(input_length) << "\n";
       
     delete [] compressed;
+
+    
     
   }
 
@@ -133,6 +135,8 @@ BOOST_AUTO_TEST_CASE( encoded_and_print_length )
     }
     std::cout << "\n";
   }
+
+  BOOST_CHECK_EQUAL(true,true);
 }
 
 

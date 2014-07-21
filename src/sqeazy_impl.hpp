@@ -55,16 +55,17 @@ namespace sqeazy {
 				   const raw_type* _input,
 				   compressed_type* _output) 
     {
-      sum_type local_sum = 0;
+      
       unsigned long length = _width*_height*_depth;
-
       std::copy(_input, _input + length, _output);//crossing fingers due to possible type mismatch
-      std::vector<size_type> offsets; 
 
+      std::vector<size_type> offsets; 
       sqeazy::halo<Neighborhood, size_type> geometry(_width,_height,_depth);
       geometry.compute_offsets_in_x(offsets);
       std::vector<size_type>::const_iterator offsetsItr = offsets.begin(); 
-      const size_type end_ = geometry.non_halo_end(0);
+
+      const size_type end_ = geometry.non_halo_end(0)-1;
+      sum_type local_sum = 0;
 
       for(;offsetsItr!=offsets.end();++offsetsItr){
 	for(unsigned long index = 0;index < end_;++index){
@@ -72,6 +73,7 @@ namespace sqeazy {
 	  const size_type local_index = index + *offsetsItr;
 	  local_sum = naive_sum<Neighborhood>(_input,local_index,_width, _height,_depth);
 	  _output[local_index] = _input[local_index] - local_sum/Neighborhood::traversed;
+
 	}
       }
       
@@ -85,15 +87,33 @@ namespace sqeazy {
 				   raw_type* _output) 
     {
       unsigned long length = _width*_height*_depth;
-
       std::copy(_input,_input + length, _output);
-      
+
+      std::vector<size_type> offsets; 
+      sqeazy::halo<Neighborhood, size_type> geometry(_width,_height,_depth);
+      geometry.compute_offsets_in_x(offsets);
+      std::vector<size_type>::const_iterator offsetsItr = offsets.begin(); 
+
+      const size_type end_ = geometry.non_halo_end(0)-1;
       sum_type local_sum = 0;
-      for(unsigned long index = 0;index < length;++index){
-	local_sum = halo_aware_sum<Neighborhood>(_output,index,_width, _height,_depth);
-	
-	_output[index] = _input[index] + local_sum/Neighborhood::traversed;
+
+      for(;offsetsItr!=offsets.end();++offsetsItr){
+	for(unsigned long index = 0;index < end_;++index){
+	  
+	  const size_type local_index = index + *offsetsItr;
+	  local_sum = naive_sum<Neighborhood>(_output,local_index,_width, _height,_depth);
+	  _output[local_index] = _input[local_index] + local_sum/Neighborhood::traversed;
+
+	}
       }
+
+
+      // sum_type local_sum = 0;
+      // for(unsigned long index = 0;index < length;++index){
+      // 	local_sum = halo_aware_sum<Neighborhood>(_output,index,_width, _height,_depth);
+	
+      // 	_output[index] = _input[index] + local_sum/Neighborhood::traversed;
+      // }
       
       return SUCCESS;
     }

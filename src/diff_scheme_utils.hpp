@@ -177,7 +177,7 @@ namespace sqeazy {
 
     
     U non_halo_end(int dim_id) const  {
-      U end = Neighborhood::offset_end(dim_id) > 0 ? world.at(dim_id) - Neighborhood::offset_end(dim_id) : world.at(dim_id);
+      U end = Neighborhood::offset_end(dim_id) > 0 ? world.at(dim_id) - Neighborhood::offset_end(dim_id) +1 : world.at(dim_id);
       return end;
     }
     
