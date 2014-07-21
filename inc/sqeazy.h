@@ -92,6 +92,7 @@ SQY_FUNCTION_PREFIX int SQY_RasterDiffDecode_3D_UI16(int width, int height, int 
 	extensions 1: if src==dst the function is capable of doing in-place processing.	
 */
 SQY_FUNCTION_PREFIX int SQY_BitSwap4Encode_UI16(const char* src, char* dst, long length);
+SQY_FUNCTION_PREFIX int SQY_BitSwap4Encode_I16(const char* src, char* dst, long length);
 
 /*
 	SQY_BitSwap4Decode_UI16 - 4 Bit swapping scheme on unsigned 16 bit int data.
@@ -107,6 +108,7 @@ SQY_FUNCTION_PREFIX int SQY_BitSwap4Encode_UI16(const char* src, char* dst, long
 	extensions 1: if src==dst the function is capable of doing in-place processing.	
 */
 SQY_FUNCTION_PREFIX int SQY_BitSwap4Decode_UI16(const char* src, char* dst, long length);
+SQY_FUNCTION_PREFIX int SQY_BitSwap4Decode_I16(const char* src, char* dst, long length);
 
 /*
 	SQY_BitSwap8Encode_UI16 - 8 Bit swapping scheme on unsigned 16 bit int data.
@@ -139,6 +141,19 @@ SQY_FUNCTION_PREFIX int SQY_BitSwap8Encode_UI16(const char* src, char* dst, long
 	extensions 1: if src==dst the function is capable of doing in-place processing.	
 */
 SQY_FUNCTION_PREFIX int SQY_BitSwap8Decode_UI16(const char* src, char* dst, long length);
+SQY_FUNCTION_PREFIX int SQY_BitSwap8Encode_I16(const char* src, char* dst, long length);
+SQY_FUNCTION_PREFIX int SQY_BitSwap8Decode_I16(const char* src, char* dst, long length);
+
+
+SQY_FUNCTION_PREFIX int SQY_BitSwap2Encode_UI16(const char* src, char* dst, long length);
+SQY_FUNCTION_PREFIX int SQY_BitSwap2Decode_UI16(const char* src, char* dst, long length);
+SQY_FUNCTION_PREFIX int SQY_BitSwap2Encode_I16(const char* src, char* dst, long length);
+SQY_FUNCTION_PREFIX int SQY_BitSwap2Decode_I16(const char* src, char* dst, long length);
+
+SQY_FUNCTION_PREFIX int SQY_BitSwap1Encode_UI16(const char* src, char* dst, long length);
+SQY_FUNCTION_PREFIX int SQY_BitSwap1Decode_UI16(const char* src, char* dst, long length);
+SQY_FUNCTION_PREFIX int SQY_BitSwap1Encode_I16(const char* src, char* dst, long length);
+SQY_FUNCTION_PREFIX int SQY_BitSwap1Decode_I16(const char* src, char* dst, long length);
 
 
 //#############################################################################

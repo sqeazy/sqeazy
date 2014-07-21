@@ -274,3 +274,28 @@ BOOST_AUTO_TEST_CASE( decode_encoded )
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+typedef sqeazy::array_fixture<short> int16_cube_of_8;
+
+
+BOOST_FIXTURE_TEST_SUITE( signed_bitswap4x4_scheme_encode_out_of_place, int16_cube_of_8 )
+ 
+
+BOOST_AUTO_TEST_CASE( signed_encode_success )
+{
+  
+  value_type negative_constant_cube[size];
+  std::fill(&negative_constant_cube[0], &negative_constant_cube[0]+size,-1*constant_cube[0]);
+  
+  const char* input = reinterpret_cast<char*>(&negative_constant_cube[0]);
+  char* output = reinterpret_cast<char*>(&to_play_with[0]);
+
+  int retcode = SQY_BitSwap4Encode_I16(input,
+					output,
+					int16_cube_of_8::size_in_byte);
+  
+  BOOST_CHECK_EQUAL(retcode,0);
+  BOOST_CHECK_NE(negative_constant_cube[0],to_play_with[0]);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
