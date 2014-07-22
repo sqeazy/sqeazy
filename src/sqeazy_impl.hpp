@@ -106,14 +106,6 @@ namespace sqeazy {
 
 	}
       }
-
-
-      // sum_type local_sum = 0;
-      // for(unsigned long index = 0;index < length;++index){
-      // 	local_sum = halo_aware_sum<Neighborhood>(_output,index,_width, _height,_depth);
-	
-      // 	_output[index] = _input[index] + local_sum/Neighborhood::traversed;
-      // }
       
       return SUCCESS;
     }
@@ -150,7 +142,9 @@ namespace sqeazy {
 	  size_type output_bit_offset = ((index % num_segments)*raw_type_num_bits_per_segment);
 	  size_type output_index = ((num_segments-1-seg_index)*segment_length) + (index/num_segments);
 
-	  _output[output_index] = setbits_of_integertype(_output[output_index],extracted_bits,
+	  raw_type value = rotate_left<1>(xor_if_signed(_output[output_index]));
+
+	  _output[output_index] = setbits_of_integertype(value,extracted_bits,
 							 output_bit_offset,
 							 raw_type_num_bits_per_segment);
 	}
@@ -178,11 +172,16 @@ namespace sqeazy {
 	  size_type output_bit_offset = seg_index*raw_type_num_bits_per_segment;
 	  
 
+
 	  _output[index] = setbits_of_integertype(_output[index],extracted_bits,
 						  output_bit_offset,raw_type_num_bits_per_segment);
 	}
       }
-	    
+	  
+      for(size_type index = 0;index < _length;++index){
+	_output[index] = xor_if_signed(rotate_right<1>(_output[index]));
+      }
+  
       return SUCCESS;
     }
 

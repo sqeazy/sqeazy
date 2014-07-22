@@ -4,12 +4,14 @@
 namespace sqeazy {
 
   template <typename T> struct remove_unsigned { typedef T type; };
+  template <> struct remove_unsigned<unsigned char> 		{ typedef char		type; };
   template <> struct remove_unsigned<unsigned short> 		{ typedef short		type; };
   template <> struct remove_unsigned<unsigned int  > 		{ typedef int		type; };
   template <> struct remove_unsigned<unsigned long > 		{ typedef long		type; };
   template <> struct remove_unsigned<unsigned long long >	{ typedef long long	type; };
 
   template <typename T> struct add_unsigned { typedef T type; };
+  template <> struct add_unsigned<char> 	{ typedef unsigned char	type; };
   template <> struct add_unsigned<short> 	{ typedef unsigned short	type; };
   template <> struct add_unsigned<int  > 	{ typedef unsigned int		type; };
   template <> struct add_unsigned<long > 	{ typedef unsigned long		type; };
