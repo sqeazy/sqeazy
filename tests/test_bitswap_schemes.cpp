@@ -322,4 +322,63 @@ BOOST_AUTO_TEST_CASE( signed_encode_success )
   BOOST_CHECK_NE(negative_constant_cube[0],to_play_with[0]);
 }
 
+BOOST_AUTO_TEST_CASE( signed_decode_encoded_of_negative )
+{
+
+  value_type negative_constant_cube[size];
+  std::fill(&negative_constant_cube[0], &negative_constant_cube[0]+size,-1*constant_cube[0]);
+
+  value_type  intermediate[int16_cube_of_8::size];
+  std::fill(intermediate,intermediate+int16_cube_of_8::size,0);
+  char* intermediate_casted = reinterpret_cast<char*>(&intermediate[0]);
+
+  SQY_BitSwap4Encode_I16(reinterpret_cast<const char*>(&negative_constant_cube[0]),
+			  intermediate_casted,
+			  int16_cube_of_8::size_in_byte);
+  
+  const char* input = reinterpret_cast<const char*>(&intermediate[0]);
+
+  int retcode = SQY_BitSwap4Decode_I16(input,
+				       reinterpret_cast<char*>(&to_play_with[0]),
+				       int16_cube_of_8::size_in_byte);
+  
+  BOOST_CHECK_EQUAL(retcode,0);
+  BOOST_CHECK_EQUAL(to_play_with[0],negative_constant_cube[0]);
+  BOOST_CHECK_EQUAL_COLLECTIONS(&negative_constant_cube[0], &negative_constant_cube[0] + int16_cube_of_8::size,
+				&to_play_with[0], &to_play_with[0] + int16_cube_of_8::size);
+
+}
+
+
+
+
+BOOST_AUTO_TEST_CASE( signed_decode_encoded_of_mixture )
+{
+
+  value_type negative_incrementing_cube[size];
+  std::copy(&incrementing_cube[0], &incrementing_cube[0]+size,&negative_incrementing_cube[0]);
+  
+  for(unsigned i = 0;i<int16_cube_of_8::size;++i)
+    negative_incrementing_cube[i] -= .25*std::numeric_limits<value_type>::max();
+  
+  value_type  intermediate[int16_cube_of_8::size];
+  std::fill(intermediate,intermediate+int16_cube_of_8::size,0);
+  char* intermediate_casted = reinterpret_cast<char*>(&intermediate[0]);
+
+  SQY_BitSwap4Encode_I16(reinterpret_cast<const char*>(&negative_incrementing_cube[0]),
+			  intermediate_casted,
+			  int16_cube_of_8::size_in_byte);
+  
+  const char* input = reinterpret_cast<const char*>(&intermediate[0]);
+
+  int retcode = SQY_BitSwap4Decode_I16(input,
+				       reinterpret_cast<char*>(&to_play_with[0]),
+				       int16_cube_of_8::size_in_byte);
+  
+  BOOST_CHECK_EQUAL(retcode,0);
+  BOOST_CHECK_EQUAL(to_play_with[0],negative_incrementing_cube[0]);
+  BOOST_CHECK_EQUAL_COLLECTIONS(&negative_incrementing_cube[0], &negative_incrementing_cube[0] + int16_cube_of_8::size,
+				&to_play_with[0], &to_play_with[0] + int16_cube_of_8::size);
+
+}
 BOOST_AUTO_TEST_SUITE_END()
