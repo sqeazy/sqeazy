@@ -4,6 +4,7 @@
 #include <numeric>
 #include <vector>
 #include <iostream>
+#include <climits>
 #include "array_fixtures.hpp"
 
 extern "C" {
@@ -11,6 +12,26 @@ extern "C" {
 }
 
 typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
+
+template <unsigned encode_width,typename T>
+T condense_constant(const T& _const){
+
+  if(_const > (1<<encode_width))
+    return 0;
+  
+  T condensed = 0;
+
+  for(int i = 0;i<(CHAR_BIT/encode_width);++i)
+    condensed += ((_const << 1) << i*encode_width);
+
+  if(sizeof(T)>1){
+    for(unsigned i = 1;i<=sizeof(T);++i)
+      condensed += condensed << (8*i);
+  }
+  
+  return condensed;
+
+}
 
 
 BOOST_FIXTURE_TEST_SUITE( bitswap4x4_scheme_encode_out_of_place, uint16_cube_of_8 )
@@ -45,8 +66,9 @@ BOOST_AUTO_TEST_CASE( encode_constant_correct )
   //the output the is filled as [Ai,..,Bi,..,Ci,..,Di,..]
   //if the input only contains the value 1 as 16bit integer, the exepected output element 
   //can be constructed by hand
-  value_type condensed = (constant_cube[0] << 4) + constant_cube[0];
-  condensed += condensed << 8;
+  // value_type condensed = ((constant_cube[0] << 1) << 4) + (constant_cube[0] << 1);
+  // condensed += condensed << 8;
+  value_type condensed = condense_constant<4>(constant_cube[0]);
 
   const unsigned end_three_quarters = .75*uint16_cube_of_8::size;
   const unsigned expected_sum = (uint16_cube_of_8::size-end_three_quarters)*condensed;
@@ -65,8 +87,9 @@ BOOST_FIXTURE_TEST_SUITE( bitswap4x4_scheme_encode_out_of_place, uint16_cube_of_
 
 BOOST_AUTO_TEST_CASE( decode_success )
 {
-  value_type condensed = (constant_cube[0] << 4) + constant_cube[0];
-  condensed += condensed << 8;
+
+  value_type condensed = condense_constant<4>(constant_cube[0]);
+
   const unsigned end_three_quarters = .75*uint16_cube_of_8::size;
   std::fill(&to_play_with[0]+end_three_quarters,&to_play_with[0]+uint16_cube_of_8::size,condensed);
 
@@ -85,8 +108,8 @@ BOOST_AUTO_TEST_CASE( decode_success )
 
 BOOST_AUTO_TEST_CASE( is_synthetic_input_valid )
 {
-  value_type condensed = (constant_cube[0] << 4) + constant_cube[0];
-  condensed += condensed << 8;
+  value_type condensed = condense_constant<4>(constant_cube[0]);
+
   const unsigned end_three_quarters = .75*uint16_cube_of_8::size;
   std::fill(&to_play_with[0],&to_play_with[0]+uint16_cube_of_8::size,0);
   std::fill(&to_play_with[0]+end_three_quarters,&to_play_with[0]+uint16_cube_of_8::size,condensed);
@@ -109,8 +132,8 @@ BOOST_AUTO_TEST_CASE( is_synthetic_input_valid )
 
 BOOST_AUTO_TEST_CASE( decode_exact )
 {
-  value_type condensed = (constant_cube[0] << 4) + constant_cube[0];
-  condensed += condensed << 8;
+  value_type condensed = condense_constant<4>(constant_cube[0]);
+  
   const unsigned end_three_quarters = .75*uint16_cube_of_8::size;
   std::fill(&to_play_with[0],&to_play_with[0]+uint16_cube_of_8::size,0);
   std::fill(&to_play_with[0]+end_three_quarters,&to_play_with[0]+uint16_cube_of_8::size,condensed);
@@ -212,7 +235,7 @@ BOOST_AUTO_TEST_CASE( encode_constant_correct )
   //the output the is filled as [Ai,..,Bi,..]
   //if the input only contains the value 1 as 16bit integer, the exepected output element 
   //can be constructed by hand
-  value_type condensed = (constant_cube[0] << 8) + constant_cube[0];
+  value_type condensed = condense_constant<8>(constant_cube[0]);
 
   const unsigned end_three_quarters = .5*uint16_cube_of_8::size;
   const unsigned expected_sum = (uint16_cube_of_8::size-end_three_quarters)*condensed;
@@ -227,7 +250,8 @@ BOOST_AUTO_TEST_CASE( encode_constant_correct )
 
 BOOST_AUTO_TEST_CASE( decode_exact )
 {
-  value_type condensed = (constant_cube[0] << 8) + constant_cube[0];
+
+  value_type condensed = condense_constant<8>(constant_cube[0]);
 
   const unsigned end_three_quarters = .5*uint16_cube_of_8::size;
   std::fill(&to_play_with[0],&to_play_with[0]+uint16_cube_of_8::size,0);

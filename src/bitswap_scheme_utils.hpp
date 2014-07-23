@@ -19,11 +19,16 @@ namespace sqeazy {
 
   };
 
+  /*
+    rotate bits of integer by <shift> to the left (wrapping around the ends)
+    input = 0001 0111
+    rotate_left<1>(input): 0010 1110
+   */
   template <unsigned shift,typename T >
   T rotate_left(const T& _in)  {
     typedef typename sqeazy::add_unsigned<T>::type type;
     static const unsigned num_bits = (sizeof(type) * CHAR_BIT) - shift;
-    // std::cout << "rotate_left\t" << sizeof(type) << "*" << CHAR_BIT << " - " << shift << " = "<< num_bits << "\n";
+    
     type shifted = _in << shift;
     static const type mask = ~(~0 << shift);
     type left_over = (_in >> num_bits) & mask;
@@ -31,6 +36,11 @@ namespace sqeazy {
     return  (shifted | left_over);
   }
 
+  /*
+    rotate bits of integer by <shift> to the left (wrapping around the ends)
+    input = 0001 0111
+    rotate_left<1>(input): 1000 1011
+   */
   template <unsigned shift,typename T>
   T rotate_right(const T& _in)  {
     typedef typename sqeazy::add_unsigned<T>::type type;
