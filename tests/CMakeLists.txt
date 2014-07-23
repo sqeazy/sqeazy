@@ -24,6 +24,9 @@ target_link_libraries(test_bitswap_scheme_impl boost_system boost_filesystem boo
 add_executable(test_lz4_encoding test_lz4_encoding.cpp)
 target_link_libraries(test_lz4_encoding ${PROJECT_NAME} boost_system boost_filesystem boost_unit_test_framework)
 
+add_executable(test_hist_impl test_hist_impl.cpp)
+target_link_libraries(test_hist_impl boost_system boost_filesystem boost_unit_test_framework)
+
 # FIND_PACKAGE(TIFF REQUIRED)
 # IF(TIFF_FOUND)
 # add_executable(test_view_from_disk_fixture test_view_from_disk_fixture.cpp)

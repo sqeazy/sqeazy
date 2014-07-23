@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include "bench_fixtures.hpp"
 #include "bench_utils.hpp"
-
+#include "../src/hist_impl.hpp"
 
 
 int help_string(){
@@ -19,8 +19,10 @@ int help_string(){
 	    << "\t help\n"
 	    << "\t diff_encode <num_iterations|optional>\n"
 	    << "\t diff_decode <num_iterations|optional>\n"
-	    << "\t ref_encode  <num_iterations|optional>\n"
-	    << "\t pipe_encode <file_to_encode>\n"
+    // << "\t ref_encode  <num_iterations|optional>\n"
+    	    << "\t diff_bswap4_lz4_compress <file_to_encode>\n"
+    	    << "\t bswap4_lz4_compress      <file_to_encode>\n"
+	    << "\t diff_lz4_compress        <file_to_encode>\n"
 	    << "\n";
 
   return 1;
@@ -56,14 +58,14 @@ int diff_decode(const std::vector<std::string>& _args){
   return 0;
 }
 
-int pipe_encode_on_file(const std::vector<std::string>& _args, long& _input_size, long& _output_size){
+int diff_bswap4_lz4_compress(const std::vector<std::string>& _args){
 
   tiff_fixture<unsigned short> reference(_args[1]);
-  
+  sqeazy::histogram<unsigned short> ref_hist(&reference.tiff_data[0],reference.tiff_data.size());
   if(reference.empty())
     return 1;
 
-  _input_size = reference.data_in_byte();
+  unsigned long _input_size = reference.data_in_byte();
   char* input_data = reinterpret_cast<char*>(&reference.tiff_data[0]);
   char* intermediate_buffer = new char[_input_size];
   
@@ -72,12 +74,12 @@ int pipe_encode_on_file(const std::vector<std::string>& _args, long& _input_size
   int retcode = SQY_RasterDiffEncode_3D_UI16(reference.axis_length(0), reference.axis_length(1), reference.axis_length(2), 
 					     input_data,intermediate_buffer);
   
-  retcode += 10*SQY_BitSwap4Encode_UI16(intermediate_buffer,input_data,reference.data_in_byte());
+  retcode += 10*SQY_BitSwap4Encode_I16(intermediate_buffer,input_data,reference.data_in_byte());
   
   long input_length = reference.data_in_byte();
   unsigned expected_size = SQY_LZ4Length(intermediate_buffer, &input_length);
   char* final_buffer = new char[expected_size];
-  _output_size = reference.data_in_byte();
+  long _output_size = reference.data_in_byte();
   retcode += 100 * SQY_LZ4Encode(input_data,
 				 _input_size,
 				 final_buffer,
@@ -85,63 +87,107 @@ int pipe_encode_on_file(const std::vector<std::string>& _args, long& _input_size
 				 );
   delete [] final_buffer;
   delete [] intermediate_buffer;
+  std::cout << "diff_bswap4_lz4\t" 
+	    << _args[1] << "\t"
+	    << reference.data_in_byte() << "\t" 
+	    << reference.axis_length(0)<< "x" << reference.axis_length(1)<< "x" << reference.axis_length(2) << "\t"
+	    << ref_hist.smallest_populated_bin() << "\t"
+	    << ref_hist.largest_populated_bin() << "\t"
+	    << ref_hist.mode() << "\t"
+	    << ref_hist.mean() << "\t"
+	    << double(_output_size)/double(reference.data_in_byte())
+    	    << "\n";
 
-  return 42;
+  return retcode;
 
 }
 
-int pipe_encode_on_synthetic(const std::vector<std::string>& _args, long& _input_size, long& _output_size){
 
-  synthetic_fixture<unsigned short> reference;
-  std::cout << "input data: "
-      	    << reference <<"\n";
+int bswap4_lz4_compress(const std::vector<std::string>& _args){
 
-  _input_size = reference.data_in_byte();
-  const char* input_data = reinterpret_cast<const char*>(&reference.sin_data[0]);
+  tiff_fixture<unsigned short> reference(_args[1]);
   
-  char first_intermediate[sizeof(short)*synthetic_fixture<unsigned short>::size];
-  char second_intermediate[sizeof(short)*synthetic_fixture<unsigned short>::size];
-  std::fill(std::begin(first_intermediate), std::end(first_intermediate),0);    
-  std::fill(std::begin(second_intermediate), std::end(second_intermediate),0);    
+  if(reference.empty())
+    return 1;
+
+  sqeazy::histogram<unsigned short> ref_hist(&reference.tiff_data[0],reference.tiff_data.size());
+  unsigned long _input_size = reference.data_in_byte();
+  char* input_data = reinterpret_cast<char*>(&reference.tiff_data[0]);
+  char* intermediate_buffer = new char[_input_size];
   
-  int retcode = SQY_RasterDiffEncode_3D_UI16(reference.axis_length(), reference.axis_length(), reference.axis_length(), 
-			       input_data,first_intermediate);
+  std::fill(intermediate_buffer, intermediate_buffer + _input_size,0);    
   
-  retcode += 10*SQY_BitSwap4Encode_UI16(first_intermediate,second_intermediate,reference.data_in_byte());
+  
+  int retcode = SQY_BitSwap4Encode_UI16(input_data,intermediate_buffer,reference.data_in_byte());
   
   long input_length = reference.data_in_byte();
-  unsigned expected_size = SQY_LZ4Length(second_intermediate, &input_length);
+  unsigned expected_size = SQY_LZ4Length(intermediate_buffer, &input_length);
   char* final_buffer = new char[expected_size];
-  _output_size = reference.data_in_byte();
-  retcode += 100* SQY_LZ4Encode(second_intermediate,
-			      synthetic_fixture<unsigned short>::size_in_byte,
-			      final_buffer,
-			      &_output_size
-			      );
+  long _output_size = reference.data_in_byte();
+  retcode += 10 * SQY_LZ4Encode(intermediate_buffer,
+				 _input_size,
+				 final_buffer,
+				 &_output_size
+				 );
   delete [] final_buffer;
-  
+  delete [] intermediate_buffer;
+  std::cout << "bswap4_lz4\t" 
+	    << _args[1] << "\t"
+	    << reference.data_in_byte() << "\t" 
+	    << reference.axis_length(0)<< "x" << reference.axis_length(1)<< "x" << reference.axis_length(2) << "\t"
+	    << ref_hist.smallest_populated_bin() << "\t"
+	    << ref_hist.largest_populated_bin() << "\t"
+	    << ref_hist.mode() << "\t"
+	    << ref_hist.mean() << "\t"
+	    << double(_output_size)/double(reference.data_in_byte())
+	    << "\n";
+
   return retcode;
+
 }
 
+int diff_lz4_compress(const std::vector<std::string>& _args){
 
-int pipe_encode(const std::vector<std::string>& _args){
-
-
-  long output_buffer_size_in_byte = 0;
-  long input_buffer_size_in_byte = 0;
-  int retcode = 0;
-  if(_args.size()>1){
-    retcode = pipe_encode_on_file(_args, input_buffer_size_in_byte, output_buffer_size_in_byte);
-  } else {
-    retcode = pipe_encode_on_synthetic(_args, input_buffer_size_in_byte, output_buffer_size_in_byte);
-  }
-
-  std::cout << "file = " << _args[1] << ", "
-	    << ", output buffer size = " << output_buffer_size_in_byte << " ("<< output_buffer_size_in_byte/(1<<20) <<" MB)"
-	    << ", compression ratio output/input = " << double(output_buffer_size_in_byte)/double(input_buffer_size_in_byte)
-	    <<"\n";
+  tiff_fixture<unsigned short> reference(_args[1]);
   
+  if(reference.empty())
+    return 1;
+
+  sqeazy::histogram<unsigned short> ref_hist(&reference.tiff_data[0],reference.tiff_data.size());
+  unsigned long _input_size = reference.data_in_byte();
+  char* input_data = reinterpret_cast<char*>(&reference.tiff_data[0]);
+  char* intermediate_buffer = new char[_input_size];
+  
+  std::fill(intermediate_buffer, intermediate_buffer + _input_size,0);    
+  
+  
+  int retcode = SQY_RasterDiffEncode_3D_UI16(reference.axis_length(0), reference.axis_length(1), reference.axis_length(2), 
+					input_data,intermediate_buffer);
+  
+  long input_length = reference.data_in_byte();
+  unsigned expected_size = SQY_LZ4Length(intermediate_buffer, &input_length);
+  char* final_buffer = new char[expected_size];
+  long _output_size = reference.data_in_byte();
+  retcode += 10 * SQY_LZ4Encode(intermediate_buffer,
+				 _input_size,
+				 final_buffer,
+				 &_output_size
+				 );
+  delete [] final_buffer;
+  delete [] intermediate_buffer;
+  std::cout << "diff_lz4\t" 
+	    << _args[1] << "\t"
+	    << reference.data_in_byte() << "\t" 
+	    << reference.axis_length(0)<< "x" << reference.axis_length(1)<< "x" << reference.axis_length(2) << "\t"
+	    << ref_hist.smallest_populated_bin() << "\t"
+	    << ref_hist.largest_populated_bin() << "\t"
+	    << ref_hist.mode() << "\t"
+	    << ref_hist.mean() << "\t"
+	    << double(_output_size)/double(reference.data_in_byte())
+    	    << "\n";
+
   return retcode;
+
 }
 
 int main(int argc, char *argv[])
@@ -152,7 +198,9 @@ int main(int argc, char *argv[])
   prog_flow["help"] = func_t(help);
   prog_flow["-h"] = func_t(help);
   prog_flow["diff_encode"] = func_t(diff_encode);
-  prog_flow["pipe_encode"] = func_t(pipe_encode);
+  prog_flow["diff_bswap4_lz4_compress"] = func_t(diff_bswap4_lz4_compress);
+  prog_flow["bswap4_lz4_compress"] = func_t(bswap4_lz4_compress);
+  prog_flow["diff_lz4_compress"] = func_t(diff_lz4_compress);
   prog_flow["diff_decode"] = func_t(diff_decode);
 
 

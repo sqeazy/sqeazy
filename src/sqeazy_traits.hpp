@@ -17,7 +17,7 @@ namespace sqeazy {
   template <> struct add_unsigned<long > 	{ typedef unsigned long		type; };
   template <> struct add_unsigned<long long >	{ typedef unsigned long long	type; };
 
-  template <typename T> struct twice_as_wide	{};
+  template <typename T> struct twice_as_wide	{typedef T		type;};
   template	<> struct twice_as_wide<unsigned char> { typedef unsigned short		type; 	};
   template	<> struct twice_as_wide<unsigned short>{ typedef unsigned int		type; 	};
   template	<> struct twice_as_wide<unsigned int>  { typedef unsigned long		type;	};
@@ -26,7 +26,7 @@ namespace sqeazy {
   template	<> struct twice_as_wide<short>	       { typedef int		type; };
   template	<> struct twice_as_wide<int>	       { typedef long		type; };
   template	<> struct twice_as_wide<long>	       { typedef long long	type; };
-
+  template	<> struct twice_as_wide<float>	       { typedef double		type; };
 } // sqeazy
 
 #endif /* _SQEAZY_TRAITS_H_ */
