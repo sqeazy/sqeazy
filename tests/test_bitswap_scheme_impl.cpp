@@ -40,7 +40,8 @@ BOOST_AUTO_TEST_CASE( rotate_right )
   short test_signed_short = 23;
   short result_signed = sqeazy::rotate_right<1>(test_signed_short);
   BOOST_CHECK_EQUAL(-32757,result_signed);
-
+  unsigned short result_casted = static_cast<unsigned short>(result_signed);
+  BOOST_CHECK_EQUAL(result_casted,result);
 }
 
 BOOST_AUTO_TEST_CASE( rotate_is_injective )
@@ -57,11 +58,24 @@ BOOST_AUTO_TEST_CASE( rotate_is_injective )
   result_unsigned_short = sqeazy::rotate_right<1>(sqeazy::rotate_left<1>(test_unsigned_short));
   BOOST_CHECK_EQUAL(test_unsigned_short,result_unsigned_short);
 
-   short test_short = 23;
-   short result_short = sqeazy::rotate_left<1>(sqeazy::rotate_right<1>(test_short));
+  short test_short = 23;
+  BOOST_CHECK_EQUAL(test_short,sqeazy::rotate_left<1>(sqeazy::rotate_right<1>(test_short)));
+  short result_short = sqeazy::rotate_right<1>(test_short);
+  result_short = sqeazy::rotate_left<1>(result_short);
   BOOST_CHECK_EQUAL(test_short,result_short);
+
   result_short = sqeazy::rotate_right<1>(sqeazy::rotate_left<1>(test_short));
   BOOST_CHECK_EQUAL(test_short,result_short);
+
+  test_short = -23;
+  BOOST_CHECK_EQUAL(test_short,sqeazy::rotate_left<1>(sqeazy::rotate_right<1>(test_short)));
+  result_short = sqeazy::rotate_right<1>(test_short);
+  result_short = sqeazy::rotate_left<1>(result_short);
+  BOOST_CHECK_EQUAL(test_short,result_short);
+
+  result_short = sqeazy::rotate_right<1>(sqeazy::rotate_left<1>(test_short));
+  BOOST_CHECK_EQUAL(test_short,result_short);
+
 
 }
 
@@ -83,7 +97,8 @@ BOOST_AUTO_TEST_CASE( encoding_decoding_injective_on_signed )
   using namespace sqeazy;
 
   const short test_signed[8] = {-42,-16,-11,-4,-1,0,2,4};
-
+  short expected = 0;
+  
   for(int i = 0;i<8;++i){
     
     BOOST_CHECK_NE(test_signed[i], xor_if_signed(test_signed[i]));
@@ -93,7 +108,9 @@ BOOST_AUTO_TEST_CASE( encoding_decoding_injective_on_signed )
     short intermediate = xor_if_signed(test_signed[i]);
 
     intermediate = sqeazy::rotate_left<1>(intermediate);
-    BOOST_CHECK_EQUAL(xor_if_signed(test_signed[i]), sqeazy::rotate_right<1>(intermediate));
+    
+    expected = xor_if_signed(test_signed[i]);
+    BOOST_CHECK_EQUAL(expected, sqeazy::rotate_right<1>(intermediate));
     intermediate = sqeazy::rotate_right<1>(intermediate);
 
     short result =  xor_if_signed(intermediate);
