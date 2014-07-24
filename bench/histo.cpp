@@ -1,30 +1,24 @@
 #define __SQY_BENCH_CPP__
 #include <iostream>
 #include <functional>
-#include <chrono>
-#include <iterator>
+#include <string>
+#include <sstream>
 #include <numeric>
 #include <vector>
 #include <unordered_map>
 #include "bench_fixtures.hpp"
-#include "bench_utils.hpp"
 #include "../src/hist_impl.hpp"
 
+#include "TH1F.h"
 
 int help_string(){
   
-  std::string me = "bench";
+  std::string me = "histo";
   std::cout << "usage: " << me << " <target>\n"
 	    << "availble targets:\n"
 	    << "\t help\n"
-	    << "\t diff_encode <num_iterations|optional>\n"
-	    << "\t diff_decode <num_iterations|optional>\n"
-    // << "\t ref_encode  <num_iterations|optional>\n"
-    	    << "\t diff_bswap4_lz4_compress <file_to_encode>\n"
-    	    << "\t bswap4_lz4_compress      <file_to_encode>\n"
-	    << "\t diff_lz4_compress        <file_to_encode>\n"
+	    << "\t scan <file_to_encode>\n"
 	    << "\n";
-
   return 1;
 }
 
@@ -40,160 +34,34 @@ int help(const std::vector<std::string>& _args){
   return help_string();
 }
 
-int diff_encode(const std::vector<std::string>& _args){
 
-  synthetic_fixture<> reference;
-  std::cout << "SQY_RasterDiffEncode_3D_UI16 of "
-  	    << reference << "\n";
-  perform(std::function<int(int,int,int,const char*,char*)>(SQY_RasterDiffEncode_3D_UI16),reference);
+int scan(const std::vector<std::string>& _args){
+
+  tiff_fixture<unsigned short> reference(_args[1]);
+  
+  if(reference.empty())
+    return 1;
+
+  sqeazy::histogram<unsigned short> ref_hist(&reference.tiff_data[0],reference.tiff_data.size());
+  
+  std::string no_suffix(_args[1],0,_args[1].find_last_of("."));
+  size_t dash_pos = _args[1].find_last_of("/");
+  std::string basename(_args[1],dash_pos+1, no_suffix.size() - dash_pos-1);
+  
+  std::ostringstream str("");
+  str << basename << sizeof(unsigned short)*8 << "bit_intensities";
+  TH1F values(str.str().c_str(),";intensity;frequency",128,0.,1 << (sizeof(unsigned short)*8));
+
+  for(unsigned long i = 0;i<ref_hist.num_bins;++i){
+    values.Fill(i,ref_hist.bins[i]);
+  }
+
+  std::ostringstream plots("");
+  plots << basename << ".root";
+  
+  values.SaveAs(plots.str().c_str());
+
   return 0;
-}
-
-int diff_decode(const std::vector<std::string>& _args){
-
-  synthetic_fixture<> reference;
-  std::cout << "SQY_RasterDiffDecode_3D_UI16 of "
-  	    << reference << "\n";
-  perform(std::function<int(int,int,int,const char*,char*)>(SQY_RasterDiffDecode_3D_UI16),reference);
-  return 0;
-}
-
-int diff_bswap4_lz4_compress(const std::vector<std::string>& _args){
-
-  tiff_fixture<unsigned short> reference(_args[1]);
-  sqeazy::histogram<unsigned short> ref_hist(&reference.tiff_data[0],reference.tiff_data.size());
-  if(reference.empty())
-    return 1;
-
-  unsigned long _input_size = reference.data_in_byte();
-  char* input_data = reinterpret_cast<char*>(&reference.tiff_data[0]);
-  char* intermediate_buffer = new char[_input_size];
-  
-  std::fill(intermediate_buffer, intermediate_buffer + _input_size,0);    
-  
-  int retcode = SQY_RasterDiffEncode_3D_UI16(reference.axis_length(0), reference.axis_length(1), reference.axis_length(2), 
-					     input_data,intermediate_buffer);
-  
-  retcode += 10*SQY_BitSwap4Encode_I16(intermediate_buffer,input_data,reference.data_in_byte());
-  
-  long input_length = reference.data_in_byte();
-  long expected_size = input_length;
-  retcode += SQY_LZ4_Max_Compressed_Length(&expected_size);
-
-  char* final_buffer = new char[expected_size];
-  long _output_size = reference.data_in_byte();
-  retcode += 100 * SQY_LZ4Encode(input_data,
-				 _input_size,
-				 final_buffer,
-				 &_output_size
-				 );
-  delete [] final_buffer;
-  delete [] intermediate_buffer;
-  std::cout << "diff_bswap4_lz4\t" 
-	    << _args[1] << "\t"
-	    << reference.data_in_byte() << "\t" 
-	    << reference.axis_length(0)<< "x" << reference.axis_length(1)<< "x" << reference.axis_length(2) << "\t"
-	    << ref_hist.smallest_populated_bin() << "\t"
-	    << ref_hist.largest_populated_bin() << "\t"
-	    << ref_hist.mode() << "\t"
-	    << ref_hist.mean() << "\t"
-	    << double(_output_size)/double(reference.data_in_byte())
-    	    << "\n";
-
-  return retcode;
-
-}
-
-
-int bswap4_lz4_compress(const std::vector<std::string>& _args){
-
-  tiff_fixture<unsigned short> reference(_args[1]);
-  
-  if(reference.empty())
-    return 1;
-
-  sqeazy::histogram<unsigned short> ref_hist(&reference.tiff_data[0],reference.tiff_data.size());
-  unsigned long _input_size = reference.data_in_byte();
-  char* input_data = reinterpret_cast<char*>(&reference.tiff_data[0]);
-  char* intermediate_buffer = new char[_input_size];
-  
-  std::fill(intermediate_buffer, intermediate_buffer + _input_size,0);    
-  
-  
-  int retcode = SQY_BitSwap4Encode_UI16(input_data,intermediate_buffer,reference.data_in_byte());
-  
-  long input_length = reference.data_in_byte();
-  long expected_size = input_length;
-  retcode += SQY_LZ4_Max_Compressed_Length(&expected_size);
-
-  char* final_buffer = new char[expected_size];
-  long _output_size = reference.data_in_byte();
-  retcode += 10 * SQY_LZ4Encode(intermediate_buffer,
-				 _input_size,
-				 final_buffer,
-				 &_output_size
-				 );
-  delete [] final_buffer;
-  delete [] intermediate_buffer;
-  std::cout << "bswap4_lz4\t" 
-	    << _args[1] << "\t"
-	    << reference.data_in_byte() << "\t" 
-	    << reference.axis_length(0)<< "x" << reference.axis_length(1)<< "x" << reference.axis_length(2) << "\t"
-	    << ref_hist.smallest_populated_bin() << "\t"
-	    << ref_hist.largest_populated_bin() << "\t"
-	    << ref_hist.mode() << "\t"
-	    << ref_hist.mean() << "\t"
-	    << double(_output_size)/double(reference.data_in_byte())
-	    << "\n";
-
-  return retcode;
-
-}
-
-int diff_lz4_compress(const std::vector<std::string>& _args){
-
-  tiff_fixture<unsigned short> reference(_args[1]);
-  
-  if(reference.empty())
-    return 1;
-
-  sqeazy::histogram<unsigned short> ref_hist(&reference.tiff_data[0],reference.tiff_data.size());
-  unsigned long _input_size = reference.data_in_byte();
-  char* input_data = reinterpret_cast<char*>(&reference.tiff_data[0]);
-  char* intermediate_buffer = new char[_input_size];
-  
-  std::fill(intermediate_buffer, intermediate_buffer + _input_size,0);    
-  
-  
-  int retcode = SQY_RasterDiffEncode_3D_UI16(reference.axis_length(0), reference.axis_length(1), reference.axis_length(2), 
-					input_data,intermediate_buffer);
-  
-  long input_length = reference.data_in_byte();
-
-  long expected_size = input_length;
-  retcode += SQY_LZ4_Max_Compressed_Length(&expected_size);
-  
-  char* final_buffer = new char[expected_size];
-  long _output_size = reference.data_in_byte();
-  retcode += 10 * SQY_LZ4Encode(intermediate_buffer,
-				 _input_size,
-				 final_buffer,
-				 &_output_size
-				 );
-  delete [] final_buffer;
-  delete [] intermediate_buffer;
-  std::cout << "diff_lz4\t" 
-	    << _args[1] << "\t"
-	    << reference.data_in_byte() << "\t" 
-	    << reference.axis_length(0)<< "x" << reference.axis_length(1)<< "x" << reference.axis_length(2) << "\t"
-	    << ref_hist.smallest_populated_bin() << "\t"
-	    << ref_hist.largest_populated_bin() << "\t"
-	    << ref_hist.mode() << "\t"
-	    << ref_hist.mean() << "\t"
-	    << double(_output_size)/double(reference.data_in_byte())
-    	    << "\n";
-
-  return retcode;
 
 }
 
@@ -204,12 +72,7 @@ int main(int argc, char *argv[])
   std::unordered_map<std::string, func_t> prog_flow;
   prog_flow["help"] = func_t(help);
   prog_flow["-h"] = func_t(help);
-  prog_flow["diff_encode"] = func_t(diff_encode);
-  prog_flow["diff_bswap4_lz4_compress"] = func_t(diff_bswap4_lz4_compress);
-  prog_flow["bswap4_lz4_compress"] = func_t(bswap4_lz4_compress);
-  prog_flow["diff_lz4_compress"] = func_t(diff_lz4_compress);
-  prog_flow["diff_decode"] = func_t(diff_decode);
-
+  prog_flow["scan"] = func_t(scan);
 
   std::vector<std::string> arguments(argv+1,argv + argc);
   
