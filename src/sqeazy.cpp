@@ -202,10 +202,10 @@ int SQY_LZ4Encode(const char* src, long srclength, char* dst, long* dstlength){
   long* first_bytes = reinterpret_cast<long*>(dst);
   *first_bytes = srclength;
   
-  int retcode = LZ4_compress(src,&dst[sizeof(long)],srclength);
+  int num_written_bytes = LZ4_compress(src,&dst[sizeof(long)],srclength);
   
-  if(retcode){
-    *dstlength = retcode+sizeof(long);
+  if(num_written_bytes){
+    *dstlength = num_written_bytes+sizeof(long);
     return 0;
   }
   else{
@@ -215,11 +215,26 @@ int SQY_LZ4Encode(const char* src, long srclength, char* dst, long* dstlength){
 }
 
 
-int SQY_LZ4Length(const char* buffer, long* length){
+int SQY_LZ4_Max_Compressed_Length(long* length){
   
-  return LZ4_compressBound(*length)+sizeof(long);
+  long value = LZ4_compressBound(*length)+sizeof(long);//compression size + one long to encode size of
+  *length = value;
+  return 0;
 
 }
+
+int SQY_LZ4_Decompressed_Length(const char* data, long *length){
+  
+  if(*length<8){
+    *length = 0;
+    return 1;}
+
+  long value = *(reinterpret_cast<const long*>(data));
+  *length = value;
+  return 0;
+
+}
+
 
 
 int SQY_LZ4Decode(const char* src, long srclength, char* dst){
@@ -228,6 +243,6 @@ int SQY_LZ4Decode(const char* src, long srclength, char* dst){
   
   int retcode = LZ4_decompress_safe(src + sizeof(long),dst,srclength - sizeof(long), maxOutputSize);
   
-  return retcode;
+  return retcode == maxOutputSize ? 0 : 1;
 }
 

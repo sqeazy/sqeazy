@@ -77,7 +77,9 @@ int diff_bswap4_lz4_compress(const std::vector<std::string>& _args){
   retcode += 10*SQY_BitSwap4Encode_I16(intermediate_buffer,input_data,reference.data_in_byte());
   
   long input_length = reference.data_in_byte();
-  unsigned expected_size = SQY_LZ4Length(intermediate_buffer, &input_length);
+  long expected_size = input_length;
+  retcode += SQY_LZ4_Max_Compressed_Length(&expected_size);
+
   char* final_buffer = new char[expected_size];
   long _output_size = reference.data_in_byte();
   retcode += 100 * SQY_LZ4Encode(input_data,
@@ -121,7 +123,9 @@ int bswap4_lz4_compress(const std::vector<std::string>& _args){
   int retcode = SQY_BitSwap4Encode_UI16(input_data,intermediate_buffer,reference.data_in_byte());
   
   long input_length = reference.data_in_byte();
-  unsigned expected_size = SQY_LZ4Length(intermediate_buffer, &input_length);
+  long expected_size = input_length;
+  retcode += SQY_LZ4_Max_Compressed_Length(&expected_size);
+
   char* final_buffer = new char[expected_size];
   long _output_size = reference.data_in_byte();
   retcode += 10 * SQY_LZ4Encode(intermediate_buffer,
@@ -165,7 +169,10 @@ int diff_lz4_compress(const std::vector<std::string>& _args){
 					input_data,intermediate_buffer);
   
   long input_length = reference.data_in_byte();
-  unsigned expected_size = SQY_LZ4Length(intermediate_buffer, &input_length);
+
+  long expected_size = input_length;
+  retcode += SQY_LZ4_Max_Compressed_Length(&expected_size);
+  
   char* final_buffer = new char[expected_size];
   long _output_size = reference.data_in_byte();
   retcode += 10 * SQY_LZ4Encode(intermediate_buffer,

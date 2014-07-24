@@ -244,17 +244,32 @@ SQY_FUNCTION_PREFIX int SQY_LZ4Encode(const char* src, long srclength, char* dst
 
 
 /*
-	SQY_LZ4Length - Returns the decompressed length of a LZ4 compressed buffer.
+	SQY_LZ4_Max_Compressed_Length - Calculates the maximum size of the output buffer from LZ4 compression
 
 	The first 8 bytes of the destination buffer encode a 64 bit long that
 	represents the length of the source buffer.
 
-	buffer 					: LZ4 compressed buffer (externally allocated)
-	length 					: length in bytes of decompressed buffer
+	length 					: (in) length in bytes of decompressed buffer
+						  (out) maximum length in bytes of compressed buffer
 
 	Returns 0 if success, another code if there was an error (error codes provided below)
 */
-SQY_FUNCTION_PREFIX int SQY_LZ4Length(const char* buffer, long* length);
+SQY_FUNCTION_PREFIX int SQY_LZ4_Max_Compressed_Length(long* length);
+
+/*
+	SQY_LZ4_Decompressed_Length - Extracts the size of the decompressed buffer from the first 8 Byte of data
+
+	The first 8 bytes of the destination buffer encode a 64 bit long that
+	represents the length of the source buffer. This function extracts it.
+
+	data					: buffer to contain the compressed data as output by SQY_LZ4Encode
+	length					: (in) length in bytes of incoming data buffer
+						  (out) extracted length in bytes of decompressed buffer to be output by SQY_LZ4Decode called on data
+
+	Returns 0 if success, another code if there was an error (error codes provided below)
+*/
+
+SQY_FUNCTION_PREFIX int SQY_LZ4_Decompressed_Length(const char* data, long *length);
 
 /*
 	SQY_LZ4Decode - Decompress using LZ4.
