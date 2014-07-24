@@ -13,8 +13,26 @@ add_executable(bench bench.cpp)
 target_link_libraries(bench ${PROJECT_NAME} tiff)
 SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++11")
 SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -std=c++11")
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/bench/cmake)
+FIND_PACKAGE(ROOT REQUIRED)
+IF(ROOT_FOUND)
+add_executable(histo histo.cpp)
+target_link_libraries(histo ${PROJECT_NAME} tiff ${ROOT_LIBRARIES})
+
+execute_process(
+    COMMAND ${ROOT_CONFIG_EXECUTABLE} --cflags
+    OUTPUT_VARIABLE ROOT_INCLUDE_FLAGS
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+set_target_properties(histo PROPERTIES COMPILE_FLAGS ${ROOT_INCLUDE_FLAGS})
+Message("Building histo, added \n\t${ROOT_LIBRARIES}\n\t${ROOT_INCLUDE_FLAGS}")
+ELSE(ROOT_FOUND)
+WARNING("Skipping histo util, ROOT not found\!")
+ENDIF(ROOT_FOUND)
+
+
 ELSE(TIFF_FOUND)
-WARNING("Skipping tests based on reference images, libtiff not found\!")
+WARNING("Skipping benchmark utils, libtiff not found (but required for build)\!")
 ENDIF(TIFF_FOUND)
 
 
