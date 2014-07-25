@@ -404,8 +404,8 @@ int main(int argc, char *argv[])
   prog_flow["bswap4_lz4_compress"] = func_t(bswap4_lz4_compress);
 
   prog_flow["rmbkg_diff_bswap1_lz4_compress"] = func_t(rmbkg_diff_bswap1_lz4_compress);
-  prog_flow["diff_bswap1_lz4_compress"] = func_t(diff_bswap4_lz4_compress);
-  prog_flow["bswap1_lz4_compress"] = func_t(bswap4_lz4_compress);
+  prog_flow["diff_bswap1_lz4_compress"] = func_t(diff_bswap1_lz4_compress);
+  prog_flow["bswap1_lz4_compress"] = func_t(bswap1_lz4_compress);
 
   prog_flow["diff_lz4_compress"] = func_t(diff_lz4_compress);
 
