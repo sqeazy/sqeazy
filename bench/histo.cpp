@@ -10,6 +10,7 @@
 #include "../src/hist_impl.hpp"
 
 #include "TH1F.h"
+#include "TCanvas.h"
 
 int help_string(){
   
@@ -35,6 +36,22 @@ int help(const std::vector<std::string>& _args){
 }
 
 
+void write_as_svg(const std::vector<TH1F*>& _histos, const std::string& _basename){
+  
+  for(auto h : _histos){
+
+    TCanvas to_be_written(h->GetName(),"",400,300);
+    to_be_written.Clear();
+    h->Draw();
+    gPad->SetLogy();
+    to_be_written.Update();
+    std::ostringstream filename;
+    filename << h->GetName() << ".svg";
+    to_be_written.Print(filename.str().c_str());
+  }
+}
+
+
 int scan(const std::vector<std::string>& _args){
 
   tiff_fixture<unsigned short> reference(_args[1]);
@@ -48,18 +65,34 @@ int scan(const std::vector<std::string>& _args){
   size_t dash_pos = _args[1].find_last_of("/");
   std::string basename(_args[1],dash_pos+1, no_suffix.size() - dash_pos-1);
   
-  std::ostringstream str("");
-  str << basename << sizeof(unsigned short)*8 << "bit_intensities";
-  TH1F values(str.str().c_str(),";intensity;frequency",128,0.,1 << (sizeof(unsigned short)*8));
+  /////////////////////////////////////////////////////////////////////////////////////////////////////
+  // histogram for the entire intensity range
+  std::ostringstream hname("");
+  hname << basename << "_fullrange_" << sizeof(unsigned short)*8 << "bit_intensities";
+  std::ostringstream htitle("");
+  htitle << basename << ";intensity;frequency";
+  TH1F full_range(hname.str().c_str(),htitle.str().c_str(),256,0.,1 << (sizeof(unsigned short)*8));
 
   for(unsigned long i = 0;i<ref_hist.num_bins;++i){
-    values.Fill(i,ref_hist.bins[i]);
+    full_range.Fill(i,ref_hist.bins[i]);
   }
 
-  std::ostringstream plots("");
-  plots << basename << ".root";
+  /////////////////////////////////////////////////////////////////////////////////////////////////////
+  // histogram from 0 to 1.1*(largest intensity)
+  hname.str("");
+  hname << basename << "_populatedrange_" << sizeof(unsigned short)*8 << "bit_intensities";
+
+  TH1F populated_range(hname.str().c_str(),htitle.str().c_str(),128,0.,1.1*ref_hist.largest_populated_bin());
+  for(unsigned long i = 0;i<ref_hist.num_bins;++i){
+    populated_range.Fill(i,ref_hist.bins[i]);
+  }
+
+  std::vector<TH1F*> histos;
+  histos.reserve(2);  
+  histos.push_back(&full_range);
+  histos.push_back(&populated_range);
   
-  values.SaveAs(plots.str().c_str());
+  write_as_svg(histos, basename);
 
   return 0;
 
