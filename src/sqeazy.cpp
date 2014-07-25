@@ -195,6 +195,25 @@ int SQY_RLEEncode_UI8(const char* src, char* dst, long length, long minrunlength
 int SQY_RLEDecode_UI8(const char* src, char* dst, long length){return 42;}
 
 
+int SQY_RmBackground_AtMode_UI16(char* src, char* dst, long length, unsigned short epsilon){
+
+  typedef unsigned short raw_type;
+  return sqeazy::remove_background<raw_type,long>::encode(reinterpret_cast<raw_type*>(src),
+							reinterpret_cast<raw_type*>(dst),
+							length/sizeof(raw_type),
+							epsilon
+							);
+
+}
+
+int SQY_RmBackground_Estimated_UI16(char* src, char* dst, long length){  
+  typedef unsigned short raw_type;
+  return sqeazy::remove_background<raw_type,long>::estimated_encode(reinterpret_cast<raw_type*>(src),
+								    reinterpret_cast<raw_type*>(dst),
+								    length/sizeof(raw_type)
+								    );
+}
+
 #include "lz4.h"
 
 int SQY_LZ4Encode(const char* src, long srclength, char* dst, long* dstlength){

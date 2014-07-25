@@ -6,13 +6,15 @@
 #include "sqeazy_traits.hpp"
 #include "diff_scheme_utils.hpp"
 #include "bitswap_scheme_utils.hpp"
+#include "hist_impl.hpp"
 
 namespace sqeazy {
 
   enum error_code {
     
     SUCCESS = 0,
-    FAILURE = 1
+    FAILURE = 1,
+    NOT_IMPLEMENTED_YET = 42
     
   };
 
@@ -162,6 +164,83 @@ namespace sqeazy {
 
     
   };
+
+  
+
+  template < typename T, typename S = long >
+  struct remove_background {
+    
+    typedef T raw_type;
+    typedef S size_type;
+    
+    
+    static const error_code encode(raw_type* _input,
+				   raw_type* _output,
+				   const size_type& _length,
+				   const raw_type& _epsilon) 
+    {
+      histogram<raw_type> incoming(_input, _length);
+      raw_type threshold = incoming.mode() + _epsilon;
+      
+      if(_output)
+	return encode_out_of_place(_input, _output, _length, threshold);
+      else
+	return encode_inplace(_input, _length, threshold);
+      
+    }
+
+    static const error_code estimated_encode(raw_type* _input,
+				   raw_type* _output,
+				   const size_type& _length) 
+    {
+      histogram<raw_type> incoming(_input, _length);
+      raw_type threshold = 2*incoming.mode();
+      
+      if(_output)
+	return encode_out_of_place(_input, _output, _length, threshold);
+      else
+	return encode_inplace(_input, _length, threshold);
+      
+    }
+
+    static const error_code encode_out_of_place(raw_type* _input,
+						raw_type* _output,
+						const size_type& _length,
+						const raw_type& _threshold) 
+    {
+
+      for(unsigned long vox = 0;vox<_length;++vox){
+	_output[vox] = (_input[vox] > _threshold) ? _input[vox] - _threshold : 0;
+      }
+      
+      return SUCCESS;
+    }
+
+
+    static const error_code encode_inplace(raw_type* _input,
+					   const size_type& _length,
+					   const raw_type& _threshold) 
+    {
+
+      for(unsigned long vox = 0;vox<_length;++vox){
+	_input[vox] = (_input[vox] > _threshold) ? _input[vox] - _threshold : 0;
+      }
+      
+      
+      return SUCCESS;
+    }
+
+    static const error_code decode(const raw_type* _input,
+				   raw_type* _output,
+				   const size_type& _length) 
+    {
+      
+      return NOT_IMPLEMENTED_YET;
+    }
+
+    
+  };
+
 
 } //sqeazy
 

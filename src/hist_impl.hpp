@@ -2,7 +2,7 @@
 #define _HIST_IMPL_H_
 #include <climits>
 #include <vector>
-#include <set>
+#include <numeric>
 #include "sqeazy_traits.hpp" 
 
 namespace sqeazy {

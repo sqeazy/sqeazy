@@ -213,6 +213,43 @@ SQY_FUNCTION_PREFIX int SQY_RLEEncode_UI8(const char* src, char* dst, long lengt
 */
 SQY_FUNCTION_PREFIX int SQY_RLEDecode_UI8(const char* src, char* dst, long length);
 
+//#############################################################################
+// background subtractions schemes
+
+/*
+	SQY_RmBackground_AtMode_UI16 - Subtract background from src 
+
+	Given the mode M of all voxels, subtract M+epsilon from every voxel in src (clipping at 0). 
+	If dst is 0, the operation is performed in-place.
+
+	src 					: contiguous array of voxels (externally allocated)
+	dst       				: contiguous array of voxels (externally allocated)
+	length 					: length of both buffers
+	epsilon					: epsilon to be provided by user
+
+	Returns 0 if success, another code if there was an error (error codes provided below)	
+*/
+SQY_FUNCTION_PREFIX int SQY_RmBackground_AtMode_UI16(char* src, char* dst, long length, unsigned short epsilon);
+
+/*
+	SQY_RmBackground_Estimated_UI16 - Subtract background from src using an estimate of the noise
+
+	In order to allow an automated removal of the background, we assume that the shot noise locate 
+	at the mode of the pixel value distribution is sampled from a Poisson PDF. Hence, the mode 
+	(being the mean of the Poisson, aka lambda) and the variance of the Poisson (for a Poisson 
+	PDF this equals lambda as well) are subtraced from every voxel in src (clipping at 0). If dst 
+	is 0, the operation is performed in-place.
+
+	src 					: contiguous array of voxels (externally allocated)
+	dst       				: contiguous array of voxels (externally allocated)
+	length 					: length of both buffers
+	
+
+	Returns 0 if success, another code if there was an error (error codes provided below)	
+*/
+SQY_FUNCTION_PREFIX int SQY_RmBackground_Estimated_UI16(char* src, char* dst, long length);
+
+
 
 //#############################################################################
 // Entropy encoding coding schemes:
