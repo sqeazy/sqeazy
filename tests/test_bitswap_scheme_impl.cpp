@@ -4,6 +4,8 @@
 #include <numeric>
 #include <vector>
 #include <iostream>
+#include <bitset>
+#include <map>
 #include "array_fixtures.hpp"
 #include "../src/sqeazy_impl.hpp"
 
@@ -47,19 +49,25 @@ BOOST_AUTO_TEST_CASE( rotate_right )
 BOOST_AUTO_TEST_CASE( rotate_is_injective )
 {
   unsigned char test_unsigned_char = 23;
-  unsigned char result_unsigned_char = sqeazy::rotate_left<1>(sqeazy::rotate_right<1>(test_unsigned_char));
+  unsigned char result_unsigned_char = 
+sqeazy::rotate_left<1>(sqeazy::rotate_right<1>(test_unsigned_char));
   BOOST_CHECK_EQUAL(test_unsigned_char,result_unsigned_char);
-  result_unsigned_char = sqeazy::rotate_right<1>(sqeazy::rotate_left<1>(test_unsigned_char));
+  result_unsigned_char = 
+sqeazy::rotate_right<1>(sqeazy::rotate_left<1>(test_unsigned_char));
   BOOST_CHECK_EQUAL(test_unsigned_char,result_unsigned_char);
 
   unsigned short test_unsigned_short = 23;
-  unsigned short result_unsigned_short = sqeazy::rotate_left<1>(sqeazy::rotate_right<1>(test_unsigned_short));
+  unsigned short result_unsigned_short = 
+sqeazy::rotate_left<1>(sqeazy::rotate_right<1>(test_unsigned_short));
   BOOST_CHECK_EQUAL(test_unsigned_short,result_unsigned_short);
-  result_unsigned_short = sqeazy::rotate_right<1>(sqeazy::rotate_left<1>(test_unsigned_short));
+  result_unsigned_short = 
+sqeazy::rotate_right<1>(sqeazy::rotate_left<1>(test_unsigned_short));
   BOOST_CHECK_EQUAL(test_unsigned_short,result_unsigned_short);
 
   short test_short = 23;
-  BOOST_CHECK_EQUAL(test_short,sqeazy::rotate_left<1>(sqeazy::rotate_right<1>(test_short)));
+  
+BOOST_CHECK_EQUAL(test_short,sqeazy::rotate_left<1>(sqeazy::rotate_right<1>(
+test_short)));
   short result_short = sqeazy::rotate_right<1>(test_short);
   result_short = sqeazy::rotate_left<1>(result_short);
   BOOST_CHECK_EQUAL(test_short,result_short);
@@ -68,7 +76,9 @@ BOOST_AUTO_TEST_CASE( rotate_is_injective )
   BOOST_CHECK_EQUAL(test_short,result_short);
 
   test_short = -23;
-  BOOST_CHECK_EQUAL(test_short,sqeazy::rotate_left<1>(sqeazy::rotate_right<1>(test_short)));
+  
+BOOST_CHECK_EQUAL(test_short,sqeazy::rotate_left<1>(sqeazy::rotate_right<1>(
+test_short)));
   result_short = sqeazy::rotate_right<1>(test_short);
   result_short = sqeazy::rotate_left<1>(result_short);
   BOOST_CHECK_EQUAL(test_short,result_short);
@@ -103,7 +113,8 @@ BOOST_AUTO_TEST_CASE( encoding_decoding_injective_on_signed )
     
     BOOST_CHECK_NE(test_signed[i], xor_if_signed(test_signed[i]));
 
-    BOOST_CHECK_EQUAL(xor_if_signed(test_signed[i]), test_signed[i] ^ short(~(1 << 15)));
+    BOOST_CHECK_EQUAL(xor_if_signed(test_signed[i]), test_signed[i] ^ short(~(1 
+<< 15)));
 
     short intermediate = xor_if_signed(test_signed[i]);
 
@@ -128,11 +139,128 @@ BOOST_AUTO_TEST_CASE( encoding_decoding_injective_on_unsigned )
 
   for(int i = 0;i<8;++i){
     
-    unsigned short intermediate =  sqeazy::rotate_left<1>(xor_if_signed(test_signed[i]));
+    unsigned short intermediate =  
+sqeazy::rotate_left<1>(xor_if_signed(test_signed[i]));
 
-    unsigned short result =  xor_if_signed(sqeazy::rotate_right<1>(intermediate));
+    unsigned short result =  
+xor_if_signed(sqeazy::rotate_right<1>(intermediate));
 
     BOOST_CHECK_EQUAL(test_signed[i], result);
+  }
+
+}
+BOOST_AUTO_TEST_SUITE_END()
+
+struct xor_expected_results {
+  
+//   Good catch Peter, there is indeed need for an additional twist, you are 
+// right, 
+// the ordering of negative numbers in 2s complement
+// is inverted: -1d ~ 11111111b. But, there is still a sign bit: it's the most 
+// significant bit:
+// 
+// see this table from wikipedia for 4 bit integers:
+// 0111    7 
+// 0110    6 
+// 0101    5 
+// 0100    4 
+// 0011    3 
+// 0010    2 
+// 0001    1 
+// 0000    0 
+// 1111    −1 
+// 1110    −2 
+// 1101    −3 
+// 1100    −4 
+// 1011    −5 
+// 1010    −6 
+// 1001    −7 
+// 1000    −8 
+// 
+// Now you are right that there is a problem with the fact that -1 has a lot of 'ones'
+// in its representation, that very much the opposite of what we want.
+// It actually could very well explain why we did not get a bit more compression than expected!
+// 
+// We would want instead to have an encoding more along the lines of:
+// 
+// 0111    7 
+// 0110    6 
+// 0101    5 
+// 0100    4 
+// 0011    3 
+// 0010    2 
+// 0001    1 
+// 0000    0 
+// 1000    −1 
+// 1001    −2 
+// 1010    −3 
+// 1011    −4 
+// 1100    −5 
+// 1101    −6 
+// 1110    −7 
+// 1111    −8 
+// 
+// 
+// So the simple trick I propose is to xor all lowly significant bits:
+// For 16bit integer x:
+// 
+// if sign bit of x is 1:
+//         return x^01111111b
+// else return x
+// 
+// This converts the standard two-complemet representation to a representation
+// where we keep the sign bit but inverts the encoding of the negative numbers.
+  
+  
+  std::map<short,  std::bitset<16> > expected_bit_map;
+  std::bitset<16> mask;
+  
+  xor_expected_results() :
+    expected_bit_map(), 
+    mask(~(1 << (sizeof(short)*8 - 1))){
+      
+	std::cout <<  "xor_expected_results: mask = " <<  mask.to_string() <<  "\n";
+        expected_bit_map[7] = std::bitset<16> ( std::string ( "0111" ) );
+        expected_bit_map[6] = std::bitset<16> ( std::string ( "0110" ) );
+        expected_bit_map[5] = std::bitset<16> ( std::string ( "0101" ) );
+        expected_bit_map[4] = std::bitset<16> ( std::string ( "0100" ) );
+        expected_bit_map[3] = std::bitset<16> ( std::string ( "0011" ) );
+        expected_bit_map[2] = std::bitset<16> ( std::string ( "0010" ) );
+        expected_bit_map[1] = std::bitset<16> ( std::string ( "0001" ) );
+        expected_bit_map[0] = std::bitset<16> ( std::string ( "0000" ) );
+        expected_bit_map[-1] = std::bitset< 16 > ( std::string ( "1000000000000000" ) );
+        expected_bit_map[-2] = std::bitset< 16 > ( std::string ( "1000000000000001" ) );
+        expected_bit_map[-3] = std::bitset< 16 > ( std::string ( "1000000000000010" ) );
+        expected_bit_map[-4] = std::bitset< 16 > ( std::string ( "1000000000000011" ) );
+        expected_bit_map[-5] = std::bitset< 16 > ( std::string ( "1000000000000100" ) );
+        expected_bit_map[-6] = std::bitset< 16 > ( std::string ( "1000000000000101" ) );
+        expected_bit_map[-7] = std::bitset< 16 > ( std::string ( "1000000000000110" ) );
+        expected_bit_map[-8] = std::bitset< 16 > ( std::string ( "1000000000000111" ) );
+//       
+    }
+};
+
+
+BOOST_FIXTURE_TEST_SUITE( requirements_upon_bitset, xor_expected_results )
+
+BOOST_AUTO_TEST_CASE( apply_xor )
+{
+  using namespace sqeazy;
+
+  
+  const short test_signed[16] = {7, 6, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -6, 
+-7, -8};
+
+  for(int i = 0;i<16;++i){
+    
+    short result =  sqeazy::xor_if_signed(test_signed[i]);
+    std::bitset<16> result_repr(result);
+    short expected = expected_bit_map[test_signed[i]].to_ulong();
+        
+    BOOST_CHECK_MESSAGE(result == expected,  
+                              "unable to treat " <<  test_signed[i] <<  ",  received: " 
+                              << result << "("<< result_repr.to_string() 
+                              << ") - expected: " <<  expected <<  "(" << expected_bit_map[test_signed[i]].to_string() <<")" );
   }
 
 }
