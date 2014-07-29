@@ -111,10 +111,16 @@ BOOST_AUTO_TEST_CASE( encoding_decoding_injective_on_signed )
   
   for(int i = 0;i<8;++i){
     
-    BOOST_CHECK_NE(test_signed[i], xor_if_signed(test_signed[i]));
+    if(test_signed[i]<0){
+      
+      BOOST_CHECK_NE(test_signed[i], xor_if_signed(test_signed[i]));
+      BOOST_CHECK_EQUAL(xor_if_signed(test_signed[i]), test_signed[i] ^ short(~(1 << 15)));
+      
+    }
+    else
+      BOOST_CHECK_EQUAL(test_signed[i], xor_if_signed(test_signed[i]));
 
-    BOOST_CHECK_EQUAL(xor_if_signed(test_signed[i]), test_signed[i] ^ short(~(1 
-<< 15)));
+    
 
     short intermediate = xor_if_signed(test_signed[i]);
 
@@ -219,7 +225,6 @@ struct xor_expected_results {
     expected_bit_map(), 
     mask(~(1 << (sizeof(short)*8 - 1))){
       
-	std::cout <<  "xor_expected_results: mask = " <<  mask.to_string() <<  "\n";
         expected_bit_map[7] = std::bitset<16> ( std::string ( "0111" ) );
         expected_bit_map[6] = std::bitset<16> ( std::string ( "0110" ) );
         expected_bit_map[5] = std::bitset<16> ( std::string ( "0101" ) );
