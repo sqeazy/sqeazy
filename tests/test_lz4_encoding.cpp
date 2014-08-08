@@ -5,6 +5,7 @@
 #include <vector>
 #include <iostream>
 #include "array_fixtures.hpp"
+#include <bitset>
 
 extern "C" {
 #include "sqeazy.h"
@@ -153,17 +154,137 @@ BOOST_AUTO_TEST_CASE( encoded_and_print_length )
     
   }
 
-  for(begin=data.begin();begin!=end;++begin){
-    
-    std::cout << begin->first.c_str() << "\t[0:32]\t";
-    for(int i = 0;i<32;++i){
-      std::cout << begin->second->at(i) << " ";
-    }
-    std::cout << "\n";
-  }
+  print();
 
 
 }
 
-
 BOOST_AUTO_TEST_SUITE_END()
+
+typedef sqeazy::lz4_fixture<unsigned short,64> unsigned_64elements;
+typedef sqeazy::lz4_fixture<short,64> signed_64elements;
+
+//BOOST_FIXTURE_TEST_SUITE( lz4_print, unsigned_64elements )
+
+
+BOOST_FIXTURE_TEST_CASE( print_lz4_input_unsigned , unsigned_64elements)
+{
+
+  std::map<std::string, std::vector<value_type>* >::iterator begin = data.begin();
+  std::map<std::string, std::vector<value_type>* >::iterator end = data.end();
+
+  print();
+  
+  for(;begin!=end;++begin){
+    
+    long input_length = begin->second->size();
+    
+    if(input_length>64)
+      continue;
+    
+    long input_length_in_byte = begin->second->size()*sizeof(value_type);
+    
+    const char* input = reinterpret_cast<char*>(&(*(begin->second))[0]);
+    char* output = new char[input_length_in_byte];
+    
+    std::cout << "bitswap4 " << begin->first.c_str() << " as input\n";
+    std::bitset<16> current;
+    for (int i = 0 ; i < input_length; ++i) {
+	current = std::bitset<16>(begin->second->at(i));
+	if((i+1) % 8 == 0)
+	  std::cout << current.to_string() << "("<< begin->second->at(i)<<")\n";
+	else
+	  std::cout << current.to_string() << "("<< begin->second->at(i)<<"), ";
+    }
+    
+    std::cout << "\noutput of BitSwap4Encode:\n";
+    SQY_BitSwap4Encode_UI16(input,output,input_length_in_byte);
+    std::bitset<8> current_byte;
+    for (int i = 0 ; i < input_length_in_byte; ++i) {
+	current_byte = std::bitset<8>(output[i]);
+	if((i+1) % 16 == 0)
+	  std::cout << current_byte.to_string() << "\n";
+	else
+	  std::cout << current_byte.to_string() << ", ";
+    }
+    
+    std::cout << "\noutput of BitSwap1Encode:\n";
+    SQY_BitSwap1Encode_UI16(input,output,input_length_in_byte);
+    
+    for (int i = 0 ; i < input_length_in_byte; ++i) {
+	current_byte = std::bitset<8>(output[i]);
+	if((i+1) % 16 == 0)
+	  std::cout << current_byte.to_string() << "\n";
+	else
+	  std::cout << current_byte.to_string() << ", ";
+    }
+    
+    std::cout << "\n";
+    delete [] output;
+  }
+
+  
+
+}
+
+BOOST_FIXTURE_TEST_CASE( print_lz4_input_signed , signed_64elements)
+{
+
+   print();
+  
+  std::map<std::string, std::vector<value_type>* >::iterator begin = data.begin();
+  std::map<std::string, std::vector<value_type>* >::iterator end = data.end();
+
+  for(;begin!=end;++begin){
+    
+    long input_length = begin->second->size();
+    
+    if(input_length>64)
+      continue;
+    
+    long input_length_in_byte = begin->second->size()*sizeof(value_type);
+    
+    const char* input = reinterpret_cast<char*>(&(*(begin->second))[0]);
+    char* output = new char[input_length_in_byte];
+    
+    std::cout << "bitswap4 " << begin->first.c_str() << " as input\n";
+    std::bitset<16> current;
+    for (int i = 0 ; i < input_length; ++i) {
+	current = std::bitset<16>(begin->second->at(i));
+	if((i+1) % 8 == 0)
+	  std::cout << current.to_string() << "("<< begin->second->at(i)<<")\n";
+	else
+	  std::cout << current.to_string() << "("<< begin->second->at(i)<<"), ";
+    }
+    
+    std::cout << "\noutput of BitSwap4Encode:\n";
+    SQY_BitSwap4Encode_I16(input,output,input_length_in_byte);
+    std::bitset<8> current_byte;
+    for (int i = 0 ; i < input_length_in_byte; ++i) {
+	current_byte = std::bitset<8>(output[i]);
+	if((i+1) % 16 == 0)
+	  std::cout << current_byte.to_string() << "\n";
+	else
+	  std::cout << current_byte.to_string() << ", ";
+    }
+    
+    std::cout << "\noutput of BitSwap1Encode:\n";
+    SQY_BitSwap1Encode_I16(input,output,input_length_in_byte);
+    
+    for (int i = 0 ; i < input_length_in_byte; ++i) {
+	current_byte = std::bitset<8>(output[i]);
+	if((i+1) % 16 == 0)
+	  std::cout << current_byte.to_string() << "\n";
+	else
+	  std::cout << current_byte.to_string() << ", ";
+    }
+    
+    std::cout << "\n";
+    delete [] output;
+  }
+
+  
+
+}
+
+// BOOST_AUTO_TEST_SUITE_END()
