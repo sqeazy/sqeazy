@@ -72,4 +72,13 @@ BOOST_AUTO_TEST_CASE( min_max_populated_bin )
   BOOST_CHECK_EQUAL(of_variable.smallest_populated_bin(),27);
 
 }
+
+BOOST_AUTO_TEST_CASE( median_equals_mean )
+{
+  
+  sqeazy::histogram<value_type> of_variable(&constant_cube[0], &constant_cube[0] + uint16_cube_of_8::size );
+  BOOST_CHECK_EQUAL(of_variable.mean(),of_variable.median());
+  
+
+}
 BOOST_AUTO_TEST_SUITE_END()

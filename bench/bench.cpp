@@ -165,11 +165,11 @@ int rmbkg_diff_bswap1_lz4_compress(const std::vector<std::string>& _args){
   
   std::fill(intermediate_buffer, intermediate_buffer + _input_size,0);    
   
-  int retcode = SQY_RmBackground_Estimated_UI16(input_data,0,
-						reference.axis_lengths[0],
-						reference.axis_lengths[1],
-						reference.axis_lengths[2]
- 					      );
+    int retcode = SQY_RmBackground_Estimated_UI16(		reference.axis_lengths[0],
+                  reference.axis_lengths[1],
+                  reference.axis_lengths[2],
+                  input_data,0
+                                                 );
 
   retcode += SQY_RasterDiffEncode_3D_UI16(reference.axis_length(0), reference.axis_length(1), reference.axis_length(2), 
 					  input_data,intermediate_buffer);
@@ -217,7 +217,8 @@ int rmbkg_diff_bswap4_lz4_compress(const std::vector<std::string>& _args){
   
   std::fill(intermediate_buffer, intermediate_buffer + _input_size,0);    
   
-  int retcode = SQY_RmBackground_Estimated_UI16(input_data,0,reference.axis_length(0), reference.axis_length(1), reference.axis_length(2));
+  int retcode = SQY_RmBackground_Estimated_UI16(reference.axis_length(0), reference.axis_length(1), reference.axis_length(2),
+						input_data,0);
 
   retcode += SQY_RasterDiffEncode_3D_UI16(reference.axis_length(0), reference.axis_length(1), reference.axis_length(2), 
 					  input_data,intermediate_buffer);

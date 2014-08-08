@@ -249,7 +249,7 @@ SQY_FUNCTION_PREFIX int SQY_RmBackground_AtMode_UI16(char* src, char* dst, long 
 
 	Returns 0 if success, another code if there was an error (error codes provided below)	
 */
-SQY_FUNCTION_PREFIX int SQY_RmBackground_Estimated_UI16(int width, int height, long int depth, char* src, char* dst );
+SQY_FUNCTION_PREFIX int SQY_RmBackground_Estimated_UI16(int width, int height,  int depth, char* src, char* dst );
 
 
 

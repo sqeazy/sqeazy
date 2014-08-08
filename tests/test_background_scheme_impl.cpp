@@ -17,7 +17,7 @@ BOOST_AUTO_TEST_CASE( success )
 {
   
   
-  std::vector<long> dims(3,uint16_cube_of_8::axis_length);
+  std::vector<int> dims(3,uint16_cube_of_8::axis_length);
   size_t face_size = uint16_cube_of_8::axis_length*uint16_cube_of_8::axis_length;
   std::vector<unsigned short> face(face_size);
   std::fill(face.begin(), face.end(), 0);
@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_CASE( selects_correct_plane_in_z )
 {
   
   
-  std::vector<long> dims(3,uint16_cube_of_8::axis_length);
+  std::vector<int> dims(3,uint16_cube_of_8::axis_length);
   size_t face_size = uint16_cube_of_8::axis_length*uint16_cube_of_8::axis_length;
   std::vector<unsigned short> face(face_size);
   std::fill(face.begin(), face.end(), 0);
