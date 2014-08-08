@@ -3,6 +3,7 @@
 #include "boost/test/unit_test.hpp"
 #include <numeric>
 #include <vector>
+#include <cmath>
 #include <iostream>
 #include "array_fixtures.hpp"
 
@@ -64,17 +65,23 @@ BOOST_AUTO_TEST_CASE( auto_background_removed_success )
   char* input = reinterpret_cast<char*>(&constant_cube[0]);
   char* output = reinterpret_cast<char*>(&to_play_with[0]);
 
-  int retcode = SQY_RmBackground_Estimated_UI16(input,
-					     output,
-					     uint16_cube_of_8::size_in_byte);
-  
+    const long assumed_axis_dim = uint16_cube_of_8::axis_length;
+    int retcode = SQY_RmBackground_Estimated_UI16(
+                  assumed_axis_dim,
+                  assumed_axis_dim,
+                  assumed_axis_dim,
+		  input,
+                  output);
+    
   BOOST_CHECK_EQUAL(retcode,0);
   BOOST_CHECK_NE(to_play_with[0],constant_cube[0]);
   BOOST_CHECK_NE(to_play_with[16],constant_cube[16]);
 
-  retcode = SQY_RmBackground_Estimated_UI16(input,
-					 0,
-					 uint16_cube_of_8::size_in_byte);
+  retcode = SQY_RmBackground_Estimated_UI16(assumed_axis_dim,
+                  assumed_axis_dim,
+                  assumed_axis_dim,input,
+					 0
+					 );
   
   BOOST_CHECK_EQUAL(retcode,0);
   BOOST_CHECK_NE(1,constant_cube[0]);

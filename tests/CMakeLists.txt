@@ -27,6 +27,10 @@ target_link_libraries(test_lz4_encoding ${PROJECT_NAME} boost_system boost_files
 add_executable(test_background_schemes test_background_schemes.cpp)
 target_link_libraries(test_background_schemes ${PROJECT_NAME} boost_system boost_filesystem boost_unit_test_framework)
 
+add_executable(test_background_scheme_impl test_background_scheme_impl.cpp)
+target_link_libraries(test_background_scheme_impl ${PROJECT_NAME} boost_system boost_filesystem boost_unit_test_framework)
+
+
 add_executable(test_hist_impl test_hist_impl.cpp)
 target_link_libraries(test_hist_impl boost_system boost_filesystem boost_unit_test_framework)
 

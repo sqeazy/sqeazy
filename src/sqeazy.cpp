@@ -206,11 +206,15 @@ int SQY_RmBackground_AtMode_UI16(char* src, char* dst, long length, unsigned sho
 
 }
 
-int SQY_RmBackground_Estimated_UI16(char* src, char* dst, long length){  
+int SQY_RmBackground_Estimated_UI16(int width, int height, int depth, char* src, char* dst){  
   typedef unsigned short raw_type;
+  std::vector<int> dims(3);
+  dims[0] = width;
+  dims[1] = height;
+  dims[2] = depth;
   return sqeazy::remove_background<raw_type,long>::estimated_encode(reinterpret_cast<raw_type*>(src),
 								    reinterpret_cast<raw_type*>(dst),
-								    length/sizeof(raw_type)
+								    dims
 								    );
 }
 

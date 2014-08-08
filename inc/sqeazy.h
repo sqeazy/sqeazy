@@ -242,12 +242,14 @@ SQY_FUNCTION_PREFIX int SQY_RmBackground_AtMode_UI16(char* src, char* dst, long 
 
 	src 					: contiguous array of voxels (externally allocated)
 	dst       				: contiguous array of voxels (externally allocated)
-	length 					: length of both buffers
+	width 					: width of the image stack as 16-bit integer
+	height 					: height of the image stack as 16-bit integer
+	depth 					: depth of the image stack as 16-bit integer
 	
 
 	Returns 0 if success, another code if there was an error (error codes provided below)	
 */
-SQY_FUNCTION_PREFIX int SQY_RmBackground_Estimated_UI16(char* src, char* dst, long length);
+SQY_FUNCTION_PREFIX int SQY_RmBackground_Estimated_UI16(int width, int height, long int depth, char* src, char* dst );
 
 
 
