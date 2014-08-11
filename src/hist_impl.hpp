@@ -9,6 +9,29 @@
 
 namespace sqeazy {
 
+  template <typename IteratorT>
+  IteratorT median_index(IteratorT begin, IteratorT end){
+    
+    //using double is a guess here
+    double total_integral = std::accumulate(begin, end,0);
+
+    double running_integral = 0;
+    IteratorT median = end;
+
+    for(;begin!=end;++begin) {
+        running_integral += *begin;
+        if((running_integral/total_integral) > .5) {
+            median = begin - 1;
+            break;
+        }
+    }
+
+    return median;
+
+  }
+  
+  
+  
 template <typename T, typename CounterT = unsigned long>
 struct histogram {
 
@@ -208,21 +231,10 @@ struct histogram {
 
     T calc_median() const {
 
-        const float total_integral = integral();
-
-        float running_integral = 0;
-        T median = std::numeric_limits<T>::max();
-
-        for(T i = smallest_populated_bin(); i<(largest_populated_bin()+1); ++i) {
-            running_integral += bins[i];
-            if((running_integral/total_integral) > .5) {
-                median = i-1;
-                break;
-            }
-        }
-
-
-        return median;
+	
+        return median_index(bins.begin()+smallest_populated_bin(),
+	  bins.begin()+largest_populated_bin() +1
+	) - bins.begin();
 
     }
 
@@ -252,6 +264,35 @@ struct histogram {
 
     }
 };
+
+  template <typename T>
+  typename T::value_type mpicbg_median_variation(T begin, T end){
+    
+    typedef typename T::value_type value_type;
+    typedef std::vector<value_type> local_vector;
+    
+    histogram<value_type> h_original(begin, end);
+    unsigned size = end - begin;
+    const value_type median = h_original.median();
+    
+    typename local_vector::const_iterator intensity = begin;
+    typename local_vector::const_iterator image_end = end;
+    
+    local_vector reduced(size);
+    typename local_vector::iterator rbegin = reduced.begin();
+    for(;intensity!=image_end;++intensity, ++rbegin){
+      if(*intensity < median)
+	*rbegin = 0;
+      else
+	*rbegin = *intensity - median;
+      
+    }
+    
+    histogram<value_type> h_reduced(reduced.begin(), reduced.end());
+    
+    return h_reduced.median();
+
+  }
 
 }//sqeazy
 

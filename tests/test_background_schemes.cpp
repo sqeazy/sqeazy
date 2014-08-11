@@ -1,6 +1,7 @@
 #define BOOST_TEST_DYN_LINK 
 #define BOOST_TEST_MODULE TEST_DIFF_SCHEMES
 #include "boost/test/unit_test.hpp"
+#include "boost/random.hpp"
 #include <numeric>
 #include <vector>
 #include <cmath>
@@ -61,6 +62,10 @@ BOOST_AUTO_TEST_CASE( background_removed_success )
 
 BOOST_AUTO_TEST_CASE( auto_background_removed_success )
 {
+  boost::random::mt19937 rng;
+  boost::poisson_distribution<value_type> p(5);
+  for(unsigned i = 0;i < size;++i)
+    constant_cube[i] += p(rng);
   
   char* input = reinterpret_cast<char*>(&constant_cube[0]);
   char* output = reinterpret_cast<char*>(&to_play_with[0]);

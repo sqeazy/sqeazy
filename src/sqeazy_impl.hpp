@@ -282,15 +282,16 @@ struct remove_background {
         std::vector<raw_type> darkest_face;
         extract_darkest_face(_input, _dims, darkest_face);
 	histogram<raw_type> h_darkest_facet(darkest_face.begin(), darkest_face.end());
-	/*
-	raw_type median = h_darkest_facet.median();
-	raw_type median_sd = h_darkest_facet.median_sd();
-        */
-        
-//       if(_output)
-// 	return encode_out_of_place(_input, _output, _length, threshold);
-//       else
-// 	return encode_inplace(_input, _length, threshold);
+	const raw_type median_deviation = mpicbg_median_variation(darkest_face.begin(),darkest_face.end());
+	const raw_type median = h_darkest_facet.median();
+        const float alpha = 1.f;
+	size_type input_length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<size_type>());
+	
+	if(_output)
+	  encode_out_of_place(_input, _output, input_length, median+(alpha*median_deviation));
+	else
+	  encode_inplace(_input, input_length, median+(alpha*median_deviation));
+	
         return SUCCESS;
     }
 
