@@ -17,16 +17,36 @@ struct histogram {
     std::vector<CounterT> bins;
     CounterT  num_entries;
 
+    //distribution info
+    integral_type integral_value;
+    T mean_value;
+    T median_value;
+    T mode_value;
+    T small_pop_bin_value;
+    T large_pop_bin_value;
+    
     histogram():
         bins(num_bins,0),
-        num_entries(0)
+        num_entries(0),
+        integral_value(0),
+        mean_value(0),
+        median_value(0),
+        mode_value(0),
+        small_pop_bin_value(0),
+        large_pop_bin_value(std::numeric_limits<T>::max())
     {
 
     }
 
     histogram(T* _image, const CounterT& _size):
         bins(num_bins,0),
-        num_entries(_size)
+        num_entries(_size),
+        integral_value(0),
+        mean_value(0),
+        median_value(0),
+        mode_value(0),
+        small_pop_bin_value(0),
+        large_pop_bin_value(std::numeric_limits<T>::max())
     {
 
         fill_from_image(_image, _image + _size);
@@ -36,7 +56,13 @@ struct histogram {
     template <typename ItrT>
     histogram(ItrT _begin, ItrT _end):
         bins(num_bins,0),
-        num_entries(_end - _begin)
+        num_entries(_end - _begin),
+        integral_value(0),
+        mean_value(0),
+        median_value(0),
+        mode_value(0),
+        small_pop_bin_value(0),
+        large_pop_bin_value(std::numeric_limits<T>::max())
     {
 
         fill_from_image(_begin, _end);
@@ -44,6 +70,8 @@ struct histogram {
     }
 
 
+    
+    
     //TODO: use SFINAE to fill bins for signed histo as well
     template <typename ItrT>
     void fill_from_image(ItrT _image_begin, ItrT _image_end) {
@@ -52,43 +80,60 @@ struct histogram {
         for(; _image_begin!=_image_end; ++_image_begin) {
             bins[*_image_begin]++;
         }
+        
+        small_pop_bin_value = calc_smallest_populated_bin();
+        large_pop_bin_value = calc_largest_populated_bin();
+	
+        integral_value = calc_integral();
+        mean_value = calc_mean();
+        median_value = calc_median();
+        mode_value = calc_mode();
+        
+        
+        
+        
+        
     }
 
-    integral_type integral() const {
+    integral_type calc_integral() const {
 
         integral_type value = std::accumulate(bins.begin(),bins.end(),0);
 
         return value;
     }
 
+    integral_type integral() const {
+    
+	return integral_value;
+	
+    }
+    
     CounterT entries() const {
         return num_entries;
     }
 
-    T mode() const {
+    T calc_mode() const {
         T value = std::max_element(bins.begin(),bins.end()) - bins.begin();
         return value;
     }
+    
+    T mode() const { return mode_value; }
 
-    T mean() const {
-        typedef typename sqeazy::twice_as_wide<T>::type double_wide_type;
+    T calc_mean() const {
+        integral_type value = 0;
 
-        double_wide_type value = 0;
-
-        typename std::vector<CounterT>::const_iterator begin = bins.begin();
-        typename std::vector<CounterT>::const_iterator end = bins.end();
-
-        for(; begin!=end; ++begin) {
-            double_wide_type distance = begin - bins.begin();
-            value += distance*(*begin);
+        for(T i = small_pop_bin_value; i < (large_pop_bin_value+1); ++i) {
+            value += i*(bins[i]);
         }
 
-        value/=integral();
+        value/=float(integral());
 
         return value;
     }
 
-    T largest_populated_bin() const {
+    T mean() const { return mean_value; }
+    
+    T calc_largest_populated_bin() const {
 
         T value = 0;
 
@@ -101,8 +146,14 @@ struct histogram {
 
         return value;
     }
+    
+    T largest_populated_bin() const {
+      
+	return large_pop_bin_value;
+    }
 
-    T smallest_populated_bin() const {
+    
+    T calc_smallest_populated_bin() const {
 
         T value = 0;
 
@@ -116,22 +167,34 @@ struct histogram {
         return value;
     }
 
-    T median() const {
+        T smallest_populated_bin() const {
+      
+	return small_pop_bin_value;
+    }
 
-        const integral_type total_integral = integral();
-        integral_type running_integral = 0;
+    
+    T calc_median() const {
+
+        const float total_integral = integral();
+		
+        float running_integral = 0;
         T median = std::numeric_limits<T>::max();
-        for(T i = 0; i<num_bins; ++i) {
-            running_integral = std::accumulate(bins.begin(), bins.begin()+i,0);
-            if(running_integral>.5*total_integral) {
-                median = i-1;
-                break;
-            }
-        }
+	
+	for(T i = smallest_populated_bin();i<(largest_populated_bin()+1);++i){
+	  running_integral += bins[i];
+	  if((running_integral/total_integral) > .5){
+	    median = i-1;
+	    break;
+	  }
+	}
+        
 
         return median;
 
     }
+    
+    T median() const { return median_value; }
+    
     ~histogram() {
 
     }
