@@ -7,7 +7,10 @@
 
 add_test(NAME diff_schemes COMMAND test_diff_schemes)
 add_test(NAME diff_scheme_impl COMMAND test_diff_scheme_impl)
+add_test(NAME background_schemes COMMAND test_background_schemes)
+add_test(NAME background_scheme_impl COMMAND test_background_scheme_impl)
 add_test(NAME bitswap_schemes COMMAND test_bitswap_schemes)
 add_test(NAME bitswap_scheme_impl COMMAND test_bitswap_scheme_impl)
+add_test(NAME hist_impl COMMAND test_hist_impl)
 add_test(NAME lz4_encoding COMMAND test_lz4_encoding)
 
