@@ -3,6 +3,7 @@
 #include <climits>
 #include <limits>
 #include <vector>
+#include <cmath>
 #include <numeric>
 #include "sqeazy_traits.hpp"
 
@@ -20,17 +21,22 @@ struct histogram {
     //distribution info
     integral_type integral_value;
     T mean_value;
+    T mean_variation_value;
     T median_value;
+    T median_variation_value;
     T mode_value;
     T small_pop_bin_value;
     T large_pop_bin_value;
-    
+
+
     histogram():
         bins(num_bins,0),
         num_entries(0),
         integral_value(0),
         mean_value(0),
+        mean_variation_value(0),
         median_value(0),
+        median_variation_value(0),
         mode_value(0),
         small_pop_bin_value(0),
         large_pop_bin_value(std::numeric_limits<T>::max())
@@ -43,7 +49,9 @@ struct histogram {
         num_entries(_size),
         integral_value(0),
         mean_value(0),
+        mean_variation_value(0),
         median_value(0),
+        median_variation_value(0),
         mode_value(0),
         small_pop_bin_value(0),
         large_pop_bin_value(std::numeric_limits<T>::max())
@@ -59,7 +67,9 @@ struct histogram {
         num_entries(_end - _begin),
         integral_value(0),
         mean_value(0),
+        mean_variation_value(0),
         median_value(0),
+        median_variation_value(0),
         mode_value(0),
         small_pop_bin_value(0),
         large_pop_bin_value(std::numeric_limits<T>::max())
@@ -70,8 +80,8 @@ struct histogram {
     }
 
 
-    
-    
+
+
     //TODO: use SFINAE to fill bins for signed histo as well
     template <typename ItrT>
     void fill_from_image(ItrT _image_begin, ItrT _image_end) {
@@ -80,19 +90,21 @@ struct histogram {
         for(; _image_begin!=_image_end; ++_image_begin) {
             bins[*_image_begin]++;
         }
-        
+
         small_pop_bin_value = calc_smallest_populated_bin();
         large_pop_bin_value = calc_largest_populated_bin();
-	
+
         integral_value = calc_integral();
         mean_value = calc_mean();
+	mean_variation_value = calc_mean_variation();
         median_value = calc_median();
+        median_variation_value = calc_median_variation();
         mode_value = calc_mode();
-        
-        
-        
-        
-        
+
+
+
+
+
     }
 
     integral_type calc_integral() const {
@@ -103,11 +115,11 @@ struct histogram {
     }
 
     integral_type integral() const {
-    
-	return integral_value;
-	
+
+        return integral_value;
+
     }
-    
+
     CounterT entries() const {
         return num_entries;
     }
@@ -116,8 +128,10 @@ struct histogram {
         T value = std::max_element(bins.begin(),bins.end()) - bins.begin();
         return value;
     }
-    
-    T mode() const { return mode_value; }
+
+    T mode() const {
+        return mode_value;
+    }
 
     T calc_mean() const {
         integral_type value = 0;
@@ -131,7 +145,26 @@ struct histogram {
         return value;
     }
 
-    T mean() const { return mean_value; }
+    T mean() const {
+        return mean_value;
+    }
+
+    T calc_mean_variation() const {
+
+        float mean_variation = 0;
+
+        for(T i = smallest_populated_bin(); i<(largest_populated_bin()+1); ++i) {
+            float temp = bins[i] - float(mean());
+            mean_variation += (temp)*(temp);
+        }
+
+        mean_variation/=float(num_bins - 1);
+
+        return std::sqrt(mean_variation);
+
+    }
+    
+    T mean_variation() const { return mean_variation_value; }
     
     T calc_largest_populated_bin() const {
 
@@ -146,13 +179,13 @@ struct histogram {
 
         return value;
     }
-    
+
     T largest_populated_bin() const {
-      
-	return large_pop_bin_value;
+
+        return large_pop_bin_value;
     }
 
-    
+
     T calc_smallest_populated_bin() const {
 
         T value = 0;
@@ -167,33 +200,53 @@ struct histogram {
         return value;
     }
 
-        T smallest_populated_bin() const {
-      
-	return small_pop_bin_value;
+    T smallest_populated_bin() const {
+
+        return small_pop_bin_value;
     }
 
-    
+
     T calc_median() const {
 
         const float total_integral = integral();
-		
+
         float running_integral = 0;
         T median = std::numeric_limits<T>::max();
-	
-	for(T i = smallest_populated_bin();i<(largest_populated_bin()+1);++i){
-	  running_integral += bins[i];
-	  if((running_integral/total_integral) > .5){
-	    median = i-1;
-	    break;
-	  }
-	}
-        
+
+        for(T i = smallest_populated_bin(); i<(largest_populated_bin()+1); ++i) {
+            running_integral += bins[i];
+            if((running_integral/total_integral) > .5) {
+                median = i-1;
+                break;
+            }
+        }
+
 
         return median;
 
     }
+
+    T calc_median_variation() const {
+
+        float median_variation = 0;
+
+        for(T i = smallest_populated_bin(); i<(largest_populated_bin()+1); ++i) {
+            float temp = bins[i] - float(median());
+            median_variation += (temp)*(temp);
+        }
+
+        median_variation/=float(num_bins - 1);
+
+        return std::sqrt(median_variation);
+
+    }
+
     
-    T median() const { return median_value; }
+    T median() const {
+        return median_value;
+    }
+
+    T median_variation() const { return median_variation_value; }
     
     ~histogram() {
 

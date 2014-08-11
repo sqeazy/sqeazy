@@ -1,6 +1,7 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE TEST_HIST_IMPL
 #include "boost/test/unit_test.hpp"
+#include "boost/random.hpp"
 #include <numeric>
 #include <cmath>
 #include <vector>
@@ -103,4 +104,28 @@ sqeazy::histogram<value_type> of_variable(&to_play_with[0], size);
     BOOST_CHECK_EQUAL(of_variable.calc_median(),exp_median);
 
 }
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE( hist_impl_unsigned16, uint16_cube_of_8 )
+
+BOOST_AUTO_TEST_CASE( median_variation )
+{
+    boost::random::mt19937 rng;
+    boost::random::lognormal_distribution<float> lnorm(10.f,2);
+    
+    for(unsigned num = 0; num<size; ++num) {
+
+        to_play_with[num] = lnorm(rng)/**(std::numeric_limits< value_type >::max()/2.f)*/;
+
+    }
+
+sqeazy::histogram<value_type> of_variable(&to_play_with[0], size);
+    
+    BOOST_CHECK_NE(of_variable.median(),of_variable.median_variation());
+    BOOST_CHECK_NE(of_variable.mean_variation(),of_variable.median_variation());
+    
+
+}
+
 BOOST_AUTO_TEST_SUITE_END()
