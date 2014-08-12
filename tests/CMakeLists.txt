@@ -7,8 +7,8 @@ LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 ENDIF()
 
 add_executable(test_apply test_apply.cpp)
-set_target_properties(test_apply PROPERTIES
-                      COMPILE_FLAGS "-std=c++11")
+# set_target_properties(test_apply PROPERTIES
+#                       COMPILE_FLAGS "-std=c++11")
 target_link_libraries(test_apply boost_system boost_filesystem boost_unit_test_framework)
 
 add_executable(test_diff_schemes test_diff_schemes.cpp)
