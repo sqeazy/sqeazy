@@ -63,7 +63,6 @@ typedef add_one<int> add_one_to_ints;
  
 BOOST_AUTO_TEST_SUITE( access_test_suite )
    
-
 BOOST_AUTO_TEST_CASE( without_applyer )
 {
   std::vector<int> test_in(42,1);
@@ -73,9 +72,19 @@ BOOST_AUTO_TEST_CASE( without_applyer )
   
   BOOST_CHECK_EQUAL(std::accumulate(test_out.begin(), test_out.end(),0),42*2);
 
-  std::fill(test_out.begin(), test_out.end(),0);
   
-  typedef sqeazy::bmpl::vector<add_one<int>, square<int> > test_pipe;
+  
+  std::transform(test_in.begin(), test_in.end(), test_out.begin(), square<int>() );
+  
+  BOOST_CHECK_EQUAL(std::accumulate(test_out.begin(), test_out.end(),0),42*4);
+}
+
+BOOST_AUTO_TEST_CASE (with_pipeline_apply){
+
+  std::vector<int> test_in(42,1);
+  std::vector<int> test_out(42,0);
+  
+  typedef sqeazy::bmpl::vector2<add_one<int>, square<int> > test_pipe;
   typedef sqeazy::pipeline<int, test_pipe> current_pipe;
   
   BOOST_CHECK_NE(current_pipe::name().size(),0);
@@ -83,11 +92,15 @@ BOOST_AUTO_TEST_CASE( without_applyer )
   BOOST_CHECK_NE(current_pipe::name().find("square"),std::string::npos);
   
   BOOST_CHECK_NE(current_pipe::name().find("add_one"),std::string::npos);
-//   current_pipe::apply(&test_in[0], &test_out[0],test_in.size());
-//   
-//   BOOST_CHECK_EQUAL(test_in[0],1);
-//   
-//   BOOST_CHECK_EQUAL(test_out[0],4);
+  current_pipe::encode(&test_in[0], &test_out[0],test_in.size());
+  
+  BOOST_CHECK_EQUAL(test_in[0],1);
+  
+  std::vector<int> expected(42,4);
+  
+  BOOST_CHECK_EQUAL_COLLECTIONS(test_out.begin(),test_out.end(),
+    expected.begin(),expected.end()
+  );
+  
 }
-
 BOOST_AUTO_TEST_SUITE_END()
