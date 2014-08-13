@@ -2,7 +2,9 @@
 #define _SQEAZY_IMPL_H_
 
 #include <algorithm>
+#include <sstream>
 
+#include "sqeazy_common.hpp"
 #include "sqeazy_traits.hpp"
 #include "diff_scheme_utils.hpp"
 #include "bitswap_scheme_utils.hpp"
@@ -10,13 +12,6 @@
 
 namespace sqeazy {
 
-enum error_code {
-
-    SUCCESS = 0,
-    FAILURE = 1,
-    NOT_IMPLEMENTED_YET = 42
-
-};
 
 
 template <typename T, typename Neighborhood = last_plane_neighborhood<3> >
@@ -24,9 +19,24 @@ struct diff_scheme {
 
     typedef T raw_type;
     typedef typename remove_unsigned<T>::type compressed_type;
+    
     typedef typename add_unsigned<typename twice_as_wide<T>::type >::type sum_type;
     typedef unsigned size_type;
 
+    static const std::string name(){
+      
+      //TODO: add name of Neighborhood
+      return std::string("diff_scheme");
+      
+    }
+    static const error_code encode(const raw_type* _input,
+                                   compressed_type* _output,
+				   const std::vector<size_type>& _dims
+				  )
+    {
+	return encode(_dims.at(0), _dims.at(1), _dims.at(2), _input, _output);
+    }
+    
     static const error_code encode(const size_type& _width,
                                    const size_type& _height,
                                    const size_type& _depth,
@@ -96,11 +106,19 @@ template < typename T, const unsigned num_segments = 4  >
 struct bitswap_scheme {
 
     typedef T raw_type;
+    typedef T compressed_type;
     typedef unsigned size_type;
 
     static const unsigned raw_type_num_bits = sizeof(T)*8;
     static const unsigned raw_type_num_bits_per_segment = raw_type_num_bits/num_segments;
-
+    
+    static const std::string name(){
+      
+      std::ostringstream val("");
+      val << "bitswap" << raw_type_num_bits_per_segment;
+      return val.str();
+      
+    }
 
     static const error_code encode(const raw_type* _input,
                                    raw_type* _output,
@@ -165,85 +183,35 @@ struct bitswap_scheme {
 
 };
 
+
 template < typename T, typename S = long >
 struct remove_background {
 
     typedef T raw_type;
+    typedef T compressed_type;
     typedef S size_type;
-
-
-    static const void extract_darkest_face(raw_type* _input,
-                                           const std::vector<int>& _dims,
-                                           std::vector<raw_type>& _darkest_face) {
-
-        raw_type mean = std::numeric_limits<raw_type>::max();
-        unsigned long input_index =0;
-        const unsigned long frame_size = _dims[1]*_dims[0];
-	unsigned long face_index =0;
-
-	
-        //faces with z
-        for(unsigned z_idx = 0; z_idx < _dims[2]; z_idx+=(_dims[2]-1)) {
-            input_index = z_idx*(frame_size);
-            raw_type* begin = _input + input_index;
-            raw_type temp = std::accumulate(begin, begin + (frame_size),0 )/(frame_size);
-            if(temp < mean) {
-	      if(_darkest_face.size()<frame_size)
-                _darkest_face.resize(frame_size);
-                std::copy(begin, begin + (frame_size),_darkest_face.begin());
-	      mean = temp;
-            }
-        }
-
-        //faces with y
-        face_index =0;
-        for(unsigned y_idx = 0; y_idx < _dims[1]; y_idx+=(_dims[1]-1)) {
-            raw_type temp = 0;
-            for(unsigned z_idx = 0; z_idx < _dims[2]; ++z_idx) {
-                for(unsigned x_idx = 0; x_idx < _dims[0]; ++x_idx) {
-                    input_index = z_idx*(frame_size)+y_idx*_dims[0]+x_idx;
-                    temp += _input[input_index];
-                }
-            }
-            temp/=_dims[2]*_dims[0];
-            if(temp < mean) {
-	      if(_darkest_face.size()<_dims[2]*_dims[0])
-                _darkest_face.resize(_dims[2]*_dims[0]);
-                for(unsigned z_idx = 0; z_idx < _dims[2]; ++z_idx) {
-                    for(unsigned x_idx = 0; x_idx < _dims[0]; ++x_idx) {
-                        input_index = z_idx*(frame_size)+y_idx*_dims[0]+x_idx;
-                        _darkest_face[face_index++] = _input[input_index];
-                    }
-                }
-                mean = temp;
-            }
-        }
-
-        //faces with x
-        face_index =0;
-        for(unsigned x_idx = 0; x_idx < _dims[0]; x_idx+=(_dims[0]-1)) {
-            raw_type temp = 0;
-            for(unsigned z_idx = 0; z_idx < _dims[2]; ++z_idx) {
-                for(unsigned y_idx = 0; y_idx < _dims[1]; ++y_idx) {
-                    input_index = z_idx*(frame_size)+y_idx*_dims[0]+x_idx;
-                    temp += _input[input_index];
-                }
-            }
-            temp/=_dims[2]*_dims[1];
-            if(temp < mean) {
-	      if(_darkest_face.size()<_dims[2]*_dims[1])
-                _darkest_face.resize(_dims[2]*_dims[1]);
-                for(unsigned z_idx = 0; z_idx < _dims[2]; ++z_idx) {
-                    for(unsigned y_idx = 0; y_idx < _dims[0]; ++y_idx) {
-                        input_index = z_idx*(frame_size)+y_idx*_dims[0]+x_idx;
-                        _darkest_face[face_index++] = _input[input_index];
-                    }
-                }
-                mean = temp;
-            }
-        }
+    
+    static const std::string name(){
+      
+      
+      return std::string("rmbkrd");
+      
     }
 
+    
+
+    static const error_code encode(raw_type* _input,
+                                   raw_type* _output,
+                                   const std::vector<size_type>& _data)
+    {
+      
+      if(_data.size() == 2)
+	return encode(_input, _output, _data.at(0), _data.at(1));
+      else
+	return FAILURE;
+      
+    }
+    
     static const error_code encode(raw_type* _input,
                                    raw_type* _output,
                                    const size_type& _length,
@@ -274,26 +242,7 @@ struct remove_background {
         return SUCCESS;
     }
 
-    static const error_code estimated_encode(raw_type* _input,
-            raw_type* _output,
-            const std::vector<int>& _dims)
-    {
-
-        std::vector<raw_type> darkest_face;
-        extract_darkest_face(_input, _dims, darkest_face);
-	histogram<raw_type> h_darkest_facet(darkest_face.begin(), darkest_face.end());
-	const raw_type median_deviation = mpicbg_median_variation(darkest_face.begin(),darkest_face.end());
-	const raw_type median = h_darkest_facet.median();
-        const float alpha = 1.f;
-	size_type input_length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<size_type>());
-	
-	if(_output)
-	  encode_out_of_place(_input, _output, input_length, median+(alpha*median_deviation));
-	else
-	  encode_inplace(_input, input_length, median+(alpha*median_deviation));
-	
-        return SUCCESS;
-    }
+    
 
     static const error_code encode_inplace(raw_type* _input,
                                            const size_type& _length,
@@ -320,6 +269,127 @@ struct remove_background {
 };
 
 
+template < typename T >
+struct remove_estimated_background {
+
+    typedef T raw_type;
+    typedef T compressed_type;
+    
+    
+    static const std::string name(){
+      
+      
+      return std::string("rmestbkrd");
+      
+    }
+    
+    template <typename size_type>
+    static const void extract_darkest_face(const raw_type* _input,
+                                           const std::vector<size_type>& _dims,
+                                           std::vector<raw_type>& _darkest_face) {
+
+      typedef typename add_unsigned<typename twice_as_wide<size_type>::type >::type index_type;
+      
+        raw_type mean = std::numeric_limits<raw_type>::max();
+        index_type input_index =0;
+        const index_type frame_size = _dims[1]*_dims[0];
+        index_type face_index =0;
+
+
+        //faces with z
+        for(size_type z_idx = 0; z_idx < _dims[2]; z_idx+=(_dims[2]-1)) {
+            input_index = z_idx*(frame_size);
+            const raw_type* begin = _input + input_index;
+            raw_type temp = std::accumulate(begin, begin + (frame_size),0 )/(frame_size);
+            if(temp < mean) {
+                if(_darkest_face.size()<frame_size)
+                    _darkest_face.resize(frame_size);
+                std::copy(begin, begin + (frame_size),_darkest_face.begin());
+                mean = temp;
+            }
+        }
+
+        //faces with y
+        face_index =0;
+        for(size_type y_idx = 0; y_idx < _dims[1]; y_idx+=(_dims[1]-1)) {
+            raw_type temp = 0;
+            for(size_type z_idx = 0; z_idx < _dims[2]; ++z_idx) {
+                for(size_type x_idx = 0; x_idx < _dims[0]; ++x_idx) {
+                    input_index = z_idx*(frame_size)+y_idx*_dims[0]+x_idx;
+                    temp += _input[input_index];
+                }
+            }
+            temp/=_dims[2]*_dims[0];
+            if(temp < mean) {
+                if(_darkest_face.size()<_dims[2]*_dims[0])
+                    _darkest_face.resize(_dims[2]*_dims[0]);
+                for(size_type z_idx = 0; z_idx < _dims[2]; ++z_idx) {
+                    for(size_type x_idx = 0; x_idx < _dims[0]; ++x_idx) {
+                        input_index = z_idx*(frame_size)+y_idx*_dims[0]+x_idx;
+                        _darkest_face[face_index++] = _input[input_index];
+                    }
+                }
+                mean = temp;
+            }
+        }
+
+        //faces with x
+        face_index =0;
+        for(size_type x_idx = 0; x_idx < _dims[0]; x_idx+=(_dims[0]-1)) {
+            raw_type temp = 0;
+            for(size_type z_idx = 0; z_idx < _dims[2]; ++z_idx) {
+                for(size_type y_idx = 0; y_idx < _dims[1]; ++y_idx) {
+                    input_index = z_idx*(frame_size)+y_idx*_dims[0]+x_idx;
+                    temp += _input[input_index];
+                }
+            }
+            temp/=_dims[2]*_dims[1];
+            if(temp < mean) {
+                if(_darkest_face.size()<_dims[2]*_dims[1])
+                    _darkest_face.resize(_dims[2]*_dims[1]);
+                for(size_type z_idx = 0; z_idx < _dims[2]; ++z_idx) {
+                    for(size_type y_idx = 0; y_idx < _dims[0]; ++y_idx) {
+                        input_index = z_idx*(frame_size)+y_idx*_dims[0]+x_idx;
+                        _darkest_face[face_index++] = _input[input_index];
+                    }
+                }
+                mean = temp;
+            }
+        }
+    }
+    
+    template <typename size_type>
+    static const error_code encode(raw_type* _input,
+            raw_type* _output,
+            const std::vector<size_type>& _dims)
+    {
+      
+	
+        std::vector<raw_type> darkest_face;
+        extract_darkest_face((const raw_type*)_input, _dims, darkest_face);
+        histogram<raw_type> h_darkest_facet(darkest_face.begin(), darkest_face.end());
+        const raw_type median_deviation = mpicbg_median_variation(darkest_face.begin(),darkest_face.end());
+        const raw_type median = h_darkest_facet.median();
+        const float alpha = 1.f;
+        size_type input_length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<size_type>());
+
+        if(_output)
+            remove_background<raw_type>::encode_out_of_place(_input, _output, input_length, median+(alpha*median_deviation));
+        else
+            remove_background<raw_type>::encode_inplace(_input, input_length, median+(alpha*median_deviation));
+
+        return SUCCESS;
+    }
+    
+    template <typename size_type>
+    static const error_code decode(const raw_type* _input,
+                                   raw_type* _output,
+                                   const size_type& _length)
+    {
+
+        return NOT_IMPLEMENTED_YET;
+    }
+};
 } //sqeazy
 
 #endif /* _SQEAZY_IMPL_H_ */

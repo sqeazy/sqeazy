@@ -198,7 +198,7 @@ int SQY_RLEDecode_UI8(const char* src, char* dst, long length){return 42;}
 int SQY_RmBackground_AtMode_UI16(char* src, char* dst, long length, unsigned short epsilon){
 
   typedef unsigned short raw_type;
-  return sqeazy::remove_background<raw_type,long>::encode(reinterpret_cast<raw_type*>(src),
+  return sqeazy::remove_background<raw_type>::encode(reinterpret_cast<raw_type*>(src),
 							reinterpret_cast<raw_type*>(dst),
 							length/sizeof(raw_type),
 							epsilon
@@ -212,29 +212,35 @@ int SQY_RmBackground_Estimated_UI16(int width, int height, int depth, char* src,
   dims[0] = width;
   dims[1] = height;
   dims[2] = depth;
-  return sqeazy::remove_background<raw_type,long>::estimated_encode(reinterpret_cast<raw_type*>(src),
-								    reinterpret_cast<raw_type*>(dst),
-								    dims
+    return sqeazy::remove_estimated_background<raw_type>::encode(reinterpret_cast<raw_type*>(src),
+            reinterpret_cast<raw_type*>(dst),
+            dims
 								    );
 }
 
-#include "lz4.h"
+#ifndef LZ4_VERSION_MAJOR
+#include "external_encoders.hpp"
+#endif
 
 int SQY_LZ4Encode(const char* src, long srclength, char* dst, long* dstlength){
 
-  long* first_bytes = reinterpret_cast<long*>(dst);
-  *first_bytes = srclength;
+//   long* first_bytes = reinterpret_cast<long*>(dst);
+//   *first_bytes = srclength;
+//   
+//   int num_written_bytes = LZ4_compress(src,&dst[sizeof(long)],srclength);
+//   
+//   if(num_written_bytes){
+//     *dstlength = num_written_bytes+sizeof(long);
+//     return 0;
+//   }
+//   else{
+//     *dstlength = 0;
+//     return -1;
+//   }
   
-  int num_written_bytes = LZ4_compress(src,&dst[sizeof(long)],srclength);
+  int retvalue = sqeazy::lz4_scheme<char,long>::encode(src,dst,srclength,*dstlength);
   
-  if(num_written_bytes){
-    *dstlength = num_written_bytes+sizeof(long);
-    return 0;
-  }
-  else{
-    *dstlength = 0;
-    return -1;
-  }
+  return retvalue;
 }
 
 
