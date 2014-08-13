@@ -21,7 +21,7 @@ struct add_one {
     return _in + 1;
   }
 
-  static void encode( const T* _in, T* _out, const unsigned long& _size) {
+  static int encode( const T* _in, T* _out, const unsigned long& _size) {
     const T* begin = _in;
     const T* end = begin + _size;
     
@@ -31,6 +31,7 @@ struct add_one {
     add_one<T> adder;
     std::transform(begin, end, _out, adder);
     
+    return 0;
   }
 
   
@@ -49,13 +50,14 @@ struct square {
     return _in * _in;
   }
 
-  static void encode( const T* _in, T* _out, const unsigned long& _size) {
+  static int encode( const T* _in, T* _out, const unsigned long& _size) {
     const T* begin = _in;
     const T* end = begin + _size;
     
     square<T> operation;
     std::transform(begin, end, _out, operation);
     
+    return 0;
   }
 
   

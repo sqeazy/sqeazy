@@ -33,18 +33,18 @@ namespace sqeazy {
     
     
     template <typename S>
-    static void apply(const T* _in, T* _out, S& _size) {
+    static int apply(const T* _in, T* _out, S& _size) {
       
        std::vector<T> temp_(_size);
       std::copy(_in, _in + _size, temp_.begin());
       
       
       typedef typename bmpl::at<TList, bmpl::int_<bmpl::size<TList>::value - i - 1> >::type current_step;
-      current_step::encode(&temp_[0], _out, _size);
+      int retvalue = current_step::encode(&temp_[0], _out, _size);
 //       std::cout << "calling step " << bmpl::size<TList>::value - i - 1 << "/" << bmpl::size<TList>::value << "\t" << current_step::name() << "\n";
       
      std::copy(_out, _out + _size, temp_.begin());
-      return loop_encode<T,TList,i-1>::apply(&temp_[0], _out, _size);
+      return (retvalue*(10*bmpl::size<TList>::value - i - 1)) + loop_encode<T,TList,i-1>::apply(&temp_[0], _out, _size);
       
     }
     
@@ -59,9 +59,9 @@ namespace sqeazy {
   struct loop_encode<T,TList, -1 > {
     
     template <typename S>
-    static void apply(const T* _in, T* _out, S& _size) {
+    static int apply(const T* _in, T* _out, S& _size) {
       
-      return ;
+      return 0;
       
     }
     
@@ -73,7 +73,7 @@ namespace sqeazy {
     
     
     template <typename S>
-    static void apply(const T* _in, T* _out, S& _size) {
+    static int apply(const T* _in, T* _out, S& _size) {
 
         std::vector<T> temp_(_size);
         std::copy(_in, _in + _size, temp_.begin());
@@ -81,12 +81,12 @@ namespace sqeazy {
 
         typedef typename bmpl::at<TList, bmpl::int_<bmpl::size<TList>::value - i - 1> >::type current_step;
 
-        current_step::decode(&temp_[0], _out, _size);
+        int retvalue = current_step::decode(&temp_[0], _out, _size);
 //       std::cout << "calling step " << bmpl::size<TList>::value - i - 1 << "/" << bmpl::size<TList>::value << "\t" << current_step::name() << "\n";
 
 		
         std::copy(_out, _out + _size, temp_.begin());
-        return loop_decode<T,TList,i-1>::apply(&temp_[0], _out, _size);
+        return (retvalue*(10*bmpl::size<TList>::value - i - 1)) + loop_decode<T,TList,i-1>::apply(&temp_[0], _out, _size);
 
     }
     
@@ -96,9 +96,9 @@ namespace sqeazy {
   struct loop_decode<T,TList, -1 > {
     
     template <typename S>
-    static void apply(const T* _in, T* _out, S& _size) {
+    static int apply(const T* _in, T* _out, S& _size) {
       
-      return ;
+      return 0;
       
     }
     
@@ -132,9 +132,9 @@ struct pipeline : public bmpl::front<TypeList>::type,
     
     typedef loop_encode<ValueT, TypeList , size> pipe_loop;
        
-    pipe_loop::apply(_in, _out, _size);
+    int value = pipe_loop::apply(_in, _out, _size);
     
-    return 1;
+    return value;
   }
   
   template <typename SizeType>
@@ -145,9 +145,9 @@ struct pipeline : public bmpl::front<TypeList>::type,
     
     typedef loop_decode<ValueT, TypeList , size> pipe_loop;
        
-    pipe_loop::apply(_in, _out, _size);
+    int value = pipe_loop::apply(_in, _out, _size);
     
-    return 1;
+    return value;
   }
   
 };
