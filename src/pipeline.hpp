@@ -163,8 +163,9 @@ struct pipeline : public bmpl::back<TypeList>::type {
     static const int size = type_list_size - 1 - 1;
     typedef loop_decode<pipe_list , size> pipe_loop;
     
-    unsigned long buffer_size = compressor_type::decoded_size(_in, _size);
-    std::vector<raw_type> temp(buffer_size);
+    unsigned long buffer_size_in_byte = compressor_type::decoded_size(_in, _size);
+    unsigned long temp_size = buffer_size_in_byte/sizeof(raw_type);
+    std::vector<raw_type> temp(temp_size);
     
     int dec_result = compressor_type::decode(_in, &temp[0], _size);
     dec_result *= 10*(type_list_size - 1);
@@ -173,7 +174,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
     if(size<0)
       std::copy(temp.begin(),temp.end(),reinterpret_cast<raw_type*>(_out));
        
-    int value = pipe_loop::apply(&temp[0], _out, buffer_size);
+    int value = pipe_loop::apply(&temp[0], _out, temp_size);
     
     return value+dec_result;
   }
