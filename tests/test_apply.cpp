@@ -128,7 +128,7 @@ BOOST_FIXTURE_TEST_SUITE( pipeline_on_chars, uint8_cube_of_8 )
 
 BOOST_AUTO_TEST_CASE( encode_bitswap1 )
 {
-    typedef sqeazy::bmpl::vector<sqeazy::bitswap_scheme<char,8>, sqeazy::lz4_scheme<char,long> > test_pipe;
+    typedef sqeazy::bmpl::vector<sqeazy::bitswap_scheme<char>, sqeazy::lz4_scheme<char,long> > test_pipe;
     typedef sqeazy::pipeline<test_pipe> current_pipe;
 
     std::string pipe_name = current_pipe::name();
@@ -154,7 +154,7 @@ BOOST_AUTO_TEST_CASE( encode_bitswap1 )
 
 BOOST_AUTO_TEST_CASE( encode_decode_bitswap_chars )
 {
-    typedef sqeazy::bmpl::vector<sqeazy::bitswap_scheme<value_type,8>, sqeazy::lz4_scheme<value_type> > test_pipe;
+    typedef sqeazy::bmpl::vector<sqeazy::bitswap_scheme<value_type>, sqeazy::lz4_scheme<value_type> > test_pipe;
     typedef sqeazy::pipeline<test_pipe> current_pipe;
 
 
@@ -186,7 +186,7 @@ BOOST_FIXTURE_TEST_SUITE( pipeline_on_shorts, uint16_cube_of_8 )
 BOOST_AUTO_TEST_CASE( encode_decode_bitswap_shorts )
 {
 
-    typedef sqeazy::bmpl::vector<sqeazy::bitswap_scheme<value_type,16>, sqeazy::lz4_scheme<value_type> > test_pipe;
+    typedef sqeazy::bmpl::vector<sqeazy::bitswap_scheme<value_type>, sqeazy::lz4_scheme<value_type> > test_pipe;
     typedef sqeazy::pipeline<test_pipe> current_pipe;
 
     char* output = reinterpret_cast<char*>(&to_play_with[0]);
