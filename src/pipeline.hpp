@@ -143,7 +143,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
     
     typedef typename first_step::compressed_type output_type;
     
-    static const unsigned size = type_list_size - 1;
+    static const int size = type_list_size - 1;
     
     typedef loop_encode<TypeList , size> pipe_loop;
        
@@ -160,15 +160,18 @@ struct pipeline : public bmpl::back<TypeList>::type {
   decompress(const compressed_type* _in, raw_type* _out, SizeType& _size){
       
     typedef typename bmpl::reverse<TypeList>::type pipe_list;
-        
+    static const int size = type_list_size - 1 - 1;
+    typedef loop_decode<pipe_list , size> pipe_loop;
+    
     unsigned long buffer_size = compressor_type::decoded_size(_in, _size);
     std::vector<raw_type> temp(buffer_size);
     
     int dec_result = compressor_type::decode(_in, &temp[0], _size);
     dec_result *= 10*(type_list_size - 1);
     
-    static const unsigned size = type_list_size - 1 - 1;
-    typedef loop_decode<pipe_list , size> pipe_loop;
+    
+    if(size<0)
+      std::copy(temp.begin(),temp.end(),reinterpret_cast<raw_type*>(_out));
        
     int value = pipe_loop::apply(&temp[0], _out, buffer_size);
     
@@ -182,7 +185,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
     
         typedef typename bmpl::reverse<TypeList>::type pipe_list;
 
-        static const unsigned size = type_list_size - 1 ;
+        static const int size = type_list_size - 1 ;
         typedef loop_decode<pipe_list , size> pipe_loop;
 
         int value = pipe_loop::apply(_in, _out, _size);

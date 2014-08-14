@@ -75,7 +75,7 @@ typedef add_one<int> add_one_to_ints;
 
 BOOST_AUTO_TEST_SUITE( access_test_suite )
 
-BOOST_AUTO_TEST_CASE( without_applyer )
+BOOST_AUTO_TEST_CASE( without_pipeline )
 {
     std::vector<int> test_in(42,1);
     std::vector<int> test_out(42,0);
@@ -152,6 +152,33 @@ BOOST_AUTO_TEST_CASE( encode_bitswap1 )
 
 }
 
+
+BOOST_AUTO_TEST_CASE( plain_encode_decode_chars )
+{
+    typedef sqeazy::bmpl::vector<sqeazy::lz4_scheme<value_type> > test_pipe;
+    typedef sqeazy::pipeline<test_pipe> current_pipe;
+
+
+    char* output = reinterpret_cast<char*>(&to_play_with[0]);
+
+    const unsigned local_size = size;
+    int enc_ret = current_pipe::compress(&constant_cube[0], output, local_size);
+
+    const unsigned written_bytes = current_pipe::last_num_encoded_bytes;
+    char* temp  = new char[written_bytes];
+    std::copy(output,output + written_bytes, temp);
+
+    int dec_ret = current_pipe::decompress(temp, &to_play_with[0], written_bytes);
+    BOOST_CHECK_EQUAL(enc_ret,0);
+    BOOST_CHECK_EQUAL(dec_ret,0);
+
+    delete [] temp;
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(&constant_cube[0],&constant_cube[0] + size,
+                                  &to_play_with[0], &to_play_with[0] + size
+                                 );
+}
+
 BOOST_AUTO_TEST_CASE( encode_decode_bitswap_chars )
 {
     typedef sqeazy::bmpl::vector<sqeazy::bitswap_scheme<value_type>, sqeazy::lz4_scheme<value_type> > test_pipe;
@@ -163,7 +190,7 @@ BOOST_AUTO_TEST_CASE( encode_decode_bitswap_chars )
     const unsigned local_size = uint8_cube_of_8::size;
     int enc_ret = current_pipe::compress(&constant_cube[0], output, local_size);
 
-    const unsigned written_bytes = sqeazy::lz4_scheme<char,long>::last_num_encoded_bytes;
+    const unsigned written_bytes = current_pipe::last_num_encoded_bytes;
     char* temp  = new char[written_bytes];
     std::copy(output,output + written_bytes, temp);
 
@@ -181,7 +208,30 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_FIXTURE_TEST_SUITE( pipeline_on_shorts, uint16_cube_of_8 )
 
+BOOST_AUTO_TEST_CASE( plain_encode_decode_shorts )
+{
+    typedef sqeazy::bmpl::vector<sqeazy::lz4_scheme<value_type> > test_pipe;
+    typedef sqeazy::pipeline<test_pipe> current_pipe;
 
+
+    char* output = reinterpret_cast<char*>(&to_play_with[0]);
+
+    const unsigned local_size = size;
+    int enc_ret = current_pipe::compress(&constant_cube[0], output, local_size);
+    const unsigned written_bytes = current_pipe::last_num_encoded_bytes;
+    
+    std::vector<char> temp(written_bytes);
+    std::copy(output,output + written_bytes, temp.begin());
+
+    int dec_ret = current_pipe::decompress(&temp[0], &to_play_with[0], written_bytes);
+    BOOST_CHECK_EQUAL(enc_ret,0);
+    BOOST_CHECK_EQUAL(dec_ret,0);
+    
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(&constant_cube[0],&constant_cube[0] + local_size,
+                                  &to_play_with[0], &to_play_with[0] + local_size
+                                 );
+}
 
 BOOST_AUTO_TEST_CASE( encode_decode_bitswap_shorts )
 {
@@ -194,8 +244,9 @@ BOOST_AUTO_TEST_CASE( encode_decode_bitswap_shorts )
     const unsigned local_size = size;
     int enc_ret = current_pipe::compress(&constant_cube[0], output, local_size);
 
-    const unsigned written_bytes = sqeazy::lz4_scheme<value_type>::last_num_encoded_bytes;
-    BOOST_REQUIRE_EQUAL(current_pipe::last_num_encoded_bytes,written_bytes);
+    
+    const unsigned written_bytes = current_pipe::last_num_encoded_bytes;
+    
     char* temp  = new char[written_bytes];
     std::copy(output,output + written_bytes, temp);
 
