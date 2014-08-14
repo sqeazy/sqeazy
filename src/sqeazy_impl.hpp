@@ -122,6 +122,15 @@ struct bitswap_scheme {
       
     }
 
+    template <typename S>
+    static const error_code encode(const raw_type* _input,
+                                   raw_type* _output,
+                                   const std::vector<S>& _length)
+    {
+      typename sqeazy::twice_as_wide<S>::type total_length = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<S>());
+      return encode(_input, _output, total_length);
+    }
+    
     static const error_code encode(const raw_type* _input,
                                    raw_type* _output,
                                    const size_type& _length)
@@ -150,6 +159,15 @@ struct bitswap_scheme {
         return SUCCESS;
     }
 
+    template <typename S>
+    static const error_code decode(const raw_type* _input,
+                                   raw_type* _output,
+                                   const std::vector<S>& _length)
+    {
+      typename sqeazy::twice_as_wide<S> total_length = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<S>());
+      return decode(_input, _output, total_length);
+    }
+    
     static const error_code decode(const raw_type* _input,
                                    raw_type* _output,
                                    const size_type& _length)

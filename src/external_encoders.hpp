@@ -10,47 +10,49 @@
 #include "lz4.h"
 #endif
 namespace sqeazy {
-  
+
 template < typename T , typename S = unsigned>
 struct lz4_scheme {
 
     typedef T raw_type;
     typedef char compressed_type;
     typedef S size_type;
-    
+
     static S last_num_encoded_bytes;
-    
+
     static const bool is_compressor = true;
-    
-    static const std::string name(){
-      
-      return std::string("lz4");
-      
+
+    static const std::string name() {
+
+        return std::string("lz4");
+
     }
-    
-    
+
+
     /**
      * @brief encode input raw_type buffer and write to output (not owned, not allocated)
-     * 
+     *
      * @param _input input raw_type buffer
      * @param _output output char buffer (not owned, not allocated)
      * @param _length mutable std::vector<size_type>, contains the length of _input at [0] and the number of written bytes at [1]
      * @return sqeazy::error_code
      */
+    template <typename SizeType>
     static const error_code encode(const raw_type* _input,
                                    compressed_type* _output,
-                                   std::vector<size_type>& _length
+                                   std::vector<SizeType>& _dims
                                   ) {
 
-
-        return encode(_input, _output, _length.at(0), _length.at(1));
+        typename sqeazy::twice_as_wide<SizeType>::type total_length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<SizeType>());
+	
+        return encode(_input, _output, total_length, last_num_encoded_bytes);
 
     }
-    
-    
+
+
     /**
      * @brief encode _input using the lz4 library, the output contains the number of input elements encoded as 64bit signed integer (long) and the encoded data
-     * 
+     *
      * @param _input array/buffer that contains data of raw_type
      * @param _output the char buffer that contains the compressed data (not truncated, not owned)
      * @param _length size of _input (unmutable)
@@ -62,8 +64,8 @@ struct lz4_scheme {
                                    const size_type& _length,//size of _input
                                    size_type& _bytes_written = last_num_encoded_bytes
                                   ) {
-  
-	const compressed_type* input = reinterpret_cast<const compressed_type*>(_input);
+
+        const compressed_type* input = reinterpret_cast<const compressed_type*>(_input);
         long* first_bytes = reinterpret_cast<long*>(_output);
         *first_bytes = _length*sizeof(raw_type);
 
@@ -71,12 +73,12 @@ struct lz4_scheme {
 
         if(num_written_bytes) {
             _bytes_written = num_written_bytes+sizeof(long);
-	    last_num_encoded_bytes = _bytes_written;
+            last_num_encoded_bytes = _bytes_written;
             return SUCCESS;
         }
         else {
             _bytes_written = 0;
-	    last_num_encoded_bytes = 0;
+            last_num_encoded_bytes = 0;
             return FAILURE;
         }
 
@@ -85,7 +87,7 @@ struct lz4_scheme {
     /**
      * @brief decode the input data stream _input with lz4 (the number of output elements is extracted from the first 64
      * bit of the input stream)
-     * 
+     *
      * @param _input input buffer as char
      * @param _output output buffer (needs to be allocated outside this function)
      * @param _length number of elements in _input
@@ -98,42 +100,42 @@ struct lz4_scheme {
 
         long maxOutputSize = *(reinterpret_cast<const long*>(_input));
 
-	compressed_type* output = reinterpret_cast<compressed_type*>(_output);
+        compressed_type* output = reinterpret_cast<compressed_type*>(_output);
         int num_bytes_decoded = LZ4_decompress_safe(_input + sizeof(long),output,_length - sizeof(long), maxOutputSize);
 
         return num_bytes_decoded == maxOutputSize ? SUCCESS : FAILURE;
 
     }
-    
+
     //////////////////////////////////////////////////////////////////////////
     //TODO: the following functions are actually not very compressor specific
     //      -> refactor to policy!
-    
-    static const unsigned long header_size(){
-      
-      return sizeof(long);
-      
+
+    static const unsigned long header_size() {
+
+        return sizeof(long);
+
     }
-    
+
     template <typename U>
-    static const unsigned long max_encoded_size(U _src_length_in_bytes){
-	
-	long lz4_bound = LZ4_compressBound(_src_length_in_bytes);
-		
-	return lz4_bound + header_size();
-	
+    static const unsigned long max_encoded_size(U _src_length_in_bytes) {
+
+        long lz4_bound = LZ4_compressBound(_src_length_in_bytes);
+
+        return lz4_bound + header_size();
+
     }
-    
+
     template <typename U>
-    static const unsigned long decoded_size(const compressed_type* _buf, const U& _size){
-	
-	if(_size<header_size())
-	  return 0;
-	
-	long value = *(reinterpret_cast<const long*>(_buf));
-	
-	return value;
-	
+    static const unsigned long decoded_size(const compressed_type* _buf, const U& _size) {
+
+        if(_size<header_size())
+            return 0;
+
+        long value = *(reinterpret_cast<const long*>(_buf));
+
+        return value;
+
     }
 
 };
