@@ -102,15 +102,17 @@ struct diff_scheme {
 };
 
 
-template < typename T, const unsigned num_segments = 4  >
+template < typename T, const unsigned raw_type_num_bits_per_segment = 1  >
 struct bitswap_scheme {
 
     typedef T raw_type;
     typedef T compressed_type;
     typedef unsigned size_type;
 
+    
     static const unsigned raw_type_num_bits = sizeof(T)*8;
-    static const unsigned raw_type_num_bits_per_segment = raw_type_num_bits/num_segments;
+    static const unsigned num_segments = raw_type_num_bits/raw_type_num_bits_per_segment;
+//     static const unsigned raw_type_num_bits_per_segment = raw_type_num_bits/num_segments;
     
     static const std::string name(){
       
