@@ -4,12 +4,12 @@
 #include <sstream>
 #include "boost/mpl/vector.hpp"
 #include "boost/mpl/for_each.hpp"
-#include "boost/mpl/front.hpp"
 #include "boost/mpl/back.hpp"
 #include "boost/mpl/size.hpp"
 #include "boost/mpl/at.hpp"
 #include "boost/mpl/reverse.hpp"
-
+#include "boost/utility/enable_if.hpp"
+ 
 namespace sqeazy {
 
   namespace bmpl = boost::mpl;
@@ -104,13 +104,55 @@ namespace sqeazy {
     
   };
   
-  
-  
+
+//   template <typename ValueT, typename TypeList, typename CompressType ,bool is_compressor>
+//   struct defer_compressor{
+//     
+//     template <typename SizeType>
+//     static int decompress(const ValueT* _in, ValueT* _out, SizeType& _size){
+//       
+//       typedef typename bmpl::reverse<TypeList>::type pipe_list;
+//       
+//       static const unsigned size = bmpl::size<pipe_list>::value - 1 ;
+//     typedef loop_decode<ValueT, pipe_list , size> pipe_loop;
+//        
+//     int value = pipe_loop::apply(_in, _out, _size);
+//     
+//     return value;
+//       
+//     }
+//     
+//   };
+//   
+//   template <typename ValueT, typename TypeList, typename CompressType >
+//   struct defer_compressor<ValueT,TypeList,CompressType,true> {
+//     
+//     template <typename SizeType>
+//     static int decompress(const ValueT* _in, ValueT* _out, SizeType& _size){
+//       
+//       typedef typename bmpl::reverse<TypeList>::type pipe_list;
+//     
+//     
+//     unsigned long buffer_size = CompressType::decoded_size(_in, _size);
+//     std::vector<ValueT> temp(buffer_size);
+//     int dec_result = CompressType::decode(_in, &temp[0], _size);
+//     
+//     static const unsigned size = bmpl::size<pipe_list>::value - 1 - 1;
+//     typedef loop_decode<ValueT, pipe_list , size> pipe_loop;
+//        
+//     int value = pipe_loop::apply(&temp[0], _out, buffer_size);
+//     
+//     return value+10+dec_result;
+//     
+//     }
+//     
+//   };
+
+
 template <typename ValueT, typename TypeList>
-struct pipeline : public bmpl::front<TypeList>::type, 
-		 public bmpl::back<TypeList>::type {
+struct pipeline : public bmpl::back<TypeList>::type {
   
-  
+  typedef typename bmpl::back<TypeList>::type compressor_type;
   
   static std::string name() {
     
@@ -125,7 +167,7 @@ struct pipeline : public bmpl::front<TypeList>::type,
   }
   
   template <typename SizeType>
-  static int encode(const ValueT* _in, ValueT* _out, SizeType _size){
+  static int compress(const ValueT* _in, ValueT* _out, SizeType& _size){
     
     
     static const unsigned size = bmpl::size<TypeList>::value - 1;
@@ -137,17 +179,40 @@ struct pipeline : public bmpl::front<TypeList>::type,
     return value;
   }
   
+  
+  
   template <typename SizeType>
-  static int decode(const ValueT* _in, ValueT* _out, SizeType _size){
+  static typename boost::enable_if_c<sizeof(SizeType) && compressor_type::is_compressor,int>::type decompress(const ValueT* _in, ValueT* _out, SizeType& _size){
+         
+      
+    typedef typename bmpl::reverse<TypeList>::type pipe_list;
     
     
-    static const unsigned size = bmpl::size<TypeList>::value - 1;
+    unsigned long buffer_size = compressor_type::decoded_size(_in, _size);
+    std::vector<ValueT> temp(buffer_size);
+    int dec_result = compressor_type::decode(_in, &temp[0], _size);
     
-    typedef loop_decode<ValueT, TypeList , size> pipe_loop;
+    static const unsigned size = bmpl::size<pipe_list>::value - 1 - 1;
+    typedef loop_decode<ValueT, pipe_list , size> pipe_loop;
        
-    int value = pipe_loop::apply(_in, _out, _size);
+    int value = pipe_loop::apply(&temp[0], _out, buffer_size);
     
-    return value;
+    return value+10+dec_result;
+  }
+  
+  template <typename SizeType>
+  static typename boost::enable_if_c<sizeof(SizeType) && compressor_type::is_compressor!=true,int>::type decompress(const ValueT* _in, ValueT* _out, SizeType& _size){
+         
+    
+        typedef typename bmpl::reverse<TypeList>::type pipe_list;
+
+        static const unsigned size = bmpl::size<pipe_list>::value - 1 ;
+        typedef loop_decode<ValueT, pipe_list , size> pipe_loop;
+
+        int value = pipe_loop::apply(_in, _out, _size);
+
+        return value;
+    
   }
   
 };

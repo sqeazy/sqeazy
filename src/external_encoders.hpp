@@ -20,6 +20,8 @@ struct lz4_scheme {
     
     static S last_num_encoded_bytes;
     
+    static const bool is_compressor = true;
+    
     static const std::string name(){
       
       return std::string("lz4");
@@ -63,7 +65,7 @@ struct lz4_scheme {
   
 	const compressed_type* input = reinterpret_cast<const compressed_type*>(_input);
         long* first_bytes = reinterpret_cast<long*>(_output);
-        *first_bytes = _length;
+        *first_bytes = _length*sizeof(raw_type);
 
         size_type num_written_bytes = LZ4_compress(input,&_output[sizeof(long)],_length);
 
@@ -123,7 +125,7 @@ struct lz4_scheme {
     }
     
     template <typename U>
-    static const unsigned long decoded_size(compressed_type* _buf, const U& _size){
+    static const unsigned long decoded_size(const compressed_type* _buf, const U& _size){
 	
 	if(_size<header_size())
 	  return 0;

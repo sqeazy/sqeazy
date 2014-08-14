@@ -9,7 +9,9 @@
 
 template <typename T>
 struct add_one {
-
+  
+  
+  
   static std::string name() {
     
     return std::string("add_one");
@@ -39,7 +41,7 @@ struct add_one {
 
 template <typename T >
 struct square {
-
+static const bool is_compressor = false;
   static std::string name() {
     
     return std::string("square");
@@ -96,7 +98,9 @@ BOOST_AUTO_TEST_CASE (with_pipeline_apply){
   BOOST_CHECK_NE(current_pipe::name().find("square"),std::string::npos);
   
   BOOST_CHECK_NE(current_pipe::name().find("add_one"),std::string::npos);
-  current_pipe::encode(&test_in[0], &test_out[0],test_in.size());
+  
+  unsigned long in_size = test_in.size();
+  current_pipe::compress((const int*)&test_in[0], &test_out[0],in_size);
   
   BOOST_CHECK_EQUAL(test_in[0],1);
   
@@ -114,7 +118,7 @@ BOOST_AUTO_TEST_SUITE_END()
 typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 typedef sqeazy::array_fixture<unsigned char> uint8_cube_of_8;
 
-BOOST_FIXTURE_TEST_SUITE( pipeline_on_chars, uint8_cube_of_8 )
+BOOST_FIXTURE_TEST_SUITE( pipeline_on_chars, uint16_cube_of_8 )
 
 BOOST_AUTO_TEST_CASE( encode_bitswap1 )
 {
@@ -133,7 +137,7 @@ BOOST_AUTO_TEST_CASE( encode_bitswap1 )
   char* output = reinterpret_cast<char*>(&to_play_with[0]);
   
   const unsigned local_size = uint8_cube_of_8::size;
-  int ret = current_pipe::encode(input, output, local_size);
+  int ret = current_pipe::compress(input, output, local_size);
   
   BOOST_CHECK_NE(input[0],output[0]);
   BOOST_CHECK_NE(ret,42);
@@ -144,26 +148,28 @@ BOOST_AUTO_TEST_CASE( encode_bitswap1 )
 
 BOOST_AUTO_TEST_CASE( encode_decode_bitswap1 )
 {
-  typedef sqeazy::bmpl::vector<sqeazy::lz4_scheme<char,long>, sqeazy::bitswap_scheme<char,8> > test_pipe;
+  typedef sqeazy::bmpl::vector<sqeazy::bitswap_scheme<char,8>, sqeazy::lz4_scheme<char,long> > test_pipe;
   typedef sqeazy::pipeline<char, test_pipe> current_pipe;
   
   const char* input = reinterpret_cast<const char*>(&constant_cube[0]);
   char* output = reinterpret_cast<char*>(&to_play_with[0]);
   
   const unsigned local_size = uint8_cube_of_8::size;
-  int enc_ret = current_pipe::encode(input, output, local_size);
+  int enc_ret = current_pipe::compress(input, output, local_size);
   
   const unsigned written_bytes = sqeazy::lz4_scheme<char,long>::last_num_encoded_bytes;
+  
   char* temp  = new char[written_bytes];
   std::copy(output,output + written_bytes, temp);
   
-  int dec_ret = current_pipe::decode(temp, output, written_bytes);
-  BOOST_CHECK_NE(enc_ret,1);
-  BOOST_CHECK_NE(dec_ret,1);
+  int dec_ret = current_pipe::decompress(temp, output, written_bytes);
+  BOOST_CHECK_EQUAL(enc_ret,0);
+  BOOST_CHECK_EQUAL(dec_ret,0);
   
   delete [] temp;
-  BOOST_CHECK_EQUAL_COLLECTIONS(input,input + local_size,
-    output, output + local_size
+  
+  BOOST_CHECK_EQUAL_COLLECTIONS(&constant_cube[0],&constant_cube[0] + size,
+  &to_play_with[0], &to_play_with[0] + size  
   );
 }
 BOOST_AUTO_TEST_SUITE_END()
