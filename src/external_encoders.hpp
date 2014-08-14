@@ -67,7 +67,7 @@ struct lz4_scheme {
         long* first_bytes = reinterpret_cast<long*>(_output);
         *first_bytes = _length*sizeof(raw_type);
 
-        size_type num_written_bytes = LZ4_compress(input,&_output[sizeof(long)],_length);
+        size_type num_written_bytes = LZ4_compress(input,&_output[sizeof(long)],*first_bytes);
 
         if(num_written_bytes) {
             _bytes_written = num_written_bytes+sizeof(long);

@@ -27,39 +27,48 @@ namespace sqeazy {
     
   };
   
+//TODO: fix the abundant use of memory in loop_encode/_decode
+// 	currently every pipeline step allocates a clone of the input data  
+// 	this could be fixed by a static member variable that simply needs to be resized
+//   	template <typename T, typename TList, int i>
+//   	std::vector<T> loop_encode<T,TList,i>::temp_ = std::vector<T>();
   
-  template <typename T, typename TList, int i>
+  template <typename TList, int i>
   struct loop_encode{
     
+    typedef typename bmpl::at<TList, bmpl::int_<bmpl::size<TList>::value - i - 1> >::type current_step;
+    typedef typename current_step::raw_type raw_type;
+    typedef typename current_step::compressed_type compressed_type;
+    typedef typename loop_encode<TList,i-1>::compressed_type next_compressed_type;
     
     template <typename S>
-    static int apply(const T* _in, T* _out, S& _size) {
+    static int apply(const raw_type* _in, compressed_type* _out, S& _size) {
       
-       std::vector<T> temp_(_size);
+       std::vector<raw_type> temp_(_size);
       std::copy(_in, _in + _size, temp_.begin());
-      
-      
-      typedef typename bmpl::at<TList, bmpl::int_<bmpl::size<TList>::value - i - 1> >::type current_step;
+            
       int retvalue = current_step::encode(&temp_[0], _out, _size);
-//       std::cout << "calling step " << bmpl::size<TList>::value - i - 1 << "/" << bmpl::size<TList>::value << "\t" << current_step::name() << "\n";
       
-     std::copy(_out, _out + _size, temp_.begin());
-      return (retvalue*(10*bmpl::size<TList>::value - i - 1)) + loop_encode<T,TList,i-1>::apply(&temp_[0], _out, _size);
+      std::copy(_out, _out + _size, temp_.begin());
+     
+      next_compressed_type* next_output = reinterpret_cast<next_compressed_type*>(_out);
+     
+      return (retvalue*(10*bmpl::size<TList>::value - i - 1)) + loop_encode<TList,i-1>::apply(&temp_[0], next_output, _size);
       
     }
     
   };
 
-//TODO: this is left in, to remind me of fixing the abundant use of memory in loop_encode  
-//   template <typename T, typename TList, int i>
-//   std::vector<T> loop_encode<T,TList,i>::temp_ = std::vector<T>();
     
   
-  template <typename T, typename TList>
-  struct loop_encode<T,TList, -1 > {
+  template <typename TList>
+  struct loop_encode<TList, -1 > {
     
-    template <typename S>
-    static int apply(const T* _in, T* _out, S& _size) {
+    typedef void raw_type;
+    typedef void compressed_type;
+    
+    template <typename T, typename U, typename S>
+    static int apply(const T* _in, U* _out, S& _size) {
       
       return 0;
       
@@ -68,35 +77,37 @@ namespace sqeazy {
   };
   
   
-  template <typename T, typename TList, int i>
+  template <typename TList, int i>
   struct loop_decode{
     
+    typedef typename bmpl::at<TList, bmpl::int_<bmpl::size<TList>::value - i - 1> >::type current_step;
+    typedef typename current_step::raw_type raw_type;
+    typedef typename current_step::compressed_type compressed_type;
+//     typedef typename loop_encode<TList,i-1>::compressed_type next_compressed_type;
     
     template <typename S>
-    static int apply(const T* _in, T* _out, S& _size) {
+    static int apply(const compressed_type* _in, raw_type* _out, S& _size) {
 
-        std::vector<T> temp_(_size);
-        std::copy(_in, _in + _size, temp_.begin());
-
-
-        typedef typename bmpl::at<TList, bmpl::int_<bmpl::size<TList>::value - i - 1> >::type current_step;
+        std::vector<compressed_type> temp_(_size);
+        std::copy(_in, _in + _size, temp_.begin());      
 
         int retvalue = current_step::decode(&temp_[0], _out, _size);
-//       std::cout << "calling step " << bmpl::size<TList>::value - i - 1 << "/" << bmpl::size<TList>::value << "\t" << current_step::name() << "\n";
-
 		
         std::copy(_out, _out + _size, temp_.begin());
-        return (retvalue*(10*bmpl::size<TList>::value - i - 1)) + loop_decode<T,TList,i-1>::apply(&temp_[0], _out, _size);
+        return (retvalue*(10*bmpl::size<TList>::value - i - 1)) + loop_decode<TList,i-1>::apply(&temp_[0], _out, _size);
 
     }
     
   };
   
-  template <typename T, typename TList>
-  struct loop_decode<T,TList, -1 > {
+  template <typename TList>
+  struct loop_decode<TList, -1 > {
     
-    template <typename S>
-    static int apply(const T* _in, T* _out, S& _size) {
+    typedef void raw_type;
+    typedef void compressed_type;
+    
+    template <typename T, typename U, typename S>
+    static int apply(const T* _in, U* _out, S& _size) {
       
       return 0;
       
@@ -105,54 +116,15 @@ namespace sqeazy {
   };
   
 
-//   template <typename ValueT, typename TypeList, typename CompressType ,bool is_compressor>
-//   struct defer_compressor{
-//     
-//     template <typename SizeType>
-//     static int decompress(const ValueT* _in, ValueT* _out, SizeType& _size){
-//       
-//       typedef typename bmpl::reverse<TypeList>::type pipe_list;
-//       
-//       static const unsigned size = bmpl::size<pipe_list>::value - 1 ;
-//     typedef loop_decode<ValueT, pipe_list , size> pipe_loop;
-//        
-//     int value = pipe_loop::apply(_in, _out, _size);
-//     
-//     return value;
-//       
-//     }
-//     
-//   };
-//   
-//   template <typename ValueT, typename TypeList, typename CompressType >
-//   struct defer_compressor<ValueT,TypeList,CompressType,true> {
-//     
-//     template <typename SizeType>
-//     static int decompress(const ValueT* _in, ValueT* _out, SizeType& _size){
-//       
-//       typedef typename bmpl::reverse<TypeList>::type pipe_list;
-//     
-//     
-//     unsigned long buffer_size = CompressType::decoded_size(_in, _size);
-//     std::vector<ValueT> temp(buffer_size);
-//     int dec_result = CompressType::decode(_in, &temp[0], _size);
-//     
-//     static const unsigned size = bmpl::size<pipe_list>::value - 1 - 1;
-//     typedef loop_decode<ValueT, pipe_list , size> pipe_loop;
-//        
-//     int value = pipe_loop::apply(&temp[0], _out, buffer_size);
-//     
-//     return value+10+dec_result;
-//     
-//     }
-//     
-//   };
-
-
-template <typename ValueT, typename TypeList>
+template <typename TypeList>
 struct pipeline : public bmpl::back<TypeList>::type {
   
   typedef typename bmpl::back<TypeList>::type compressor_type;
+  typedef typename compressor_type::raw_type raw_type;
+  typedef typename compressor_type::compressed_type compressed_type;
+  typedef typename bmpl::at<TypeList, bmpl::int_<0> >::type first_step;
+  
+  static const int type_list_size = bmpl::size<TypeList>::value;
   
   static std::string name() {
     
@@ -167,14 +139,16 @@ struct pipeline : public bmpl::back<TypeList>::type {
   }
   
   template <typename SizeType>
-  static int compress(const ValueT* _in, ValueT* _out, SizeType& _size){
+  static int compress(const raw_type* _in, compressed_type* _out, SizeType& _size){
     
+    typedef typename first_step::compressed_type output_type;
     
-    static const unsigned size = bmpl::size<TypeList>::value - 1;
+    static const unsigned size = type_list_size - 1;
     
-    typedef loop_encode<ValueT, TypeList , size> pipe_loop;
+    typedef loop_encode<TypeList , size> pipe_loop;
        
-    int value = pipe_loop::apply(_in, _out, _size);
+    output_type* first_output = reinterpret_cast<output_type*>(_out);
+    int value = pipe_loop::apply(_in, first_output, _size);
     
     return value;
   }
@@ -182,32 +156,34 @@ struct pipeline : public bmpl::back<TypeList>::type {
   
   
   template <typename SizeType>
-  static typename boost::enable_if_c<sizeof(SizeType) && compressor_type::is_compressor,int>::type decompress(const ValueT* _in, ValueT* _out, SizeType& _size){
-         
+  static typename boost::enable_if_c<sizeof(SizeType) && compressor_type::is_compressor,int>::type 
+  decompress(const compressed_type* _in, raw_type* _out, SizeType& _size){
       
     typedef typename bmpl::reverse<TypeList>::type pipe_list;
-    
-    
+        
     unsigned long buffer_size = compressor_type::decoded_size(_in, _size);
-    std::vector<ValueT> temp(buffer_size);
-    int dec_result = compressor_type::decode(_in, &temp[0], _size);
+    std::vector<raw_type> temp(buffer_size);
     
-    static const unsigned size = bmpl::size<pipe_list>::value - 1 - 1;
-    typedef loop_decode<ValueT, pipe_list , size> pipe_loop;
+    int dec_result = compressor_type::decode(_in, &temp[0], _size);
+    dec_result *= 10*(type_list_size - 1);
+    
+    static const unsigned size = type_list_size - 1 - 1;
+    typedef loop_decode<pipe_list , size> pipe_loop;
        
     int value = pipe_loop::apply(&temp[0], _out, buffer_size);
     
-    return value+10+dec_result;
+    return value+dec_result;
   }
   
   template <typename SizeType>
-  static typename boost::enable_if_c<sizeof(SizeType) && compressor_type::is_compressor!=true,int>::type decompress(const ValueT* _in, ValueT* _out, SizeType& _size){
+  static typename boost::enable_if_c<sizeof(SizeType) && compressor_type::is_compressor!=true,int>::type 
+  decompress(const compressed_type* _in, raw_type* _out, SizeType& _size){
          
     
         typedef typename bmpl::reverse<TypeList>::type pipe_list;
 
-        static const unsigned size = bmpl::size<pipe_list>::value - 1 ;
-        typedef loop_decode<ValueT, pipe_list , size> pipe_loop;
+        static const unsigned size = type_list_size - 1 ;
+        typedef loop_decode<pipe_list , size> pipe_loop;
 
         int value = pipe_loop::apply(_in, _out, _size);
 
