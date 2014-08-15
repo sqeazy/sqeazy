@@ -1,6 +1,6 @@
 #ifndef _EXTERNAL_ENCODERS_HPP_
 #define _EXTERNAL_ENCODERS_HPP_
-
+#include <map>
 #include <string>
 #include <typeinfo>
 #include "sqeazy.h"
@@ -31,6 +31,25 @@ void split_string_to_vector(const std::string& _buffer, std::vector<T>& _v) {
         end = _buffer.find(delimiter,begin);
     }
 
+}
+
+static unsigned sizeof_typeinfo(const std::string& _lit) {
+
+    static std::map<std::string,int> type_size_map;
+    type_size_map[typeid(short).name()] = sizeof(short);
+    type_size_map[typeid(unsigned short).name()] = sizeof(unsigned short);
+    type_size_map[typeid(char).name()] = sizeof(char);
+    type_size_map[typeid(unsigned char).name()] = sizeof(unsigned char);
+    type_size_map[typeid(int).name()] = sizeof(int);
+    type_size_map[typeid(unsigned int).name()] = sizeof(unsigned int);
+    type_size_map[typeid(long).name()] = sizeof(long);
+    type_size_map[typeid(unsigned long).name()] = sizeof(unsigned long);
+
+    std::map<std::string,int>::const_iterator found = type_size_map.find(_lit);
+    if(found!=type_size_map.end())
+        return found->second;
+    else
+	return 0;
 }
 
 template <typename T,char major_delim = ',', char minor_delim='x', char header_end_delim = '|'>
@@ -87,7 +106,14 @@ struct image_header {
 
     unsigned long payload_size_byte() const {
 
-        return payload_size()*sizeof(T);
+        unsigned long size_of_type = sizeof(T);
+        if(!header.empty()) {
+	  std::string typeinfo_literal = header.substr(0,header.find(major_delim));
+	  unsigned found_size_byte = sizeof_typeinfo(typeinfo_literal);
+	  if(found_size_byte && found_size_byte!=size_of_type)
+	    size_of_type = found_size_byte;
+        }
+        return payload_size()*size_of_type;
     }
 
     template <typename vtype>
@@ -282,16 +308,25 @@ struct lz4_scheme {
     }
 
     template <typename U>
+    static const unsigned long max_encoded_size(const std::vector<U>& _src_dims) {
+
+        image_header<raw_type> artificial_header(_src_dims);
+        long lz4_bound = LZ4_compressBound(artificial_header.payload_size());
+
+        return lz4_bound + artificial_header.size();
+
+    }
+
+    template <typename U>
     static const unsigned long decoded_size_byte(const compressed_type* _buf, const U& _size) {
 
         size_t delimiter_pos = std::find(_buf, _buf+_size,'|') - _buf;
         if((delimiter_pos) >= _size)
             return 0;
 
-        std::vector<unsigned> dims = image_header<raw_type>::unpack(_buf, delimiter_pos+1);
-        long value = std::accumulate(dims.begin(),dims.end(),1,std::multiplies<unsigned>());
+        image_header<raw_type> found_header(_buf, _buf + delimiter_pos+1);
 
-        return value*sizeof(raw_type);
+        return found_header.payload_size_byte();
 
     }
 

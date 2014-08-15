@@ -246,7 +246,7 @@ int SQY_LZ4Encode(const char* src, long srclength, char* dst, long* dstlength){
 
 int SQY_LZ4_Max_Compressed_Length(long* length){
   
-  long value = LZ4_compressBound(*length)+sizeof(long);//compression size + one long to encode size of
+  long value = sqeazy::lz4_scheme<char>::max_encoded_size(*length);//compression size + one long to encode size of
   *length = value;
   return 0;
 
@@ -254,12 +254,8 @@ int SQY_LZ4_Max_Compressed_Length(long* length){
 
 int SQY_LZ4_Decompressed_Length(const char* data, long *length){
   
-  if(*length<8){
-    *length = 0;
-    return 1;}
-
-  long value = *(reinterpret_cast<const long*>(data));
-  *length = value;
+  
+  *length = sqeazy::lz4_scheme<char>::decoded_size_byte(data,*length);
   return 0;
 
 }
@@ -268,10 +264,10 @@ int SQY_LZ4_Decompressed_Length(const char* data, long *length){
 
 int SQY_LZ4Decode(const char* src, long srclength, char* dst){
 
-  long maxOutputSize = *(reinterpret_cast<const long*>(src));
   
-  int retcode = LZ4_decompress_safe(src + sizeof(long),dst,srclength - sizeof(long), maxOutputSize);
   
-  return retcode == maxOutputSize ? 0 : 1;
+  int retcode = sqeazy::lz4_scheme<char>::decode(src,dst,srclength);
+  
+  return retcode;
 }
 

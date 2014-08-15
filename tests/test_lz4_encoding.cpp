@@ -53,19 +53,26 @@ BOOST_AUTO_TEST_CASE( decode_length )
 {
   
   const char* input = reinterpret_cast<char*>(&constant_cube[0]);
-  long* begin = reinterpret_cast<long*>(&constant_cube[0]);
-  *begin = uint16_cube_of_8::size_in_byte - sizeof(long);
+  
+  
 
-  long output_length = uint16_cube_of_8::size_in_byte - sizeof(long);
-
-  int retcode = SQY_LZ4_Decompressed_Length(input,&output_length);
+  long expected_size = size_in_byte;
+  int retcode = SQY_LZ4_Max_Compressed_Length(&expected_size);
+char* compressed = new char[expected_size];
+  long output_length = size_in_byte;
+  retcode += SQY_LZ4Encode(input,
+			      uint16_cube_of_8::size*sizeof(value_type),
+			      compressed,
+			      &output_length
+			      );
+  
+  retcode = SQY_LZ4_Decompressed_Length(compressed,&output_length);
   BOOST_CHECK_EQUAL(retcode,0);
-  BOOST_CHECK_EQUAL(output_length,uint16_cube_of_8::size_in_byte - sizeof(long));
+  unsigned expected = uint16_cube_of_8::size_in_byte;
+  BOOST_CHECK_EQUAL(output_length,expected);
 
-  output_length = 7;
-  retcode = SQY_LZ4_Decompressed_Length(input,&output_length);
-  BOOST_CHECK_EQUAL(retcode,1);
-  BOOST_CHECK_EQUAL(output_length,0);
+  
+  delete [] compressed;
 }
 
 BOOST_AUTO_TEST_CASE( decode_encoded )
@@ -74,12 +81,12 @@ BOOST_AUTO_TEST_CASE( decode_encoded )
   const char* input = reinterpret_cast<char*>(&constant_cube[0]);
 
   
-  long expected_size = uint16_cube_of_8::size_in_byte;
+  long expected_size = size_in_byte;
   int retcode = SQY_LZ4_Max_Compressed_Length(&expected_size);
   BOOST_CHECK_EQUAL(retcode,0);
 
   char* compressed = new char[expected_size];
-  long output_length = uint16_cube_of_8::size*sizeof(value_type);
+  long output_length = size_in_byte;
   retcode += SQY_LZ4Encode(input,
 			      uint16_cube_of_8::size*sizeof(value_type),
 			      compressed,
