@@ -33,26 +33,61 @@ void split_string_to_vector(const std::string& _buffer, std::vector<T>& _v) {
 
 }
 
-template <typename T,char major_delim = ',', char minor_delim='x'>
+template <typename T,char major_delim = ',', char minor_delim='x', char header_end_delim = '|'>
 struct image_header {
 
-    std::string header_;
-    std::vector<unsigned long> dims;
-    
+    std::string header;
+    std::vector<unsigned> dims;
+
     template <typename S>
     image_header(const std::vector<S>& _dims):
-        header_(pack(_dims)),
-        dims(_dims.begin(), _dims.end()){
+        header(pack(_dims)),
+        dims(_dims.begin(), _dims.end()) {
 
 
     }
 
 
     image_header(const std::string& _str):
-        header_(_str),
-        dims(unpack(_str)){
-  
-    
+        header(),
+        dims() {
+
+        size_t header_end = _str.find(header_end_delim);
+        header = _str.substr(0,header_end+1);
+        dims = unpack(header);
+    }
+
+    image_header(const char* _begin, const char* _end):
+        header(_begin,_end),
+        dims() {
+
+        size_t header_end = header.find(header_end_delim);
+        header = header.substr(0,header_end+1);
+        dims = unpack(header);
+
+
+    }
+
+    unsigned size() const {
+
+        return header.size();
+    }
+
+    std::string str() const {
+
+        return header;
+
+    }
+
+    unsigned long payload_size() const {
+
+        unsigned long value = std::accumulate(dims.begin(), dims.end(), 1, std::multiplies<unsigned>());
+        return value;
+    }
+
+    unsigned long payload_size_byte() const {
+
+        return payload_size()*sizeof(T);
     }
 
     template <typename vtype>
@@ -68,21 +103,22 @@ struct image_header {
                 header << _dims[i];
         }
 
+        header << header_end_delim;
         return header.str();
     }
 
-    static const std::vector<unsigned> unpack(const std::string& _buffer){
-      
-      return unpack(&_buffer[0], _buffer.size());
+    static const std::vector<unsigned> unpack(const std::string& _buffer) {
+
+        return unpack(&_buffer[0], _buffer.size());
     }
-    
+
     static const std::vector<unsigned> unpack(const char* _buffer, const unsigned& _size) {
 
         std::vector<unsigned> value;
 
         std::string in_buffer(_buffer, _buffer+_size);
 
-        size_t header_end = in_buffer.find('|');
+        size_t header_end = in_buffer.find(header_end_delim);
         size_t last_comma = in_buffer.rfind(major_delim,header_end);
         size_t begin = 0;
         if(last_comma!=std::string::npos)
@@ -98,13 +134,13 @@ struct image_header {
 
         std::string in_buffer(_buffer, _buffer+_size);
 
-        size_t dims_begin = in_buffer.find(major_delim);
+        size_t dims_begin = in_buffer.find(major_delim)+1;
         size_t dims_end = in_buffer.find(major_delim,dims_begin+1);
-        
-        std::istringstream conv(in_buffer.substr(dims_begin, dims_end));
-	
+
+        std::istringstream conv(in_buffer.substr(dims_begin, dims_end - dims_begin));
+
         int value = 0;
-	conv >> value;
+        conv >> value;
         return value;
     }
 };
@@ -148,19 +184,17 @@ struct lz4_scheme {
         typedef typename sqeazy::twice_as_wide<SizeType>::type local_size_type;
         local_size_type total_length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<SizeType>());
         local_size_type total_length_in_byte = total_length*sizeof(raw_type);
-	
+
         const compressed_type* input = reinterpret_cast<const compressed_type*>(_input);
 
         std::string header = image_header<raw_type>::pack(_dims);
 
         std::copy(header.begin(),header.end(),_output);
-        _output[header.size()] = '|';
 
-
-        size_type num_written_bytes = LZ4_compress(input,&_output[header.size()+1],total_length_in_byte);
+        size_type num_written_bytes = LZ4_compress(input,&_output[header.size()],total_length_in_byte);
 
         if(num_written_bytes) {
-            _bytes_written = num_written_bytes+header.size()+1;
+            _bytes_written = num_written_bytes+header.size();
             last_num_encoded_bytes = _bytes_written;
             return SUCCESS;
         }
@@ -188,22 +222,10 @@ struct lz4_scheme {
                                    size_type& _bytes_written = last_num_encoded_bytes
                                   ) {
 
-        const compressed_type* input = reinterpret_cast<const compressed_type*>(_input);
-        long* first_bytes = reinterpret_cast<long*>(_output);
-        *first_bytes = _length*sizeof(raw_type);
+        std::vector<size_type> artificial_dims(1);
+        artificial_dims[0] = _length;
 
-        size_type num_written_bytes = LZ4_compress(input,&_output[sizeof(long)],*first_bytes);
-
-        if(num_written_bytes) {
-            _bytes_written = num_written_bytes+sizeof(long);
-            last_num_encoded_bytes = _bytes_written;
-            return SUCCESS;
-        }
-        else {
-            _bytes_written = 0;
-            last_num_encoded_bytes = 0;
-            return FAILURE;
-        }
+        return encode(_input, _output, artificial_dims, _bytes_written);
 
     }
 
@@ -221,10 +243,17 @@ struct lz4_scheme {
                                    const size_type& _length
                                   ) {
 
-        long maxOutputSize = *(reinterpret_cast<const long*>(_input));
+        size_t delimiter_pos = std::find(_input, _input+_length,'|') - _input;
+        if((delimiter_pos) >= _length)
+            return FAILURE;
+
+        image_header<raw_type> found_header(_input, _input + delimiter_pos + 1);
+
+        long maxOutputSize = found_header.payload_size_byte();
 
         compressed_type* output = reinterpret_cast<compressed_type*>(_output);
-        int num_bytes_decoded = LZ4_decompress_safe(_input + sizeof(long),output,_length - sizeof(long), maxOutputSize);
+        const compressed_type* begin_payload = _input + found_header.size();
+        int num_bytes_decoded = LZ4_decompress_safe(begin_payload,output,_length - found_header.size(), maxOutputSize);
 
         return num_bytes_decoded == maxOutputSize ? SUCCESS : FAILURE;
 
@@ -237,8 +266,8 @@ struct lz4_scheme {
     template <typename U>
     static const unsigned long header_size(const std::vector<U>& _in) {
 
-	image_header<raw_type> value(_in);
-        return _in.size()+1;
+        image_header<raw_type> value(_in);
+        return value.header.size();
 
     }
 
@@ -247,7 +276,7 @@ struct lz4_scheme {
 
         long lz4_bound = LZ4_compressBound(_src_length_in_bytes);
 
-	std::vector<unsigned> any(1,_src_length_in_bytes);
+        std::vector<unsigned> any(1,_src_length_in_bytes);
         return lz4_bound + header_size(any);
 
     }
@@ -255,13 +284,13 @@ struct lz4_scheme {
     template <typename U>
     static const unsigned long decoded_size_byte(const compressed_type* _buf, const U& _size) {
 
-	
-        if((std::find(_buf, _buf+_size,'|')-_buf) >= _size)
+        size_t delimiter_pos = std::find(_buf, _buf+_size,'|') - _buf;
+        if((delimiter_pos) >= _size)
             return 0;
 
-	std::vector<unsigned> dims = image_header<raw_type>::unpack(_buf, _size);
+        std::vector<unsigned> dims = image_header<raw_type>::unpack(_buf, delimiter_pos+1);
         long value = std::accumulate(dims.begin(),dims.end(),1,std::multiplies<unsigned>());
-      
+
         return value*sizeof(raw_type);
 
     }
@@ -269,24 +298,26 @@ struct lz4_scheme {
     template <typename U>
     static const std::vector<unsigned> decode_dimensions(const compressed_type* _buf, const U& _size) {
 
-	std::vector<unsigned> dims;
-	
-        if((std::find(_buf, _buf+_size,'|')-_buf) >= _size)
-            return dims;
+        std::vector<unsigned> dims;
 
-	 dims = image_header<raw_type>::unpack(_buf, _size);
-        
+        size_t delimiter_pos = std::find(_buf, _buf+_size,'|') - _buf;
+        if((delimiter_pos) >= _size)
+            return dims;
+        dims = image_header<raw_type>::unpack(_buf, delimiter_pos+1);
+
 
         return dims;
 
     }
-    
+
     template <typename U>
-    static const int decoded_num_dims(const compressed_type* _buf, const U& _size){
-      
-	return image_header<raw_type>::unpack_num_dims(_buf, _size);
-      
-      
+    static const int decoded_num_dims(const compressed_type* _buf, const U& _size) {
+        size_t delimiter_pos = std::find(_buf, _buf+_size,'|') - _buf;
+        if((delimiter_pos) >= _size)
+            return 0;
+        return image_header<raw_type>::unpack_num_dims(_buf, delimiter_pos+1);
+
+
     }
 };
 

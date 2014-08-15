@@ -191,14 +191,12 @@ BOOST_AUTO_TEST_CASE( encode_decode_bitswap_chars )
     int enc_ret = current_pipe::compress(&constant_cube[0], output, local_size);
 
     const unsigned written_bytes = current_pipe::last_num_encoded_bytes;
-    char* temp  = new char[written_bytes];
-    std::copy(output,output + written_bytes, temp);
-
-    int dec_ret = current_pipe::decompress(temp, &to_play_with[0], written_bytes);
-    BOOST_CHECK_EQUAL(enc_ret,0);
-    BOOST_CHECK_EQUAL(dec_ret,0);
-
-    delete [] temp;
+    std::vector<char> temp(output,output + written_bytes);
+    
+    int dec_ret = current_pipe::decompress(&temp[0], &to_play_with[0], written_bytes);
+    BOOST_REQUIRE_EQUAL(enc_ret,0);
+    BOOST_REQUIRE_EQUAL(dec_ret,0);
+   
 
     BOOST_CHECK_EQUAL_COLLECTIONS(&constant_cube[0],&constant_cube[0] + size,
                                   &to_play_with[0], &to_play_with[0] + size
