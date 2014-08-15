@@ -21,7 +21,7 @@ struct diff_scheme {
     typedef typename remove_unsigned<T>::type compressed_type;
     
     typedef typename add_unsigned<typename twice_as_wide<T>::type >::type sum_type;
-    typedef unsigned size_type;
+    
 
     static const std::string name(){
       
@@ -29,6 +29,8 @@ struct diff_scheme {
       return std::string("diff_scheme");
       
     }
+    
+    template <typename size_type>
     static const error_code encode(const raw_type* _input,
                                    compressed_type* _output,
 				   const std::vector<size_type>& _dims
@@ -37,6 +39,7 @@ struct diff_scheme {
 	return encode(_dims.at(0), _dims.at(1), _dims.at(2), _input, _output);
     }
     
+    template <typename size_type>
     static const error_code encode(const size_type& _width,
                                    const size_type& _height,
                                    const size_type& _depth,
@@ -50,7 +53,7 @@ struct diff_scheme {
         std::vector<size_type> offsets;
         sqeazy::halo<Neighborhood, size_type> geometry(_width,_height,_depth);
         geometry.compute_offsets_in_x(offsets);
-        std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
+        typename std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
 
         const size_type end_ = geometry.non_halo_end(0)-1;
         sum_type local_sum = 0;
@@ -67,7 +70,19 @@ struct diff_scheme {
 
         return SUCCESS;
     }
-
+    
+    template <typename size_type>
+    static const error_code decode(const compressed_type* _input,
+                                   raw_type* _output,
+				   std::vector<size_type>& _dims
+				  ){
+				    
+	return decode(_dims.at(0), _dims.at(1), _dims.at(2), _input, _output);
+      
+				  }
+    
+    
+    template <typename size_type>
     static const error_code decode(const size_type& _width,
                                    const size_type& _height,
                                    const size_type& _depth,
@@ -80,7 +95,7 @@ struct diff_scheme {
         std::vector<size_type> offsets;
         sqeazy::halo<Neighborhood, size_type> geometry(_width,_height,_depth);
         geometry.compute_offsets_in_x(offsets);
-        std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
+        typename std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
 
         const size_type end_ = geometry.non_halo_end(0)-1;
         sum_type local_sum = 0;
@@ -164,7 +179,7 @@ struct bitswap_scheme {
                                    raw_type* _output,
                                    const std::vector<S>& _length)
     {
-      typename sqeazy::twice_as_wide<S> total_length = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<S>());
+      typename sqeazy::twice_as_wide<S>::type total_length = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<S>());
       return decode(_input, _output, total_length);
     }
     

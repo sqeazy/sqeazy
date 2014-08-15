@@ -24,6 +24,9 @@ target_link_libraries(test_bitswap_scheme_impl boost_system boost_filesystem boo
 add_executable(test_lz4_encoding test_lz4_encoding.cpp)
 target_link_libraries(test_lz4_encoding ${PROJECT_NAME} boost_system boost_filesystem boost_unit_test_framework)
 
+add_executable(test_lz4_encoding_impl test_lz4_encoding_impl.cpp)
+target_link_libraries(test_lz4_encoding_impl ${PROJECT_NAME} boost_system boost_filesystem boost_unit_test_framework)
+
 add_executable(test_background_schemes test_background_schemes.cpp)
 target_link_libraries(test_background_schemes ${PROJECT_NAME} boost_system boost_filesystem boost_unit_test_framework)
 

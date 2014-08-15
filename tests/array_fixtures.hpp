@@ -19,12 +19,15 @@ struct array_fixture {
     T constant_cube[size];
     T incrementing_cube[size];
     T to_play_with[size];
+    std::vector<unsigned> dims;
+    
     typedef T value_type;
 
     array_fixture():
         constant_cube(),
         incrementing_cube(),
-        to_play_with()
+        to_play_with(),
+        dims(3)
     {
         value_type* begin = &constant_cube[0];
         value_type* end = begin + size;
@@ -40,7 +43,8 @@ struct array_fixture {
         for(; begin!=end; ++begin,++value) {
             *begin = value;
         }
-
+        
+	std::fill(dims.begin(), dims.end(), dim);
     }
 
     ~array_fixture() {

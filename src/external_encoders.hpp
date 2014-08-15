@@ -2,16 +2,114 @@
 #define _EXTERNAL_ENCODERS_HPP_
 
 #include <string>
-
+#include <typeinfo>
 #include "sqeazy.h"
 #include "sqeazy_common.hpp"
+#include "sqeazy_traits.hpp"
 
 #ifndef LZ4_VERSION_MAJOR
 #include "lz4.h"
 #endif
 namespace sqeazy {
 
-template < typename T , typename S = unsigned>
+template <char delimiter, typename T>
+void split_string_to_vector(const std::string& _buffer, std::vector<T>& _v) {
+
+    int num_del = std::count(_buffer.begin(), _buffer.end(), delimiter);
+    if(_v.size() != num_del + 1)
+        _v.resize(num_del+1);
+
+    size_t begin = 0;
+    size_t end = _buffer.find(delimiter);
+
+    std::string token;
+
+    for(int id = 0; id<_v.size(); ++id) {
+        std::istringstream converter(_buffer.substr(begin,end - begin));
+        converter >> _v[id];
+        begin = end +1;
+        end = _buffer.find(delimiter,begin);
+    }
+
+}
+
+template <typename T,char major_delim = ',', char minor_delim='x'>
+struct image_header {
+
+    std::string header_;
+    std::vector<unsigned long> dims;
+    
+    template <typename S>
+    image_header(const std::vector<S>& _dims):
+        header_(pack(_dims)),
+        dims(_dims.begin(), _dims.end()){
+
+
+    }
+
+
+    image_header(const std::string& _str):
+        header_(_str),
+        dims(unpack(_str)){
+  
+    
+    }
+
+    template <typename vtype>
+    static const std::string pack(const std::vector<vtype>& _dims) {
+
+        std::stringstream header("");
+        header << typeid(T).name() << ","
+               << _dims.size() << ",";
+        for(unsigned i = 0; i<_dims.size(); ++i) {
+            if(i!=(_dims.size()-1))
+                header << _dims[i] << "x";
+            else
+                header << _dims[i];
+        }
+
+        return header.str();
+    }
+
+    static const std::vector<unsigned> unpack(const std::string& _buffer){
+      
+      return unpack(&_buffer[0], _buffer.size());
+    }
+    
+    static const std::vector<unsigned> unpack(const char* _buffer, const unsigned& _size) {
+
+        std::vector<unsigned> value;
+
+        std::string in_buffer(_buffer, _buffer+_size);
+
+        size_t header_end = in_buffer.find('|');
+        size_t last_comma = in_buffer.rfind(major_delim,header_end);
+        size_t begin = 0;
+        if(last_comma!=std::string::npos)
+            begin = last_comma+1;
+
+        std::string dim_fields(in_buffer,begin,header_end-begin);
+
+        split_string_to_vector<minor_delim>(dim_fields, value);
+        return value;
+    }
+
+    static const int unpack_num_dims(const char* _buffer, const unsigned& _size) {
+
+        std::string in_buffer(_buffer, _buffer+_size);
+
+        size_t dims_begin = in_buffer.find(major_delim);
+        size_t dims_end = in_buffer.find(major_delim,dims_begin+1);
+        
+        std::istringstream conv(in_buffer.substr(dims_begin, dims_end));
+	
+        int value = 0;
+	conv >> value;
+        return value;
+    }
+};
+
+template < typename T , typename S = unsigned long>
 struct lz4_scheme {
 
     typedef T raw_type;
@@ -29,6 +127,9 @@ struct lz4_scheme {
     }
 
 
+
+
+
     /**
      * @brief encode input raw_type buffer and write to output (not owned, not allocated)
      *
@@ -40,12 +141,34 @@ struct lz4_scheme {
     template <typename SizeType>
     static const error_code encode(const raw_type* _input,
                                    compressed_type* _output,
-                                   std::vector<SizeType>& _dims
+                                   std::vector<SizeType>& _dims,//size of _input
+                                   size_type& _bytes_written = last_num_encoded_bytes
                                   ) {
 
-        typename sqeazy::twice_as_wide<SizeType>::type total_length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<SizeType>());
+        typedef typename sqeazy::twice_as_wide<SizeType>::type local_size_type;
+        local_size_type total_length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<SizeType>());
+        local_size_type total_length_in_byte = total_length*sizeof(raw_type);
 	
-        return encode(_input, _output, total_length, last_num_encoded_bytes);
+        const compressed_type* input = reinterpret_cast<const compressed_type*>(_input);
+
+        std::string header = image_header<raw_type>::pack(_dims);
+
+        std::copy(header.begin(),header.end(),_output);
+        _output[header.size()] = '|';
+
+
+        size_type num_written_bytes = LZ4_compress(input,&_output[header.size()+1],total_length_in_byte);
+
+        if(num_written_bytes) {
+            _bytes_written = num_written_bytes+header.size()+1;
+            last_num_encoded_bytes = _bytes_written;
+            return SUCCESS;
+        }
+        else {
+            _bytes_written = 0;
+            last_num_encoded_bytes = 0;
+            return FAILURE;
+        }
 
     }
 
@@ -111,9 +234,11 @@ struct lz4_scheme {
     //TODO: the following functions are actually not very compressor specific
     //      -> refactor to policy!
 
-    static const unsigned long header_size() {
+    template <typename U>
+    static const unsigned long header_size(const std::vector<U>& _in) {
 
-        return sizeof(long);
+	image_header<raw_type> value(_in);
+        return _in.size()+1;
 
     }
 
@@ -122,22 +247,47 @@ struct lz4_scheme {
 
         long lz4_bound = LZ4_compressBound(_src_length_in_bytes);
 
-        return lz4_bound + header_size();
+	std::vector<unsigned> any(1,_src_length_in_bytes);
+        return lz4_bound + header_size(any);
 
     }
 
     template <typename U>
-    static const unsigned long decoded_size(const compressed_type* _buf, const U& _size) {
+    static const unsigned long decoded_size_byte(const compressed_type* _buf, const U& _size) {
 
-        if(_size<header_size())
+	
+        if((std::find(_buf, _buf+_size,'|')-_buf) >= _size)
             return 0;
 
-        long value = *(reinterpret_cast<const long*>(_buf));
-
-        return value;
+	std::vector<unsigned> dims = image_header<raw_type>::unpack(_buf, _size);
+        long value = std::accumulate(dims.begin(),dims.end(),1,std::multiplies<unsigned>());
+      
+        return value*sizeof(raw_type);
 
     }
 
+    template <typename U>
+    static const std::vector<unsigned> decode_dimensions(const compressed_type* _buf, const U& _size) {
+
+	std::vector<unsigned> dims;
+	
+        if((std::find(_buf, _buf+_size,'|')-_buf) >= _size)
+            return dims;
+
+	 dims = image_header<raw_type>::unpack(_buf, _size);
+        
+
+        return dims;
+
+    }
+    
+    template <typename U>
+    static const int decoded_num_dims(const compressed_type* _buf, const U& _size){
+      
+	return image_header<raw_type>::unpack_num_dims(_buf, _size);
+      
+      
+    }
 };
 
 template < typename T , typename S>
