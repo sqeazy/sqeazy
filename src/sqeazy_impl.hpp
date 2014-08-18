@@ -19,26 +19,18 @@ struct diff_scheme {
 
     typedef T raw_type;
     typedef typename remove_unsigned<T>::type compressed_type;
-    
-    typedef typename add_unsigned<typename twice_as_wide<T>::type >::type sum_type;
-    
 
-    static const std::string name(){
-      
-      //TODO: add name of Neighborhood
-      return std::string("diff_scheme");
-      
+    typedef typename add_unsigned<typename twice_as_wide<T>::type >::type sum_type;
+    static const bool is_compressor = false;
+
+    static const std::string name() {
+
+        //TODO: add name of Neighborhood
+        return std::string("diff_scheme");
+
     }
-    
-    template <typename size_type>
-    static const error_code encode(const raw_type* _input,
-                                   compressed_type* _output,
-				   const std::vector<size_type>& _dims
-				  )
-    {
-	return encode(_dims.at(0), _dims.at(1), _dims.at(2), _input, _output);
-    }
-    
+
+
     template <typename size_type>
     static const error_code encode(const size_type& _width,
                                    const size_type& _height,
@@ -70,18 +62,27 @@ struct diff_scheme {
 
         return SUCCESS;
     }
-    
+
+
     template <typename size_type>
-    static const error_code decode(const compressed_type* _input,
-                                   raw_type* _output,
-				   std::vector<size_type>& _dims
-				  ){
-				    
-	return decode(_dims.at(0), _dims.at(1), _dims.at(2), _input, _output);
-      
-				  }
-    
-    
+    static const error_code encode(const raw_type* _input,
+                                   compressed_type* _output,
+                                   size_type& _dim
+                                  )
+    {
+
+        return encode(_dim, 1, 1, _input, _output);
+    }
+
+    template <typename size_type>
+    static const error_code encode(const raw_type* _input,
+                                   compressed_type* _output,
+                                   std::vector<size_type>& _dims
+                                  )
+    {
+        return encode(_dims.at(0), _dims.at(1), _dims.at(2), _input, _output);
+    }
+
     template <typename size_type>
     static const error_code decode(const size_type& _width,
                                    const size_type& _height,
@@ -114,6 +115,27 @@ struct diff_scheme {
     }
 
 
+    template <typename size_type>
+    static const error_code decode(const compressed_type* _input,
+                                   raw_type* _output,
+                                   std::vector<size_type>& _dims
+                                  ) {
+
+        return decode(_dims.at(0), _dims.at(1), _dims.at(2), _input, _output);
+
+    }
+
+    template <typename size_type>
+    static const error_code decode(const compressed_type* _input,
+                                   raw_type* _output,
+                                   size_type& _dim
+                                  ) {
+      
+        const size_type one = 1;
+        return decode(_dim, one, one, _input, _output);
+
+    }
+
 };
 
 
@@ -123,18 +145,18 @@ struct bitswap_scheme {
     typedef T raw_type;
     typedef T compressed_type;
     typedef unsigned size_type;
+    static const bool is_compressor = false;
 
-    
     static const unsigned raw_type_num_bits = sizeof(T)*8;
     static const unsigned num_segments = raw_type_num_bits/raw_type_num_bits_per_segment;
 //     static const unsigned raw_type_num_bits_per_segment = raw_type_num_bits/num_segments;
-    
-    static const std::string name(){
-      
-      std::ostringstream val("");
-      val << "bitswap" << raw_type_num_bits_per_segment;
-      return val.str();
-      
+
+    static const std::string name() {
+
+        std::ostringstream val("");
+        val << "bitswap" << raw_type_num_bits_per_segment;
+        return val.str();
+
     }
 
     template <typename S>
@@ -142,10 +164,10 @@ struct bitswap_scheme {
                                    raw_type* _output,
                                    const std::vector<S>& _length)
     {
-      typename sqeazy::twice_as_wide<S>::type total_length = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<S>());
-      return encode(_input, _output, total_length);
+        typename sqeazy::twice_as_wide<S>::type total_length = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<S>());
+        return encode(_input, _output, total_length);
     }
-    
+
     static const error_code encode(const raw_type* _input,
                                    raw_type* _output,
                                    const size_type& _length)
@@ -179,10 +201,10 @@ struct bitswap_scheme {
                                    raw_type* _output,
                                    const std::vector<S>& _length)
     {
-      typename sqeazy::twice_as_wide<S>::type total_length = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<S>());
-      return decode(_input, _output, total_length);
+        typename sqeazy::twice_as_wide<S>::type total_length = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<S>());
+        return decode(_input, _output, total_length);
     }
-    
+
     static const error_code decode(const raw_type* _input,
                                    raw_type* _output,
                                    const size_type& _length)
@@ -225,28 +247,29 @@ struct remove_background {
     typedef T raw_type;
     typedef T compressed_type;
     typedef S size_type;
-    
-    static const std::string name(){
-      
-      
-      return std::string("rmbkrd");
-      
+    static const bool is_compressor = false;
+
+    static const std::string name() {
+
+
+        return std::string("rmbkrd");
+
     }
 
-    
+
 
     static const error_code encode(raw_type* _input,
                                    raw_type* _output,
                                    const std::vector<size_type>& _data)
     {
-      
-      if(_data.size() == 2)
-	return encode(_input, _output, _data.at(0), _data.at(1));
-      else
-	return FAILURE;
-      
+
+        if(_data.size() == 2)
+            return encode(_input, _output, _data.at(0), _data.at(1));
+        else
+            return FAILURE;
+
     }
-    
+
     static const error_code encode(raw_type* _input,
                                    raw_type* _output,
                                    const size_type& _length,
@@ -277,7 +300,7 @@ struct remove_background {
         return SUCCESS;
     }
 
-    
+
 
     static const error_code encode_inplace(raw_type* _input,
                                            const size_type& _length,
@@ -309,22 +332,22 @@ struct remove_estimated_background {
 
     typedef T raw_type;
     typedef T compressed_type;
-    
-    
-    static const std::string name(){
-      
-      
-      return std::string("rmestbkrd");
-      
+    static const bool is_compressor = false;
+
+    static const std::string name() {
+
+
+        return std::string("rmestbkrd");
+
     }
-    
+
     template <typename size_type>
     static const void extract_darkest_face(const raw_type* _input,
                                            const std::vector<size_type>& _dims,
                                            std::vector<raw_type>& _darkest_face) {
 
-      typedef typename add_unsigned<typename twice_as_wide<size_type>::type >::type index_type;
-      
+        typedef typename add_unsigned<typename twice_as_wide<size_type>::type >::type index_type;
+
         raw_type mean = std::numeric_limits<raw_type>::max();
         index_type input_index =0;
         const index_type frame_size = _dims[1]*_dims[0];
@@ -392,14 +415,14 @@ struct remove_estimated_background {
             }
         }
     }
-    
+
     template <typename size_type>
     static const error_code encode(raw_type* _input,
-            raw_type* _output,
-            const std::vector<size_type>& _dims)
+                                   raw_type* _output,
+                                   const std::vector<size_type>& _dims)
     {
-      
-	
+
+
         std::vector<raw_type> darkest_face;
         extract_darkest_face((const raw_type*)_input, _dims, darkest_face);
         histogram<raw_type> h_darkest_facet(darkest_face.begin(), darkest_face.end());
@@ -415,7 +438,7 @@ struct remove_estimated_background {
 
         return SUCCESS;
     }
-    
+
     template <typename size_type>
     static const error_code decode(const raw_type* _input,
                                    raw_type* _output,
