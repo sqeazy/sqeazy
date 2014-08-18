@@ -30,37 +30,69 @@ int help_string(){
 }
 
 
+
+template <typename T, typename PipeType>
+void fill_suite(const std::vector<std::string>& _args, sqeazy_bench::bsuite<T>& _suite) {
+
+    typedef T value_type;
+    typedef PipeType current_pipe;
+    
+    int ret_code = 0;
+    unsigned num_files = _args.size();
+    
+    if(_suite.size() != num_files)
+      _suite.cases.resize(num_files);
+       
+    
+    for(unsigned i = 0;i < num_files;++i) {
+
+        tiff_fixture<value_type> reference(_args[i]);
+
+        if(reference.empty())
+            continue;
+
+	sqeazy_bench::bcase<value_type> temp_case(fname, reference.data(), reference.axis_lengths);
+	
+        temp_case.return_code = current_pipe::encode(reference.data(),
+						     reference.output_as<char>(),
+						     reference.axis_lengths);
+	temp_case.stop(current_pipe::last_num_encoded_bytes);
+	
+	suite[i] = temp_case;
+	
+    }
+    
+    return ret_code;
+
+}
+
+
 int bswap1_lz4_compress(const std::vector<std::string>& _args) {
 
     typedef sqeazy::bmpl::vector<sqeazy::bitswap_scheme<unsigned short>, sqeazy::lz4_scheme<unsigned short> > test_pipe;
     typedef sqeazy::pipeline<test_pipe> current_pipe;
+    
     int ret_code = 0;
-    unsigned num_files = _args.size() - 1;
-    std::vector<char> output;
+    unsigned num_files = _args.size();
+    
+    sqeazy_bench::bsuite<unsigned short> suite(num_files);
+    
+    for(const std::string& fname : _args) {
 
-    for(unsigned i = 0; i<num_files; ++i) {
-
-        tiff_fixture<unsigned short> reference(_args[i]);
+        tiff_fixture<unsigned short> reference(fname);
 
         if(reference.empty())
-            return 1;
+            continue;
 
-        sqeazy::histogram<unsigned short> ref_hist(&reference.tiff_data[0],reference.tiff_data.size());
-
-        ret_code += current_pipe::encode(&reference.tiff_data[0],&output[0],reference.axis_lengths);
-
-        unsigned long _output_size = current_pipe::last_num_encoded_bytes;
-
-        std::cout << "bswap1_lz4\t"
-                  << _args[i] << "\t"
-                  << reference.data_in_byte() << "\t"
-                  << reference.axis_length(0)<< "x" << reference.axis_length(1)<< "x" << reference.axis_length(2) << "\t"
-                  << ref_hist.smallest_populated_bin() << "\t"
-                  << ref_hist.largest_populated_bin() << "\t"
-                  << ref_hist.mode() << "\t"
-                  << ref_hist.mean() << "\t"
-                  << double(_output_size)/double(reference.data_in_byte())
-                  << "\n";
+	sqeazy_bench::bcase<unsigned short> temp_case(fname, reference.data(), reference.axis_lengths);
+	
+        temp_case.return_code = current_pipe::encode(reference.data(),
+						     reference.output_as<char>(),
+						     reference.axis_lengths);
+	temp_case.stop(current_pipe::last_num_encoded_bytes);
+	
+	suite.push_back(temp_case);
+	
     }
     
     return ret_code;

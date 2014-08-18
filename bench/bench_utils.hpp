@@ -51,6 +51,8 @@ struct bcase {
     decltype(std::chrono::high_resolution_clock::now()) start_time;
     double time_us = 0.;
 
+    int return_code = 0;
+
     template <typename T = int>
     bcase(const std::string& _filename = "",
           const value_type* _data = 0,
@@ -60,7 +62,7 @@ struct bcase {
         raw_size_in_byte(std::accumulate(_extents.begin(), _extents.end(),1,std::multiplies<unsigned long>())*sizeof(value_type)),
         start_time(std::chrono::high_resolution_clock::now())
     {
-	histogram = sqeazy::histogram<value_type>(_data, _data + (raw_size_in_byte/sizeof(value_type)));
+        histogram = sqeazy::histogram<value_type>(_data, _data + (raw_size_in_byte/sizeof(value_type)));
     }
 
     bool has_run() const {
@@ -69,17 +71,18 @@ struct bcase {
 
     }
 
-    void stop() {
+    void stop(const unsigned long& _compr_size) {
 
         auto end_time = std::chrono::high_resolution_clock::now();
         time_us = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
+	compressed_size_in_byte = _compr_size;
 
     }
 
     double time_in_microseconds() {
 
         if(!time_us) {
-            stop();
+            stop(0);
         }
 
         return time_us;
@@ -108,8 +111,9 @@ struct bcase {
 
     friend std::ostream& operator<<(std::ostream& _cout, const bcase& _in) {
 
-        _cout << _in.filename << "\t"
+        _cout << _in.filename << " ["<< _in.return_code <<"]\t"
               << _in.raw_size_in_byte << "\t";
+
         for( const int& n : _in.dims ) {
             if(n != _in.dims.last())
                 _cout << n << "x";

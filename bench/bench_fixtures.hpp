@@ -99,6 +99,37 @@ struct tiff_fixture{
     return axis_lengths.at(_axis_ref);
   }
 
+  T* data(){
+    
+    return &tiff_data[0];
+    
+  }
+  
+  
+  T const * data() const {
+    
+    return &tiff_data[0];
+    
+  }
+  
+  T* output() {
+    
+    return &output_data[0];
+  }
+  
+  template <typename OutT>
+  OutT* output_as() {
+    
+    return reinterpret_cast<OutT*>(&output_data[0]);
+  }
+  
+  
+  unsigned long size() const {
+    
+    return tiff_data.size();
+    
+  }
+  
   void fill_from(const std::string& _path){
     if(!file_exists(_path) || _path.empty()){
       std::stringstream msg("");
