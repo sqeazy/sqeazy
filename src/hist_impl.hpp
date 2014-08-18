@@ -97,8 +97,8 @@ struct histogram {
         small_pop_bin_value(0),
         large_pop_bin_value(std::numeric_limits<T>::max())
     {
-
-        fill_from_image(_begin, _end);
+	if(num_entries)
+	  fill_from_image(_begin, _end);
 
     }
 
@@ -110,6 +110,9 @@ struct histogram {
     void fill_from_image(ItrT _image_begin, ItrT _image_end) {
         num_entries = _image_end - _image_begin;
 
+	if(!num_entries)
+	  return;
+	
         for(; _image_begin!=_image_end; ++_image_begin) {
             bins[*_image_begin]++;
         }

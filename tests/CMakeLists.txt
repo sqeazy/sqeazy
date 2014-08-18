@@ -37,6 +37,10 @@ target_link_libraries(test_background_scheme_impl ${PROJECT_NAME} boost_system b
 add_executable(test_hist_impl test_hist_impl.cpp)
 target_link_libraries(test_hist_impl boost_system boost_filesystem boost_unit_test_framework)
 
+add_executable(test_bench_utils_impl test_bench_utils_impl.cpp)
+target_link_libraries(test_bench_utils_impl boost_system boost_filesystem boost_unit_test_framework tiff)
+set_target_properties(test_bench_utils_impl PROPERTIES COMPILE_FLAGS "--std=c++11 -I${PROJECT_SOURCE_DIR}/src")
+
 # FIND_PACKAGE(TIFF REQUIRED)
 # IF(TIFF_FOUND)
 # add_executable(test_view_from_disk_fixture test_view_from_disk_fixture.cpp)

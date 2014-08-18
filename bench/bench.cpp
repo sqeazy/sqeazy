@@ -19,17 +19,52 @@ int help_string(){
   std::cout << "usage: " << me << " <target>\n"
 	    << "availble targets:\n"
 	    << "\t help\n"
-	    << "\t diff_encode <num_iterations|optional>\n"
-	    << "\t diff_decode <num_iterations|optional>\n"
-    // << "\t ref_encode  <num_iterations|optional>\n"
-    	    << "\t diff_bswap4_lz4_compress <file_to_encode>\n"
-    	    << "\t bswap4_lz4_compress      <file_to_encode>\n"
-    	    << "\t diff_bswap1_lz4_compress <file_to_encode>\n"
-    	    << "\t bswap1_lz4_compress      <file_to_encode>\n"
-	    << "\t diff_lz4_compress        <file_to_encode>\n"
+	    << "\t diff_bswap4_lz4_compress <files_to_encode>\n"
+    	    << "\t bswap4_lz4_compress      <files_to_encode>\n"
+    	    << "\t diff_bswap1_lz4_compress <files_to_encode>\n"
+    	    << "\t bswap1_lz4_compress      <files_to_encode>\n"
+	    << "\t diff_lz4_compress        <files_to_encode>\n"
 	    << "\n";
 
   return 1;
+}
+
+
+int bswap1_lz4_compress(const std::vector<std::string>& _args) {
+
+    typedef sqeazy::bmpl::vector<sqeazy::bitswap_scheme<unsigned short>, sqeazy::lz4_scheme<unsigned short> > test_pipe;
+    typedef sqeazy::pipeline<test_pipe> current_pipe;
+    int ret_code = 0;
+    unsigned num_files = _args.size() - 1;
+    std::vector<char> output;
+
+    for(unsigned i = 0; i<num_files; ++i) {
+
+        tiff_fixture<unsigned short> reference(_args[i]);
+
+        if(reference.empty())
+            return 1;
+
+        sqeazy::histogram<unsigned short> ref_hist(&reference.tiff_data[0],reference.tiff_data.size());
+
+        ret_code += current_pipe::encode(&reference.tiff_data[0],&output[0],reference.axis_lengths);
+
+        unsigned long _output_size = current_pipe::last_num_encoded_bytes;
+
+        std::cout << "bswap1_lz4\t"
+                  << _args[i] << "\t"
+                  << reference.data_in_byte() << "\t"
+                  << reference.axis_length(0)<< "x" << reference.axis_length(1)<< "x" << reference.axis_length(2) << "\t"
+                  << ref_hist.smallest_populated_bin() << "\t"
+                  << ref_hist.largest_populated_bin() << "\t"
+                  << ref_hist.mode() << "\t"
+                  << ref_hist.mean() << "\t"
+                  << double(_output_size)/double(reference.data_in_byte())
+                  << "\n";
+    }
+    
+    return ret_code;
+
 }
 
 int help(const std::vector<std::string>& _args){
@@ -42,24 +77,6 @@ int help(const std::vector<std::string>& _args){
   std::cerr << "\n\n";
 
   return help_string();
-}
-
-int diff_encode(const std::vector<std::string>& _args){
-
-  synthetic_fixture<> reference;
-  std::cout << "SQY_RasterDiffEncode_3D_UI16 of "
-  	    << reference << "\n";
-  perform(std::function<int(int,int,int,const char*,char*)>(SQY_RasterDiffEncode_3D_UI16),reference);
-  return 0;
-}
-
-int diff_decode(const std::vector<std::string>& _args){
-
-  synthetic_fixture<> reference;
-  std::cout << "SQY_RasterDiffDecode_3D_UI16 of "
-  	    << reference << "\n";
-  perform(std::function<int(int,int,int,const char*,char*)>(SQY_RasterDiffDecode_3D_UI16),reference);
-  return 0;
 }
 
 int diff_bswap4_lz4_compress(const std::vector<std::string>& _args){
@@ -256,41 +273,6 @@ int rmbkg_diff_bswap4_lz4_compress(const std::vector<std::string>& _args){
 }
 
 
-int bswap1_lz4_compress(const std::vector<std::string>& _args) {
-
-    typedef sqeazy::bmpl::vector<sqeazy::bitswap_scheme<unsigned short>, sqeazy::lz4_scheme<unsigned short> > test_pipe;
-    typedef sqeazy::pipeline<test_pipe> current_pipe;
-    int ret_code = 0;
-    unsigned num_files = _args.size() - 1;
-    std::vector<char> output;
-
-    for(unsigned i = 0; i<num_files; ++i) {
-
-        tiff_fixture<unsigned short> reference(_args[i]);
-
-        if(reference.empty())
-            return 1;
-
-        sqeazy::histogram<unsigned short> ref_hist(&reference.tiff_data[0],reference.tiff_data.size());
-
-        ret_code += current_pipe::encode(&reference.tiff_data[0],&output[0],reference.axis_lengths);
-
-        unsigned long _output_size = current_pipe::last_num_encoded_bytes;
-
-        std::cout << "bswap1_lz4\t"
-                  << _args[i] << "\t"
-                  << reference.data_in_byte() << "\t"
-                  << reference.axis_length(0)<< "x" << reference.axis_length(1)<< "x" << reference.axis_length(2) << "\t"
-                  << ref_hist.smallest_populated_bin() << "\t"
-                  << ref_hist.largest_populated_bin() << "\t"
-                  << ref_hist.mode() << "\t"
-                  << ref_hist.mean() << "\t"
-                  << double(_output_size)/double(reference.data_in_byte())
-                  << "\n";
-    }
-    return ret_code;
-
-}
 
 int diff_lz4_compress(const std::vector<std::string>& _args){
 
@@ -346,10 +328,6 @@ int main(int argc, char *argv[])
   std::unordered_map<std::string, func_t> prog_flow;
   prog_flow["help"] = func_t(help);
   prog_flow["-h"] = func_t(help);
-
-  //speed benches
-  prog_flow["diff_encode"] = func_t(diff_encode);
-  prog_flow["diff_decode"] = func_t(diff_decode);
 
   //compression benches
   prog_flow["rmbkg_diff_bswap4_lz4_compress"] = func_t(rmbkg_diff_bswap4_lz4_compress);
