@@ -12,7 +12,7 @@
 #include "TH1F.h"
 #include "TCanvas.h"
 
-int help_string(){
+int print_help(){
   
   std::string me = "histo";
   std::cout << "usage: " << me << " <target>\n"
@@ -32,7 +32,7 @@ int help(const std::vector<std::string>& _args){
       std::cerr << el << " ";
   std::cerr << "\n\n";
 
-  return help_string();
+  return print_help();
 }
 
 

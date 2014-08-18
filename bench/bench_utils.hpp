@@ -20,6 +20,17 @@ extern "C" {
 
 namespace sqeazy_bench {
 
+  template <typename T>
+  bool contains_and_pop(std::vector<T>& _data, const T& _pred){
+    
+    auto found = std::find(_data.begin(), _data.end(), _pred);
+    if(found!=_data.end()){
+      _data.erase(found);
+      return true;} 
+    else	
+      return false;
+  }
+  
 template <typename It, typename V>
 V sample_variance(const It& _begin,
                   const It& _end,
@@ -59,10 +70,10 @@ struct bcase {
           const std::vector<T>& _extents = {0,0,0}):
         filename(_filename),
         dims(_extents.begin(), _extents.end()),
-        raw_size_in_byte(std::accumulate(_extents.begin(), _extents.end(),1,std::multiplies<unsigned long>())*sizeof(value_type)),
-        start_time(std::chrono::high_resolution_clock::now())
-    {
+        raw_size_in_byte(std::accumulate(_extents.begin(), _extents.end(),1,std::multiplies<unsigned long>())*sizeof(value_type))
+  {
         histogram = sqeazy::histogram<value_type>(_data, _data + (raw_size_in_byte/sizeof(value_type)));
+	start_time = std::chrono::high_resolution_clock::now();
     }
 
     bool has_run() const {
@@ -79,11 +90,7 @@ struct bcase {
 
     }
 
-    double time_in_microseconds() {
-
-        if(!time_us) {
-            stop(0);
-        }
+    double time_in_microseconds() const {
 
         return time_us;
 
@@ -99,7 +106,7 @@ struct bcase {
 
     double compress_speed_mb_per_sec()  {
 
-        double time_sec = time_in_microseconds()/double(1e-6);
+        double time_sec = time_in_microseconds()/double(1e6);
         double value_mb = raw_size_in_byte/double(1 << 20);
 
         if(time_sec)
@@ -115,7 +122,7 @@ struct bcase {
               << _in.raw_size_in_byte << "\t";
 
         for( const int& n : _in.dims ) {
-            if(n != _in.dims.last())
+            if(n != _in.dims.back())
                 _cout << n << "x";
             else
                 _cout << n;
@@ -147,6 +154,14 @@ struct bsuite {
 
     }
 
+    void at(const unsigned int& _index, bcase<value_type>& _new){
+      
+      cases.at(_index) = (_new);
+      compression_accumulator(_new.compress_ratio());
+      speed_accumulator(_new.compress_speed_mb_per_sec());
+	
+    }
+    
     void push_back(bcase<value_type>& _new) {
 
         cases.push_back(_new);
@@ -175,6 +190,16 @@ struct bsuite {
 
     }
 
+    void print_cases() const {
+      
+      for(const bcase<value_type>& c : cases){
+	
+	std::cout << c<< "\n";
+	
+      }
+      
+    }
+    
     unsigned size() const {
         return cases.size() ;
     }

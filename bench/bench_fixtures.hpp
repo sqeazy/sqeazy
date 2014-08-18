@@ -118,9 +118,9 @@ struct tiff_fixture{
   }
   
   template <typename OutT>
-  OutT* output_as() {
+  OutT output_as() {
     
-    return reinterpret_cast<OutT*>(&output_data[0]);
+    return reinterpret_cast<OutT>(&output_data[0]);
   }
   
   
@@ -142,6 +142,7 @@ struct tiff_fixture{
     sqeazy::get_tiff_dirs(stack_tiff,   stack_tdirs  );
 
     axis_lengths = sqeazy::extract_tiff_to_vector(stack_tiff,   stack_tdirs  , tiff_data     );
+    output_data.resize(tiff_data.size());
     TIFFClose(stack_tiff);
       
     if(tiff_data.size()>0){
