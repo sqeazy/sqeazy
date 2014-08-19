@@ -19,6 +19,11 @@ typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned short
         sqeazy::lz4_scheme<unsigned short> > rmbkg_diff_bswap1_lz4;
 typedef sqeazy::pipeline<rmbkg_diff_bswap1_lz4> rmbkg_diff_bswap1_lz4_pipe;
 
+typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned short>,
+        sqeazy::bitswap_scheme<unsigned short>,
+        sqeazy::lz4_scheme<unsigned short> > rmbkg_bswap1_lz4;
+typedef sqeazy::pipeline<rmbkg_bswap1_lz4> rmbkg_bswap1_lz4_pipe;
+
 typedef sqeazy::bmpl::vector< sqeazy::diff_scheme<unsigned short>,
         sqeazy::bitswap_scheme<unsigned short>,
         sqeazy::lz4_scheme<unsigned short> > diff_bswap1_lz4;
@@ -104,12 +109,14 @@ int main(int argc, char *argv[])
     std::unordered_map<std::string, func_t> prog_flow;
 
     prog_flow["rmbkg_diff_bswap1_lz4_compress"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
+    prog_flow["rmbkg_bswap1_lz4_compress"] = func_t(fill_suite<unsigned short, rmbkg_bswap1_lz4_pipe>);
     prog_flow["diff_bswap1_lz4_compress"] = func_t(fill_suite<unsigned short, diff_bswap1_lz4_pipe>);
     prog_flow["bswap1_lz4_compress"] = func_t(fill_suite<unsigned short, bswap1_lz4_pipe>);
     prog_flow["diff_lz4_compress"] = func_t(fill_suite<unsigned short, diff_lz4_pipe>);
     prog_flow["lz4_compress"] = func_t(fill_suite<unsigned short, lz4_pipe>);
 
     prog_flow["rmbkg_diff_bswap1_lz4_speed"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
+    prog_flow["rmbkg_bswap1_lz4_speed"] = func_t(fill_suite<unsigned short, rmbkg_bswap1_lz4_pipe>);
     prog_flow["diff_bswap1_lz4_speed"] = func_t(fill_suite<unsigned short, diff_bswap1_lz4_pipe>);
     prog_flow["bswap1_lz4_speed"] = func_t(fill_suite<unsigned short, bswap1_lz4_pipe>);
     prog_flow["diff_lz4_speed"] = func_t(fill_suite<unsigned short, diff_lz4_pipe>);
