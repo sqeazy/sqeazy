@@ -118,16 +118,16 @@ struct bcase {
 
     friend std::ostream& operator<<(std::ostream& _cout, const bcase& _in) {
 
-        _cout << _in.filename << " ["<< _in.return_code <<"]\t"
+        _cout << _in.filename << "\t"
               << _in.raw_size_in_byte << "\t";
 
         for( const int& n : _in.dims ) {
             if(n != _in.dims.back())
                 _cout << n << "x";
             else
-                _cout << n;
+                _cout << n << "\t";
         }
-
+  
         _cout << _in.histogram.smallest_populated_bin() << "\t"
               << _in.histogram.largest_populated_bin() << "\t"
               << _in.histogram.mode() << "\t"
@@ -192,6 +192,8 @@ struct bsuite {
 
     void print_cases() const {
       
+      std::cout << "filename\traw_size/Byte\textents\tsmallest-pop-bin\tlargest-pop-bin\tmode\tmean\t"
+           << "time-to-compress/us\tcompress-ratio\n";
       for(const bcase<value_type>& c : cases){
 	
 	std::cout << c<< "\n";
