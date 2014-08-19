@@ -87,7 +87,7 @@ bool file_exists(const std::string& _path){
 
 #include "tiff_utils.h"
 
-template <typename T = unsigned short>
+template <typename T = unsigned short, bool verbose = true>
 struct tiff_fixture{
 
   std::string file_loc;
@@ -145,7 +145,8 @@ struct tiff_fixture{
     output_data.resize(tiff_data.size());
     TIFFClose(stack_tiff);
       
-    if(tiff_data.size()>0){
+    if(tiff_data.size()>0 && verbose){
+      
       std::cout << *this << "successfully loaded \n";
     }
 

@@ -76,14 +76,14 @@ void fill_suite(const std::vector<std::string>& _args, sqeazy_bench::bsuite<T>& 
 
     for(unsigned i = 0; i < num_files; ++i) {
 
-        tiff_fixture<value_type> reference(_args[i]);
+        tiff_fixture<value_type, false> reference(_args[i]);
 
         if(reference.empty())
             continue;
 
         sqeazy_bench::bcase<value_type> temp_case(_args[i], reference.data(), reference.axis_lengths);
 
-        temp_case.return_code = current_pipe::encode(reference.data(),
+        temp_case.return_code = current_pipe::compress(reference.data(),
                                 reinterpret_cast<char*>(reference.output()),
                                 reference.axis_lengths);
 
@@ -156,15 +156,12 @@ int main(int argc, char *argv[])
             std::cout.precision(prec);
         } else {
 
-            std::cerr << "unable to detect target in\n";
+            std::cerr << "unable to detect known target! \nreceived:\tbench ";
             for( const std::string& word : args ) {
                 std::cerr << word << "\n";
             }
-            std::cerr << "\navailable are\n";
-	    for( auto& pair : prog_flow ) {
-                std::cerr << pair.first << "\n";
-            }
-
+            std::cerr << "\n";
+            print_help(prog_flow);
         }
     }
     else {
