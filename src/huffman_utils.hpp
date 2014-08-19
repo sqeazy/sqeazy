@@ -7,6 +7,7 @@
 #include <climits> // for CHAR_BIT
 #include <iterator>
 #include <algorithm>
+#include "sqeazy_common.hpp"
 
 namespace sqeazy { 
 /* the below is adapted from http://rosettacode.org/wiki/Huffman_codes */
@@ -21,7 +22,9 @@ struct huffman_scheme {
   //  typedef std::vector<bool> HuffCode;
   typedef std::bitset<UniqueSymbols> HuffCode;
   typedef std::map<char, HuffCode> HuffCodeMap;
- 
+
+  static HuffCodeMap global_map;
+
   class INode
   {
   public:
@@ -105,6 +108,26 @@ struct huffman_scheme {
       }
   }
 
+  template <typename SizeType>
+  static error_code encode(const raw_type* _in, compressed_type* _output, 
+			   SizeType& _size,
+			   HuffCodeMap& _out_map = global_map){
+
+    int frequencies[UniqueSymbols] = {0};
+    const char* ptr = _in;
+    while (*ptr != '\0')
+      ++frequencies[*ptr++];
+ 
+    INode* root = BuildTree(frequencies);
+ 
+    HuffCodeMap codes;
+    GenerateCodes(root, HuffCode(), codes);
+    delete root;
+
+    return SUCCESS;
+
+
+  }
 }; 
 
 };
