@@ -7,64 +7,72 @@
 #include <climits> // for CHAR_BIT
 #include <iterator>
 #include <algorithm>
- 
+
+namespace sqeazy { 
 /* the below is adapted from http://rosettacode.org/wiki/Huffman_codes */
 
-const int UniqueSymbols = 1 << CHAR_BIT;
-const char* SampleString = "this is an example for huffman encoding";
+template <typename T>
+struct huffman_scheme {
+
+  typedef T raw_type;
+  typedef T compressed_type;
+
+  static const int UniqueSymbols = 1 << CHAR_BIT; 
+  //  typedef std::vector<bool> HuffCode;
+  typedef std::bitset<UniqueSymbols> HuffCode;
+  typedef std::map<char, HuffCode> HuffCodeMap;
  
-typedef std::vector<bool> HuffCode;
-typedef std::map<char, HuffCode> HuffCodeMap;
- 
-class INode
-{
-public:
+  class INode
+  {
+  public:
     const int f;
  
     virtual ~INode() {}
  
-protected:
+  protected:
     INode(int f) : f(f) {}
-};
+  };
  
-class InternalNode : public INode
-{
-public:
+  class InternalNode : public INode
+  {
+  public:
     INode *const left;
     INode *const right;
  
     InternalNode(INode* c0, INode* c1) : INode(c0->f + c1->f), left(c0), right(c1) {}
+
     ~InternalNode()
     {
-        delete left;
-        delete right;
+      delete left;
+      delete right;
     }
-};
+  };
  
-class LeafNode : public INode
-{
-public:
-    const char c;
+  class LeafNode : public INode
+  {
+  public:
+    const raw_type c;
  
-    LeafNode(int f, char c) : INode(f), c(c) {}
-};
+    LeafNode(int f, raw_type c) : INode(f), c(c) {}
+  };
  
-struct NodeCmp
-{
+  struct NodeCmp
+  {
     bool operator()(const INode* lhs, const INode* rhs) const { return lhs->f > rhs->f; }
-};
- 
-INode* BuildTree(const int (&frequencies)[UniqueSymbols])
-{
+  };
+  
+  //  static INode* BuildTree(const int (&frequencies)[UniqueSymbols])
+  static INode* BuildTree(const int* frequencies)
+  {
     std::priority_queue<INode*, std::vector<INode*>, NodeCmp> trees;
  
     for (int i = 0; i < UniqueSymbols; ++i)
-    {
+      {
         if(frequencies[i] != 0)
-            trees.push(new LeafNode(frequencies[i], (char)i));
-    }
+	  trees.push(new LeafNode(frequencies[i], (char)i));
+      }
     while (trees.size() > 1)
-    {
+      {
         INode* childR = trees.top();
         trees.pop();
  
@@ -73,28 +81,33 @@ INode* BuildTree(const int (&frequencies)[UniqueSymbols])
  
         INode* parent = new InternalNode(childR, childL);
         trees.push(parent);
-    }
+      }
     return trees.top();
-}
+  }
  
-void GenerateCodes(const INode* node, const HuffCode& prefix, HuffCodeMap& outCodes)
-{
+  static void GenerateCodes(const INode* node, const HuffCode& prefix, HuffCodeMap& outCodes)
+  {
     if (const LeafNode* lf = dynamic_cast<const LeafNode*>(node))
-    {
+      {
         outCodes[lf->c] = prefix;
-    }
+      }
     else if (const InternalNode* in = dynamic_cast<const InternalNode*>(node))
-    {
+      {
         HuffCode leftPrefix = prefix;
-        leftPrefix.push_back(false);
+	//leftPrefix.push_back(false);
+	leftPrefix << 1;leftPrefix.set(0,false);
         GenerateCodes(in->left, leftPrefix, outCodes);
  
         HuffCode rightPrefix = prefix;
-        rightPrefix.push_back(true);
+	rightPrefix << 1;rightPrefix.set(0,true);
+        // rightPrefix.push_back(true);
         GenerateCodes(in->right, rightPrefix, outCodes);
-    }
-}
- 
+      }
+  }
+
+}; 
+
+};
 // int main()
 // {
 //     // Build frequency table

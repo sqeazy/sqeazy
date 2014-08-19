@@ -41,6 +41,8 @@ add_executable(test_bench_utils_impl test_bench_utils_impl.cpp)
 target_link_libraries(test_bench_utils_impl boost_system boost_filesystem boost_unit_test_framework tiff)
 set_target_properties(test_bench_utils_impl PROPERTIES COMPILE_FLAGS "--std=c++11 -I${PROJECT_SOURCE_DIR}/src")
 
+add_executable(test_huffman_utils_impl test_huffman_utils_impl.cpp)
+target_link_libraries(test_huffman_utils_impl boost_system boost_filesystem boost_unit_test_framework tiff)
 # FIND_PACKAGE(TIFF REQUIRED)
 # IF(TIFF_FOUND)
 # add_executable(test_view_from_disk_fixture test_view_from_disk_fixture.cpp)
