@@ -77,18 +77,20 @@ namespace sqeazy {
     std::vector<unsigned> extents = extract_max_extents<unsigned>(_tiff_handle, _tiff_dirs );
 
     unsigned w,h;
-    unsigned frame_offset = extents[0]*extents[1];
-    unsigned total = frame_offset*extents[2];
+    unsigned long frame_offset = extents[0]*extents[1];
+    unsigned long total = frame_offset*extents[2];
     _container.clear();
     _container.resize(total);
+    unsigned long index = 0;
 
-    for(int frame = 0;frame<extents[2];++frame)
+    for(unsigned long frame = 0;frame<extents[2];++frame)
       {
 	TIFFSetDirectory(_tiff_handle,_tiff_dirs[frame]);
 	TIFFGetField(_tiff_handle, TIFFTAG_IMAGEWIDTH, &w);
 	TIFFGetField(_tiff_handle, TIFFTAG_IMAGELENGTH, &h);
-	for (unsigned y=0;y<h;++y) {
-	  TIFFReadScanline(_tiff_handle,&_container[frame*frame_offset+y*w], y);
+	for (unsigned long y=0;y<h;++y) {
+	  index = frame*frame_offset+y*w;
+	  TIFFReadScanline(_tiff_handle,&_container[index], y);
 	}
       }
 
