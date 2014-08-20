@@ -118,8 +118,7 @@ struct bcase {
 
     friend std::ostream& operator<<(std::ostream& _cout, const bcase& _in) {
 
-        _cout << _in.filename << "\t"
-              << _in.raw_size_in_byte << "\t";
+        _cout << _in.raw_size_in_byte << "\t";
 
         for( const int& n : _in.dims ) {
             if(n != _in.dims.back())
@@ -133,7 +132,8 @@ struct bcase {
               << _in.histogram.mode() << "\t"
               << _in.histogram.mean() << "\t"
               << _in.time_us << "\t"
-              << _in.compress_ratio()
+              << _in.compress_ratio()<< "\t"
+	      << _in.filename               
               << "\n";
         return _cout;
     }
@@ -176,7 +176,7 @@ struct bsuite {
         std::cout << boost::accumulators::min( compression_accumulator ) << "\t"
                   << boost::accumulators::mean( compression_accumulator ) << "\t"
                   << boost::accumulators::max( compression_accumulator ) << "\t"
-                  << boost::accumulators::median( compression_accumulator ) << "\n";
+                  << boost::accumulators::median( compression_accumulator ) << "\t";
 
     }
 
@@ -186,14 +186,14 @@ struct bsuite {
         std::cout << boost::accumulators::min( speed_accumulator ) << "\t"
                   << boost::accumulators::mean( speed_accumulator ) << "\t"
                   << boost::accumulators::max( speed_accumulator ) << "\t"
-                  << boost::accumulators::median( speed_accumulator ) << "\n";
+                  << boost::accumulators::median( speed_accumulator )  << "\t" ;
 
     }
 
     void print_cases() const {
       
-      std::cout << "filename\traw_size/Byte\textents\tsmallest-pop-bin\tlargest-pop-bin\tmode\tmean\t"
-           << "time-to-compress/us\tcompress-ratio\n";
+      std::cout << "raw_size/Byte\textents\tsmallest-pop-bin\tlargest-pop-bin\tmode\tmean\t"
+           << "time-to-compress/us\tcompress-ratio\tfilename\n";
       for(const bcase<value_type>& c : cases){
 	
 	std::cout << c<< "\n";

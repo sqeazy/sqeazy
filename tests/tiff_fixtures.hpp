@@ -13,17 +13,6 @@
 #include "image_stack_utils.h"
 #include "tiff_utils.h"
 
-////////////////////////////////////////////////////////////////////////////
-// Explanation of the test images
-// input :
-// image_view_i.tif	.. the input frame stack from view i
-// kernel1_view_i.tif	.. integrating PSF for view i
-// kernel2_view_i.tif	.. conditional pdf of all views for view i
-// weights_view_i.tif	.. the weights from view i
-// results:
-// psi_i.tif		.. the results after the i-th iteration
-// psi_0		.. first guess (all pixels have the same intensity)
-
 namespace multiviewnative {
 
   static const std::string path_to_test_images = "/dev/shm/libmultiview_data/";

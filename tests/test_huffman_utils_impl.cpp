@@ -105,10 +105,10 @@ BOOST_AUTO_TEST_CASE( reduces_entropy )
 {
     sqeazy::histogram<char> sample_hist(sample.begin(), sample.end());
 
-    map_type codes;
+    
     std::string encoded = sample;
     unsigned size = sample.size();
-    sqeazy::huffman_scheme<value_type>::encode(sample.c_str(),&encoded[0],size, codes);
+    sqeazy::huffman_scheme<value_type>::encode(sample.c_str(),&encoded[0],size);
 
     sqeazy::histogram<char> encoded_hist(encoded.begin(), encoded.end());
     

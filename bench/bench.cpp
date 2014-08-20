@@ -5,12 +5,15 @@
 #include <iomanip>
 #include <numeric>
 #include <vector>
+#include <map>
+#include <set>
+
 #include <unordered_map>
 #include "bench_fixtures.hpp"
 #include "bench_utils.hpp"
 #include "hist_impl.hpp"
-#include "pipeline.hpp"
 #include "sqeazy_impl.hpp"
+#include "pipeline.hpp"
 #include "external_encoders.hpp"
 
 typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned short>,
@@ -18,6 +21,13 @@ typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned short
         sqeazy::bitswap_scheme<unsigned short>,
         sqeazy::lz4_scheme<unsigned short> > rmbkg_diff_bswap1_lz4;
 typedef sqeazy::pipeline<rmbkg_diff_bswap1_lz4> rmbkg_diff_bswap1_lz4_pipe;
+
+typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned short>,
+        sqeazy::huffman_scheme<unsigned short>,
+        sqeazy::bitswap_scheme<unsigned short>,
+        sqeazy::lz4_scheme<unsigned short> > rmbkg_huff_bswap1_lz4;
+typedef sqeazy::pipeline<rmbkg_huff_bswap1_lz4> rmbkg_huff_bswap1_lz4_pipe;
+
 
 typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned short>,
         sqeazy::bitswap_scheme<unsigned short>,
@@ -28,6 +38,12 @@ typedef sqeazy::bmpl::vector< sqeazy::diff_scheme<unsigned short>,
         sqeazy::bitswap_scheme<unsigned short>,
         sqeazy::lz4_scheme<unsigned short> > diff_bswap1_lz4;
 typedef sqeazy::pipeline<diff_bswap1_lz4> diff_bswap1_lz4_pipe;
+
+typedef sqeazy::bmpl::vector< sqeazy::huffman_scheme<unsigned short>,
+        sqeazy::bitswap_scheme<unsigned short>,
+        sqeazy::lz4_scheme<unsigned short> > huff_bswap1_lz4;
+typedef sqeazy::pipeline<huff_bswap1_lz4> huff_bswap1_lz4_pipe;
+
 
 typedef sqeazy::bmpl::vector< sqeazy::diff_scheme<unsigned short>,
         sqeazy::lz4_scheme<unsigned short> > diff_lz4;
@@ -40,23 +56,37 @@ typedef sqeazy::pipeline<bswap1_lz4> bswap1_lz4_pipe;
 typedef sqeazy::bmpl::vector< sqeazy::lz4_scheme<unsigned short> > lz4_;
 typedef sqeazy::pipeline<lz4_> lz4_pipe;
 
+typedef sqeazy::bmpl::vector< sqeazy::huffman_scheme<unsigned short>, sqeazy::lz4_scheme<unsigned short> > huffman_lz4;
+typedef sqeazy::pipeline<huffman_lz4> huff_lz4_pipe;
 
 template <typename MapT>
 int print_help(const MapT& _av_targets) {
 
+    auto mbegin = _av_targets.cbegin();
+    auto mend = _av_targets.cend();
+    auto max_el_itr = std::max_element(mbegin,mend,
+                                       [&](const typename MapT::value_type& a,
+    const typename MapT::value_type& b) {
+        return a.first.size() < b.first.size();
 
+    }
+                                      );
+    const unsigned field_width = max_el_itr->first.size()+1;
 
     std::string me = "bench";
     std::cout << "usage: " << me << " <flags> <target>\n"
               << "flags:\n\t -v \t\t print benchmark stats for every file\n"
+              << "\n"
               << "availble targets:\n"
-              << "\t help\n";
+              << std::setw(field_width) << "help" << "\n";
 
-    auto mbegin = _av_targets.cbegin();
-    auto mend = _av_targets.cend();
 
-    for(; mbegin!=mend; ++mbegin) {
-        std::cout << "\t "<< mbegin->first <<" <files_to_encode>\n";
+    std::set<std::string> target_names;
+    for( auto it : _av_targets )
+        target_names.insert(it.first);
+
+    for(const std::string& target : target_names ) {
+        std::cout << std::setw(field_width) << target <<"\t<files_to_encode>\n";
     }
 
     std::cout << "\n";
@@ -67,12 +97,14 @@ int print_help(const MapT& _av_targets) {
 
 
 template <typename T, typename PipeType>
-void fill_suite(const std::vector<std::string>& _args, sqeazy_bench::bsuite<T>& _suite) {
+void fill_suite(const std::vector<std::string>& _args, sqeazy_bench::bsuite<T>& _suite, bool verbose = false) {
 
     typedef T value_type;
     typedef PipeType current_pipe;
 
-    std::cout << "fill_suite :: " << PipeType::name() << "\n";
+    if(verbose)
+        std::cerr << "fill_suite :: " << PipeType::name() << "\n";
+    
     unsigned num_files = _args.size();
 
     if(_suite.size() != num_files)
@@ -88,8 +120,19 @@ void fill_suite(const std::vector<std::string>& _args, sqeazy_bench::bsuite<T>& 
 
         sqeazy_bench::bcase<value_type> temp_case(_args[i], reference.data(), reference.axis_lengths);
 
+        unsigned long expected_size = current_pipe::max_encoded_size(reference.data_in_byte());
+        if(expected_size>reference.data_in_byte()) {
+            if(verbose)
+                std::cerr << "default output buffer too small! exp: " << expected_size
+                          << " vs default: " << reference.data_in_byte() << "\tResizing it!\n";
+            reference.output_data.resize(expected_size/sizeof(value_type));
+
+        }
+
+        char* dest = reinterpret_cast<char*>(reference.output());
         temp_case.return_code = current_pipe::compress(reference.data(),
-                                reinterpret_cast<char*>(reference.output()),
+                                dest,/*
+                                reinterpret_cast<char*>(reference.output()),*/
                                 reference.axis_lengths);
 
         temp_case.stop(current_pipe::last_num_encoded_bytes);
@@ -105,21 +148,27 @@ void fill_suite(const std::vector<std::string>& _args, sqeazy_bench::bsuite<T>& 
 int main(int argc, char *argv[])
 {
 
-    typedef std::function<void(const std::vector<std::string>&, sqeazy_bench::bsuite<unsigned short>&) > func_t;
+    typedef std::function<void(const std::vector<std::string>&, sqeazy_bench::bsuite<unsigned short>&, bool) > func_t;
     std::unordered_map<std::string, func_t> prog_flow;
 
     prog_flow["rmbkg_diff_bswap1_lz4_compress"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
+    prog_flow["rmbkg_huff_bswap1_lz4_compress"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
     prog_flow["rmbkg_bswap1_lz4_compress"] = func_t(fill_suite<unsigned short, rmbkg_bswap1_lz4_pipe>);
     prog_flow["diff_bswap1_lz4_compress"] = func_t(fill_suite<unsigned short, diff_bswap1_lz4_pipe>);
+    prog_flow["huff_bswap1_lz4_compress"] = func_t(fill_suite<unsigned short, huff_bswap1_lz4_pipe>);
     prog_flow["bswap1_lz4_compress"] = func_t(fill_suite<unsigned short, bswap1_lz4_pipe>);
     prog_flow["diff_lz4_compress"] = func_t(fill_suite<unsigned short, diff_lz4_pipe>);
+    prog_flow["huff_lz4_compress"] = func_t(fill_suite<unsigned short, huff_lz4_pipe>);
     prog_flow["lz4_compress"] = func_t(fill_suite<unsigned short, lz4_pipe>);
 
     prog_flow["rmbkg_diff_bswap1_lz4_speed"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
+    prog_flow["rmbkg_huff_bswap1_lz4_speed"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
     prog_flow["rmbkg_bswap1_lz4_speed"] = func_t(fill_suite<unsigned short, rmbkg_bswap1_lz4_pipe>);
     prog_flow["diff_bswap1_lz4_speed"] = func_t(fill_suite<unsigned short, diff_bswap1_lz4_pipe>);
+    prog_flow["huff_bswap1_lz4_speed"] = func_t(fill_suite<unsigned short, huff_bswap1_lz4_pipe>);
     prog_flow["bswap1_lz4_speed"] = func_t(fill_suite<unsigned short, bswap1_lz4_pipe>);
     prog_flow["diff_lz4_speed"] = func_t(fill_suite<unsigned short, diff_lz4_pipe>);
+    prog_flow["huff_lz4_speed"] = func_t(fill_suite<unsigned short, huff_lz4_pipe>);
     prog_flow["lz4_speed"] = func_t(fill_suite<unsigned short, lz4_pipe>);
 
     int retcode = 0;
@@ -137,30 +186,37 @@ int main(int argc, char *argv[])
         }
 
         std::vector<std::string> filenames(args.begin()+1, args.end());
+        std::cout << "number_of_files\tmin\tmean\tmax\tmedian\tobservable\ttarget name\n";
+
         sqeazy_bench::bsuite<unsigned short> suite(filenames.size());
         if(f_func!=prog_flow.end()) {
-            (f_func->second)(filenames, suite);
+            (f_func->second)(filenames, suite,verbose);
             int prec = std::cout.precision();
 
 
-            if(verbose)
-                suite.print_cases();
 
-            std::cout << f_func->first << "\t" << filenames.size() << " files ";
+
+            std::cout << filenames.size() << "\t";
 
             if(f_func->first.find("compress")!=std::string::npos) {
-                std::cout << std::setw(12) << "ratio (out/in)\t";
+
                 std::cout.precision(5);
                 suite.compression_summary();
-
+                std::cout << std::setw(12) << "ratio (out/in)\t";
             } else {
-                std::cout << std::setw(12) << "speed (MB/s)\t";
+
                 std::cout.precision(5);
                 suite.speed_summary();
-
+                std::cout << std::setw(12) << "speed (MB/s) \t";
             }
 
+            std::cout << "\t" << f_func->first << "\n";
             std::cout.precision(prec);
+	    
+	    
+            if(verbose)
+                suite.print_cases();
+	    
         } else {
 
             std::cerr << "unable to detect known target! \nreceived:\tbench ";

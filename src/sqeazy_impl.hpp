@@ -9,6 +9,7 @@
 #include "diff_scheme_utils.hpp"
 #include "bitswap_scheme_utils.hpp"
 #include "hist_impl.hpp"
+#include "huffman_utils.hpp"
 
 namespace sqeazy {
 
