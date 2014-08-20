@@ -7,6 +7,7 @@
 #include <vector>
 #include <map>
 #include <set>
+#include <cmath>
 
 #include <unordered_map>
 #include "bench_fixtures.hpp"
@@ -110,7 +111,8 @@ void fill_suite(const std::vector<std::string>& _args, sqeazy_bench::bsuite<T>& 
     if(_suite.size() != num_files)
         _suite.cases.resize(num_files);
 
-
+    std::vector<value_type> output_data;
+    
     for(unsigned i = 0; i < num_files; ++i) {
 
         tiff_fixture<value_type, false> reference(_args[i]);
@@ -120,16 +122,12 @@ void fill_suite(const std::vector<std::string>& _args, sqeazy_bench::bsuite<T>& 
 
         sqeazy_bench::bcase<value_type> temp_case(_args[i], reference.data(), reference.axis_lengths);
 
-        unsigned long expected_size = current_pipe::max_encoded_size(reference.data_in_byte());
-        if(expected_size>reference.data_in_byte()) {
-            if(verbose)
-                std::cerr << "default output buffer too small! exp: " << expected_size
-                          << " vs default: " << reference.data_in_byte() << "\tResizing it!\n";
-            reference.output_data.resize(expected_size/sizeof(value_type));
-
+        unsigned long expected_size = std::ceil(current_pipe::max_encoded_size(reference.size_in_byte())/float(sizeof(value_type)));
+        if(expected_size>output_data.size()) {
+            output_data.resize(expected_size);
         }
 
-        char* dest = reinterpret_cast<char*>(reference.output());
+        char* dest = reinterpret_cast<char*>(output_data.data());
         temp_case.return_code = current_pipe::compress(reference.data(),
                                 dest,/*
                                 reinterpret_cast<char*>(reference.output()),*/
@@ -214,8 +212,9 @@ int main(int argc, char *argv[])
             std::cout.precision(prec);
 	    
 	    
-            if(verbose)
-                suite.print_cases();
+            if(verbose){
+		std::cout << "\n";
+                suite.print_cases();}
 	    
         } else {
 

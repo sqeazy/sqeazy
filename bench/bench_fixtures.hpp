@@ -92,7 +92,6 @@ struct tiff_fixture{
 
   std::string file_loc;
   std::vector<T> tiff_data;
-  std::vector<T> output_data;
   std::vector<unsigned> axis_lengths;
 
   unsigned long axis_length(const int& _axis_ref) const {
@@ -112,16 +111,6 @@ struct tiff_fixture{
     
   }
   
-  T* output() {
-    
-    return &output_data[0];
-  }
-  
-  template <typename OutT>
-  OutT output_as() {
-    
-    return reinterpret_cast<OutT>(&output_data[0]);
-  }
   
   
   unsigned long size() const {
@@ -142,7 +131,7 @@ struct tiff_fixture{
     sqeazy::get_tiff_dirs(stack_tiff,   stack_tdirs  );
 
     axis_lengths = sqeazy::extract_tiff_to_vector(stack_tiff,   stack_tdirs  , tiff_data     );
-    output_data.resize(tiff_data.size());
+    
     TIFFClose(stack_tiff);
       
     if(tiff_data.size()>0 && verbose){
@@ -155,14 +144,12 @@ struct tiff_fixture{
   void swap(tiff_fixture& _first, tiff_fixture& _second){
     std::swap(_first.file_loc, _second.file_loc);
     std::swap(_first.tiff_data, _second.tiff_data);
-    std::swap(_first.output_data, _second.output_data);
     std::swap(_first.axis_length, _second.axis_length);
   }
 
   tiff_fixture():
     file_loc(""),
     tiff_data(),
-    output_data(),
     axis_lengths()
   {
 
@@ -171,7 +158,6 @@ struct tiff_fixture{
   tiff_fixture(const std::string& _fileloc):
     file_loc(_fileloc),
     tiff_data(),
-    output_data(),
     axis_lengths()
   {
     fill_from(_fileloc);
@@ -181,11 +167,9 @@ struct tiff_fixture{
   //copy-constructor: reinit everything (don't copy)
   tiff_fixture(const tiff_fixture& _rhs):
     file_loc(_rhs.file_loc),
-    tiff_data(),
-    output_data(),
-    axis_lengths(){
+    tiff_data(_rhs.tiff_data),
+    axis_lengths(_rhs.axis_lengths){
 
-    *this = _rhs;
     
   }
 
@@ -197,7 +181,7 @@ struct tiff_fixture{
     
   }
   
-  unsigned long data_in_byte() const {
+  unsigned long size_in_byte() const {
     return tiff_data.size()*sizeof(T);
   }
 
@@ -206,7 +190,7 @@ struct tiff_fixture{
     for(int axis_id = 0;axis_id<_self.axis_lengths.size();++axis_id){
       _cout << _self.axis_length(axis_id) << ((axis_id < _self.axis_lengths.size()-1) ? "x" : " ");
     }
-    _cout <<" uint16 = " << _self.data_in_byte()/(1<<20) << " MB ";
+    _cout <<" uint16 = " << _self.size_in_byte()/(1<<20) << " MB ";
     return _cout;
   }
 
