@@ -83,12 +83,12 @@ namespace sqeazy {
     _container.resize(total);
     unsigned long index = 0;
 
-    for(unsigned long frame = 0;frame<extents[2];++frame)
+    for(unsigned frame = 0;frame<extents[2];++frame)
       {
 	TIFFSetDirectory(_tiff_handle,_tiff_dirs[frame]);
 	TIFFGetField(_tiff_handle, TIFFTAG_IMAGEWIDTH, &w);
 	TIFFGetField(_tiff_handle, TIFFTAG_IMAGELENGTH, &h);
-	for (unsigned long y=0;y<h;++y) {
+	for (unsigned y=0;y<h;++y) {
 	  index = frame*frame_offset+y*w;
 	  TIFFReadScanline(_tiff_handle,&_container[index], y);
 	}
