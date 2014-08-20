@@ -20,7 +20,7 @@ struct huffman_scheme {
 
     static const std::string name() {
       
-      return std::string("huffman");
+      return std::string("huff");
       
     }
     

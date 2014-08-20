@@ -20,9 +20,10 @@ struct get_name {
     template <typename T>
     void operator()(T any) {
 
-        if(text)
+        if(text) {
+            *text += std::string("_");
             *text += T::name();
-
+        }
     }
 
 };
@@ -44,7 +45,7 @@ struct loop_encode {
     template <typename S>
     static int apply(const raw_type* _in, compressed_type* _out, std::vector<S>& _size) {
 
-	unsigned long total_size = std::accumulate(_size.begin(),_size.end(),1, std::multiplies<S>());
+        unsigned long total_size = std::accumulate(_size.begin(),_size.end(),1, std::multiplies<S>());
         std::vector<raw_type> temp_(total_size);
         std::copy(_in, _in + total_size, temp_.begin());
 
@@ -99,22 +100,22 @@ struct loop_decode {
     typedef typename bmpl::at<TList, bmpl::int_<bmpl::size<TList>::value - i - 1> >::type current_step;
     typedef typename current_step::raw_type raw_type;
     typedef typename current_step::compressed_type compressed_type;
-        
+
     typedef typename loop_decode<TList,i-1>::compressed_type next_compressed_type;
     typedef typename loop_decode<TList,i-1>::raw_type next_raw_type;
-    
+
     template <typename S>
     static int apply(const compressed_type* _in, raw_type* _out, std::vector<S>& _size) {
 
-	unsigned long input_size = std::accumulate(_size.begin(),_size.end(),1,std::multiplies<S>());
+        unsigned long input_size = std::accumulate(_size.begin(),_size.end(),1,std::multiplies<S>());
         std::vector<compressed_type> temp_(_in, _in + input_size);
-        
+
         int retvalue = current_step::decode(&temp_[0], _out, _size);
 
         std::copy(_out, _out + input_size, temp_.begin());
-	
-	const next_compressed_type* next_in = reinterpret_cast<const next_compressed_type*>(&temp_[0]);
-	
+
+        const next_compressed_type* next_in = reinterpret_cast<const next_compressed_type*>(&temp_[0]);
+
         return (retvalue*(10*bmpl::size<TList>::value - i - 1)) + loop_decode<TList,i-1>::apply(next_in, _out, _size);
 
     }
@@ -123,12 +124,12 @@ struct loop_decode {
     static int apply(const compressed_type* _in, raw_type* _out, S& _size) {
 
         std::vector<compressed_type> temp_(_in, _in + _size);
-        
+
         int retvalue = current_step::decode(&temp_[0], _out, _size);
 
         std::copy(_out, _out + _size, temp_.begin());
-	
-	const next_compressed_type* next_in = reinterpret_cast<const next_compressed_type*>(&temp_[0]);
+
+        const next_compressed_type* next_in = reinterpret_cast<const next_compressed_type*>(&temp_[0]);
         return (retvalue*(10*bmpl::size<TList>::value - i - 1)) + loop_decode<TList,i-1>::apply(next_in, _out, _size);
 
     }
@@ -162,13 +163,13 @@ struct pipeline : public bmpl::back<TypeList>::type {
 
     static std::string name() {
 
-        static std::string temp;
+        std::string temp;
         get_name extractor;
         extractor.text = &temp;
 
         bmpl::for_each<TypeList>(extractor);
 
-        return temp;
+        return std::string(temp, 1);
 
     }
 
@@ -194,12 +195,12 @@ struct pipeline : public bmpl::back<TypeList>::type {
     decompress(const compressed_type* _in, raw_type* _out, SizeType& _size) {
 
         typedef typename bmpl::reverse<TypeList>::type pipe_list;
-	static const int size = type_list_size - 1 - 1;
+        static const int size = type_list_size - 1 - 1;
         typedef loop_decode<pipe_list , size> pipe_loop;
-	typedef typename pipe_loop::raw_type first_step_output_type;
-	typedef typename pipe_loop::compressed_type first_step_input_type;
-        
-	unsigned long temp_size = compressor_type::decoded_size_byte(_in, _size)/sizeof(raw_type);
+        typedef typename pipe_loop::raw_type first_step_output_type;
+        typedef typename pipe_loop::compressed_type first_step_input_type;
+
+        unsigned long temp_size = compressor_type::decoded_size_byte(_in, _size)/sizeof(raw_type);
         std::vector<raw_type> temp(temp_size);
 
         int dec_result = compressor_type::decode(_in, &temp[0], _size);
@@ -209,23 +210,23 @@ struct pipeline : public bmpl::back<TypeList>::type {
         if(size<0)
             std::copy(temp.begin(),temp.end(),reinterpret_cast<raw_type*>(_out));
 
-	unsigned found_num_dims = compressor_type::decoded_num_dims(_in, _size);
-	
-	int ret_value = 0;
-	first_step_output_type* first_out= reinterpret_cast<first_step_output_type*>(_out);
-	first_step_input_type* first_in = reinterpret_cast<first_step_input_type*>(&temp[0]);
-	  
-	if(found_num_dims==1){
-	  
-	  ret_value = pipe_loop::apply(first_in, first_out, temp_size);
-	  
-	}
+        unsigned found_num_dims = compressor_type::decoded_num_dims(_in, _size);
 
-	if(found_num_dims>1){
-	  std::vector<unsigned> found_dims = compressor_type::decode_dimensions(_in, _size);
-	  ret_value = pipe_loop::apply(first_in, first_out, found_dims);
-	}
-	
+        int ret_value = 0;
+        first_step_output_type* first_out= reinterpret_cast<first_step_output_type*>(_out);
+        first_step_input_type* first_in = reinterpret_cast<first_step_input_type*>(&temp[0]);
+
+        if(found_num_dims==1) {
+
+            ret_value = pipe_loop::apply(first_in, first_out, temp_size);
+
+        }
+
+        if(found_num_dims>1) {
+            std::vector<unsigned> found_dims = compressor_type::decode_dimensions(_in, _size);
+            ret_value = pipe_loop::apply(first_in, first_out, found_dims);
+        }
+
         return ret_value+dec_result;
     }
 
@@ -235,11 +236,11 @@ struct pipeline : public bmpl::back<TypeList>::type {
 
 
         typedef typename bmpl::reverse<TypeList>::type pipe_list;
-	static const int size = type_list_size - 1 ;
+        static const int size = type_list_size - 1 ;
         typedef loop_decode<pipe_list , size> pipe_loop;
-	typedef typename pipe_loop::raw_type first_step_output_type;
-	
-	first_step_output_type* first_output = reinterpret_cast<first_step_output_type*>(_out);
+        typedef typename pipe_loop::raw_type first_step_output_type;
+
+        first_step_output_type* first_output = reinterpret_cast<first_step_output_type*>(_out);
         int value = pipe_loop::apply(_in, first_output, _size);
 
         return value;

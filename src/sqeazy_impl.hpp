@@ -27,7 +27,12 @@ struct diff_scheme {
     static const std::string name() {
 
         //TODO: add name of Neighborhood
-        return std::string("diff_scheme");
+      std::ostringstream msg;
+      msg << "diff" 
+	  << Neighborhood::x_offset_end - Neighborhood::x_offset_begin << "x"
+	  << Neighborhood::y_offset_end - Neighborhood::y_offset_begin << "x" 
+	  << Neighborhood::z_offset_end - Neighborhood::z_offset_begin ; 
+        return msg.str();
 
     }
 
@@ -155,7 +160,7 @@ struct bitswap_scheme {
     static const std::string name() {
 
         std::ostringstream val("");
-        val << "bitswap" << raw_type_num_bits_per_segment;
+        val << "bswap" << raw_type_num_bits_per_segment;
         return val.str();
 
     }
