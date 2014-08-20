@@ -4,6 +4,7 @@
 #include <numeric>
 #include <vector>
 #include <string>
+#include <array>
 #include <boost/concept_check.hpp>
 #include "hist_impl.hpp"
 
@@ -20,17 +21,28 @@ extern "C" {
 
 namespace sqeazy_bench {
 
-  template <typename T>
-  bool contains_and_pop(std::vector<T>& _data, const T& _pred){
-    
+template <typename T>
+bool pop_if_contained(std::vector<T>& _data, const T& _pred) {
+
     auto found = std::find(_data.begin(), _data.end(), _pred);
-    if(found!=_data.end()){
-      _data.erase(found);
-      return true;} 
-    else	
-      return false;
-  }
-  
+    if(found!=_data.end()) {
+        _data.erase(found);
+        return true;
+    }
+    else
+        return false;
+}
+
+
+std::array<std::string,2> split_last_of(const std::string& _data, const std::string& _del) {
+
+    std::array<std::string,2> value;
+    size_t pos_last_del = _data.rfind(_del);
+    value[0] = _data.substr(0,pos_last_del);
+    value[1] = _data.substr(pos_last_del );
+    return value;
+}
+
 template <typename It, typename V>
 V sample_variance(const It& _begin,
                   const It& _end,
@@ -71,9 +83,9 @@ struct bcase {
         filename(_filename),
         dims(_extents.begin(), _extents.end()),
         raw_size_in_byte(std::accumulate(_extents.begin(), _extents.end(),1,std::multiplies<unsigned long>())*sizeof(value_type))
-  {
+    {
         histogram = sqeazy::histogram<value_type>(_data, _data + (raw_size_in_byte/sizeof(value_type)));
-	start_time = std::chrono::high_resolution_clock::now();
+        start_time = std::chrono::high_resolution_clock::now();
     }
 
     bool has_run() const {
@@ -86,7 +98,7 @@ struct bcase {
 
         auto end_time = std::chrono::high_resolution_clock::now();
         time_us = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
-	compressed_size_in_byte = _compr_size;
+        compressed_size_in_byte = _compr_size;
 
     }
 
@@ -126,14 +138,14 @@ struct bcase {
             else
                 _cout << n << "\t";
         }
-  
+
         _cout << _in.histogram.smallest_populated_bin() << "\t"
               << _in.histogram.largest_populated_bin() << "\t"
               << _in.histogram.mode() << "\t"
               << _in.histogram.mean() << "\t"
               << _in.time_us << "\t"
               << _in.compress_ratio()<< "\t"
-	      << _in.filename               
+              << _in.filename
               << "\n";
         return _cout;
     }
@@ -154,14 +166,14 @@ struct bsuite {
 
     }
 
-    void at(const unsigned int& _index, bcase<value_type>& _new){
-      
-      cases.at(_index) = (_new);
-      compression_accumulator(_new.compress_ratio());
-      speed_accumulator(_new.compress_speed_mb_per_sec());
-	
+    void at(const unsigned int& _index, bcase<value_type>& _new) {
+
+        cases.at(_index) = (_new);
+        compression_accumulator(_new.compress_ratio());
+        speed_accumulator(_new.compress_speed_mb_per_sec());
+
     }
-    
+
     void push_back(bcase<value_type>& _new) {
 
         cases.push_back(_new);
@@ -191,17 +203,17 @@ struct bsuite {
     }
 
     void print_cases() const {
-      
-      std::cout << "raw_size/Byte\textents\tsmallest-pop-bin\tlargest-pop-bin\tmode\tmean\t"
-           << "time-to-compress/us\tcompress-ratio\tfilename\n";
-      for(const bcase<value_type>& c : cases){
-	
-	std::cout << c<< "\n";
-	
-      }
-      
+
+        std::cout << "raw_size/Byte\textents\tsmallest-pop-bin\tlargest-pop-bin\tmode\tmean\t"
+                  << "time-to-compress/us\tcompress-ratio\tfilename\n";
+        for(const bcase<value_type>& c : cases) {
+
+            std::cout << c<< "\n";
+
+        }
+
     }
-    
+
     unsigned size() const {
         return cases.size() ;
     }

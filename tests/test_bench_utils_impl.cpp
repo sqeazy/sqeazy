@@ -24,6 +24,7 @@ BOOST_AUTO_TEST_CASE( success )
   sqeazy_bench::bcase<value_type> testme2("/tmp/something", &constant_cube[0], dims);
   BOOST_CHECK_EQUAL(testme2.has_run(),false);
   BOOST_CHECK_EQUAL(testme2.filename.empty(),false);
+  testme2.stop(1024);
   BOOST_CHECK_EQUAL(testme2.time_in_microseconds()>0,true);
   BOOST_CHECK_EQUAL(testme2.histogram.mean()==1,true);
   
@@ -33,10 +34,13 @@ BOOST_AUTO_TEST_CASE( copied )
 {
    
   sqeazy_bench::bcase<value_type> testme("/tmp/something", &constant_cube[0], dims);
+  
   sqeazy_bench::bcase<value_type> testme2 = testme;
   
   BOOST_CHECK_EQUAL(testme2.has_run(),false);
   BOOST_CHECK_EQUAL(testme2.filename.empty(),false);
+  
+  testme2.stop(1024);
   BOOST_CHECK_EQUAL(testme2.time_in_microseconds()>0,true);
   BOOST_CHECK_EQUAL(testme2.histogram.mean(),testme.histogram.mean());
   
@@ -74,3 +78,18 @@ BOOST_AUTO_TEST_CASE( load )
   
 }
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_CASE( head_tail_split){
+  
+  std::string name_head = "/path/to/file";
+  std::string name_tail = ".suffix";
+  std::string name = name_head + name_tail;
+  
+  std::array<std::string,2> head_tail = sqeazy_bench::split_last_of(name, ".");
+  
+  BOOST_CHECK_EQUAL(head_tail[0],name_head);
+  BOOST_CHECK_EQUAL(head_tail[1],name_tail);
+  
+  
+}
+

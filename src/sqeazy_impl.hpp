@@ -316,14 +316,25 @@ struct remove_background {
         return SUCCESS;
     }
 
+    
+    template <typename SizeType>
     static const error_code decode(const raw_type* _input,
                                    raw_type* _output,
-                                   const size_type& _length)
+                                   const SizeType& _length)
     {
-
-        return NOT_IMPLEMENTED_YET;
+	std::copy(_input, _input + _length, _output);
+        return SUCCESS;
     }
-
+    
+    template <typename SizeType>
+    static const error_code decode(const raw_type* _input,
+                                   raw_type* _output,
+                                   const std::vector<SizeType>& _length)
+    {
+	unsigned long total_size = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<SizeType>());
+	
+        return decode(_input, _output, total_size);
+    }
 
 };
 
@@ -419,7 +430,7 @@ struct remove_estimated_background {
 
     template <typename size_type>
     static const error_code encode(raw_type* _input,
-                                   raw_type* _output,
+                                   compressed_type* _output,
                                    const std::vector<size_type>& _dims)
     {
 
@@ -440,14 +451,26 @@ struct remove_estimated_background {
         return SUCCESS;
     }
 
-    template <typename size_type>
-    static const error_code decode(const raw_type* _input,
+    template <typename SizeType>
+    static const error_code decode(const compressed_type* _input,
                                    raw_type* _output,
-                                   const size_type& _length)
+                                   const SizeType& _length)
     {
-
-        return NOT_IMPLEMENTED_YET;
+	std::copy(_input, _input + _length, _output);
+        return SUCCESS;
     }
+    
+    template <typename SizeType>
+    static const error_code decode(const compressed_type* _input,
+                                   raw_type* _output,
+                                   const std::vector<SizeType>& _length)
+    {
+	unsigned long total_size = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<SizeType>());
+	
+        return decode(_input, _output, total_size);
+    }
+    
+    
 };
 } //sqeazy
 

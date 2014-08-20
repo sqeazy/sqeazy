@@ -77,6 +77,7 @@ int print_help(const MapT& _av_targets) {
     std::string me = "bench";
     std::cout << "usage: " << me << " <flags> <target>\n"
               << "flags:\n\t -v \t\t print benchmark stats for every file\n"
+	      << "\t -r \t\t perform round trip and save output to <basefilename>-<targetname>.tif\n"
               << "\n"
               << "availble targets:\n"
               << std::setw(field_width) << "help" << "\n";
@@ -98,7 +99,8 @@ int print_help(const MapT& _av_targets) {
 
 
 template <typename T, typename PipeType>
-void fill_suite(const std::vector<std::string>& _args, sqeazy_bench::bsuite<T>& _suite, bool verbose = false) {
+void fill_suite(const std::vector<std::string>& _args, sqeazy_bench::bsuite<T>& _suite, 
+		bool verbose = false, bool roundtrip = false) {
 
     typedef T value_type;
     typedef PipeType current_pipe;
@@ -134,9 +136,26 @@ void fill_suite(const std::vector<std::string>& _args, sqeazy_bench::bsuite<T>& 
                                 reference.axis_lengths);
 
         temp_case.stop(current_pipe::last_num_encoded_bytes);
-
         _suite.at(i,temp_case);
 
+	if(roundtrip){
+	  //decompress what was just compressed
+	  int dec_ret = current_pipe::decompress(dest,reference.data(),
+                                current_pipe::last_num_encoded_bytes);
+	  if(dec_ret & verbose){
+	    std::cerr << "decompression failed! Nothing to write to disk...\n";
+	    continue;
+	  }
+	  
+	  std::array<std::string,2> head_tail = sqeazy_bench::split_last_of(_args[i], ".");
+	  std::string name = head_tail[0];
+	  name += "-";
+	  name += PipeType::name();
+	  name += head_tail[1];
+	  sqeazy::write_tiff_from_vector(reference.tiff_data, reference.axis_lengths,name);
+	}
+	  
+	
     }
 
 
@@ -146,7 +165,10 @@ void fill_suite(const std::vector<std::string>& _args, sqeazy_bench::bsuite<T>& 
 int main(int argc, char *argv[])
 {
 
-    typedef std::function<void(const std::vector<std::string>&, sqeazy_bench::bsuite<unsigned short>&, bool) > func_t;
+    
+    typedef std::function<void(const std::vector<std::string>&, 
+			       sqeazy_bench::bsuite<unsigned short>&, 
+			       bool, bool) > func_t;
     std::unordered_map<std::string, func_t> prog_flow;
 
     prog_flow["rmbkg_diff_bswap1_lz4_compress"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
@@ -176,8 +198,9 @@ int main(int argc, char *argv[])
         std::unordered_map<std::string, func_t>::const_iterator f_func = prog_flow.end();
 
         std::vector<std::string> args(argv+1, argv+argc);
-        bool verbose = sqeazy_bench::contains_and_pop(args, std::string("-v"));
-
+        bool verbose = sqeazy_bench::pop_if_contained(args, std::string("-v"));
+	bool perform_roundtrip = sqeazy_bench::pop_if_contained(args, std::string("-r"));
+	
         for(f_index = 0; f_index<args.size(); ++f_index) {
             if((f_func = prog_flow.find(args[f_index])) != prog_flow.end())
                 break;
@@ -188,7 +211,7 @@ int main(int argc, char *argv[])
 
         sqeazy_bench::bsuite<unsigned short> suite(filenames.size());
         if(f_func!=prog_flow.end()) {
-            (f_func->second)(filenames, suite,verbose);
+            (f_func->second)(filenames, suite,verbose,perform_roundtrip);
             int prec = std::cout.precision();
 
 

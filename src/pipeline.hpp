@@ -99,8 +99,10 @@ struct loop_decode {
     typedef typename bmpl::at<TList, bmpl::int_<bmpl::size<TList>::value - i - 1> >::type current_step;
     typedef typename current_step::raw_type raw_type;
     typedef typename current_step::compressed_type compressed_type;
-//     typedef typename loop_encode<TList,i-1>::compressed_type next_compressed_type;
-
+        
+    typedef typename loop_decode<TList,i-1>::compressed_type next_compressed_type;
+    typedef typename loop_decode<TList,i-1>::raw_type next_raw_type;
+    
     template <typename S>
     static int apply(const compressed_type* _in, raw_type* _out, std::vector<S>& _size) {
 
@@ -110,7 +112,10 @@ struct loop_decode {
         int retvalue = current_step::decode(&temp_[0], _out, _size);
 
         std::copy(_out, _out + input_size, temp_.begin());
-        return (retvalue*(10*bmpl::size<TList>::value - i - 1)) + loop_decode<TList,i-1>::apply(&temp_[0], _out, _size);
+	
+	const next_compressed_type* next_in = reinterpret_cast<const next_compressed_type*>(&temp_[0]);
+	
+        return (retvalue*(10*bmpl::size<TList>::value - i - 1)) + loop_decode<TList,i-1>::apply(next_in, _out, _size);
 
     }
 
@@ -122,7 +127,9 @@ struct loop_decode {
         int retvalue = current_step::decode(&temp_[0], _out, _size);
 
         std::copy(_out, _out + _size, temp_.begin());
-        return (retvalue*(10*bmpl::size<TList>::value - i - 1)) + loop_decode<TList,i-1>::apply(&temp_[0], _out, _size);
+	
+	const next_compressed_type* next_in = reinterpret_cast<const next_compressed_type*>(&temp_[0]);
+        return (retvalue*(10*bmpl::size<TList>::value - i - 1)) + loop_decode<TList,i-1>::apply(next_in, _out, _size);
 
     }
 };
