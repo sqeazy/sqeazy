@@ -3,7 +3,7 @@
 
 #include <algorithm>
 #include <sstream>
-
+#include <climits>
 #include "sqeazy_common.hpp"
 #include "sqeazy_traits.hpp"
 #include "diff_scheme_utils.hpp"
@@ -147,7 +147,7 @@ struct bitswap_scheme {
     typedef unsigned size_type;
     static const bool is_compressor = false;
 
-    static const unsigned raw_type_num_bits = sizeof(T)*8;
+    static const unsigned raw_type_num_bits = sizeof(T)*CHAR_BIT;
     static const unsigned num_segments = raw_type_num_bits/raw_type_num_bits_per_segment;
 //     static const unsigned raw_type_num_bits_per_segment = raw_type_num_bits/num_segments;
 
