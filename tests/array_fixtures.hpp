@@ -16,17 +16,17 @@ struct array_fixture {
     static const unsigned size = dim*dim*dim;
     static const unsigned size_in_byte = dim*dim*dim*sizeof(T);
 
-    T constant_cube[size];
-    T incrementing_cube[size];
-    T to_play_with[size];
+    std::vector<T> constant_cube;
+    std::vector<T> incrementing_cube;
+    std::vector<T> to_play_with;
     std::vector<unsigned> dims;
     
     typedef T value_type;
 
     array_fixture():
-        constant_cube(),
-        incrementing_cube(),
-        to_play_with(),
+        constant_cube(size),
+        incrementing_cube(size),
+        to_play_with(size),
         dims(3)
     {
         value_type* begin = &constant_cube[0];

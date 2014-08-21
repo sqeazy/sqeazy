@@ -447,11 +447,11 @@ struct remove_estimated_background {
         const raw_type median = h_darkest_facet.median();
         const float alpha = 1.f;
         size_type input_length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<size_type>());
-
+	const float reduce_by = median+(alpha*median_deviation);
         if(_output)
-            remove_background<raw_type>::encode_out_of_place(_input, _output, input_length, median+(alpha*median_deviation));
+            remove_background<raw_type>::encode_out_of_place(_input, _output, input_length, reduce_by);
         else
-            remove_background<raw_type>::encode_inplace(_input, input_length, median+(alpha*median_deviation));
+            remove_background<raw_type>::encode_inplace(_input, input_length, reduce_by);
 
         return SUCCESS;
     }

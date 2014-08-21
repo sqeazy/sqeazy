@@ -162,7 +162,8 @@ BOOST_AUTO_TEST_CASE( plain_encode_decode_chars )
     char* output = reinterpret_cast<char*>(&to_play_with[0]);
 
     const unsigned local_size = size;
-    int enc_ret = current_pipe::compress(&constant_cube[0], output, local_size);
+    const value_type* input = &constant_cube[0];
+    int enc_ret = current_pipe::compress(input, output, local_size);
 
     const unsigned written_bytes = current_pipe::last_num_encoded_bytes;
     char* temp  = new char[written_bytes];
@@ -174,7 +175,7 @@ BOOST_AUTO_TEST_CASE( plain_encode_decode_chars )
 
     delete [] temp;
 
-    BOOST_CHECK_EQUAL_COLLECTIONS(&constant_cube[0],&constant_cube[0] + size,
+    BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(), constant_cube.end(),
                                   &to_play_with[0], &to_play_with[0] + size
                                  );
 }
@@ -198,7 +199,7 @@ BOOST_AUTO_TEST_CASE( encode_decode_bitswap_chars )
     BOOST_REQUIRE_EQUAL(dec_ret,0);
    
 
-    BOOST_CHECK_EQUAL_COLLECTIONS(&constant_cube[0],&constant_cube[0] + size,
+    BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(), constant_cube.end(),
                                   &to_play_with[0], &to_play_with[0] + size
                                  );
 }
@@ -252,7 +253,7 @@ BOOST_AUTO_TEST_CASE( encode_decode_bitswap_shorts )
     BOOST_REQUIRE_EQUAL(enc_ret,0);
     BOOST_REQUIRE_EQUAL(dec_ret,0);
 
-    BOOST_CHECK_EQUAL_COLLECTIONS(&constant_cube[0],&constant_cube[0] + size,
+    BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(), constant_cube.end(),
                                   &to_play_with[0], &to_play_with[0] + size
                                  );
 }
@@ -279,7 +280,7 @@ BOOST_AUTO_TEST_CASE( encode_decode_bitswap_shorts_dims_input )
     BOOST_REQUIRE_EQUAL(enc_ret,0);
     BOOST_REQUIRE_EQUAL(dec_ret,0);
 
-    BOOST_CHECK_EQUAL_COLLECTIONS(&constant_cube[0],&constant_cube[0] + size,
+    BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(), constant_cube.end(),
                                   &to_play_with[0], &to_play_with[0] + size
                                  );
 }
@@ -306,7 +307,7 @@ BOOST_AUTO_TEST_CASE( encode_decode_diff_shorts_dims_input )
     BOOST_REQUIRE_EQUAL(enc_ret,0);
     BOOST_REQUIRE_EQUAL(dec_ret,0);
 
-    BOOST_CHECK_EQUAL_COLLECTIONS(&constant_cube[0],&constant_cube[0] + size,
+    BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(), constant_cube.end(),
                                   &to_play_with[0], &to_play_with[0] + size
                                  );
 }

@@ -9,6 +9,12 @@
 
 namespace sqeazy {
 
+template <typename T, typename FT>
+T round(const FT& _num) {
+
+    return std::floor(_num + .5);
+}
+
 template <typename IteratorT>
 IteratorT median_index(IteratorT begin, IteratorT end) {
 
@@ -17,13 +23,17 @@ IteratorT median_index(IteratorT begin, IteratorT end) {
 
     double running_integral = 0;
     IteratorT median = end;
-
+    IteratorT in_begin = begin;
     for(; begin!=end; ++begin) {
         running_integral += *begin;
         if((running_integral/total_integral) > .5) {
             median = begin - 1;
             break;
         }
+    }
+
+    if(median<in_begin) {
+        median=in_begin;
     }
 
     return median;
@@ -37,18 +47,19 @@ struct histogram {
 
     typedef typename sqeazy::twice_as_wide<CounterT>::type integral_type;
     typedef T value_type;
+    typedef CounterT bins_type;
     typedef typename sqeazy::twice_as_wide<T>::type twice_value_type;
 
     static const unsigned long long num_bins = 1 << (sizeof(T) * CHAR_BIT);
-    std::vector<CounterT> bins;
+    std::vector<bins_type> bins;
     integral_type  num_entries;
 
     //distribution info
     integral_type integral_value;
-    T mean_value;
-    T mean_variation_value;
-    T median_value;
-    T median_variation_value;
+    float mean_value;
+    float mean_variation_value;
+    float median_value;
+    float median_variation_value;
     T mode_value;
     T small_pop_bin_value;
     T large_pop_bin_value;
@@ -82,8 +93,8 @@ struct histogram {
         small_pop_bin_value(0),
         large_pop_bin_value(std::numeric_limits<T>::max())
     {
-	if(_size>0)
-	  fill_from_image(_image, _image + _size);
+        if(_size>0)
+            fill_from_image(_image, _image + _size);
 
     }
 
@@ -112,9 +123,9 @@ struct histogram {
     template <typename ItrT>
     void fill_from_image(ItrT _image_begin, ItrT _image_end) {
         num_entries = _image_end - _image_begin;
-/*
-        if(!num_entries)
-            return;*/
+        /*
+                if(!num_entries)
+                    return;*/
 
         for(ItrT Itr = _image_begin; Itr!=_image_end; ++Itr) {
             bins[*Itr]++;
@@ -162,32 +173,39 @@ struct histogram {
         return mode_value;
     }
 
-    T calc_mean() const {
+    float calc_mean() const {
         float value = 0;
         const twice_value_type end = large_pop_bin_value +1;
-	float temp = 0;
-	const float inv_integral = 1.f/integral();
-	
-	const CounterT* data = &bins[0];
+        float temp = 0;
+        const float inv_integral = 1.f/integral();
+
+        const CounterT* data = &bins[0];
         for(twice_value_type i = small_pop_bin_value; i < (end); ++i) {
-	    temp = data[i];
+            temp = data[i];
             value += i*temp;
         }
 
         return value*inv_integral;
     }
 
-    T mean() const {
+    float mean() const {
         return mean_value;
     }
 
-    T calc_mean_variation() const {
+    float calc_mean_variation() const {
 
         float mean_variation = 0;
         const twice_value_type end = large_pop_bin_value +1;
-	
+ 
+ 
+	unsigned mean_index = round<unsigned>(mean());
+        float mean_value = 0;
+        if(mean_index<num_bins) {
+            mean_value = bins[mean_index];
+        }
+        
         for(twice_value_type i = smallest_populated_bin(); i<(end); ++i) {
-            float temp = bins[i] - float(mean());
+            float temp = bins[i] - mean_value;
             mean_variation += (temp)*(temp);
         }
 
@@ -197,7 +215,7 @@ struct histogram {
 
     }
 
-    T mean_variation() const {
+    float mean_variation() const {
         return mean_variation_value;
     }
 
@@ -241,22 +259,31 @@ struct histogram {
     }
 
 
-    T calc_median() const {
+    float calc_median() const {
 
+        T mindex = median_index(bins.begin()+smallest_populated_bin(),
+                                bins.begin()+largest_populated_bin() +1
+                               ) - bins.begin();
+        float result = 0;
+        if(mindex>0 ) //the underlying distribution has always even number of entries
+            result = (bins[mindex]*mindex + bins[mindex-1]*(mindex-1))/float(bins[mindex-1] + bins[mindex]);
 
-        return median_index(bins.begin()+smallest_populated_bin(),
-                            bins.begin()+largest_populated_bin() +1
-                           ) - bins.begin();
+        return result;
 
     }
 
-    T calc_median_variation() const {
+    float calc_median_variation() const {
 
         float median_variation = 0;
-	const twice_value_type end = large_pop_bin_value +1;
-	
+        const twice_value_type end = large_pop_bin_value +1;
+        unsigned median_index = round<unsigned>(median());
+        float median_value = 0;
+        if(median_index<num_bins) {
+            median_value = bins[median_index];
+        }
+
         for(twice_value_type i = smallest_populated_bin(); i<(end); ++i) {
-            float temp = bins[i] - float(median());
+            float temp = bins[i] - median_value;
             median_variation += (temp)*(temp);
         }
 
@@ -267,11 +294,11 @@ struct histogram {
     }
 
 
-    T median() const {
+    float median() const {
         return median_value;
     }
 
-    T median_variation() const {
+    float median_variation() const {
         return median_variation_value;
     }
 
