@@ -20,7 +20,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/bench/cmake)
 FIND_PACKAGE(ROOT REQUIRED)
 IF(ROOT_FOUND)
 add_executable(histo histo.cpp)
-target_link_libraries(histo ${PROJECT_NAME} tiff ${ROOT_LIBRARIES})
+target_link_libraries(histo tiff ${ROOT_LIBRARIES})
 
 execute_process(
     COMMAND ${ROOT_CONFIG_EXECUTABLE} --cflags
