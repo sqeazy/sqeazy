@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_CASE( load )
 }
 BOOST_AUTO_TEST_SUITE_END()
 
-BOOST_AUTO_TEST_CASE( head_tail_split){
+BOOST_AUTO_TEST_CASE( head_tail_split ){
   
   std::string name_head = "/path/to/file";
   std::string name_tail = ".suffix";
@@ -93,3 +93,18 @@ BOOST_AUTO_TEST_CASE( head_tail_split){
   
 }
 
+
+BOOST_AUTO_TEST_CASE( pop_next ){
+  
+  std::string path = "/somewhere/to/go";
+  std::vector<std::string> args = { "-v", "-r", path.c_str()};
+  
+  std::string success = sqeazy_bench::pop_next_if_contained(args,std::string("-r"));
+  
+  
+  BOOST_CHECK_EQUAL(success.empty(),false);
+  BOOST_CHECK_EQUAL(success,path);
+  
+  
+  
+}

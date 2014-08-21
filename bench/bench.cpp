@@ -8,6 +8,7 @@
 #include <map>
 #include <set>
 #include <cmath>
+#include <fstream>
 
 #include <unordered_map>
 #include "bench_fixtures.hpp"
@@ -16,6 +17,7 @@
 #include "sqeazy_impl.hpp"
 #include "pipeline.hpp"
 #include "external_encoders.hpp"
+#include "boost/filesystem.hpp"
 
 typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned short>,
         sqeazy::diff_scheme<unsigned short>,
@@ -28,6 +30,10 @@ typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned short
         sqeazy::bitswap_scheme<unsigned short>,
         sqeazy::lz4_scheme<unsigned short> > rmbkg_huff_bswap1_lz4;
 typedef sqeazy::pipeline<rmbkg_huff_bswap1_lz4> rmbkg_huff_bswap1_lz4_pipe;
+
+typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned short>,
+        sqeazy::lz4_scheme<unsigned short> > rmbkg_lz4;
+typedef sqeazy::pipeline<rmbkg_lz4> rmbkg_lz4_pipe;
 
 
 typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned short>,
@@ -77,7 +83,8 @@ int print_help(const MapT& _av_targets) {
     std::string me = "bench";
     std::cout << "usage: " << me << " <flags> <target>\n"
               << "flags:\n\t -v \t\t print benchmark stats for every file\n"
-	      << "\t -r \t\t perform round trip and save output to <basefilename>-<targetname>.tif\n"
+              << "\t -r <path>\t perform round trip and save output to <path>/<basefilename>-<targetname>.tif\n"
+              << "\t -e <path>\t save result of encoding <path>/<basefilename>-<targetname>.tif\n"
               << "\n"
               << "availble targets:\n"
               << std::setw(field_width) << "help" << "\n";
@@ -96,27 +103,65 @@ int print_help(const MapT& _av_targets) {
     return 1;
 }
 
+struct fill_suite_config {
 
+    bool verbose = false;
+    std::string roundtrip = "";
+    std::string save_encoded = "";
+
+    fill_suite_config(std::vector<std::string>& _args) {
+
+        verbose = sqeazy_bench::pop_if_contained(_args, std::string("-v"));
+        boost::filesystem::path roundtrip_p = sqeazy_bench::pop_next_if_contained(_args, std::string("-r"));
+        boost::filesystem::path save_encoded_p = sqeazy_bench::pop_next_if_contained(_args, std::string("-e"));
+
+        auto morphing = [&](const boost::filesystem::path& _p) {
+            std::string value;
+            if(boost::filesystem::exists(_p))
+            {
+                if(boost::filesystem::is_directory(_p) || boost::filesystem::is_regular_file(_p))
+                {
+                    value = _p.string();
+                }
+                else {
+                    value = roundtrip_p.parent_path().string();
+                }
+            }
+            return value;
+        };
+
+        roundtrip = morphing(roundtrip_p);
+        save_encoded = morphing(save_encoded_p);
+
+    }
+
+};
 
 template <typename T, typename PipeType>
-void fill_suite(const std::vector<std::string>& _args, sqeazy_bench::bsuite<T>& _suite, 
-		bool verbose = false, bool roundtrip = false) {
+void fill_suite(const std::vector<std::string>& _args,
+                sqeazy_bench::bsuite<T>& _suite,
+                const fill_suite_config& _config) {
 
     typedef T value_type;
     typedef PipeType current_pipe;
 
-    if(verbose)
+    if(_config.verbose)
         std::cerr << "fill_suite :: " << PipeType::name() << "\n";
-    
+
     unsigned num_files = _args.size();
 
     if(_suite.size() != num_files)
         _suite.cases.resize(num_files);
 
     std::vector<value_type> output_data;
-    
+    std::array<std::string,2> head_tail;
+    boost::filesystem::path current_file;
+
     for(unsigned i = 0; i < num_files; ++i) {
 
+        current_file = _args[i];
+
+// 	head_tail = sqeazy_bench::split_last_of(_args[i], ".");
         tiff_fixture<value_type, false> reference(_args[i]);
 
         if(reference.empty())
@@ -135,27 +180,43 @@ void fill_suite(const std::vector<std::string>& _args, sqeazy_bench::bsuite<T>& 
                                 reinterpret_cast<char*>(reference.output()),*/
                                 reference.axis_lengths);
 
+
         temp_case.stop(current_pipe::last_num_encoded_bytes);
         _suite.at(i,temp_case);
 
-	if(roundtrip){
-	  //decompress what was just compressed
-	  int dec_ret = current_pipe::decompress(dest,reference.data(),
-                                current_pipe::last_num_encoded_bytes);
-	  if(dec_ret & verbose){
-	    std::cerr << "decompression failed! Nothing to write to disk...\n";
-	    continue;
-	  }
-	  
-	  std::array<std::string,2> head_tail = sqeazy_bench::split_last_of(_args[i], ".");
-	  std::string name = head_tail[0];
-	  name += "-";
-	  name += PipeType::name();
-	  name += head_tail[1];
-	  sqeazy::write_tiff_from_vector(reference.tiff_data, reference.axis_lengths,name);
-	}
-	  
-	
+        if(_config.save_encoded.size()>1) {
+
+            std::string name = _config.save_encoded;
+            name += current_file.stem().string();
+            name += "_";
+            name += PipeType::name();
+            name += "-enc.sqy";
+
+            std::ofstream encoded(name.c_str(), std::ios::binary | std::ios::out);
+            std::cout << "Writing to " << name << "\n";
+            encoded.write(dest,current_pipe::last_num_encoded_bytes);
+            encoded.close();
+        }
+
+        if(_config.roundtrip.size()>1) {
+            //decompress what was just compressed
+            int dec_ret = current_pipe::decompress(dest,reference.data(),
+                                                   current_pipe::last_num_encoded_bytes);
+            if(dec_ret & _config.verbose) {
+                std::cerr << "decompression failed! Nothing to write to disk...\n";
+                continue;
+            }
+
+            std::string name = _config.roundtrip;
+            name += current_file.stem().string();
+            name += "_";
+            name += PipeType::name();
+            name += "-enc-dec";
+            name += current_file.extension().string();
+            sqeazy::write_tiff_from_vector(reference.tiff_data, reference.axis_lengths,name);
+        }
+
+
     }
 
 
@@ -165,31 +226,32 @@ void fill_suite(const std::vector<std::string>& _args, sqeazy_bench::bsuite<T>& 
 int main(int argc, char *argv[])
 {
 
-    
-    typedef std::function<void(const std::vector<std::string>&, 
-			       sqeazy_bench::bsuite<unsigned short>&, 
-			       bool, bool) > func_t;
+
+    typedef std::function<void(const std::vector<std::string>&,
+                               sqeazy_bench::bsuite<unsigned short>&,
+                               const fill_suite_config&) > func_t;
     std::unordered_map<std::string, func_t> prog_flow;
 
-    prog_flow["rmbkg_diff_bswap1_lz4_compress"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
-    prog_flow["rmbkg_huff_bswap1_lz4_compress"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
-    prog_flow["rmbkg_bswap1_lz4_compress"] = func_t(fill_suite<unsigned short, rmbkg_bswap1_lz4_pipe>);
-    prog_flow["diff_bswap1_lz4_compress"] = func_t(fill_suite<unsigned short, diff_bswap1_lz4_pipe>);
-    prog_flow["huff_bswap1_lz4_compress"] = func_t(fill_suite<unsigned short, huff_bswap1_lz4_pipe>);
-    prog_flow["bswap1_lz4_compress"] = func_t(fill_suite<unsigned short, bswap1_lz4_pipe>);
-    prog_flow["diff_lz4_compress"] = func_t(fill_suite<unsigned short, diff_lz4_pipe>);
-    prog_flow["huff_lz4_compress"] = func_t(fill_suite<unsigned short, huff_lz4_pipe>);
-    prog_flow["lz4_compress"] = func_t(fill_suite<unsigned short, lz4_pipe>);
+    prog_flow["compress_rmbkg_diff_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
+    prog_flow["compress_rmbkg_huff_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
+    prog_flow["compress_rmbkg_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_bswap1_lz4_pipe>);
+    prog_flow["compress_diff_bswap1_lz4"] = func_t(fill_suite<unsigned short, diff_bswap1_lz4_pipe>);
+    prog_flow["compress_bswap1_lz4"] = func_t(fill_suite<unsigned short, bswap1_lz4_pipe>);
+    prog_flow["compress_diff_lz4"] = func_t(fill_suite<unsigned short, diff_lz4_pipe>);
+    prog_flow["compress_lz4"] = func_t(fill_suite<unsigned short, lz4_pipe>);
 
-    prog_flow["rmbkg_diff_bswap1_lz4_speed"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
-    prog_flow["rmbkg_huff_bswap1_lz4_speed"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
-    prog_flow["rmbkg_bswap1_lz4_speed"] = func_t(fill_suite<unsigned short, rmbkg_bswap1_lz4_pipe>);
-    prog_flow["diff_bswap1_lz4_speed"] = func_t(fill_suite<unsigned short, diff_bswap1_lz4_pipe>);
-    prog_flow["huff_bswap1_lz4_speed"] = func_t(fill_suite<unsigned short, huff_bswap1_lz4_pipe>);
-    prog_flow["bswap1_lz4_speed"] = func_t(fill_suite<unsigned short, bswap1_lz4_pipe>);
-    prog_flow["diff_lz4_speed"] = func_t(fill_suite<unsigned short, diff_lz4_pipe>);
-    prog_flow["huff_lz4_speed"] = func_t(fill_suite<unsigned short, huff_lz4_pipe>);
-    prog_flow["lz4_speed"] = func_t(fill_suite<unsigned short, lz4_pipe>);
+    prog_flow["experim_rmbkg_lz4"] = func_t(fill_suite<unsigned short, rmbkg_lz4_pipe>);
+    prog_flow["experim_huff_lz4"] = func_t(fill_suite<unsigned short, huff_lz4_pipe>);
+    prog_flow["experim_huff_bswap1_lz4"] = func_t(fill_suite<unsigned short, huff_bswap1_lz4_pipe>);
+
+    prog_flow["speed_rmbkg_diff_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
+    prog_flow["speed_rmbkg_huff_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
+    prog_flow["speed_rmbkg_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_bswap1_lz4_pipe>);
+    prog_flow["speed_diff_bswap1_lz4"] = func_t(fill_suite<unsigned short, diff_bswap1_lz4_pipe>);
+    prog_flow["speed_huff_bswap1_lz4"] = func_t(fill_suite<unsigned short, huff_bswap1_lz4_pipe>);
+    prog_flow["speed_bswap1_lz4"] = func_t(fill_suite<unsigned short, bswap1_lz4_pipe>);
+    prog_flow["speed_diff_lz4"] = func_t(fill_suite<unsigned short, diff_lz4_pipe>);
+    prog_flow["speed_lz4"] = func_t(fill_suite<unsigned short, lz4_pipe>);
 
     int retcode = 0;
     if(argc>1) {
@@ -198,9 +260,8 @@ int main(int argc, char *argv[])
         std::unordered_map<std::string, func_t>::const_iterator f_func = prog_flow.end();
 
         std::vector<std::string> args(argv+1, argv+argc);
-        bool verbose = sqeazy_bench::pop_if_contained(args, std::string("-v"));
-	bool perform_roundtrip = sqeazy_bench::pop_if_contained(args, std::string("-r"));
-	
+        fill_suite_config config(args);
+
         for(f_index = 0; f_index<args.size(); ++f_index) {
             if((f_func = prog_flow.find(args[f_index])) != prog_flow.end())
                 break;
@@ -211,7 +272,7 @@ int main(int argc, char *argv[])
 
         sqeazy_bench::bsuite<unsigned short> suite(filenames.size());
         if(f_func!=prog_flow.end()) {
-            (f_func->second)(filenames, suite,verbose,perform_roundtrip);
+            (f_func->second)(filenames, suite,config);
             int prec = std::cout.precision();
 
 
@@ -233,12 +294,13 @@ int main(int argc, char *argv[])
 
             std::cout << "\t" << f_func->first << "\n";
             std::cout.precision(prec);
-	    
-	    
-            if(verbose){
-		std::cout << "\n";
-                suite.print_cases();}
-	    
+
+
+            if(config.verbose) {
+                std::cout << "\n";
+                suite.print_cases();
+            }
+
         } else {
 
             std::cerr << "unable to detect known target! \nreceived:\tbench ";

@@ -33,6 +33,22 @@ bool pop_if_contained(std::vector<T>& _data, const T& _pred) {
         return false;
 }
 
+template <typename T>
+T pop_next_if_contained(std::vector<T>& _data, const T& _pred) {
+
+    T value;
+    typename std::vector<T>::iterator found = std::find(_data.begin(), _data.end(), _pred);
+    if(found!=_data.end()) {
+      value = *(found + 1);
+      if(found + 2 <= _data.end())
+        _data.erase(found,found + 2);
+      else
+	_data.erase(found, _data.end());
+      return value;
+    }
+    else
+        return value;
+}
 
 std::array<std::string,2> split_last_of(const std::string& _data, const std::string& _del) {
 
