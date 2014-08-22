@@ -27,11 +27,11 @@ struct diff_scheme {
     static const std::string name() {
 
         //TODO: add name of Neighborhood
-      std::ostringstream msg;
-      msg << "diff" 
-	  << Neighborhood::x_offset_end - Neighborhood::x_offset_begin << "x"
-	  << Neighborhood::y_offset_end - Neighborhood::y_offset_begin << "x" 
-	  << Neighborhood::z_offset_end - Neighborhood::z_offset_begin ; 
+        std::ostringstream msg;
+        msg << "diff"
+            << Neighborhood::x_offset_end - Neighborhood::x_offset_begin << "x"
+            << Neighborhood::y_offset_end - Neighborhood::y_offset_begin << "x"
+            << Neighborhood::z_offset_end - Neighborhood::z_offset_begin ;
         return msg.str();
 
     }
@@ -53,15 +53,17 @@ struct diff_scheme {
         geometry.compute_offsets_in_x(offsets);
         typename std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
 
-        const size_type end_ = geometry.non_halo_end(0)-1;
+        const size_type halo_size_x = geometry.non_halo_end(0)-geometry.non_halo_begin(0);
         sum_type local_sum = 0;
-
+        size_type local_index = 0;
+        const sum_type n_traversed_pixels = sqeazy::num_traversed_pixels<Neighborhood>();
+	
         for(; offsetsItr!=offsets.end(); ++offsetsItr) {
-            for(unsigned long index = 0; index < end_; ++index) {
+            for(unsigned long index = 0; index < halo_size_x; ++index) {
 
-                const size_type local_index = index + *offsetsItr;
+                local_index = index + *offsetsItr;
                 local_sum = naive_sum<Neighborhood>(_input,local_index,_width, _height,_depth);
-                _output[local_index] = _input[local_index] - local_sum/Neighborhood::traversed;
+                _output[local_index] = _input[local_index] - local_sum/n_traversed_pixels;
 
             }
         }
@@ -106,13 +108,14 @@ struct diff_scheme {
 
         const size_type end_ = geometry.non_halo_end(0)-1;
         sum_type local_sum = 0;
-
+	const sum_type n_traversed_pixels = sqeazy::num_traversed_pixels<Neighborhood>();
+	
         for(; offsetsItr!=offsets.end(); ++offsetsItr) {
             for(unsigned long index = 0; index < end_; ++index) {
 
                 const size_type local_index = index + *offsetsItr;
                 local_sum = naive_sum<Neighborhood>(_output,local_index,_width, _height,_depth);
-                _output[local_index] = _input[local_index] + local_sum/Neighborhood::traversed;
+                _output[local_index] = _input[local_index] + local_sum/n_traversed_pixels;
 
             }
         }
@@ -136,7 +139,7 @@ struct diff_scheme {
                                    raw_type* _output,
                                    size_type& _dim
                                   ) {
-      
+
         const size_type one = 1;
         return decode(_dim, one, one, _input, _output);
 
@@ -321,23 +324,23 @@ struct remove_background {
         return SUCCESS;
     }
 
-    
+
     template <typename SizeType>
     static const error_code decode(const raw_type* _input,
                                    raw_type* _output,
                                    const SizeType& _length)
     {
-	std::copy(_input, _input + _length, _output);
+        std::copy(_input, _input + _length, _output);
         return SUCCESS;
     }
-    
+
     template <typename SizeType>
     static const error_code decode(const raw_type* _input,
                                    raw_type* _output,
                                    const std::vector<SizeType>& _length)
     {
-	unsigned long total_size = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<SizeType>());
-	
+        unsigned long total_size = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<SizeType>());
+
         return decode(_input, _output, total_size);
     }
 
@@ -447,7 +450,7 @@ struct remove_estimated_background {
         const raw_type median = h_darkest_facet.median();
         const float alpha = 1.f;
         size_type input_length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<size_type>());
-	const float reduce_by = median+(alpha*median_deviation);
+        const float reduce_by = median+(alpha*median_deviation);
         if(_output)
             remove_background<raw_type>::encode_out_of_place(_input, _output, input_length, reduce_by);
         else
@@ -461,21 +464,21 @@ struct remove_estimated_background {
                                    raw_type* _output,
                                    const SizeType& _length)
     {
-	std::copy(_input, _input + _length, _output);
+        std::copy(_input, _input + _length, _output);
         return SUCCESS;
     }
-    
+
     template <typename SizeType>
     static const error_code decode(const compressed_type* _input,
                                    raw_type* _output,
                                    const std::vector<SizeType>& _length)
     {
-	unsigned long total_size = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<SizeType>());
-	
+        unsigned long total_size = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<SizeType>());
+
         return decode(_input, _output, total_size);
     }
-    
-    
+
+
 };
 } //sqeazy
 

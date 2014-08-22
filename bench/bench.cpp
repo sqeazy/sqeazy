@@ -133,6 +133,12 @@ struct fill_suite_config {
         roundtrip = morphing(roundtrip_p);
         save_encoded = morphing(save_encoded_p);
 
+	//TODO: the following is not platform independent
+        if(roundtrip[roundtrip.size()-1]!='/')
+            roundtrip += "/";
+
+        if(save_encoded[save_encoded.size()-1]!='/')
+            save_encoded += "/";
     }
 
 };

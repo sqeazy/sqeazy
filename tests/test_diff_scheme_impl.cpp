@@ -10,20 +10,6 @@
 typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 typedef sqeazy::diff_scheme<unsigned short> local_diff_scheme ;
 
-// BOOST_FIXTURE_TEST_SUITE( diff_scheme_suite, uint16_cube_of_8 )
- 
-
-// BOOST_AUTO_TEST_CASE( check_success )
-// {
-  
-//   const unsigned axis_size = axis_length;
-//   const unsigned total_size = size;
-//   BOOST_CHECK_EQUAL(local_diff_scheme::index_in_ghost_layer(0,axis_length,axis_length,axis_length),true);
-//   BOOST_CHECK_EQUAL(local_diff_scheme::index_in_ghost_layer(axis_size+1,axis_size,axis_size,axis_size),true);
-//   BOOST_CHECK_EQUAL(local_diff_scheme::index_in_ghost_layer(total_size/2,axis_size,axis_size,axis_size),false);
-// }
-
-// BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_FIXTURE_TEST_SUITE( offset_calculation, uint16_cube_of_8 )
 
@@ -96,5 +82,16 @@ BOOST_AUTO_TEST_CASE( offset_exact_last_plane )
   BOOST_CHECK_EQUAL(offsets.at(1),axis_size*axis_size + 2*axis_size + 1);
   BOOST_CHECK_EQUAL(offsets.back(),(axis_size-1)*axis_size*axis_size + ((axis_size-1-1))*axis_size + 1);
 
+}
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE( offset_calculation, uint16_cube_of_8 )
+BOOST_AUTO_TEST_CASE( Neighborhood_size )
+{
+//   sqeazy::last_plane_neighborhood<3> local;
+  unsigned traversed_pixels = sqeazy::num_traversed_pixels<sqeazy::last_plane_neighborhood<3> >();
+  BOOST_CHECK_GT(traversed_pixels,0);
+  BOOST_CHECK_EQUAL(traversed_pixels,9);
+  
 }
 BOOST_AUTO_TEST_SUITE_END()
