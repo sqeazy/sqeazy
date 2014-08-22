@@ -43,7 +43,7 @@ static const int offset_end_on_axis(const int& _dim_number) {
 template <typename Neighborhood>
 static const unsigned num_traversed_pixels() {
 
-    static unsigned value = 1;
+     unsigned value = 1;
     for(unsigned dim_id = 0;dim_id<Neighborhood::num_dims;++dim_id){
       
       value *= offset_end_on_axis<Neighborhood>(dim_id) - offset_begin_on_axis<Neighborhood>(dim_id);

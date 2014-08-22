@@ -89,9 +89,15 @@ BOOST_FIXTURE_TEST_SUITE( offset_calculation, uint16_cube_of_8 )
 BOOST_AUTO_TEST_CASE( Neighborhood_size )
 {
 //   sqeazy::last_plane_neighborhood<3> local;
-  unsigned traversed_pixels = sqeazy::num_traversed_pixels<sqeazy::last_plane_neighborhood<3> >();
-  BOOST_CHECK_GT(traversed_pixels,0);
-  BOOST_CHECK_EQUAL(traversed_pixels,9);
+  unsigned last_plane_traversed_pixels = sqeazy::num_traversed_pixels<sqeazy::last_plane_neighborhood<3> >();
+  BOOST_CHECK_GT(last_plane_traversed_pixels,0);
+  BOOST_CHECK_EQUAL(last_plane_traversed_pixels,9);
+  last_plane_traversed_pixels = sqeazy::num_traversed_pixels<sqeazy::last_plane_neighborhood<3> >();
+  BOOST_CHECK_EQUAL(last_plane_traversed_pixels,9);
+  
+  unsigned last_in_cube_traversed_pixels = sqeazy::num_traversed_pixels<sqeazy::last_pixels_in_cube_neighborhood<3> >();
+  BOOST_CHECK_GT(last_in_cube_traversed_pixels,0);
+  BOOST_CHECK_EQUAL(last_in_cube_traversed_pixels,8);
   
 }
 BOOST_AUTO_TEST_SUITE_END()

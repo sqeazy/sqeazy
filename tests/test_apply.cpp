@@ -128,7 +128,7 @@ BOOST_FIXTURE_TEST_SUITE( pipeline_on_chars, uint8_cube_of_8 )
 
 BOOST_AUTO_TEST_CASE( encode_bitswap1 )
 {
-    typedef sqeazy::bmpl::vector<sqeazy::bitswap_scheme<char>, sqeazy::lz4_scheme<char,long> > test_pipe;
+    typedef sqeazy::bmpl::vector<sqeazy::bitswap_scheme<value_type>, sqeazy::lz4_scheme<value_type> > test_pipe;
     typedef sqeazy::pipeline<test_pipe> current_pipe;
 
     std::string pipe_name = current_pipe::name();
@@ -137,17 +137,18 @@ BOOST_AUTO_TEST_CASE( encode_bitswap1 )
 
     BOOST_CHECK_NE(pipe_name.find("lz4"),std::string::npos);
 
-    BOOST_CHECK_NE(current_pipe::name().find("bitswap1"),std::string::npos);
+    BOOST_CHECK_NE(current_pipe::name().find("bswap1"),std::string::npos);
 
-    const char* input = reinterpret_cast<const char*>(&constant_cube[0]);
+    const value_type* input = reinterpret_cast<const value_type*>(&constant_cube[0]);
     char* output = reinterpret_cast<char*>(&to_play_with[0]);
 
-    const unsigned local_size = uint8_cube_of_8::size;
-    int ret = current_pipe::compress(input, output, local_size);
+    unsigned local_size = uint8_cube_of_8::size;
+    unsigned written_bytes = 0;
+    int ret = current_pipe::compress(input, output, local_size, written_bytes);
 
     BOOST_CHECK_NE(input[0],output[0]);
     BOOST_CHECK_NE(ret,42);
-    const unsigned written_bytes = sqeazy::lz4_scheme<char,long>::last_num_encoded_bytes;
+    
     BOOST_CHECK_NE(written_bytes,local_size);
 
 }
@@ -161,11 +162,13 @@ BOOST_AUTO_TEST_CASE( plain_encode_decode_chars )
 
     char* output = reinterpret_cast<char*>(&to_play_with[0]);
 
-    const unsigned local_size = size;
+    unsigned local_size = size;
+    unsigned written_bytes=0;
+    
     const value_type* input = &constant_cube[0];
-    int enc_ret = current_pipe::compress(input, output, local_size);
+    int enc_ret = current_pipe::compress(input, output, local_size, written_bytes);
 
-    const unsigned written_bytes = current_pipe::last_num_encoded_bytes;
+    
     char* temp  = new char[written_bytes];
     std::copy(output,output + written_bytes, temp);
 
@@ -187,11 +190,12 @@ BOOST_AUTO_TEST_CASE( encode_decode_bitswap_chars )
 
 
     char* output = reinterpret_cast<char*>(&to_play_with[0]);
-
-    const unsigned local_size = uint8_cube_of_8::size;
-    int enc_ret = current_pipe::compress(&constant_cube[0], output, local_size);
-
-    const unsigned written_bytes = current_pipe::last_num_encoded_bytes;
+    
+    unsigned local_size = size;
+    unsigned written_bytes=0;
+    
+    int enc_ret = current_pipe::compress(&constant_cube[0], output, local_size, written_bytes);
+    
     std::vector<char> temp(output,output + written_bytes);
     
     int dec_ret = current_pipe::decompress(&temp[0], &to_play_with[0], written_bytes);
@@ -211,15 +215,16 @@ BOOST_AUTO_TEST_CASE( plain_encode_decode_shorts )
 {
     typedef sqeazy::bmpl::vector<sqeazy::lz4_scheme<value_type> > test_pipe;
     typedef sqeazy::pipeline<test_pipe> current_pipe;
-    const unsigned local_size = size;
+    
 
     char* output = reinterpret_cast<char*>(&to_play_with[0]);
 
-    
-    int enc_ret = current_pipe::compress(&constant_cube[0], output, local_size);
+    unsigned local_size = size;
+    unsigned written_bytes=0;
+    int enc_ret = current_pipe::compress(&constant_cube[0], output, local_size,written_bytes);
     BOOST_CHECK_EQUAL(enc_ret,0);
     
-    const unsigned written_bytes = current_pipe::last_num_encoded_bytes;
+    
     
     std::vector<char> temp(output,output + (2*written_bytes));
     
@@ -294,13 +299,14 @@ BOOST_AUTO_TEST_CASE( encode_decode_diff_shorts_dims_input )
     char* output = reinterpret_cast<char*>(&to_play_with[0]);
 
     std::vector<int> dims(3);
-    const unsigned local_axis_length = axis_length;
+    unsigned local_axis_length = axis_length;
     std::fill(dims.begin(), dims.end(), local_axis_length);
 //     const unsigned local_size = size;
-    int enc_ret = current_pipe::compress(&constant_cube[0], output, dims);
+    unsigned written_bytes = 0;  
+    int enc_ret = current_pipe::compress(&constant_cube[0], output, dims, written_bytes);
 
     
-    const unsigned written_bytes = current_pipe::last_num_encoded_bytes;
+    
     std::vector<char> temp(output,output + written_bytes);
     
     int dec_ret = current_pipe::decompress(&temp[0], &to_play_with[0], written_bytes);

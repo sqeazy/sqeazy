@@ -173,8 +173,31 @@ struct pipeline : public bmpl::back<TypeList>::type {
 
     }
 
+    template <typename SizeType, typename ScalarType>
+    static typename boost::enable_if_c<sizeof(SizeType) && compressor_type::is_compressor,int>::type
+    compress(const raw_type* _in, 
+	     compressed_type* _out,
+             SizeType& _size,
+             ScalarType& _num_compressed_bytes) {
+
+        typedef typename first_step::compressed_type output_type;
+
+        static const int size = type_list_size - 1;
+
+        typedef loop_encode<TypeList , size> pipe_loop;
+
+        output_type* first_output = reinterpret_cast<output_type*>(_out);
+        int value = pipe_loop::apply(_in, first_output, _size);
+	
+        _num_compressed_bytes = compressor_type::last_num_encoded_bytes;
+        return value;
+
+    }
+
+
     template <typename SizeType>
-    static int compress(const raw_type* _in, compressed_type* _out, SizeType& _size) {
+    static int compress(const raw_type* _in, compressed_type* _out,
+                        SizeType& _size) {
 
         typedef typename first_step::compressed_type output_type;
 
