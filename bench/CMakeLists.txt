@@ -17,7 +17,8 @@ SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++11")
 SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -std=c++11")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/bench/cmake)
-FIND_PACKAGE(ROOT REQUIRED)
+
+FIND_PACKAGE(ROOT QUIET)
 IF(ROOT_FOUND)
 add_executable(histo histo.cpp)
 target_link_libraries(histo tiff ${ROOT_LIBRARIES})
@@ -28,8 +29,9 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE)
 set_target_properties(histo PROPERTIES COMPILE_FLAGS ${ROOT_INCLUDE_FLAGS})
 Message("Building histo, added \n\t${ROOT_LIBRARIES}\n\t${ROOT_INCLUDE_FLAGS}")
+
 ELSE(ROOT_FOUND)
-WARNING("Skipping histo util, ROOT not found\!")
+message(">> Skipping optional bench/histo utility, ROOT libraries not found!")
 ENDIF(ROOT_FOUND)
 
 
