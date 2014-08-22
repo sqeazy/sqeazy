@@ -198,18 +198,19 @@ struct histogram {
         const twice_value_type end = large_pop_bin_value +1;
  
  
-	unsigned mean_index = round<unsigned>(mean());
-        float mean_value = 0;
-        if(mean_index<num_bins) {
-            mean_value = bins[mean_index];
-        }
+	//unsigned mean_index = round<unsigned>(mean());
+        // float mean_value = 0;
+        // if(mean_index<num_bins) {
+        //     mean_value = bins[mean_index];
+        // }
         
+	float temp;
         for(twice_value_type i = smallest_populated_bin(); i<(end); ++i) {
-            float temp = bins[i] - mean_value;
-            mean_variation += (temp)*(temp);
+	  temp = float(i) - mean();
+	  mean_variation += (temp)*(temp)*bins[i];
         }
 
-        mean_variation/=float(num_bins - 1);
+        mean_variation/=integral();
 
         return std::sqrt(mean_variation);
 
@@ -276,18 +277,15 @@ struct histogram {
 
         float median_variation = 0;
         const twice_value_type end = large_pop_bin_value +1;
-        unsigned median_index = round<unsigned>(median());
-        float median_value = 0;
-        if(median_index<num_bins) {
-            median_value = bins[median_index];
-        }
+        
 
+	float temp = 0;
         for(twice_value_type i = smallest_populated_bin(); i<(end); ++i) {
-            float temp = bins[i] - median_value;
-            median_variation += (temp)*(temp);
+	  temp = i - median();
+	  median_variation += (temp)*(temp)*bins[i];
         }
 
-        median_variation/=float(num_bins - 1);
+        median_variation/=integral();
 
         return std::sqrt(median_variation);
 

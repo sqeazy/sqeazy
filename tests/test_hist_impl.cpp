@@ -152,17 +152,24 @@ BOOST_FIXTURE_TEST_SUITE( hist_impl_unsigned16, uint16_cube_of_8 )
 
 BOOST_AUTO_TEST_CASE( median_variation )
 {
+  boost::accumulators::accumulator_set<float,
+          boost::accumulators::stats<boost::accumulators::tag::mean,
+				     boost::accumulators::tag::median,
+				     boost::accumulators::tag::variance
+          > 
+          > to_play_with_acc;
     boost::random::mt19937 rng;
-    boost::random::lognormal_distribution<float> lnorm(10.f,2);
+    boost::random::lognormal_distribution<float> lnorm(1.f,1.f);
 
     for(unsigned num = 0; num<size; ++num) {
 
-        to_play_with[num] = lnorm(rng)/**(std::numeric_limits< value_type >::max()/2.f)*/;
-
+        to_play_with[num] = lnorm(rng);
+	to_play_with_acc(to_play_with[num]);
     }
 
     sqeazy::histogram<value_type> of_variable(&to_play_with[0], size);
 
+    BOOST_CHECK_NE(boost::accumulators::mean(to_play_with_acc),boost::accumulators::median(to_play_with_acc));
     BOOST_CHECK_NE(of_variable.median(),of_variable.median_variation());
 //    BOOST_CHECK_NE(of_variable.mean_variation(),of_variable.median_variation());
 
@@ -201,7 +208,7 @@ BOOST_AUTO_TEST_CASE( median_variance_vs_boost )
           > to_play_with_acc;
 
 	  boost::random::mt19937 rng;
-    boost::random::normal_distribution<float> norm(10,2);
+    boost::random::normal_distribution<float> norm(128,8);
 
     for(unsigned num = 0; num<size; ++num) {
 
@@ -210,9 +217,11 @@ BOOST_AUTO_TEST_CASE( median_variance_vs_boost )
 
     }
 	  sqeazy::histogram<value_type> of_norm(&to_play_with[0], size);
-	  BOOST_CHECK_CLOSE(of_norm.mean(), 10,10);
-	  BOOST_CHECK_CLOSE(of_norm.mean(), boost::accumulators::mean(to_play_with_acc),1e-1);
-	  BOOST_CHECK_CLOSE(of_norm.mean_variation(), boost::accumulators::variance(to_play_with_acc),1e-1);
-	  BOOST_CHECK_CLOSE(of_norm.mean_variation(), boost::accumulators::moment<2>(to_play_with_acc),1e-1);
+	  BOOST_CHECK_CLOSE(of_norm.mean(), 128, 10);
+	  BOOST_CHECK_CLOSE(of_norm.mean(), boost::accumulators::mean(to_play_with_acc),1);
+	  BOOST_CHECK_CLOSE(of_norm.mean_variation(), 
+			    std::sqrt(boost::accumulators::variance(to_play_with_acc)),1e-1);
+	  // BOOST_CHECK_CLOSE(of_norm.mean_variation(), 
+	  // 		    std::sqrt(boost::accumulators::moment<2>(to_play_with_acc)),1);
 }
 BOOST_AUTO_TEST_SUITE_END()
