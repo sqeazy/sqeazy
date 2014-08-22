@@ -136,5 +136,6 @@ BOOST_AUTO_TEST_CASE( diff_it )
   
   BOOST_CHECK_EQUAL(to_play_with[12],to_play_with[13]);
   
+  
 }
 BOOST_AUTO_TEST_SUITE_END()

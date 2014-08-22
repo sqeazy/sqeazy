@@ -12,6 +12,8 @@
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/mean.hpp>
 #include <boost/accumulators/statistics/median.hpp>
+#include <boost/accumulators/statistics/variance.hpp>
+#include <boost/accumulators/statistics/moment.hpp>
 
 typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 typedef sqeazy::array_fixture<unsigned char> uint8_cube_of_8;
@@ -187,5 +189,30 @@ BOOST_AUTO_TEST_CASE( data_of_all_zeroes )
     BOOST_CHECK_EQUAL(of_variable.calc_mean(),0);
     BOOST_CHECK_EQUAL(of_variable.calc_median_variation(),0.f);
     BOOST_CHECK_EQUAL(of_variable.calc_mean_variation(),0.f);	
+}
+
+
+BOOST_AUTO_TEST_CASE( median_variance_vs_boost )
+{
+    boost::accumulators::accumulator_set<float,
+          boost::accumulators::stats<boost::accumulators::tag::mean,
+          boost::accumulators::tag::variance,boost::accumulators::tag::moment<2>
+          > 
+          > to_play_with_acc;
+
+	  boost::random::mt19937 rng;
+    boost::random::normal_distribution<float> norm(10,2);
+
+    for(unsigned num = 0; num<size; ++num) {
+
+        to_play_with[num] = norm(rng)/**(std::numeric_limits< value_type >::max()/2.f)*/;
+	to_play_with_acc(to_play_with[num]);
+
+    }
+	  sqeazy::histogram<value_type> of_norm(&to_play_with[0], size);
+	  BOOST_CHECK_CLOSE(of_norm.mean(), 10,10);
+	  BOOST_CHECK_CLOSE(of_norm.mean(), boost::accumulators::mean(to_play_with_acc),1e-1);
+	  BOOST_CHECK_CLOSE(of_norm.mean_variation(), boost::accumulators::variance(to_play_with_acc),1e-1);
+	  BOOST_CHECK_CLOSE(of_norm.mean_variation(), boost::accumulators::moment<2>(to_play_with_acc),1e-1);
 }
 BOOST_AUTO_TEST_SUITE_END()
