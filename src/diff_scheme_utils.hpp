@@ -2,6 +2,7 @@
 #define _DIFF_SCHEME_UTILS_H_
 
 #include <vector>
+#include <numeric>
 
 #include "sqeazy_traits.hpp"
 
@@ -43,13 +44,13 @@ static const int offset_end_on_axis(const int& _dim_number) {
 template <typename Neighborhood>
 static const unsigned num_traversed_pixels() {
 
-     unsigned value = 1;
-    for(unsigned dim_id = 0;dim_id<Neighborhood::num_dims;++dim_id){
-      
-      value *= offset_end_on_axis<Neighborhood>(dim_id) - offset_begin_on_axis<Neighborhood>(dim_id);
-      
+    unsigned value = 1;
+    for(unsigned dim_id = 0; dim_id<Neighborhood::num_dims; ++dim_id) {
+
+        value *= offset_end_on_axis<Neighborhood>(dim_id) - offset_begin_on_axis<Neighborhood>(dim_id);
+
     }
-    //return (Neighborhood::z_offset_end-Neighborhood::z_offset_begin)*(Neighborhood::y_offset_end-Neighborhood::y_offset_begin)*(Neighborhood::x_offset_end-Neighborhood::x_offset_begin);
+
     return value;
 
 }
@@ -61,10 +62,6 @@ struct last_plane_neighborhood {
     static const unsigned axis_half   = extent/2;
     static const unsigned num_dims    = 3;
 
-    //the indexing assumed is :
-    //axis_begin[0] = x_axis_begin
-    //axis_begin[1] = y_axis_begin
-    //axis_begin[2] = z_axis_begin
 
     //this is the inclusive start
     static const int z_offset_begin = -1;
@@ -76,32 +73,28 @@ struct last_plane_neighborhood {
     static const int z_offset_end = z_offset_begin+1;
     static const int y_offset_end = axis_half+1;
     static const int x_offset_end = axis_half+1;
-/*
-    static int offset_begin(int _dim) {
 
-        static int begins[3] = {x_offset_begin,y_offset_begin,z_offset_begin};
+};
 
-        if(_dim<3) {
-            return begins[_dim];
-        }
-        else
-            return -1;
+template < unsigned num_pixels = 8>
+struct last_pixels_on_line_neighborhood {
+
+    static const unsigned axis_length = num_pixels;
+    static const unsigned axis_half   = axis_length/2;
+    static const unsigned num_dims    = 3;
 
 
-    };
+    //this is the inclusive start
+    static const int z_offset_begin = 0;
+    static const int y_offset_begin = 0;
+    static const int x_offset_begin = -num_pixels;
 
-    static int offset_end(int _dim) {
 
-        static int ends[3] = {x_offset_end,y_offset_end,z_offset_end};
+    //this is the exclusive end, so the index one past the last element
+    static const int z_offset_end = z_offset_begin+1;
+    static const int y_offset_end = y_offset_begin+1;
+    static const int x_offset_end = 0;
 
-        if(_dim<3) {
-            return ends[_dim];
-        }
-        else
-            return -1;
-    };*/
-
-//    static const int traversed = (z_offset_end-z_offset_begin)*(y_offset_end-y_offset_begin)*(x_offset_end-x_offset_begin);
 };
 
 
@@ -113,11 +106,6 @@ struct last_pixels_in_cube_neighborhood {
     static const unsigned axis_half   = extent/2;
     static const unsigned num_dims    = 3;
 
-    //the indexing assumed is :
-    //axis_begin[0] = x_axis_begin
-    //axis_begin[1] = y_axis_begin
-    //axis_begin[2] = z_axis_begin
-
     //this is the inclusive start
     static const int z_offset_begin = -axis_half;
     static const int y_offset_begin = -axis_half;
@@ -128,32 +116,6 @@ struct last_pixels_in_cube_neighborhood {
     static const int z_offset_end = 1;
     static const int y_offset_end = 1;
     static const int x_offset_end = 1;
-
-//     static int offset_begin(int _dim) {
-// 
-//         static int begins[3] = {x_offset_begin,y_offset_begin,z_offset_begin};
-// 
-//         if(_dim<3) {
-//             return begins[_dim];
-//         }
-//         else
-//             return -1;
-//     };
-// 
-//     static int offset_end(int _dim) {
-// 
-//         static int ends[3] = {x_offset_end,y_offset_end,z_offset_end};
-// 
-//         if(_dim<3) {
-//             return ends[_dim];
-//         }
-//         else
-//             return -1;
-//     };
-/*
-    static const int traversed = (z_offset_end-z_offset_begin)*(y_offset_end-y_offset_begin)*(x_offset_end-x_offset_begin);
-
-*/
 
 };
 
@@ -180,34 +142,12 @@ struct cube_neighborhood_excluding_pixel {
     static const int y_offset_end = 0;
     static const int x_offset_end = 0;
 
-//     static int offset_begin(int _dim) {
-// 
-//         static int begins[3] = {x_offset_begin,y_offset_begin,z_offset_begin};
-// 
-//         if(_dim<3) {
-//             return begins[_dim];
-//         }
-// 
-//     };
-// 
-//     static int offset_end(int _dim) {
-// 
-//         static int ends[3] = {x_offset_end,y_offset_end,z_offset_end};
-// 
-//         if(_dim<3) {
-//             return ends[_dim];
-//         }
-// 
-//     };
-/*
-    static const int traversed = (z_offset_end-z_offset_begin)*(y_offset_end-y_offset_begin)*(x_offset_end-x_offset_begin);
-*/
-
 };
 
 template <typename Neighborhood, typename U>
 struct halo {
 
+    typedef typename sqeazy::twice_as_wide<U>::type length_type;
     std::vector<U> world;
 
     halo(const U& _w, const U& _h, const U& _d) {
@@ -215,6 +155,13 @@ struct halo {
         world[0] = _w;
         world[1] = _h;
         world[2] = _d;
+    }
+
+    template <typename Itr>
+    halo(Itr begin, Itr end) :
+        world(begin, end)
+    {
+
     }
 
 
@@ -235,20 +182,37 @@ struct halo {
 
 
 
-        unsigned num_offsets_required = (non_halo_end(2) - non_halo_begin(2))*(non_halo_end(1) - non_halo_begin(1));
+        length_type num_offsets_required = 1;
+        int non_halo_length = 0;
+        for(int i = world.size()-1; i>0; --i) {
+            non_halo_length = non_halo_end(i) - non_halo_begin(i);
+            if(non_halo_length!=world.at(i))
+                num_offsets_required *= non_halo_length;
+        }
 
         _offsets.clear();
         _offsets.reserve(num_offsets_required);
         std::fill(_offsets.begin(), _offsets.end(),0);
 
-        unsigned offset = 0;
-        for(T z_index = non_halo_begin(2); z_index<non_halo_end(2); ++z_index) {
-            for(T y_index = non_halo_begin(1); y_index<non_halo_end(1); ++y_index) {
+        if(num_offsets_required>1) {
 
-                offset = z_index*world[1]*world[0] + y_index*world[0] + non_halo_begin(0);
-                _offsets.push_back(offset);
+            length_type offset = 0;
+            length_type length = std::accumulate(world.begin(), world.end(), 1, std::multiplies<U>());
 
+            for(T z_index = non_halo_begin(2); z_index<non_halo_end(2); ++z_index) {
+                for(T y_index = non_halo_begin(1); y_index<non_halo_end(1); ++y_index) {
+
+                    offset = z_index*world[1]*world[0] + y_index*world[0] + non_halo_begin(0);
+                    if(offset<length)
+                        _offsets.push_back(offset);
+
+                }
             }
+        }
+        else {
+	    _offsets.resize(1);
+            _offsets[0] =(non_halo_begin(0));
+
         }
 
 

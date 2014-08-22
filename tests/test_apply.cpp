@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_CASE( encode_bitswap1 )
 
     BOOST_CHECK_NE(input[0],output[0]);
     BOOST_CHECK_NE(ret,42);
-    
+
     BOOST_CHECK_NE(written_bytes,local_size);
 
 }
@@ -164,11 +164,11 @@ BOOST_AUTO_TEST_CASE( plain_encode_decode_chars )
 
     unsigned local_size = size;
     unsigned written_bytes=0;
-    
+
     const value_type* input = &constant_cube[0];
     int enc_ret = current_pipe::compress(input, output, local_size, written_bytes);
 
-    
+
     char* temp  = new char[written_bytes];
     std::copy(output,output + written_bytes, temp);
 
@@ -190,18 +190,18 @@ BOOST_AUTO_TEST_CASE( encode_decode_bitswap_chars )
 
 
     char* output = reinterpret_cast<char*>(&to_play_with[0]);
-    
+
     unsigned local_size = size;
     unsigned written_bytes=0;
-    
+
     int enc_ret = current_pipe::compress(&constant_cube[0], output, local_size, written_bytes);
-    
+
     std::vector<char> temp(output,output + written_bytes);
-    
+
     int dec_ret = current_pipe::decompress(&temp[0], &to_play_with[0], written_bytes);
     BOOST_REQUIRE_EQUAL(enc_ret,0);
     BOOST_REQUIRE_EQUAL(dec_ret,0);
-   
+
 
     BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(), constant_cube.end(),
                                   &to_play_with[0], &to_play_with[0] + size
@@ -215,7 +215,7 @@ BOOST_AUTO_TEST_CASE( plain_encode_decode_shorts )
 {
     typedef sqeazy::bmpl::vector<sqeazy::lz4_scheme<value_type> > test_pipe;
     typedef sqeazy::pipeline<test_pipe> current_pipe;
-    
+
 
     char* output = reinterpret_cast<char*>(&to_play_with[0]);
 
@@ -223,16 +223,16 @@ BOOST_AUTO_TEST_CASE( plain_encode_decode_shorts )
     unsigned written_bytes=0;
     int enc_ret = current_pipe::compress(&constant_cube[0], output, local_size,written_bytes);
     BOOST_CHECK_EQUAL(enc_ret,0);
-    
-    
-    
+
+
+
     std::vector<char> temp(output,output + (2*written_bytes));
-    
+
 
     int dec_ret = current_pipe::decompress(&temp[0], &to_play_with[0], written_bytes);
-    
+
     BOOST_CHECK_EQUAL(dec_ret,0);
-    
+
 
     BOOST_CHECK_EQUAL_COLLECTIONS(&constant_cube[0],&constant_cube[0] + local_size,
                                   &to_play_with[0], &to_play_with[0] + local_size
@@ -250,10 +250,10 @@ BOOST_AUTO_TEST_CASE( encode_decode_bitswap_shorts )
     const unsigned local_size = size;
     int enc_ret = current_pipe::compress(&constant_cube[0], output, local_size);
 
-    
+
     const unsigned written_bytes = current_pipe::last_num_encoded_bytes;
     std::vector<char> temp(output,output + written_bytes);
-    
+
     int dec_ret = current_pipe::decompress(&temp[0], &to_play_with[0], written_bytes);
     BOOST_REQUIRE_EQUAL(enc_ret,0);
     BOOST_REQUIRE_EQUAL(dec_ret,0);
@@ -277,10 +277,10 @@ BOOST_AUTO_TEST_CASE( encode_decode_bitswap_shorts_dims_input )
 //     const unsigned local_size = size;
     int enc_ret = current_pipe::compress(&constant_cube[0], output, dims);
 
-    
+
     const unsigned written_bytes = current_pipe::last_num_encoded_bytes;
     std::vector<char> temp(output,output + written_bytes);
-    
+
     int dec_ret = current_pipe::decompress(&temp[0], &to_play_with[0], written_bytes);
     BOOST_REQUIRE_EQUAL(enc_ret,0);
     BOOST_REQUIRE_EQUAL(dec_ret,0);
@@ -302,13 +302,13 @@ BOOST_AUTO_TEST_CASE( encode_decode_diff_shorts_dims_input )
     unsigned local_axis_length = axis_length;
     std::fill(dims.begin(), dims.end(), local_axis_length);
 //     const unsigned local_size = size;
-    unsigned written_bytes = 0;  
+    unsigned written_bytes = 0;
     int enc_ret = current_pipe::compress(&constant_cube[0], output, dims, written_bytes);
 
-    
-    
+
+
     std::vector<char> temp(output,output + written_bytes);
-    
+
     int dec_ret = current_pipe::decompress(&temp[0], &to_play_with[0], written_bytes);
     BOOST_REQUIRE_EQUAL(enc_ret,0);
     BOOST_REQUIRE_EQUAL(dec_ret,0);
@@ -333,10 +333,38 @@ BOOST_AUTO_TEST_CASE( encode_decode_diff_shorts_incrementing_input )
 //     const unsigned local_size = size;
     int enc_ret = current_pipe::compress(&incrementing_cube[0], output, dims);
 
-    
+
     const unsigned written_bytes = current_pipe::last_num_encoded_bytes;
     std::vector<char> temp(output,output + written_bytes);
-    
+
+    int dec_ret = current_pipe::decompress(&temp[0], &to_play_with[0], written_bytes);
+    BOOST_REQUIRE_EQUAL(enc_ret,0);
+    BOOST_REQUIRE_EQUAL(dec_ret,0);
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(&incrementing_cube[0],&incrementing_cube[0] + size,
+                                  &to_play_with[0], &to_play_with[0] + size
+                                 );
+}
+
+BOOST_AUTO_TEST_CASE( encode_decode_diff_shorts_incrementing_input_last_pixels_on_line )
+{
+
+    typedef sqeazy::bmpl::vector<sqeazy::diff_scheme<value_type, sqeazy::last_pixels_on_line_neighborhood<> >,
+            sqeazy::lz4_scheme<value_type> > test_pipe;
+    typedef sqeazy::pipeline<test_pipe> current_pipe;
+
+    char* output = reinterpret_cast<char*>(&to_play_with[0]);
+
+    std::vector<int> dims(3);
+    const unsigned local_axis_length = axis_length;
+    std::fill(dims.begin(), dims.end(), local_axis_length);
+//     const unsigned local_size = size;
+    int enc_ret = current_pipe::compress(&incrementing_cube[0], output, dims);
+
+
+    const unsigned written_bytes = current_pipe::last_num_encoded_bytes;
+    std::vector<char> temp(output,output + written_bytes);
+
     int dec_ret = current_pipe::decompress(&temp[0], &to_play_with[0], written_bytes);
     BOOST_REQUIRE_EQUAL(enc_ret,0);
     BOOST_REQUIRE_EQUAL(dec_ret,0);

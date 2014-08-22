@@ -46,6 +46,11 @@ typedef sqeazy::bmpl::vector< sqeazy::diff_scheme<unsigned short>,
         sqeazy::lz4_scheme<unsigned short> > diff_bswap1_lz4;
 typedef sqeazy::pipeline<diff_bswap1_lz4> diff_bswap1_lz4_pipe;
 
+typedef sqeazy::bmpl::vector< sqeazy::diff_scheme<unsigned short, sqeazy::last_pixels_on_line_neighborhood<> >,
+        sqeazy::bitswap_scheme<unsigned short>,
+        sqeazy::lz4_scheme<unsigned short> > diffonrow_bswap1_lz4;
+typedef sqeazy::pipeline<diffonrow_bswap1_lz4> diffonrow_bswap1_lz4_pipe;
+
 typedef sqeazy::bmpl::vector< sqeazy::huffman_scheme<unsigned short>,
         sqeazy::bitswap_scheme<unsigned short>,
         sqeazy::lz4_scheme<unsigned short> > huff_bswap1_lz4;
@@ -55,6 +60,10 @@ typedef sqeazy::pipeline<huff_bswap1_lz4> huff_bswap1_lz4_pipe;
 typedef sqeazy::bmpl::vector< sqeazy::diff_scheme<unsigned short>,
         sqeazy::lz4_scheme<unsigned short> > diff_lz4;
 typedef sqeazy::pipeline<diff_lz4> diff_lz4_pipe;
+
+typedef sqeazy::bmpl::vector< sqeazy::diff_scheme<unsigned short, sqeazy::last_pixels_on_line_neighborhood<> >,
+        sqeazy::lz4_scheme<unsigned short> > diffonrow_lz4;
+typedef sqeazy::pipeline<diffonrow_lz4> diffonrow_lz4_pipe;
 
 typedef sqeazy::bmpl::vector< sqeazy::bitswap_scheme<unsigned short>,
         sqeazy::lz4_scheme<unsigned short> > bswap1_lz4;
@@ -242,11 +251,13 @@ int main(int argc, char *argv[])
     prog_flow["compress_rmbkg_huff_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
     prog_flow["compress_rmbkg_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_bswap1_lz4_pipe>);
     prog_flow["compress_diff_bswap1_lz4"] = func_t(fill_suite<unsigned short, diff_bswap1_lz4_pipe>);
+    prog_flow["compress_diffonrow_bswap1_lz4"] = func_t(fill_suite<unsigned short, diffonrow_bswap1_lz4_pipe>);
     prog_flow["compress_bswap1_lz4"] = func_t(fill_suite<unsigned short, bswap1_lz4_pipe>);
     prog_flow["compress_diff_lz4"] = func_t(fill_suite<unsigned short, diff_lz4_pipe>);
     prog_flow["compress_lz4"] = func_t(fill_suite<unsigned short, lz4_pipe>);
 
     prog_flow["experim_rmbkg_lz4"] = func_t(fill_suite<unsigned short, rmbkg_lz4_pipe>);
+    prog_flow["experim_diffonrow_lz4"] = func_t(fill_suite<unsigned short, diffonrow_lz4_pipe>);
     prog_flow["experim_huff_lz4"] = func_t(fill_suite<unsigned short, huff_lz4_pipe>);
     prog_flow["experim_huff_bswap1_lz4"] = func_t(fill_suite<unsigned short, huff_bswap1_lz4_pipe>);
 

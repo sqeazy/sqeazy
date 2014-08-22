@@ -53,7 +53,11 @@ struct diff_scheme {
         geometry.compute_offsets_in_x(offsets);
         typename std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
 
-        const size_type halo_size_x = geometry.non_halo_end(0)-geometry.non_halo_begin(0);
+        size_type halo_size_x = geometry.non_halo_end(0)-geometry.non_halo_begin(0);
+	if(offsets.size()==1)//no offsets in other dimensions than x
+	{
+	  halo_size_x = length - offsets[0];
+	}
         sum_type local_sum = 0;
         size_type local_index = 0;
         const sum_type n_traversed_pixels = sqeazy::num_traversed_pixels<Neighborhood>();
@@ -106,12 +110,16 @@ struct diff_scheme {
         geometry.compute_offsets_in_x(offsets);
         typename std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
 
-        const size_type end_ = geometry.non_halo_end(0)-1;
+        size_type halo_size_x = geometry.non_halo_end(0)-geometry.non_halo_begin(0);
+	if(offsets.size()==1)//no offsets in other dimensions than x
+	{
+	  halo_size_x = length - offsets[0];
+	}
         sum_type local_sum = 0;
 	const sum_type n_traversed_pixels = sqeazy::num_traversed_pixels<Neighborhood>();
 	
         for(; offsetsItr!=offsets.end(); ++offsetsItr) {
-            for(unsigned long index = 0; index < end_; ++index) {
+            for(unsigned long index = 0; index < halo_size_x; ++index) {
 
                 const size_type local_index = index + *offsetsItr;
                 local_sum = naive_sum<Neighborhood>(_output,local_index,_width, _height,_depth);
