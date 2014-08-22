@@ -373,5 +373,30 @@ BOOST_AUTO_TEST_CASE( encode_decode_diff_shorts_incrementing_input_last_pixels_o
                                   &to_play_with[0], &to_play_with[0] + size
                                  );
 }
+
+BOOST_AUTO_TEST_CASE( encode_decode_diff_shorts_incrementing_onrow_types )
+{
+
+  typedef typename sqeazy::remove_unsigned<value_type>::type signed_value_type;
+    typedef sqeazy::bmpl::vector<sqeazy::diff_scheme<value_type, sqeazy::last_pixels_on_line_neighborhood<> >,
+				 sqeazy::bitswap_scheme<value_type,1> > const_raw_type;
+    typedef sqeazy::pipeline<const_raw_type> const_raw_type_pipe;
+
+    typedef sqeazy::bmpl::vector<sqeazy::diff_scheme<value_type, sqeazy::last_pixels_on_line_neighborhood<> >,
+				 sqeazy::bitswap_scheme<signed_value_type,1> > var_raw_type_;
+    typedef sqeazy::pipeline<var_raw_type_> var_type_pipe;
+
+    std::vector<value_type> const_result = to_play_with;
+    std::vector<signed_value_type> var_result(to_play_with.begin(),to_play_with.end());
+
+    int const_ret = const_raw_type_pipe::compress(&incrementing_cube[0], &const_result[0], dims);
+    int var_ret = var_type_pipe::compress(&incrementing_cube[0], &var_result[0], dims);
+
+    std::copy(var_result.begin(), var_result.end(), to_play_with.begin());
+    BOOST_CHECK_EQUAL_COLLECTIONS(const_result.begin(), const_result.end(),
+				  to_play_with.begin(), to_play_with.end());
+    
+    BOOST_CHECK_EQUAL(const_ret, var_ret);
+}
 BOOST_AUTO_TEST_SUITE_END()
 

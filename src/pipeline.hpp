@@ -41,6 +41,7 @@ struct loop_encode {
     typedef typename current_step::raw_type raw_type;
     typedef typename current_step::compressed_type compressed_type;
     typedef typename loop_encode<TList,i-1>::compressed_type next_compressed_type;
+    typedef typename loop_encode<TList,i-1>::raw_type next_raw_type;
 
     template <typename S>
     static int apply(const raw_type* _in, compressed_type* _out, std::vector<S>& _size) {
@@ -54,8 +55,9 @@ struct loop_encode {
         std::copy(_out, _out + total_size, temp_.begin());
 
         next_compressed_type* next_output = reinterpret_cast<next_compressed_type*>(_out);
+        const next_raw_type* next_input = reinterpret_cast<const next_raw_type*>(&temp_[0]);
 
-        return (retvalue*(10*bmpl::size<TList>::value - i - 1)) + loop_encode<TList,i-1>::apply(&temp_[0], next_output, _size);
+        return (retvalue*(10*bmpl::size<TList>::value - i - 1)) + loop_encode<TList,i-1>::apply(next_input, next_output, _size);
 
     }
 
@@ -155,9 +157,9 @@ template <typename TypeList>
 struct pipeline : public bmpl::back<TypeList>::type {
 
     typedef typename bmpl::back<TypeList>::type compressor_type;
-    typedef typename compressor_type::raw_type raw_type;
     typedef typename compressor_type::compressed_type compressed_type;
     typedef typename bmpl::at<TypeList, bmpl::int_<0> >::type first_step;
+    typedef typename first_step::raw_type raw_type;
 
     static const int type_list_size = bmpl::size<TypeList>::value;
 
