@@ -54,14 +54,14 @@ struct diff_scheme {
         typename std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
 
         size_type halo_size_x = geometry.non_halo_end(0)-geometry.non_halo_begin(0);
-	if(offsets.size()==1)//no offsets in other dimensions than x
-	{
-	  halo_size_x = length - offsets[0];
-	}
+        if(offsets.size()==1)//no offsets in other dimensions than x
+        {
+            halo_size_x = length - offsets[0];
+        }
         sum_type local_sum = 0;
         size_type local_index = 0;
         const sum_type n_traversed_pixels = sqeazy::num_traversed_pixels<Neighborhood>();
-	
+
         for(; offsetsItr!=offsets.end(); ++offsetsItr) {
             for(unsigned long index = 0; index < halo_size_x; ++index) {
 
@@ -111,13 +111,13 @@ struct diff_scheme {
         typename std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
 
         size_type halo_size_x = geometry.non_halo_end(0)-geometry.non_halo_begin(0);
-	if(offsets.size()==1)//no offsets in other dimensions than x
-	{
-	  halo_size_x = length - offsets[0];
-	}
+        if(offsets.size()==1)//no offsets in other dimensions than x
+        {
+            halo_size_x = length - offsets[0];
+        }
         sum_type local_sum = 0;
-	const sum_type n_traversed_pixels = sqeazy::num_traversed_pixels<Neighborhood>();
-	
+        const sum_type n_traversed_pixels = sqeazy::num_traversed_pixels<Neighborhood>();
+
         for(; offsetsItr!=offsets.end(); ++offsetsItr) {
             for(unsigned long index = 0; index < halo_size_x; ++index) {
 
@@ -192,6 +192,7 @@ struct bitswap_scheme {
 
         const unsigned segment_length = _length/num_segments;
         const raw_type mask = ~(~0 << (raw_type_num_bits_per_segment));
+        raw_type value = 0;
 
         for(size_type seg_index = 0; seg_index<num_segments; ++seg_index) {
 
@@ -199,7 +200,8 @@ struct bitswap_scheme {
 
             for(size_type index = 0; index < _length; ++index) {
 
-                raw_type value = rotate_left<1>(xor_if_signed(_input[index]));
+                value = xor_if_signed(_input[index]);
+                value = rotate_left<1>(value);
                 raw_type extracted_bits = (value >> input_bit_offset) & mask;
                 size_type output_bit_offset = ((index % num_segments)*raw_type_num_bits_per_segment);
                 size_type output_index = ((num_segments-1-seg_index)*segment_length) + (index/num_segments);

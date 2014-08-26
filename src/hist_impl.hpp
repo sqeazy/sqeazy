@@ -381,7 +381,7 @@ struct histogram {
 };
 
 template <typename T>
-typename T::value_type mpicbg_median_variation(T begin, T end) {
+float mpicbg_median_variation(T begin, T end) {
 
     typedef typename T::value_type value_type;
     typedef std::vector<value_type> local_vector;
