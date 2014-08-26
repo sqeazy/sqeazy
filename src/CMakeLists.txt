@@ -2,6 +2,12 @@
 # src directory
 INCLUDE_DIRECTORIES(.)
 
+# FIND_PACKAGE(LZ4 REQUIRED)
+# IF(LZ4_FOUND)
+# INCLUDE_DIRECTORIES(${LZ4_INCLUDE_DIRS})
+# LINK_DIRECTORIES(${LZ4_LIBRARY_DIRS}) 
+# ENDIF()
+
 add_library(${PROJECT_NAME} SHARED sqeazy.cpp)
 target_link_libraries(${PROJECT_NAME} lz4)
 

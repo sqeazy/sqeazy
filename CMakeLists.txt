@@ -96,8 +96,17 @@ SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${HOST_COMPILER_RELEASE_FLAG
 MESSAGE(">> using release build flags: ${HOST_COMPILER_RELEASE_FLAGS}")
 
 check_cxx_compiler_flag(-std=c++11 HAS_CPP11_COMPILERFLAG)
-# add subdirectories
 
+#lz4 is needed for the entire project, so let's include it here
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+
+FIND_PACKAGE(LZ4 REQUIRED)
+IF(LZ4_FOUND)
+INCLUDE_DIRECTORIES(${LZ4_INCLUDE_DIRS})
+LINK_DIRECTORIES(${LZ4_LIBRARY_DIRS}) 
+ENDIF()
+
+# add subdirectories
 ADD_SUBDIRECTORY(src) # source code of the library
 
 IF(HAS_CPP11_COMPILERFLAG)

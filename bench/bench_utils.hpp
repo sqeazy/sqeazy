@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <array>
+#include <climits>
 #include <boost/concept_check.hpp>
 #include "hist_impl.hpp"
 
@@ -126,12 +127,22 @@ struct bcase {
 
     double compress_ratio() const {
 
-        if(raw_size_in_byte)
-            return double(compressed_size_in_byte)/double(raw_size_in_byte);
+        if(compressed_size_in_byte)
+            return double(raw_size_in_byte)/double(compressed_size_in_byte);
         else
             return 0;
     }
 
+    double max_compress_ratio() const {
+
+      const double sample_entropy = histogram.entropy();
+      double best_compressed_size_in_byte = sample_entropy*histogram.integral()/double(CHAR_BIT);
+        if(best_compressed_size_in_byte>0)
+            return double(raw_size_in_byte)/best_compressed_size_in_byte;
+        else
+            return 0;
+    }
+    
     double compress_speed_mb_per_sec()  {
 
         double time_sec = time_in_microseconds()/double(1e6);
@@ -161,6 +172,7 @@ struct bcase {
               << _in.histogram.mean() << "\t"
               << _in.time_us << "\t"
               << _in.compress_ratio()<< "\t"
+	      << _in.max_compress_ratio()<< "\t"
               << _in.filename
               << "\n";
         return _cout;
