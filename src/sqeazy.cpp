@@ -224,20 +224,6 @@ int SQY_RmBackground_Estimated_UI16(int width, int height, int depth, char* src,
 
 int SQY_LZ4Encode(const char* src, long srclength, char* dst, long* dstlength){
 
-//   long* first_bytes = reinterpret_cast<long*>(dst);
-//   *first_bytes = srclength;
-//   
-//   int num_written_bytes = LZ4_compress(src,&dst[sizeof(long)],srclength);
-//   
-//   if(num_written_bytes){
-//     *dstlength = num_written_bytes+sizeof(long);
-//     return 0;
-//   }
-//   else{
-//     *dstlength = 0;
-//     return -1;
-//   }
-  
   int retvalue = sqeazy::lz4_scheme<char,long>::encode(src,dst,srclength,*dstlength);
   
   return retvalue;

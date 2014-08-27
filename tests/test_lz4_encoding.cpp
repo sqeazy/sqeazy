@@ -146,7 +146,7 @@ BOOST_AUTO_TEST_CASE( encoded_and_print_length )
     SQY_LZ4_Max_Compressed_Length(&expected_size);
     
     char* compressed = new char[expected_size];
-    long output_length = 0;
+    long output_length = expected_size;
     SQY_LZ4Encode(input,
 		  input_length,
 		  compressed,
@@ -156,7 +156,13 @@ BOOST_AUTO_TEST_CASE( encoded_and_print_length )
     std::cout << "compressed " << begin->first.c_str() << "("<< begin->second->size()<< " elements) reduced from " << input_length << " B to " << output_length << " B, ratio out/in: " << output_length/float(input_length) << "\n";
       
     delete [] compressed;
-    BOOST_CHECK_GT(output_length,0);
+    try{
+    BOOST_REQUIRE_GT(output_length,0);
+    }
+    catch(...){
+      break;
+      
+    }
     
     
   }

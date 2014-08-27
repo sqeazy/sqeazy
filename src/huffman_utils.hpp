@@ -16,7 +16,7 @@ template <typename T>
 struct huffman_scheme {
 
     typedef T raw_type;
-    typedef T compressed_type;
+    typedef char compressed_type;
 
     static const std::string name() {
       
@@ -25,7 +25,7 @@ struct huffman_scheme {
     }
     
     static const bool is_compressor = false;
-    static const int num_bits = (CHAR_BIT*sizeof(T));
+    static const int num_bits = (CHAR_BIT*sizeof(compressed_type));
     static const unsigned long UniqueSymbols = 1 << (num_bits);
 
     
@@ -130,19 +130,18 @@ struct huffman_scheme {
                                    SizeType& _size,
                                    HuffCodeMap& _out_map = global_map) {
 
-	histogram<raw_type> h_in(_in, _in + _size);
-//         int frequencies[UniqueSymbols] = {0};
-//         const raw_type* ptr = _in;
-//         while (*ptr != '\0')
-//             ++frequencies[(int)*ptr++];
+      const compressed_type* c_in = reinterpret_cast<const compressed_type*>(_in);
+      unsigned long _size_in_ctype = _size*(sizeof(raw_type)/sizeof(compressed_type));
+      
+	histogram<compressed_type> h_in(c_in, c_in + _size);
 
 
         const INode* root = BuildTree(&h_in.bins[0]);
 
         GenerateCodes(root, HuffCode(), _out_map);
 
-        const raw_type* ptr = _in;
-        const raw_type* ptr_e = _in + _size;
+        const compressed_type* ptr = c_in;
+        const compressed_type* ptr_e = c_in + _size_in_ctype;
 	compressed_type* optr = _output;
         for(; ptr!=ptr_e; ++ptr) {
             *optr++ = (compressed_type)_out_map[*ptr].to_ulong();

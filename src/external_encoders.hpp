@@ -210,6 +210,7 @@ struct lz4_scheme {
         typedef typename sqeazy::twice_as_wide<SizeType>::type local_size_type;
         local_size_type total_length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<SizeType>());
         local_size_type total_length_in_byte = total_length*sizeof(raw_type);
+	local_size_type max_payload_length_in_byte = LZ4_compressBound(total_length_in_byte);
 
         const compressed_type* input = reinterpret_cast<const compressed_type*>(_input);
 
@@ -218,11 +219,9 @@ struct lz4_scheme {
         std::copy(header.begin(),header.end(),_output);
 
         compressed_type* output_begin = &_output[header.size()];
-        size_type num_written_bytes = 0;
-        
-            num_written_bytes = LZ4_compress_limitedOutput(input,output_begin,
+        size_type num_written_bytes = LZ4_compress_limitedOutput(input,output_begin,
                                 total_length_in_byte,
-                                total_length_in_byte-1);
+                                max_payload_length_in_byte);
 
         if(num_written_bytes) {
             _bytes_written = num_written_bytes+header.size();
