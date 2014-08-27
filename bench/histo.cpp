@@ -7,11 +7,13 @@
 #include <vector>
 #include <unordered_map>
 #include "bench_fixtures.hpp"
-#include "../src/hist_impl.hpp"
+#include "hist_impl.hpp"
+#include "sqeazy_impl.hpp"
 
 #include "TH1F.h"
 #include "TCanvas.h"
 #include "TStyle.h"
+#include "TFile.h"
 
 int print_help() {
 
@@ -19,8 +21,9 @@ int print_help() {
     std::cout << "usage: " << me << " <target>\n"
               << "availble targets:\n"
               << "\t help\n"
-              << "\t plot <file_to_encode>\t plot intensity histogram to .svg\n"
-              << "\t info <file_to_encode>\t print statistics information to command line\n"
+              << "\t plot <file(s)_to_encode>\t plot intensity histogram to .svg\n"
+              << "\t darkest_face <fil(s)_to_encode>\t plot intensity histogram of darkest face to .svg\n"
+              << "\t info <file(s)_to_encode>\t print statistics information to command line\n"
               << "\n";
     return 1;
 }
@@ -40,19 +43,26 @@ int help(const std::vector<std::string>& _args) {
 
 void write_as_svg(const std::vector<TH1F*>& _histos, const std::string& _basename) {
 
+    std::ostringstream rfilename;
+    rfilename << _basename << ".root";
+    TFile rfile(rfilename.str().c_str(),"RECREATE");
+    rfile.WriteFree();
     gStyle->SetOptStat("im");
     for(auto h : _histos) {
 
         TCanvas to_be_written(h->GetName(),"",400,300);
         to_be_written.Clear();
+        h->SetTickLength(0.01,"Y");
         h->Draw();
         gPad->SetLogy();
 
         to_be_written.Update();
         std::ostringstream filename;
-        filename << h->GetName() << ".svg";
+        filename << _basename << h->GetName() << ".svg";
         to_be_written.Print(filename.str().c_str());
+        h->Write();
     }
+    rfile.Close();
 }
 
 template <typename value_type>
@@ -84,7 +94,9 @@ int info(const std::vector<std::string>& _args) {
 int plot(const std::vector<std::string>& _args) {
 
     std::vector<TH1F*> histos(2);
-    
+
+
+
     for(unsigned fid = 1; fid < _args.size(); ++fid) {
         tiff_fixture<unsigned short> reference(_args[fid]);
 
@@ -96,40 +108,90 @@ int plot(const std::vector<std::string>& _args) {
         std::string no_suffix(_args[fid],0,_args[fid].find_last_of("."));
         size_t dash_pos = _args[fid].find_last_of("/");
         std::string basename(_args[fid],dash_pos+1, no_suffix.size() - dash_pos-1);
-
+        basename += "_histo";
         /////////////////////////////////////////////////////////////////////////////////////////////////////
         // histogram for the entire intensity range
         std::ostringstream hname("");
-        hname << basename << "_fullrange_" << sizeof(unsigned short)*8 << "bit_intensities";
+        hname <<  "_fullrange_" << sizeof(unsigned short)*8 << "bit_intensities";
         std::ostringstream htitle("");
         htitle << basename << ";intensity;frequency";
-        TH1F full_range(hname.str().c_str(),htitle.str().c_str(),256,0.,1 << (sizeof(unsigned short)*8));
+        TH1F full_range(hname.str().c_str(),htitle.str().c_str(),256,0,1 << (sizeof(unsigned short)*8));
 
         for(unsigned long i = 0; i<ref_hist.num_bins; ++i) {
             full_range.Fill(i,ref_hist.bins[i]);
         }
 
+        full_range.GetXaxis()->SetRangeUser(-20.f*float(full_range.GetXaxis()->GetBinWidth(2)),1 << (sizeof(unsigned short)*8));
+
         /////////////////////////////////////////////////////////////////////////////////////////////////////
         // histogram from 0 to 1.1*(largest intensity)
         hname.str("");
+        hname << "_populatedrange_" << sizeof(unsigned short)*8 << "bit_intensities";
+
+        TH1F populated_range(hname.str().c_str(),htitle.str().c_str(),128,0.9*ref_hist.smallest_populated_bin(),1.1*ref_hist.largest_populated_bin());
+        for(unsigned long i = 0; i<ref_hist.num_bins; ++i) {
+            populated_range.Fill(i,ref_hist.bins[i]);
+        }
+        populated_range.GetXaxis()->SetRangeUser(-20.f*populated_range.GetXaxis()->GetBinWidth(2),1.1*ref_hist.largest_populated_bin());
+
+        //   histos.reserve(2);
+        histos[0] = (&full_range);
+        histos[1] = (&populated_range);
+        write_as_svg(histos, basename);
+    }
+
+
+
+    return 0;
+
+}
+
+
+int darkest_face(const std::vector<std::string>& _args) {
+
+    typedef unsigned short raw_type;
+    std::vector<raw_type> darkest_face;
+    std::vector<TH1F*> histos(1);
+
+
+
+    for(unsigned fid = 1; fid < _args.size(); ++fid) {
+        tiff_fixture<raw_type> reference(_args[fid]);
+
+        if(reference.empty())
+            continue;
+
+        darkest_face.clear();
+
+        std::string no_suffix(_args[fid],0,_args[fid].find_last_of("."));
+        size_t dash_pos = _args[fid].find_last_of("/");
+        std::string basename(_args[fid],dash_pos+1, no_suffix.size() - dash_pos-1);
+        basename += "_darkest_face";
+
+        sqeazy::remove_estimated_background<unsigned short>::extract_darkest_face(
+            &reference.tiff_data[0], reference.axis_lengths, darkest_face);
+        sqeazy::histogram<unsigned short> ref_hist(darkest_face.begin(), darkest_face.end());
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+        // histogram from 0 to 1.1*(largest intensity)
+        std::ostringstream hname("");
         hname << basename << "_populatedrange_" << sizeof(unsigned short)*8 << "bit_intensities";
+        std::ostringstream htitle("");
+        htitle << basename << ";intensity;frequency";
+        hname.str("");
+
 
         TH1F populated_range(hname.str().c_str(),htitle.str().c_str(),128,0.,1.1*ref_hist.largest_populated_bin());
         for(unsigned long i = 0; i<ref_hist.num_bins; ++i) {
             populated_range.Fill(i,ref_hist.bins[i]);
         }
 
-
-        //   histos.reserve(2);
-        histos[0] = (&full_range);
-        histos[1] = (&populated_range);
-	write_as_svg(histos, basename);
+        populated_range.GetXaxis()->SetRangeUser(-20.f*populated_range.GetXaxis()->GetBinWidth(2),1.1*ref_hist.largest_populated_bin());
+        histos[0] = (&populated_range);
+        write_as_svg(histos, basename);
     }
-    
-    
 
     return 0;
-
 }
 
 int main(int argc, char *argv[])
@@ -140,6 +202,7 @@ int main(int argc, char *argv[])
     prog_flow["help"] = func_t(help);
     prog_flow["-h"] = func_t(help);
     prog_flow["plot"] = func_t(plot);
+    prog_flow["darkest_face"] = func_t(darkest_face);
     prog_flow["info"] = func_t(info<unsigned short>);
 
     std::vector<std::string> arguments(argv+1,argv + argc);

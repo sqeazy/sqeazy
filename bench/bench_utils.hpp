@@ -40,12 +40,12 @@ T pop_next_if_contained(std::vector<T>& _data, const T& _pred) {
     T value;
     typename std::vector<T>::iterator found = std::find(_data.begin(), _data.end(), _pred);
     if(found!=_data.end()) {
-      value = *(found + 1);
-      if(found + 2 <= _data.end())
-        _data.erase(found,found + 2);
-      else
-	_data.erase(found, _data.end());
-      return value;
+        value = *(found + 1);
+        if(found + 2 <= _data.end())
+            _data.erase(found,found + 2);
+        else
+            _data.erase(found, _data.end());
+        return value;
     }
     else
         return value;
@@ -135,14 +135,14 @@ struct bcase {
 
     double max_compress_ratio() const {
 
-      const double sample_entropy = histogram.entropy();
-      double best_compressed_size_in_byte = sample_entropy*histogram.integral()/double(CHAR_BIT);
+        const double sample_entropy = histogram.entropy();
+        double best_compressed_size_in_byte = sample_entropy*histogram.integral()/double(CHAR_BIT);
         if(best_compressed_size_in_byte>0)
             return double(raw_size_in_byte)/best_compressed_size_in_byte;
         else
             return 0;
     }
-    
+
     double compress_speed_mb_per_sec()  {
 
         double time_sec = time_in_microseconds()/double(1e6);
@@ -171,12 +171,23 @@ struct bcase {
               << _in.histogram.mode() << "\t"
               << _in.histogram.mean() << "\t"
               << _in.time_us << "\t"
+              << _in.compressed_size_in_byte << "\t"
               << _in.compress_ratio()<< "\t"
-	      << _in.max_compress_ratio()<< "\t"
-              << _in.filename
-              << "\n";
+              << _in.max_compress_ratio()<< "\t"
+              << _in.filename;
+
         return _cout;
     }
+
+    static const std::string print_header() {
+        std::ostringstream _cout;
+
+        _cout << "raw_size/Byte\textents\tsmallest-pop-bin\tlargest-pop-bin\tmode\tmean\t"
+              << "time-to-compress/us\tcompressed_size/Byte\tcompress-ratio\tmax-compress-ratio\tfilename";
+
+        return _cout.str();
+    }
+
 };
 
 template <typename T>
@@ -232,8 +243,7 @@ struct bsuite {
 
     void print_cases() const {
 
-        std::cout << "raw_size/Byte\textents\tsmallest-pop-bin\tlargest-pop-bin\tmode\tmean\t"
-                  << "time-to-compress/us\tcompress-ratio\tfilename\n";
+        std::cout << sqeazy_bench::bcase<value_type>::print_header() << "\n";
         for(const bcase<value_type>& c : cases) {
 
             std::cout << c<< "\n";

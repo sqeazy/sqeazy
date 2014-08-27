@@ -71,6 +71,8 @@ typedef sqeazy::pipeline<bswap1_lz4> bswap1_lz4_pipe;
 
 typedef sqeazy::bmpl::vector< sqeazy::lz4_scheme<unsigned short> > lz4_;
 typedef sqeazy::pipeline<lz4_> lz4_pipe;
+typedef sqeazy::bmpl::vector< sqeazy::lz4_scheme<unsigned short, unsigned long ,4 << 20 > > lz4_blocked;
+typedef sqeazy::pipeline<lz4_blocked> blockedlz4_pipe;
 
 typedef sqeazy::bmpl::vector< sqeazy::huffman_scheme<unsigned short>, sqeazy::lz4_scheme<unsigned short> > huffman_lz4;
 typedef sqeazy::pipeline<huffman_lz4> huff_lz4_pipe;
@@ -142,7 +144,7 @@ struct fill_suite_config {
         roundtrip = morphing(roundtrip_p);
         save_encoded = morphing(save_encoded_p);
 
-	//TODO: the following is not platform independent
+        //TODO: the following is not platform independent
         if(roundtrip[roundtrip.size()-1]!='/')
             roundtrip += "/";
 
@@ -257,6 +259,7 @@ int main(int argc, char *argv[])
     prog_flow["compress_lz4"] = func_t(fill_suite<unsigned short, lz4_pipe>);
 
     prog_flow["experim_rmbkg_lz4"] = func_t(fill_suite<unsigned short, rmbkg_lz4_pipe>);
+    prog_flow["experim_blocked_lz4"] = func_t(fill_suite<unsigned short, blockedlz4_pipe>);
     prog_flow["experim_diffonrow_lz4"] = func_t(fill_suite<unsigned short, diffonrow_lz4_pipe>);
     prog_flow["experim_huff_lz4"] = func_t(fill_suite<unsigned short, huff_lz4_pipe>);
     prog_flow["experim_huff_bswap1_lz4"] = func_t(fill_suite<unsigned short, huff_bswap1_lz4_pipe>);
@@ -297,16 +300,18 @@ int main(int argc, char *argv[])
 
             std::cout << filenames.size() << "\t";
 
-            if(f_func->first.find("compress")!=std::string::npos) {
-
-                std::cout.precision(5);
-                suite.compression_summary();
-                std::cout << std::setw(12) << "ratio (out/in)\t";
-            } else {
+            if(f_func->first.find("speed")!=std::string::npos) {
 
                 std::cout.precision(5);
                 suite.speed_summary();
                 std::cout << std::setw(12) << "speed (MB/s) \t";
+		
+            } else {
+
+                std::cout.precision(5);
+                suite.compression_summary();
+                std::cout << std::setw(12) << "ratio (out/in)\t";
+
             }
 
             std::cout << "\t" << f_func->first << "\n";

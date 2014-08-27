@@ -49,7 +49,7 @@ static unsigned sizeof_typeinfo(const std::string& _lit) {
     if(found!=type_size_map.end())
         return found->second;
     else
-	return 0;
+        return 0;
 }
 
 template <typename T,char major_delim = ',', char minor_delim='x', char header_end_delim = '|'>
@@ -108,10 +108,10 @@ struct image_header {
 
         unsigned long size_of_type = sizeof(T);
         if(!header.empty()) {
-	  std::string typeinfo_literal = header.substr(0,header.find(major_delim));
-	  unsigned found_size_byte = sizeof_typeinfo(typeinfo_literal);
-	  if(found_size_byte && found_size_byte!=size_of_type)
-	    size_of_type = found_size_byte;
+            std::string typeinfo_literal = header.substr(0,header.find(major_delim));
+            unsigned found_size_byte = sizeof_typeinfo(typeinfo_literal);
+            if(found_size_byte && found_size_byte!=size_of_type)
+                size_of_type = found_size_byte;
         }
         return payload_size()*size_of_type;
     }
@@ -171,7 +171,7 @@ struct image_header {
     }
 };
 
-template < typename T , typename S = unsigned long>
+template < typename T , typename S = unsigned long, S blockSize = 0>
 struct lz4_scheme {
 
     typedef T raw_type;
@@ -217,7 +217,32 @@ struct lz4_scheme {
 
         std::copy(header.begin(),header.end(),_output);
 
-        size_type num_written_bytes = LZ4_compress(input,&_output[header.size()],total_length_in_byte);
+        compressed_type* output_begin = &_output[header.size()];
+        size_type num_written_bytes = 0;
+        if(!blockSize)
+            num_written_bytes = LZ4_compress_limitedOutput(input,output_begin,
+                                total_length_in_byte,
+                                total_length_in_byte-1);
+        else
+        {
+            unsigned num_iter = (total_length_in_byte + blockSize -1 )/blockSize;
+            unsigned inputSize = 0;
+            unsigned last_num_written_bytes = 0;
+            for(unsigned i = 0; i<num_iter; ++i) {
+                if(i*blockSize < total_length_in_byte)
+                    inputSize = blockSize;
+                else
+                    inputSize = total_length_in_byte - i*blockSize;
+
+                last_num_written_bytes = LZ4_compress_limitedOutput(input+i*blockSize,
+                                          output_begin + last_num_written_bytes,
+                                          inputSize,
+                                          inputSize-1);
+		num_written_bytes += last_num_written_bytes;
+
+            }
+
+        }
 
         if(num_written_bytes) {
             _bytes_written = num_written_bytes+header.size();
@@ -356,8 +381,8 @@ struct lz4_scheme {
     }
 };
 
-template < typename T , typename S>
-S lz4_scheme<T,S>::last_num_encoded_bytes = 0;
+template < typename T , typename S, S blockSize>
+S lz4_scheme<T,S,blockSize>::last_num_encoded_bytes = 0;
 
 
 };
