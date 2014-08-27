@@ -171,7 +171,7 @@ struct image_header {
     }
 };
 
-template < typename T , typename S = unsigned long, S blockSize = 0>
+template < typename T , typename S = unsigned long>
 struct lz4_scheme {
 
     typedef T raw_type;
@@ -219,30 +219,10 @@ struct lz4_scheme {
 
         compressed_type* output_begin = &_output[header.size()];
         size_type num_written_bytes = 0;
-        if(!blockSize)
+        
             num_written_bytes = LZ4_compress_limitedOutput(input,output_begin,
                                 total_length_in_byte,
                                 total_length_in_byte-1);
-        else
-        {
-            unsigned num_iter = (total_length_in_byte + blockSize -1 )/blockSize;
-            unsigned inputSize = 0;
-            unsigned last_num_written_bytes = 0;
-            for(unsigned i = 0; i<num_iter; ++i) {
-                if(i*blockSize < total_length_in_byte)
-                    inputSize = blockSize;
-                else
-                    inputSize = total_length_in_byte - i*blockSize;
-
-                last_num_written_bytes = LZ4_compress_limitedOutput(input+i*blockSize,
-                                          output_begin + last_num_written_bytes,
-                                          inputSize,
-                                          inputSize-1);
-		num_written_bytes += last_num_written_bytes;
-
-            }
-
-        }
 
         if(num_written_bytes) {
             _bytes_written = num_written_bytes+header.size();
@@ -381,8 +361,8 @@ struct lz4_scheme {
     }
 };
 
-template < typename T , typename S, S blockSize>
-S lz4_scheme<T,S,blockSize>::last_num_encoded_bytes = 0;
+template < typename T , typename S>
+S lz4_scheme<T,S>::last_num_encoded_bytes = 0;
 
 
 };
