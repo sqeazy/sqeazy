@@ -99,4 +99,23 @@ BOOST_AUTO_TEST_CASE( free_mean_var )
 
 }
 
+
+BOOST_AUTO_TEST_CASE( stamp_removal )
+{
+
+    std::fill(constant_cube.begin(), constant_cube.end(), 0);
+    constant_cube[constant_cube.size()/2] = 1 << 14;
+
+    int rcode = sqeazy::remove_background_from_neighborhood<value_type>::encode(&to_play_with[0],
+            &to_play_with[0], dims);
+
+                                                                 
+    float sum = std::accumulate(to_play_with.begin(), to_play_with.end(),0);
+    BOOST_CHECK_EQUAL(rcode, 0);
+    BOOST_CHECK_EQUAL(sum, 0);
+    
+
+
+
+}
 BOOST_AUTO_TEST_SUITE_END()

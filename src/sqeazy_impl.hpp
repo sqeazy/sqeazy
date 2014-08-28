@@ -357,6 +357,86 @@ struct remove_background {
 };
 
 
+template < typename T,
+         typename Neighborhood = cube_neighborhood_excluding_pixel<3>,
+         short percentage_above = 75 >
+struct remove_background_from_neighborhood {
+
+    typedef T raw_type;
+    typedef T compressed_type;
+    
+    
+    static const bool is_compressor = false;
+
+    static const std::string name() {
+
+        std::ostringstream msg;
+        msg << "rmbkrd_neighbor"
+            << Neighborhood::x_offset_end - Neighborhood::x_offset_begin << "x"
+            << Neighborhood::y_offset_end - Neighborhood::y_offset_begin << "x"
+            << Neighborhood::z_offset_end - Neighborhood::z_offset_begin ;
+
+        return msg.str();
+
+    }
+
+
+template <typename size_type>
+    static const error_code encode(raw_type* _input,
+                                   raw_type* _output,
+                                   const std::vector<size_type>& _data)
+    {
+
+        return NOT_IMPLEMENTED_YET;
+
+    }
+
+template <typename size_type>
+    static const error_code encode_out_of_place(raw_type* _input,
+            raw_type* _output,
+            const size_type& _length,
+            const raw_type& _threshold)
+    {
+
+
+        return NOT_IMPLEMENTED_YET;
+    }
+
+
+template <typename size_type>
+    static const error_code encode_inplace(raw_type* _input,
+                                           const size_type& _length,
+                                           const raw_type& _threshold)
+    {
+
+
+
+        return NOT_IMPLEMENTED_YET;
+    }
+
+
+    template <typename SizeType>
+    static const error_code decode(const raw_type* _input,
+                                   raw_type* _output,
+                                   const SizeType& _length)
+    {
+        std::copy(_input, _input + _length, _output);
+        return SUCCESS;
+    }
+
+    template <typename SizeType>
+    static const error_code decode(const raw_type* _input,
+                                   raw_type* _output,
+                                   const std::vector<SizeType>& _length)
+    {
+        unsigned long total_size = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<SizeType>());
+
+        return decode(_input, _output, total_size);
+    }
+
+};
+
+
 template < typename T >
 struct remove_estimated_background {
 
@@ -453,22 +533,22 @@ struct remove_estimated_background {
     }
 
     template <typename ItrT>
-    static const void mean_and_var(ItrT begin, ItrT end, float& _mean, float& _var){
-      
-      unsigned long length = end - begin;
-      float sum = 0.f;
-      float sum_of_squares = 0.f;
-      
-      for(;begin!=end;++begin){
-	sum += float(*begin);
-	sum_of_squares += float(*begin) * float(*begin);
-      }
-      
-      _mean = sum/length;
-      _var = std::sqrt((sum_of_squares/length) - (_mean*_mean));
-      
+    static const void mean_and_var(ItrT begin, ItrT end, float& _mean, float& _var) {
+
+        unsigned long length = end - begin;
+        float sum = 0.f;
+        float sum_of_squares = 0.f;
+
+        for(; begin!=end; ++begin) {
+            sum += float(*begin);
+            sum_of_squares += float(*begin) * float(*begin);
+        }
+
+        _mean = sum/length;
+        _var = std::sqrt((sum_of_squares/length) - (_mean*_mean));
+
     }
-    
+
     template <typename size_type>
     static const error_code encode(raw_type* _input,
                                    compressed_type* _output,
@@ -478,20 +558,26 @@ struct remove_estimated_background {
 
         std::vector<raw_type> darkest_face;
         extract_darkest_face((const raw_type*)_input, _dims, darkest_face);
-        
+
         float sd = 0.f;
         float mean = 0.f;
-	
-	mean_and_var(darkest_face.begin(), darkest_face.end(), mean, sd);
-	
+
+        mean_and_var(darkest_face.begin(), darkest_face.end(), mean, sd);
+
         const float alpha = 1.f;
         size_type input_length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<size_type>());
         const float reduce_by = mean+(alpha*sd);
 
-        if(_output)
+        if(_output) {
             remove_background<raw_type>::encode_out_of_place(_input, _output, input_length, reduce_by);
-        else
+        }
+        else {
             remove_background<raw_type>::encode_inplace(_input, input_length, reduce_by);
+
+        }
+
+
+
 
         return SUCCESS;
     }
