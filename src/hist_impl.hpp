@@ -66,6 +66,7 @@ struct histogram {
     float mean_variation_value;
     float median_value;
     float median_variation_value;
+    float mad_value;//Median absolute deviation http://en.wikipedia.org/wiki/Median_absolute_deviation
     float entropy_value;
 
     T mode_value;
@@ -81,6 +82,7 @@ struct histogram {
         mean_variation_value(0),
         median_value(0),
         median_variation_value(0),
+        mad_value(),
         entropy_value(0),
         mode_value(0),
         small_pop_bin_value(0),
@@ -98,6 +100,7 @@ struct histogram {
         mean_variation_value(0),
         median_value(0),
         median_variation_value(0),
+        mad_value(),
         entropy_value(0),
         mode_value(0),
         small_pop_bin_value(0),
@@ -117,6 +120,7 @@ struct histogram {
         mean_variation_value(0),
         median_value(0),
         median_variation_value(0),
+        mad_value(),
         entropy_value(0),
         mode_value(0),
         small_pop_bin_value(0),
@@ -138,6 +142,7 @@ struct histogram {
                 if(!num_entries)
                     return;*/
 
+
         for(ItrT Itr = _image_begin; Itr!=_image_end; ++Itr) {
             bins[*Itr]++;
         }
@@ -152,7 +157,7 @@ struct histogram {
         median_variation_value = calc_median_variation();
         mode_value = calc_mode();
         entropy_value = calc_entropy();
-
+        set_mad(-1);
 
 
 
@@ -302,6 +307,12 @@ struct histogram {
 
     }
 
+    
+    void set_mad(const float& _mad) {
+
+        mad_value = _mad;
+
+    }
 
     float median() const {
         return median_value;
@@ -352,6 +363,7 @@ struct histogram {
               << std::setw(10) << _h.mode()
               << std::setw(10) << _h.median()
               << std::setw(10) << _h.median_variation()
+              << std::setw(10) << _h.mad()
               << std::setw(10) << _h.entropy()
               << std::setw(17) << max_compr_ratio
               << "\n"
@@ -371,6 +383,7 @@ struct histogram {
             << std::setw(10) << "mode"
             << std::setw(10) << "median"
             << std::setw(10) << "med_var"
+            << std::setw(10) << "mad"
             << std::setw(10) << "entropy"
             << std::setw(17) << "max_compr_ratio"
             << "\n"
@@ -378,17 +391,23 @@ struct histogram {
 
         return out.str();
     }
+
+    float mad () const {
+
+        return mad_value;
+
+    };
 };
 
 template <typename T>
-float mpicbg_median_variation(T begin, T end) {
+float mad(T begin, T end) {
 
     typedef typename T::value_type value_type;
     typedef std::vector<value_type> local_vector;
 
     histogram<value_type> h_original(begin, end);
     unsigned size = end - begin;
-    const value_type median = h_original.median();
+    const float median = h_original.median();
 
     typename local_vector::const_iterator intensity = begin;
     typename local_vector::const_iterator image_end = end;
@@ -396,10 +415,7 @@ float mpicbg_median_variation(T begin, T end) {
     local_vector reduced(size);
     typename local_vector::iterator rbegin = reduced.begin();
     for(; intensity!=image_end; ++intensity, ++rbegin) {
-        if(*intensity < median)
-            *rbegin = 0;
-        else
-            *rbegin = *intensity - median;
+        *rbegin = std::fabs(*intensity - median);
 
     }
 

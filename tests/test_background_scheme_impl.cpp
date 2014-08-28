@@ -54,20 +54,24 @@ BOOST_AUTO_TEST_CASE( crops_correct_values )
 
     unsigned current_value = 0;
     unsigned index = 0;
-    while(index < size){
-      for(unsigned num = index;num < current_value || num < size;++num){
-	to_play_with[num] = current_value;
-      }
-      index += current_value;
-      ++current_value;
+    while(index < size) {
+        for(unsigned num = index; num < current_value || num < size; ++num) {
+            to_play_with[num] = current_value;
+        }
+        index += current_value;
+        ++current_value;
     }
-    
-    
-    float result = sqeazy::mpicbg_median_variation(to_play_with.begin(), to_play_with.end());
+
+
+    float result = sqeazy::mad(to_play_with.begin(), to_play_with.end());
     BOOST_CHECK_GT(result,0);
     sqeazy::histogram<value_type> h_to_play_with(to_play_with.begin(), to_play_with.end());
     BOOST_CHECK_LT(result,h_to_play_with.median());
     BOOST_CHECK_NE(result,h_to_play_with.median_variation());
+//     std::cout << "mad : " << result << "\n"
+//               << sqeazy::histogram<value_type>::print_header() << "\n"
+//               << h_to_play_with << "\n";
 
 }
+
 BOOST_AUTO_TEST_SUITE_END()

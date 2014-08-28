@@ -2,6 +2,7 @@
 #include <iostream>
 #include <functional>
 #include <string>
+#include <iomanip>
 #include <sstream>
 #include <numeric>
 #include <vector>
@@ -14,6 +15,7 @@
 #include "TCanvas.h"
 #include "TStyle.h"
 #include "TFile.h"
+#include "TPaveText.h"
 
 int print_help() {
 
@@ -40,6 +42,94 @@ int help(const std::vector<std::string>& _args) {
     return print_help();
 }
 
+template <typename T>
+void write_as_svg(const std::vector<sqeazy::histogram<T>* >& _histos,
+                  const std::vector<std::string>& _hnames,
+                  const std::vector<std::string>& _htitle,
+                  const std::string& _basepath
+                 ) {
+
+    std::ostringstream rfilename;
+    rfilename << _basepath << "/" << _hnames[0] << ".root";
+    TFile rfile(rfilename.str().c_str(),"RECREATE");
+    rfile.WriteFree();
+    gStyle->SetOptStat("");
+
+    unsigned hindex = 0;
+    std::string currentname;
+    std::string currenttitle;
+    std::ostringstream filename;
+    std::ostringstream text;
+    std::vector<TText*> left(2);
+    std::vector<TText*> right(2);
+    for(auto sqy_h : _histos) {
+
+        currentname = _hnames[hindex];
+        currenttitle = _htitle[hindex];
+        
+        TH1F hist(currentname.c_str(), currenttitle.c_str(), 256, 0 , sqy_h->largest_populated_bin());
+        for(unsigned b = 0; b<sqy_h->largest_populated_bin()+1; ++b) {
+            hist.Fill(b,sqy_h->bins[b]);
+        }
+
+        TCanvas to_be_written(currentname.c_str(),"",400,300);
+        to_be_written.Clear();
+        hist.SetTickLength(0.01,"Y");
+        to_be_written.SetTopMargin(.2);
+        hist.SetStats(0);
+
+        hist.Draw();
+        gPad->SetLogy();
+
+        to_be_written.cd();
+
+        TPaveText* pt_left = new TPaveText(0.1,0.8,0.6,0.92,"NBNDC" );
+        pt_left->SetTextAlign(11);
+        pt_left->SetBorderSize(0);
+        pt_left->SetShadowColor(kWhite);
+        pt_left->SetFillColor(kWhite);
+        text << "median = " << std::setw(10) << sqy_h->median() << " +/- " << std::setw(10) << sqy_h->median_variation();
+
+        left[0] = pt_left->AddText(text.str().c_str());
+        text.str("");
+        text << "mean   = " << std::setw(10) << sqy_h->mean() << " +/- " << std::setw(10) << sqy_h->mean_variation();
+
+        left[1] = pt_left->AddText(text.str().c_str());
+        pt_left->Draw();
+
+
+        TPaveText* pt_right = new TPaveText(0.6,0.8,0.9,0.92,"NBNDC" );
+        pt_right->SetTextAlign(11);
+        pt_right->SetBorderSize(0);
+        pt_right->SetShadowColor(kWhite);
+        pt_right->SetFillColor(kWhite);
+        text.str("");
+        text << "mad    = " << std::setw(10) << sqy_h->mad();
+	
+        right[0] = pt_right->AddText(text.str().c_str());
+	right[0]->SetTextSize(left[0]->GetTextSize());
+	right[0]->SetTextFont(left[0]->GetTextFont());
+	text.str("");
+        text << "mode    = " << std::setw(10) << sqy_h->mode();
+	right[1] = pt_right->AddText(text.str().c_str());
+	right[1]->SetTextSize(left[1]->GetTextSize());
+	right[1]->SetTextFont(left[1]->GetTextFont());
+        pt_right->Draw();
+
+
+        to_be_written.Update();
+
+        std::ostringstream filename;
+        filename << _basepath << "/" << currentname << ".svg";
+        to_be_written.Print(filename.str().c_str());
+
+        hist.Write();
+
+        delete pt_left;
+        delete pt_right;
+    }
+    rfile.Close();
+}
 
 void write_as_svg(const std::vector<TH1F*>& _histos, const std::string& _basename) {
 
@@ -151,9 +241,10 @@ int darkest_face(const std::vector<std::string>& _args) {
 
     typedef unsigned short raw_type;
     std::vector<raw_type> darkest_face;
-    std::vector<TH1F*> histos(1);
-
-
+    //std::vector<TH1F*> histos(1);
+    std::vector<std::string> hnames(1);
+    std::vector<std::string> htitles(1);
+    std::vector<sqeazy::histogram<raw_type>* > histos(1);
 
     for(unsigned fid = 1; fid < _args.size(); ++fid) {
         tiff_fixture<raw_type> reference(_args[fid]);
@@ -171,24 +262,18 @@ int darkest_face(const std::vector<std::string>& _args) {
         sqeazy::remove_estimated_background<unsigned short>::extract_darkest_face(
             &reference.tiff_data[0], reference.axis_lengths, darkest_face);
         sqeazy::histogram<unsigned short> ref_hist(darkest_face.begin(), darkest_face.end());
+        ref_hist.set_mad(sqeazy::mad(darkest_face.begin(), darkest_face.end()));
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-        // histogram from 0 to 1.1*(largest intensity)
         std::ostringstream hname("");
-        hname << basename << "_populatedrange_" << sizeof(unsigned short)*8 << "bit_intensities";
-        std::ostringstream htitle("");
-        htitle << basename << ";intensity;frequency";
-        hname.str("");
+        hname << basename << "_" << sizeof(unsigned short)*8 << "bit_intensities";
+        hnames[0] = hname.str();
+        hname << ";intensity I;N";
+        htitles[0] = hname.str();
 
 
-        TH1F populated_range(hname.str().c_str(),htitle.str().c_str(),128,0.,1.1*ref_hist.largest_populated_bin());
-        for(unsigned long i = 0; i<ref_hist.num_bins; ++i) {
-            populated_range.Fill(i,ref_hist.bins[i]);
-        }
+        histos[0] = (&ref_hist);
 
-        populated_range.GetXaxis()->SetRangeUser(-20.f*populated_range.GetXaxis()->GetBinWidth(2),1.1*ref_hist.largest_populated_bin());
-        histos[0] = (&populated_range);
-        write_as_svg(histos, basename);
+        write_as_svg(histos, hnames, htitles, "./");
     }
 
     return 0;
