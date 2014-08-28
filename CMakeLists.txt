@@ -1,8 +1,13 @@
 # cmake compatibility issues
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
+
 # project name
 PROJECT(sqeazy CXX)
+if(NOT(${CMAKE_VERSION} VERSION_LESS "3.0.0"))
+cmake_policy(SET CMP0042 NEW)
+endif()
+
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
  
@@ -33,7 +38,7 @@ IF(UNIX)
     #the following was tested with OSX 10.8.5 and Xcode 5.0.2
     #seems to me that under apple the rpath is not stripped automatically when doing the install
     #under linux it is
-    SET(CMAKE_SKIP_RPATH ON)
+    #SET(CMAKE_SKIP_RPATH ON)
 ELSE(UNIX)
   IF(WIN32 AND NOT CYGWIN)
     set(INSTALL_SHARE_DIR CMake CACHE PATH "Installation directory for shared files")
