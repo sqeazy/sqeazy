@@ -104,7 +104,7 @@ void write_as_svg(const std::vector<sqeazy::histogram<T>* >& _histos,
         pt_right->SetShadowColor(kWhite);
         pt_right->SetFillColor(kWhite);
         text.str("");
-        text << "mad    = " << std::setw(10) << sqy_h->mad();
+        text << "integral= " << std::setw(10) << sqy_h->integral();
 	
         right[0] = pt_right->AddText(text.str().c_str());
 	right[0]->SetTextSize(left[0]->GetTextSize());
@@ -262,7 +262,6 @@ int darkest_face(const std::vector<std::string>& _args) {
         sqeazy::remove_estimated_background<unsigned short>::extract_darkest_face(
             &reference.tiff_data[0], reference.axis_lengths, darkest_face);
         sqeazy::histogram<unsigned short> ref_hist(darkest_face.begin(), darkest_face.end());
-        ref_hist.set_mad(sqeazy::mad(darkest_face.begin(), darkest_face.end()));
 
         std::ostringstream hname("");
         hname << basename << "_" << sizeof(unsigned short)*8 << "bit_intensities";

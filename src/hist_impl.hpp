@@ -30,7 +30,7 @@ IteratorT median_index(IteratorT begin, IteratorT end) {
     for(; begin!=end; ++begin) {
         running_integral += *begin;
         if((running_integral/total_integral) > .5) {
-            median = begin - 1;
+            median = begin /*- 1*/;
             break;
         }
     }
@@ -66,7 +66,6 @@ struct histogram {
     float mean_variation_value;
     float median_value;
     float median_variation_value;
-    float mad_value;//Median absolute deviation http://en.wikipedia.org/wiki/Median_absolute_deviation
     float entropy_value;
 
     T mode_value;
@@ -82,7 +81,6 @@ struct histogram {
         mean_variation_value(0),
         median_value(0),
         median_variation_value(0),
-        mad_value(),
         entropy_value(0),
         mode_value(0),
         small_pop_bin_value(0),
@@ -100,7 +98,6 @@ struct histogram {
         mean_variation_value(0),
         median_value(0),
         median_variation_value(0),
-        mad_value(),
         entropy_value(0),
         mode_value(0),
         small_pop_bin_value(0),
@@ -120,7 +117,6 @@ struct histogram {
         mean_variation_value(0),
         median_value(0),
         median_variation_value(0),
-        mad_value(),
         entropy_value(0),
         mode_value(0),
         small_pop_bin_value(0),
@@ -157,7 +153,7 @@ struct histogram {
         median_variation_value = calc_median_variation();
         mode_value = calc_mode();
         entropy_value = calc_entropy();
-        set_mad(-1);
+
 
 
 
@@ -307,12 +303,7 @@ struct histogram {
 
     }
 
-    
-    void set_mad(const float& _mad) {
 
-        mad_value = _mad;
-
-    }
 
     float median() const {
         return median_value;
@@ -363,7 +354,6 @@ struct histogram {
               << std::setw(10) << _h.mode()
               << std::setw(10) << _h.median()
               << std::setw(10) << _h.median_variation()
-              << std::setw(10) << _h.mad()
               << std::setw(10) << _h.entropy()
               << std::setw(17) << max_compr_ratio
               << "\n"
@@ -383,7 +373,6 @@ struct histogram {
             << std::setw(10) << "mode"
             << std::setw(10) << "median"
             << std::setw(10) << "med_var"
-            << std::setw(10) << "mad"
             << std::setw(10) << "entropy"
             << std::setw(17) << "max_compr_ratio"
             << "\n"
@@ -392,11 +381,6 @@ struct histogram {
         return out.str();
     }
 
-    float mad () const {
-
-        return mad_value;
-
-    };
 };
 
 template <typename T>

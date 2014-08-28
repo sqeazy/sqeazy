@@ -74,4 +74,29 @@ BOOST_AUTO_TEST_CASE( crops_correct_values )
 
 }
 
+BOOST_AUTO_TEST_CASE( free_mean_var )
+{
+    boost::random::mt19937 rng;
+    boost::random::normal_distribution<float> norm(32,4);
+
+    for(unsigned num = 0; num < size; ++num) {
+        to_play_with[num] = norm(rng);
+    }
+
+    float mean = 0;
+    float var = 0;
+    sqeazy::remove_estimated_background<value_type>::mean_and_var(to_play_with.begin(),
+            to_play_with.end(),
+            mean,
+            var
+
+                                                                 );
+
+    BOOST_CHECK_CLOSE(mean,32.f,2);
+    BOOST_CHECK_CLOSE(var,4.f,4);
+
+
+
+}
+
 BOOST_AUTO_TEST_SUITE_END()

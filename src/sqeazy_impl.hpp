@@ -385,7 +385,12 @@ struct remove_estimated_background {
 
 
         //faces with z
-        for(size_type z_idx = 0; z_idx < _dims[2]; z_idx+=(_dims[2]-1)) {
+        const size_type indices[4] = {0,1,_dims[2]-2,_dims[2]-1};
+
+        for(size_type z_idx = 0, z_idx_ctr = 0;
+                z_idx < 4;
+                ++z_idx_ctr, z_idx = indices[z_idx_ctr]) {
+
             input_index = z_idx*(frame_size);
             const raw_type* begin = _input + input_index;
             raw_type temp = std::accumulate(begin, begin + (frame_size),0 )/(frame_size);
@@ -420,32 +425,50 @@ struct remove_estimated_background {
                 mean = temp;
             }
         }
-
-        //faces with x
-        face_index =0;
-        for(size_type x_idx = 0; x_idx < _dims[0]; x_idx+=(_dims[0]-1)) {
-            raw_type temp = 0;
-            for(size_type z_idx = 0; z_idx < _dims[2]; ++z_idx) {
-                for(size_type y_idx = 0; y_idx < _dims[1]; ++y_idx) {
-                    input_index = z_idx*(frame_size)+y_idx*_dims[0]+x_idx;
-                    temp += _input[input_index];
-                }
-            }
-            temp/=_dims[2]*_dims[1];
-            if(temp < mean) {
-                if(_darkest_face.size()<_dims[2]*_dims[1])
-                    _darkest_face.resize(_dims[2]*_dims[1]);
-                for(size_type z_idx = 0; z_idx < _dims[2]; ++z_idx) {
-                    for(size_type y_idx = 0; y_idx < _dims[0]; ++y_idx) {
-                        input_index = z_idx*(frame_size)+y_idx*_dims[0]+x_idx;
-                        _darkest_face[face_index++] = _input[input_index];
+        /*
+         //the following is very expensive in terms of memory access
+                //faces with x
+                face_index =0;
+                for(size_type x_idx = 0; x_idx < _dims[0]; x_idx+=(_dims[0]-1)) {
+                    raw_type temp = 0;
+                    for(size_type z_idx = 0; z_idx < _dims[2]; ++z_idx) {
+                        for(size_type y_idx = 0; y_idx < _dims[1]; ++y_idx) {
+                            input_index = z_idx*(frame_size)+y_idx*_dims[0]+x_idx;
+                            temp += _input[input_index];
+                        }
                     }
-                }
-                mean = temp;
-            }
-        }
+                    temp/=_dims[2]*_dims[1];
+                    if(temp < mean) {
+                        if(_darkest_face.size()<_dims[2]*_dims[1])
+                            _darkest_face.resize(_dims[2]*_dims[1]);
+                        for(size_type z_idx = 0; z_idx < _dims[2]; ++z_idx) {
+                            for(size_type y_idx = 0; y_idx < _dims[0]; ++y_idx) {
+                                input_index = z_idx*(frame_size)+y_idx*_dims[0]+x_idx;
+                                _darkest_face[face_index++] = _input[input_index];
+                            }
+                        }
+                        mean = temp;
+                    }
+                }*/
     }
 
+    template <typename ItrT>
+    static const void mean_and_var(ItrT begin, ItrT end, float& _mean, float& _var){
+      
+      unsigned long length = end - begin;
+      float sum = 0.f;
+      float sum_of_squares = 0.f;
+      
+      for(;begin!=end;++begin){
+	sum += float(*begin);
+	sum_of_squares += float(*begin) * float(*begin);
+      }
+      
+      _mean = sum/length;
+      _var = std::sqrt((sum_of_squares/length) - (_mean*_mean));
+      
+    }
+    
     template <typename size_type>
     static const error_code encode(raw_type* _input,
                                    compressed_type* _output,
@@ -456,12 +479,14 @@ struct remove_estimated_background {
         std::vector<raw_type> darkest_face;
         extract_darkest_face((const raw_type*)_input, _dims, darkest_face);
         histogram<raw_type> h_darkest_facet(darkest_face.begin(), darkest_face.end());
+
         const float median_deviation = h_darkest_facet.median_variation();//mpicbg_median_variation(darkest_face.begin(),darkest_face.end());
         const float median = h_darkest_facet.median();
+
         const float alpha = 1.f;
         size_type input_length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<size_type>());
         const float reduce_by = median+(alpha*median_deviation);
-	
+
         if(_output)
             remove_background<raw_type>::encode_out_of_place(_input, _output, input_length, reduce_by);
         else

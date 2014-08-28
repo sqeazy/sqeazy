@@ -112,13 +112,15 @@ BOOST_AUTO_TEST_CASE( median_vs_mean )
 
     for(unsigned i=0; i<to_play_with.size(); ++i)
         to_play_with_acc(to_play_with[i]);
-
+                   
+                   
+                   
     sqeazy::histogram<value_type> of_variable(&to_play_with[0], size);
-    value_type exp_median = sqeazy::round<value_type>(boost::accumulators::median(to_play_with_acc));
-    value_type rec_median = sqeazy::round<value_type>(of_variable.calc_median());
+    float rec_median = of_variable.calc_median();
+    float exp_median = boost::accumulators::median(to_play_with_acc);
     BOOST_CHECK_NE(of_variable.calc_mean(),of_variable.calc_median());
     try {
-        BOOST_REQUIRE_EQUAL(rec_median,exp_median);
+        BOOST_REQUIRE_CLOSE(rec_median,exp_median,5);
     }
     catch(...) {
 
