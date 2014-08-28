@@ -67,7 +67,7 @@ BOOST_AUTO_TEST_CASE( auto_background_removed_success )
   for(unsigned i = 0;i < size;++i)
     constant_cube[i] += p(rng);
   
-  char* input = reinterpret_cast<char*>(&constant_cube[0]);
+  char* input = reinterpret_cast<char*>(&incrementing_cube[0]);
   char* output = reinterpret_cast<char*>(&to_play_with[0]);
 
     const long assumed_axis_dim = uint16_cube_of_8::axis_length;

@@ -109,33 +109,34 @@ BOOST_AUTO_TEST_CASE( last_pixels_Neighborhood_size )
     BOOST_CHECK_EQUAL(num_traversed,8);
     BOOST_CHECK_EQUAL(sqeazy::offset_begin_on_axis<last_pixels_nb>(0),-8);
     BOOST_CHECK_EQUAL(sqeazy::offset_end_on_axis<last_pixels_nb>(0),0);
-    
+
     std::vector<unsigned> offsets;
     sqeazy::halo<last_pixels_nb, unsigned> geometry(dims.begin(), dims.end());
     geometry.compute_offsets_in_x(offsets);
     const unsigned len = size;
-    
+
     BOOST_CHECK_LT(*std::max_element(offsets.begin(), offsets.end()),len);
     BOOST_CHECK_GE(*std::min_element(offsets.begin(), offsets.end()),0);
-    
+
     BOOST_CHECK_GE(geometry.non_halo_begin(0),0);
     BOOST_CHECK_EQUAL(geometry.non_halo_end(0),8);
     BOOST_CHECK_EQUAL(offsets.size(),1);
-    
+
 }
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_FIXTURE_TEST_SUITE( apply_diff, uint16_cube_of_8 )
 BOOST_AUTO_TEST_CASE( diff_it )
 {
-  
-  short* output = reinterpret_cast<short*>(&to_play_with[0]);
-  int rcode = sqeazy::diff_scheme<value_type, sqeazy::last_pixels_on_line_neighborhood<> >::encode(
-    
-    &incrementing_cube[0],output, dims);
-  
-  BOOST_CHECK_EQUAL(to_play_with[12],to_play_with[13]);
-  
-  
+
+    short* output = reinterpret_cast<short*>(&to_play_with[0]);
+    sqeazy::diff_scheme<value_type, sqeazy::last_pixels_on_line_neighborhood<> >::encode(
+        &incrementing_cube[0],
+        output,
+        dims);
+
+    BOOST_CHECK_EQUAL(to_play_with[12],to_play_with[13]);
+
+
 }
 BOOST_AUTO_TEST_SUITE_END()

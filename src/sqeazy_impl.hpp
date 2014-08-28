@@ -478,14 +478,15 @@ struct remove_estimated_background {
 
         std::vector<raw_type> darkest_face;
         extract_darkest_face((const raw_type*)_input, _dims, darkest_face);
-        histogram<raw_type> h_darkest_facet(darkest_face.begin(), darkest_face.end());
-
-        const float median_deviation = h_darkest_facet.median_variation();//mpicbg_median_variation(darkest_face.begin(),darkest_face.end());
-        const float median = h_darkest_facet.median();
-
+        
+        float sd = 0.f;
+        float mean = 0.f;
+	
+	mean_and_var(darkest_face.begin(), darkest_face.end(), mean, sd);
+	
         const float alpha = 1.f;
         size_type input_length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<size_type>());
-        const float reduce_by = median+(alpha*median_deviation);
+        const float reduce_by = mean+(alpha*sd);
 
         if(_output)
             remove_background<raw_type>::encode_out_of_place(_input, _output, input_length, reduce_by);
