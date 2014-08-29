@@ -308,7 +308,7 @@ int main(int argc, char *argv[])
 
                 std::cout.precision(5);
                 suite.compression_summary();
-                std::cout << std::setw(12) << "ratio (out/in)\t";
+                std::cout << std::setw(12) << "ratio (in/out)\t";
 
             }
 
