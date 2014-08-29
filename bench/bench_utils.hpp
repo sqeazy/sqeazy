@@ -87,6 +87,7 @@ struct bcase {
     sqeazy::histogram<value_type> histogram;
     unsigned long raw_size_in_byte = 0;
     unsigned long compressed_size_in_byte = 0;
+    float compress_speed_mb_per_sec_value = 0.;
 
     decltype(std::chrono::high_resolution_clock::now()) start_time;
     double time_us = 0.;
@@ -116,6 +117,7 @@ struct bcase {
         auto end_time = std::chrono::high_resolution_clock::now();
         time_us = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
         compressed_size_in_byte = _compr_size;
+        compress_speed_mb_per_sec_value = compress_speed_mb_per_sec();
 
     }
 
@@ -154,7 +156,12 @@ struct bcase {
             return 0.;
     }
 
+    float compress_speed() const {
 
+      return compress_speed_mb_per_sec_value;
+      
+    }
+    
     friend std::ostream& operator<<(std::ostream& _cout, const bcase& _in) {
 
         _cout << _in.raw_size_in_byte << "\t";
@@ -173,7 +180,7 @@ struct bcase {
               << _in.time_us << "\t"
               << _in.compressed_size_in_byte << "\t"
               << _in.compress_ratio()<< "\t"
-	      << _in.compress_speed_mb_per_sec()<< "\t"
+              << _in.compress_speed()<< "\t"
               << _in.max_compress_ratio()<< "\t"
               << _in.filename;
 
