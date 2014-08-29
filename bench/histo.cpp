@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include "bench_fixtures.hpp"
 #include "hist_impl.hpp"
-#include "sqeazy_impl.hpp"
+#include "background_scheme_utils.hpp"
 
 #include "TH1F.h"
 #include "TCanvas.h"
@@ -259,7 +259,7 @@ int darkest_face(const std::vector<std::string>& _args) {
         std::string basename(_args[fid],dash_pos+1, no_suffix.size() - dash_pos-1);
         basename += "_darkest_face";
 
-        sqeazy::remove_estimated_background<unsigned short>::extract_darkest_face(
+        sqeazy::extract_darkest_face(
             &reference.tiff_data[0], reference.axis_lengths, darkest_face);
         sqeazy::histogram<unsigned short> ref_hist(darkest_face.begin(), darkest_face.end());
 

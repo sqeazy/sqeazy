@@ -3,11 +3,82 @@
 #include <limits>
 #include <climits>
 #include <iostream>
+#include <vector>
 #include "sqeazy_traits.hpp"
 #include "neighborhood_utils.hpp"
 
 namespace sqeazy {
 
+  
+    template <typename raw_type, typename size_type>
+    /**
+     * @brief search for the place with the lowest mean value (median would be too expensive).
+     * the current implementation loops through the first & last two x-y planes
+     * as well as the first & last z-x plane
+     *
+     * @param _input 3D stack that is to be parsed
+     * @param _dims dimensionality of the input
+     * @param _darkest_face (inout type) this is the vector that will contain the result
+     * @return const void
+     */
+    static const void extract_darkest_face(const raw_type* _input,
+                                           const std::vector<size_type>& _dims,
+                                           std::vector<raw_type>& _darkest_face) {
+
+        typedef typename add_unsigned<typename twice_as_wide<size_type>::type >::type index_type;
+
+        raw_type mean = std::numeric_limits<raw_type>::max();
+        index_type input_index =0;
+        const index_type frame_size = _dims[1]*_dims[0];
+        index_type face_index =0;
+
+
+        //faces with z (first 2 and last 2)
+        const size_type indices[4] = {0,1,_dims[2]-2,_dims[2]-1};
+
+        for(size_type z_idx = 0, z_idx_ctr = 0;
+                z_idx < 4;
+                ++z_idx_ctr, z_idx = indices[z_idx_ctr]) {
+
+            input_index = z_idx*(frame_size);
+            const raw_type* begin = _input + input_index;
+            raw_type temp = std::accumulate(begin, begin + (frame_size),0 )/(frame_size);
+            if(temp < mean) {
+                if(_darkest_face.size()<frame_size)
+                    _darkest_face.resize(frame_size);
+                std::copy(begin, begin + (frame_size),_darkest_face.begin());
+                mean = temp;
+            }
+        }
+
+        //faces with y
+        face_index =0;
+        for(size_type y_idx = 0; y_idx < _dims[1]; y_idx+=(_dims[1]-1)) {
+            raw_type temp = 0;
+            for(size_type z_idx = 0; z_idx < _dims[2]; ++z_idx) {
+                for(size_type x_idx = 0; x_idx < _dims[0]; ++x_idx) {
+                    input_index = z_idx*(frame_size)+y_idx*_dims[0]+x_idx;
+                    temp += _input[input_index];
+                }
+            }
+            temp/=_dims[2]*_dims[0];
+            if(temp < mean) {
+                if(_darkest_face.size()<_dims[2]*_dims[0])
+                    _darkest_face.resize(_dims[2]*_dims[0]);
+                for(size_type z_idx = 0; z_idx < _dims[2]; ++z_idx) {
+
+                    input_index = z_idx*(frame_size)+y_idx*_dims[0];
+                    std::copy(_input + input_index,_input + input_index + _dims[0], _darkest_face.begin());
+//
+
+                }
+                mean = temp;
+            }
+        }
+
+    }
+
+  
 template <typename Neighborhood, typename Value_type, typename Size_type, typename Pred>
 static unsigned  count_neighbors_if(Value_type* _input,
                                     const std::vector<Size_type>& _dims,

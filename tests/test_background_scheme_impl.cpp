@@ -25,7 +25,7 @@ BOOST_AUTO_TEST_CASE( success )
     std::vector<unsigned short> face(face_size);
     std::fill(face.begin(), face.end(), 0);
     const value_type* input = &constant_cube[0];
-    sqeazy::remove_estimated_background<unsigned short>::extract_darkest_face(input, dims, face);
+    sqeazy::extract_darkest_face(input, dims, face);
 
     BOOST_CHECK_EQUAL(face.size(),face_size);
     BOOST_CHECK_EQUAL_COLLECTIONS(face.begin(),face.end(), constant_cube.begin(),constant_cube.begin() + face_size);
@@ -41,7 +41,7 @@ BOOST_AUTO_TEST_CASE( selects_correct_plane_in_z )
     std::vector<unsigned short> face(face_size);
     std::fill(face.begin(), face.end(), 0);
     const value_type* input = &incrementing_cube[0];
-    sqeazy::remove_estimated_background<unsigned short>::extract_darkest_face(input, dims, face);
+    sqeazy::extract_darkest_face(input, dims, face);
 
     BOOST_CHECK_EQUAL(face.size(),face_size);
     BOOST_CHECK_EQUAL_COLLECTIONS(face.begin(),face.end(), incrementing_cube.begin(), incrementing_cube.begin() + face_size);
