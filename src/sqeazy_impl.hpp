@@ -26,6 +26,11 @@ struct diff_scheme {
     typedef typename add_unsigned<typename twice_as_wide<T>::type >::type sum_type;
     static const bool is_compressor = false;
 
+    /**
+     * @brief producing the name of this scheme and return it as a string
+     *
+     * @return const std::string
+     */
     static const std::string name() {
 
         //TODO: add name of Neighborhood
@@ -170,7 +175,11 @@ struct bitswap_scheme {
     static const unsigned raw_type_num_bits = sizeof(T)*CHAR_BIT;
     static const unsigned num_segments = raw_type_num_bits/raw_type_num_bits_per_segment;
 
-
+    /**
+         * @brief producing the name of this scheme and return it as a string
+         *
+         * @return const std::string
+         */
     static const std::string name() {
 
         std::ostringstream val("");
@@ -271,6 +280,11 @@ struct remove_background {
     typedef S size_type;
     static const bool is_compressor = false;
 
+    /**
+     * @brief producing the name of this scheme and return it as a string
+     *
+     * @return const std::string
+     */
     static const std::string name() {
 
 
@@ -279,36 +293,60 @@ struct remove_background {
     }
 
 
-
+/**
+     * @brief [length given as vector] removal of _threshold from _input buffer, i.e. if any value
+     * inside _input is found to be <= _threshold it is set to 0, it is kept otherwise (inplace version)
+     * @param _input 3D input stack of type raw_type
+     * @param _output 3D output stack of type raw_type
+     * @param _length length of the above in units of raw_type
+     * @param _threshold threshold to apply
+     * @return sqeazy::error_code
+     */
     static const error_code encode(raw_type* _input,
                                    raw_type* _output,
-                                   const std::vector<size_type>& _data)
+                                   const std::vector<size_type>& _data,
+				   const raw_type& _threshold
+				  )
     {
 
-        if(_data.size() == 2)
-            return encode(_input, _output, _data.at(0), _data.at(1));
-        else
-            return FAILURE;
+        unsigned long length = std::accumulate(_data.begin(), _data.end(), 1, std::multiplies<size_type>());
+
+        return encode(_input, _output, length, _threshold);
 
     }
 
+    /**
+     * @brief [length given as scalar] removal of _threshold from _input buffer, i.e. if any value
+     * inside _input is found to be <= _threshold it is set to 0, it is kept otherwise (inplace version)
+     * @param _input 3D input stack of type raw_type
+     * @param _output 3D output stack of type raw_type
+     * @param _length length of the above in units of raw_type
+     * @param _threshold threshold to apply
+     * @return sqeazy::error_code
+     */
     static const error_code encode(raw_type* _input,
                                    raw_type* _output,
                                    const size_type& _length,
-                                   const raw_type& _epsilon)
+                                   const raw_type& _threshold)
     {
-        histogram<raw_type> incoming(_input, _length);
-        raw_type threshold = incoming.mode() + _epsilon;
-
         if(_output)
-            return encode_out_of_place(_input, _output, _length, threshold);
+            return encode_out_of_place(_input, _output, _length, _threshold);
         else
-            return encode_inplace(_input, _length, threshold);
+            return encode_inplace(_input, _length, _threshold);
 
     }
 
 
 
+    /**
+     * @brief clipping removal of _threshold from _input buffer, i.e. if any value
+     * inside _input is found to be <= _threshold it is set to 0, it is kept otherwise (inplace version)
+     * @param _input 3D input stack of type raw_type
+     * @param _output 3D output stack of type raw_type
+     * @param _length length of the above in units of raw_type
+     * @param _threshold threshold to apply
+     * @return sqeazy::error_code
+     */
     static const error_code encode_out_of_place(raw_type* _input,
             raw_type* _output,
             const size_type& _length,
@@ -324,6 +362,14 @@ struct remove_background {
 
 
 
+    /**
+     * @brief clipping removal of _threshold from _input buffer, i.e. if any value
+     * inside _input is found to be <= _threshold it is set to 0, it is kept otherwise (inplace version)
+     * @param _input 3D input stack of type raw_type
+     * @param _length length of the above in units of raw_type
+     * @param _threshold threshold to apply
+     * @return sqeazy::error_code
+     */
     static const error_code encode_inplace(raw_type* _input,
                                            const size_type& _length,
                                            const raw_type& _threshold)
@@ -339,6 +385,12 @@ struct remove_background {
 
 
     template <typename SizeType>
+    /**
+    * @brief reconstructing the background removal from an estimate is impossible (so far),
+    * therefor the input buffer is copied to the output buffer of size given by dimensionality
+    *
+    * @return sqeazy::error_code
+    */
     static const error_code decode(const raw_type* _input,
                                    raw_type* _output,
                                    const SizeType& _length)
@@ -348,6 +400,12 @@ struct remove_background {
     }
 
     template <typename SizeType>
+    /**
+    * @brief reconstructing the background removal from an estimate is impossible (so far),
+    * therefor the input buffer is copied to the output buffer of size given by dimensionality
+    *
+    * @return sqeazy::error_code
+    */
     static const error_code decode(const raw_type* _input,
                                    raw_type* _output,
                                    const std::vector<SizeType>& _length)
@@ -363,17 +421,17 @@ struct remove_background {
 template < typename T,
          typename Neighborhood = cube_neighborhood<3>,
          short percentage_below = 75 >
-         /**
-	  * @brief this implements a shot noise type removal scheme, i.e. inside the neighborhood of a pixel 
-	  * in _input, the number of pixels are counted that fall under a certain threshold, if this count exceeds
-	  * the limit "percentage_below" (or the one given at runtime), the central pixel 
-	  * (around which the neighborhood is located) is set to 0 as well. 
-	  * 
-	  * this scheme cannot be run inplace.
-	  * this scheme is not reversable.
-	  * 
-	  */
-	 struct flatten_to_neighborhood {
+/**
+* @brief this implements a shot noise type removal scheme in static member function encode, i.e. inside the neighborhood of a pixel
+* in _input, the number of pixels are counted that fall under a certain threshold, if this count exceeds
+* the limit "percentage_below" (or the one given at runtime), the central pixel
+* (around which the neighborhood is located) is set to 0 as well.
+*
+* this scheme cannot be run inplace.
+* this scheme is not reversable.
+*
+*/
+struct flatten_to_neighborhood {
 
     typedef T raw_type;
     typedef T compressed_type;
@@ -382,6 +440,11 @@ template < typename T,
     static const bool is_compressor = false;
     static const float fraction_below = percentage_below/100.f;
 
+    /**
+     * @brief producing the name of this scheme and return it as a string
+     *
+     * @return const std::string
+     */
     static const std::string name() {
 
         std::ostringstream msg;
@@ -396,73 +459,98 @@ template < typename T,
 
 
     template <typename size_type>
+    /**
+     * @brief encoding the flatten_to_neighborhood scheme
+     *
+     * @param _input Input 3D image stack of raw_type
+     * @param _output Output 3D image stack of raw_type
+     * @param _dims std::vector<int> that contains the dimensionality of _input and _output
+     * @param _threshold the threshold under which a pixel is considered noise
+     * @param _frac_neighb_to_null fraction of neighboring pixels (exclusive neighborhood) that decided
+     * if the central pixel is to be set to 0 (count > _frac_neighb_to_null) or kept as is (count <= _frac_neighb_to_null)
+
+     * @return sqeazy::error_code
+     */
     static const error_code encode(raw_type* _input,
                                    raw_type* _output,
                                    const std::vector<size_type>& _dims,
                                    const raw_type& _threshold,
                                    float _frac_neighb_to_null = fraction_below)
     {
-        
-
-    unsigned long length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<raw_type>());
-
-    std::vector<size_type> offsets;
-    sqeazy::halo<Neighborhood, size_type> geometry(_dims.begin(), _dims.end());
-    geometry.compute_offsets_in_x(offsets);
-
-    size_type halo_size_x = length - offsets[0];
-
-    //no offsets in other dimensions than x
-    if(offsets.size()!=1)
-    {
-        halo_size_x = geometry.non_halo_end(0) - geometry.non_halo_begin(0) + 1;
-    }
-
-    unsigned long local_index=0;
-    unsigned n_neighbors_below_threshold = 0;
-    typename std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
 
 
-    const float cut_fraction = _frac_neighb_to_null*(size<Neighborhood>()-1);
-    for(; offsetsItr!=offsets.end(); ++offsetsItr) {
-        for(unsigned long index = 0; index < halo_size_x; ++index) {
+        unsigned long length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<raw_type>());
 
-            local_index = index + *offsetsItr;
-            n_neighbors_below_threshold = count_neighbors_if<Neighborhood>(_input + local_index,
-                                          _dims,
-                                          std::bind2nd(std::less<raw_type>(), _threshold)
-                                                                          );
-            if(n_neighbors_below_threshold>cut_fraction)
-                _output[local_index] = 0;
-	    else
-	        _output[local_index] = _input[local_index];
+        std::vector<size_type> offsets;
+        sqeazy::halo<Neighborhood, size_type> geometry(_dims.begin(), _dims.end());
+        geometry.compute_offsets_in_x(offsets);
 
+        size_type halo_size_x = length - offsets[0];
+
+        //no offsets in other dimensions than x
+        if(offsets.size()!=1)
+        {
+            halo_size_x = geometry.non_halo_end(0) - geometry.non_halo_begin(0) + 1;
         }
+
+        unsigned long local_index=0;
+        unsigned n_neighbors_below_threshold = 0;
+        typename std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
+
+
+        const float cut_fraction = _frac_neighb_to_null*(size<Neighborhood>()-1);
+        for(; offsetsItr!=offsets.end(); ++offsetsItr) {
+            for(unsigned long index = 0; index < halo_size_x; ++index) {
+
+                local_index = index + *offsetsItr;
+                n_neighbors_below_threshold = count_neighbors_if<Neighborhood>(_input + local_index,
+                                              _dims,
+                                              std::bind2nd(std::less<raw_type>(), _threshold)
+                                                                              );
+                if(n_neighbors_below_threshold>cut_fraction)
+                    _output[local_index] = 0;
+                else
+                    _output[local_index] = _input[local_index];
+
+            }
+        }
+
+        return SUCCESS;
     }
 
-    return SUCCESS;
-}
 
+    template <typename SizeType>
+    /**
+     * @brief decoding the _input to _output given just the length of the buffers as scalar
+     * here: not operation except copying is performed
+     *
+     * @return sqeazy::error_code
+     */
+    static const error_code decode(const raw_type* _input,
+                                   raw_type* _output,
+                                   const SizeType& _length)
+    {
+        if(_input!=_output )
+            std::copy(_input, _input + _length, _output);
+        return SUCCESS;
+    }
 
-template <typename SizeType>
-static const error_code decode(const raw_type* _input,
-                               raw_type* _output,
-                               const SizeType& _length)
-{
-    if(_input!=_output )
-        std::copy(_input, _input + _length, _output);
-    return SUCCESS;
-}
+    template <typename SizeType>
+    /**
+     * @brief decoding the _input to _output given just the length of the buffers as vector (dimensionality)
+     * here: not operation except copying is performed
+     *
+     *
+     * @return sqeazy::error_code
+     */
+    static const error_code decode(const raw_type* _input,
+                                   raw_type* _output,
+                                   const std::vector<SizeType>& _length)
+    {
+        unsigned long total_size = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<SizeType>());
 
-template <typename SizeType>
-static const error_code decode(const raw_type* _input,
-                               raw_type* _output,
-                               const std::vector<SizeType>& _length)
-{
-    unsigned long total_size = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<SizeType>());
-
-    return decode(_input, _output, total_size);
-}
+        return decode(_input, _output, total_size);
+    }
 
 
 
@@ -477,6 +565,11 @@ struct remove_estimated_background {
     typedef T compressed_type;
     static const bool is_compressor = false;
 
+    /**
+     * @brief producing the name of this scheme and return it as a string
+     *
+     * @return const std::string
+     */
     static const std::string name() {
 
 
@@ -485,6 +578,16 @@ struct remove_estimated_background {
     }
 
     template <typename size_type>
+    /**
+     * @brief search for the place with the lowest mean value (median would be too expensive).
+     * the current implementation loops through the first & last two x-y planes
+     * as well as the first & last z-x plane
+     *
+     * @param _input 3D stack that is to be parsed
+     * @param _dims dimensionality of the input
+     * @param _darkest_face (inout type) this is the vector that will contain the result
+     * @return const void
+     */
     static const void extract_darkest_face(const raw_type* _input,
                                            const std::vector<size_type>& _dims,
                                            std::vector<raw_type>& _darkest_face) {
@@ -497,7 +600,7 @@ struct remove_estimated_background {
         index_type face_index =0;
 
 
-        //faces with z
+        //faces with z (first 2 and last 2)
         const size_type indices[4] = {0,1,_dims[2]-2,_dims[2]-1};
 
         for(size_type z_idx = 0, z_idx_ctr = 0;
@@ -530,42 +633,30 @@ struct remove_estimated_background {
                 if(_darkest_face.size()<_dims[2]*_dims[0])
                     _darkest_face.resize(_dims[2]*_dims[0]);
                 for(size_type z_idx = 0; z_idx < _dims[2]; ++z_idx) {
-                    for(size_type x_idx = 0; x_idx < _dims[0]; ++x_idx) {
-                        input_index = z_idx*(frame_size)+y_idx*_dims[0]+x_idx;
-                        _darkest_face[face_index++] = _input[input_index];
-                    }
+
+                    input_index = z_idx*(frame_size)+y_idx*_dims[0];
+                    std::copy(_input + input_index,_input + input_index + _dims[0], _darkest_face.begin());
+//
+
                 }
                 mean = temp;
             }
         }
-        /*
-         //the following is very expensive in terms of memory access
-                //faces with x
-                face_index =0;
-                for(size_type x_idx = 0; x_idx < _dims[0]; x_idx+=(_dims[0]-1)) {
-                    raw_type temp = 0;
-                    for(size_type z_idx = 0; z_idx < _dims[2]; ++z_idx) {
-                        for(size_type y_idx = 0; y_idx < _dims[1]; ++y_idx) {
-                            input_index = z_idx*(frame_size)+y_idx*_dims[0]+x_idx;
-                            temp += _input[input_index];
-                        }
-                    }
-                    temp/=_dims[2]*_dims[1];
-                    if(temp < mean) {
-                        if(_darkest_face.size()<_dims[2]*_dims[1])
-                            _darkest_face.resize(_dims[2]*_dims[1]);
-                        for(size_type z_idx = 0; z_idx < _dims[2]; ++z_idx) {
-                            for(size_type y_idx = 0; y_idx < _dims[0]; ++y_idx) {
-                                input_index = z_idx*(frame_size)+y_idx*_dims[0]+x_idx;
-                                _darkest_face[face_index++] = _input[input_index];
-                            }
-                        }
-                        mean = temp;
-                    }
-                }*/
+
     }
 
     template <typename ItrT>
+    /**
+     * @brief Calculate the mean and standard deviation of the memory region between [begin,end)
+     * in one go and write it to _mean and _var (this approach assumes a high statistic
+     * sample contained in [begin,end))
+     *
+     * @param begin begin of buffer
+     * @param end exclusive end of buffer
+     * @param _mean float that the resulting mean is written to
+     * @param _var float that the resulting standard deviation is written to
+     * @return const void
+     */
     static const void mean_and_var(ItrT begin, ItrT end, float& _mean, float& _var) {
 
         unsigned long length = end - begin;
@@ -583,6 +674,17 @@ struct remove_estimated_background {
     }
 
     template <typename size_type>
+    /**
+     * @brief applying the background/noise removal from an estimate of the noise level
+     * given the darkest faces of the volume. if the out-of-place operation is requested (input buffer is
+     * at a different memory location than the output buffer) lonely peaks on a noisy neighborhood
+     * are removed from the sample
+     *
+     * @param _input input 3D stack encoded as raw_type
+     * @param _output output 3D stack encoded as raw_type (must have same dimensionality than _input)
+     * @param _dims dimensionality of input, i.e. the extents along each dimension
+     * @return sqeazy::error_code
+     */
     static const error_code encode(raw_type* _input,
                                    compressed_type* _output,
                                    const std::vector<size_type>& _dims)
@@ -602,9 +704,11 @@ struct remove_estimated_background {
         const float reduce_by = mean+(alpha*sd);
 
         if(_output) {
-            remove_background<raw_type>::encode_out_of_place(_input, _output, input_length, reduce_by);
+            flatten_to_neighborhood<raw_type>::encode(_input, _output, _dims, reduce_by);
+            remove_background<raw_type>::encode_inplace(_output, input_length, reduce_by);
         }
         else {
+            std::cerr << "WARNING ["<< name() <<"::encode]\t inplace operation requested, flatten_to_neighborhood skipped\n";
             remove_background<raw_type>::encode_inplace(_input, input_length, reduce_by);
 
         }
@@ -616,6 +720,12 @@ struct remove_estimated_background {
     }
 
     template <typename SizeType>
+    /**
+     * @brief reconstructing the background removal from an estimate is impossible (so far),
+     * therefor the input buffer is copied to the output buffer of size _length
+     *
+     * @return sqeazy::error_code
+     */
     static const error_code decode(const compressed_type* _input,
                                    raw_type* _output,
                                    const SizeType& _length)
@@ -625,6 +735,12 @@ struct remove_estimated_background {
     }
 
     template <typename SizeType>
+    /**
+    * @brief reconstructing the background removal from an estimate is impossible (so far),
+    * therefor the input buffer is copied to the output buffer of size given by dimensionality
+    *
+    * @return sqeazy::error_code
+    */
     static const error_code decode(const compressed_type* _input,
                                    raw_type* _output,
                                    const std::vector<SizeType>& _length)
