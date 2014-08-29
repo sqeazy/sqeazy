@@ -83,8 +83,9 @@ BOOST_AUTO_TEST_CASE( huff_map_correct )
     map_citr_type rec_itr = codes.begin();
     map_citr_type rec_itrE = codes.end();
 
-    for (; rec_itr != rec_itrE; ++rec_itr, ++exp_itr)
+    for (; rec_itr != rec_itrE; ++rec_itr)
     {
+      exp_itr = expected_map.find(rec_itr->first);
         try {
             BOOST_REQUIRE_EQUAL(rec_itr->first, exp_itr->first);
         }
@@ -93,7 +94,7 @@ BOOST_AUTO_TEST_CASE( huff_map_correct )
         }
 
         try {
-            BOOST_REQUIRE_EQUAL(rec_itr->second.to_ulong(), expected_map[rec_itr->first].to_ulong());
+            BOOST_REQUIRE_EQUAL(rec_itr->second.to_ulong(), exp_itr->second.to_ulong());
         }
         catch(...) {
             std::cerr << "[mismatching value] expected " << rec_itr->second.to_string() << ", received " << expected_map[rec_itr->first].to_string() << "\n";
