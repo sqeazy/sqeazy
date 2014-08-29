@@ -173,6 +173,7 @@ struct bcase {
               << _in.time_us << "\t"
               << _in.compressed_size_in_byte << "\t"
               << _in.compress_ratio()<< "\t"
+	      << _in.compress_speed_mb_per_sec()<< "\t"
               << _in.max_compress_ratio()<< "\t"
               << _in.filename;
 
@@ -183,7 +184,7 @@ struct bcase {
         std::ostringstream _cout;
 
         _cout << "raw_size/Byte\textents\tsmallest-pop-bin\tlargest-pop-bin\tmode\tmean\t"
-              << "time-to-compress/us\tcompressed_size/Byte\tcompress-ratio\tmax-compress-ratio\tfilename";
+              << "time-to-compress/us\tcompressed_size/Byte\tcompress-ratio\tspeed/[MB/s]\tmax-compress-ratio\tfilename";
 
         return _cout.str();
     }
