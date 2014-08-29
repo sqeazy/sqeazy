@@ -478,7 +478,7 @@ struct flatten_to_neighborhood {
 
 
     static const bool is_compressor = false;
-    static const float fraction_below = percentage_below/100.f;
+
 
     /**
      * @brief producing the name of this scheme and return it as a string
@@ -515,7 +515,7 @@ struct flatten_to_neighborhood {
                                    raw_type* _output,
                                    const std::vector<size_type>& _dims,
                                    const raw_type& _threshold,
-                                   float _frac_neighb_to_null = fraction_below)
+                                   float _frac_neighb_to_null = percentage_below/100.f)
     {
 
 

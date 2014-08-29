@@ -1,5 +1,5 @@
 #ifndef _PIPELINE_HPP_
-#define _PIPELINEr_HPP_
+#define _PIPELINE_HPP_
 #include <string>
 #include <sstream>
 #include "boost/mpl/vector.hpp"
