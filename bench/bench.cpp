@@ -177,29 +177,38 @@ void fill_suite(const std::vector<std::string>& _args,
 
         current_file = _args[i];
 
-// 	head_tail = sqeazy_bench::split_last_of(_args[i], ".");
-        tiff_fixture<value_type, false> reference(_args[i]);
+	//load image located under current_file
+        tiff_fixture<value_type, false> reference(current_file.string());
 
+	//skip the rest if nothing was loaded
         if(reference.empty())
             continue;
 
-        sqeazy_bench::bcase<value_type> temp_case(_args[i], reference.data(), reference.axis_lengths);
+	
 
+	//compute the maximum size of the output buffer
         unsigned long expected_size = std::ceil(current_pipe::max_encoded_size(reference.size_in_byte())/float(sizeof(value_type)));
         if(expected_size>output_data.size()) {
             output_data.resize(expected_size);
         }
 
+        //make a cast so API of pipeline is happy
         char* dest = reinterpret_cast<char*>(output_data.data());
+	
+	//setup benchmark case for saving time, ratio ... AND START TIMER
+        sqeazy_bench::bcase<value_type> temp_case(current_file.string(), reference.data(), reference.axis_lengths);
+	
+	//perform encoding and write output to output_data
         temp_case.return_code = current_pipe::compress(reference.data(),
-                                dest,/*
-                                reinterpret_cast<char*>(reference.output()),*/
+                                dest,
                                 reference.axis_lengths);
-
-
+	//STOP TIMER
         temp_case.stop(current_pipe::last_num_encoded_bytes);
+	
+	//save benchmark case to suite for later reuse
         _suite.at(i,temp_case);
 
+	//-e was set
         if(_config.save_encoded.size()>1) {
 
             std::string name = _config.save_encoded;
@@ -214,6 +223,7 @@ void fill_suite(const std::vector<std::string>& _args,
             encoded.close();
         }
 
+        //-r was set
         if(_config.roundtrip.size()>1) {
             //decompress what was just compressed
             int dec_ret = current_pipe::decompress(dest,reference.data(),
@@ -290,13 +300,12 @@ int main(int argc, char *argv[])
 
         sqeazy_bench::bsuite<unsigned short> suite(filenames.size());
         if(f_func!=prog_flow.end()) {
+	  //call fill_suite
             (f_func->second)(filenames, suite,config);
+	    
             int prec = std::cout.precision();
 
-
-
-
-            std::cout << filenames.size() << "\t";
+	    std::cout << filenames.size() << "\t";
 
             if(f_func->first.find("speed")!=std::string::npos) {
 
