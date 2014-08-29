@@ -116,7 +116,8 @@ BOOST_AUTO_TEST_CASE( median_vs_mean )
                    
                    
     sqeazy::histogram<value_type> of_variable(&to_play_with[0], size);
-    float rec_median = of_variable.calc_median();
+    
+    float rec_median = of_variable.median();
     float exp_median = boost::accumulators::median(to_play_with_acc);
     BOOST_CHECK_NE(of_variable.calc_mean(),of_variable.calc_median());
     try {
