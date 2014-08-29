@@ -13,6 +13,7 @@
 
 typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 
+
 BOOST_FIXTURE_TEST_SUITE( extract_face, uint16_cube_of_8 )
 
 BOOST_AUTO_TEST_CASE( success )
@@ -89,7 +90,6 @@ BOOST_AUTO_TEST_CASE( free_mean_var )
             to_play_with.end(),
             mean,
             var
-
                                                                  );
 
     BOOST_CHECK_CLOSE(mean,32.f,2);
@@ -105,16 +105,62 @@ BOOST_AUTO_TEST_CASE( stamp_removal )
 
     std::fill(constant_cube.begin(), constant_cube.end(), 0);
     constant_cube[constant_cube.size()/2] = 1 << 14;
+    float input_sum = std::accumulate(constant_cube.begin(), constant_cube.end(),0);
 
-    int rcode = sqeazy::remove_background_from_neighborhood<value_type>::encode(&to_play_with[0],
-            &to_play_with[0], dims);
+    typedef sqeazy::cube_neighborhood<3> nb_t;
 
-                                                                 
+    for(int i = 0; i<3; ++i) {
+        BOOST_CHECK_EQUAL(sqeazy::offset_begin_on_axis<nb_t>(i), -1);
+        BOOST_CHECK_EQUAL(sqeazy::offset_end_on_axis<nb_t>(i), 2);
+    }
+
+    int rcode = sqeazy::flatten_to_neighborhood<value_type>::encode(&constant_cube[0],
+                &to_play_with[0], dims, 42);
+
+
     float sum = std::accumulate(to_play_with.begin(), to_play_with.end(),0);
     BOOST_CHECK_EQUAL(rcode, 0);
     BOOST_CHECK_EQUAL(sum, 0);
-    
+    BOOST_CHECK_NE(sum, input_sum);
 
+
+
+
+}
+
+BOOST_AUTO_TEST_CASE( stamp_removal_fraction )
+{
+
+    std::fill(constant_cube.begin(), constant_cube.end(), 0);
+    std::fill(incrementing_cube.begin(), incrementing_cube.end(), 0);
+
+    unsigned central_index = 3*axis_length*axis_length + 3*axis_length +3;
+    constant_cube[central_index] = 1 << 14;
+    incrementing_cube[central_index] = 1 << 14;
+    incrementing_cube[central_index - 1] = 1 << 14;
+    incrementing_cube[central_index + 1] = 1 << 14;
+    incrementing_cube[central_index - 8] = 1 << 14;
+    incrementing_cube[central_index + 8] = 1 << 14;
+    incrementing_cube[central_index - 64] = 1 << 14;
+    incrementing_cube[central_index + 64] = 1 << 14;
+
+    int rcode = sqeazy::flatten_to_neighborhood<value_type>::encode(&constant_cube[0],
+                &to_play_with[0], dims, 42);
+
+    BOOST_CHECK_EQUAL(rcode, 0);
+    BOOST_CHECK_EQUAL(to_play_with[central_index], 0);
+
+    rcode = sqeazy::flatten_to_neighborhood<value_type>::encode(&incrementing_cube[0],
+            &to_play_with[0], dims, 42, 6/(26.f));
+
+    BOOST_CHECK_EQUAL(rcode, 0);
+    BOOST_CHECK_EQUAL(to_play_with[central_index], 0);
+
+    rcode = sqeazy::flatten_to_neighborhood<value_type>::encode(&incrementing_cube[0],
+            &to_play_with[0], dims, 42, 22/(26.f));
+
+    BOOST_CHECK_EQUAL(rcode, 0);
+    BOOST_CHECK_MESSAGE(to_play_with[central_index] != 0, "flatten_to_neighborhood did not keep intensity of interest");
 
 
 }

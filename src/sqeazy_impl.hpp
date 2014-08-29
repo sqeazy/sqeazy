@@ -1,11 +1,13 @@
 #ifndef _SQEAZY_IMPL_H_
 #define _SQEAZY_IMPL_H_
-
+#include <functional>
 #include <algorithm>
 #include <sstream>
 #include <climits>
 #include "sqeazy_common.hpp"
 #include "sqeazy_traits.hpp"
+#include "neighborhood_utils.hpp"
+#include "background_scheme_utils.hpp"
 #include "diff_scheme_utils.hpp"
 #include "bitswap_scheme_utils.hpp"
 #include "hist_impl.hpp"
@@ -51,7 +53,7 @@ struct diff_scheme {
         std::vector<size_type> offsets;
         sqeazy::halo<Neighborhood, size_type> geometry(_width,_height,_depth);
         geometry.compute_offsets_in_x(offsets);
-        typename std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
+
 
         size_type halo_size_x = geometry.non_halo_end(0)-geometry.non_halo_begin(0);
         if(offsets.size()==1)//no offsets in other dimensions than x
@@ -62,6 +64,7 @@ struct diff_scheme {
         size_type local_index = 0;
         const sum_type n_traversed_pixels = sqeazy::num_traversed_pixels<Neighborhood>();
 
+        typename std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
         for(; offsetsItr!=offsets.end(); ++offsetsItr) {
             for(unsigned long index = 0; index < halo_size_x; ++index) {
 
@@ -166,7 +169,7 @@ struct bitswap_scheme {
 
     static const unsigned raw_type_num_bits = sizeof(T)*CHAR_BIT;
     static const unsigned num_segments = raw_type_num_bits/raw_type_num_bits_per_segment;
-//     static const unsigned raw_type_num_bits_per_segment = raw_type_num_bits/num_segments;
+
 
     static const std::string name() {
 
@@ -358,15 +361,26 @@ struct remove_background {
 
 
 template < typename T,
-         typename Neighborhood = cube_neighborhood_excluding_pixel<3>,
-         short percentage_above = 75 >
-struct remove_background_from_neighborhood {
+         typename Neighborhood = cube_neighborhood<3>,
+         short percentage_below = 75 >
+         /**
+	  * @brief this implements a shot noise type removal scheme, i.e. inside the neighborhood of a pixel 
+	  * in _input, the number of pixels are counted that fall under a certain threshold, if this count exceeds
+	  * the limit "percentage_below" (or the one given at runtime), the central pixel 
+	  * (around which the neighborhood is located) is set to 0 as well. 
+	  * 
+	  * this scheme cannot be run inplace.
+	  * this scheme is not reversable.
+	  * 
+	  */
+	 struct flatten_to_neighborhood {
 
     typedef T raw_type;
     typedef T compressed_type;
-    
-    
+
+
     static const bool is_compressor = false;
+    static const float fraction_below = percentage_below/100.f;
 
     static const std::string name() {
 
@@ -381,58 +395,77 @@ struct remove_background_from_neighborhood {
     }
 
 
-template <typename size_type>
+    template <typename size_type>
     static const error_code encode(raw_type* _input,
                                    raw_type* _output,
-                                   const std::vector<size_type>& _data)
+                                   const std::vector<size_type>& _dims,
+                                   const raw_type& _threshold,
+                                   float _frac_neighb_to_null = fraction_below)
     {
+        
 
-        return NOT_IMPLEMENTED_YET;
+    unsigned long length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<raw_type>());
 
+    std::vector<size_type> offsets;
+    sqeazy::halo<Neighborhood, size_type> geometry(_dims.begin(), _dims.end());
+    geometry.compute_offsets_in_x(offsets);
+
+    size_type halo_size_x = length - offsets[0];
+
+    //no offsets in other dimensions than x
+    if(offsets.size()!=1)
+    {
+        halo_size_x = geometry.non_halo_end(0) - geometry.non_halo_begin(0) + 1;
     }
 
-template <typename size_type>
-    static const error_code encode_out_of_place(raw_type* _input,
-            raw_type* _output,
-            const size_type& _length,
-            const raw_type& _threshold)
-    {
+    unsigned long local_index=0;
+    unsigned n_neighbors_below_threshold = 0;
+    typename std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
 
 
-        return NOT_IMPLEMENTED_YET;
+    const float cut_fraction = _frac_neighb_to_null*(size<Neighborhood>()-1);
+    for(; offsetsItr!=offsets.end(); ++offsetsItr) {
+        for(unsigned long index = 0; index < halo_size_x; ++index) {
+
+            local_index = index + *offsetsItr;
+            n_neighbors_below_threshold = count_neighbors_if<Neighborhood>(_input + local_index,
+                                          _dims,
+                                          std::bind2nd(std::less<raw_type>(), _threshold)
+                                                                          );
+            if(n_neighbors_below_threshold>cut_fraction)
+                _output[local_index] = 0;
+	    else
+	        _output[local_index] = _input[local_index];
+
+        }
     }
 
-
-template <typename size_type>
-    static const error_code encode_inplace(raw_type* _input,
-                                           const size_type& _length,
-                                           const raw_type& _threshold)
-    {
+    return SUCCESS;
+}
 
 
-
-        return NOT_IMPLEMENTED_YET;
-    }
-
-
-    template <typename SizeType>
-    static const error_code decode(const raw_type* _input,
-                                   raw_type* _output,
-                                   const SizeType& _length)
-    {
+template <typename SizeType>
+static const error_code decode(const raw_type* _input,
+                               raw_type* _output,
+                               const SizeType& _length)
+{
+    if(_input!=_output )
         std::copy(_input, _input + _length, _output);
-        return SUCCESS;
-    }
+    return SUCCESS;
+}
 
-    template <typename SizeType>
-    static const error_code decode(const raw_type* _input,
-                                   raw_type* _output,
-                                   const std::vector<SizeType>& _length)
-    {
-        unsigned long total_size = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<SizeType>());
+template <typename SizeType>
+static const error_code decode(const raw_type* _input,
+                               raw_type* _output,
+                               const std::vector<SizeType>& _length)
+{
+    unsigned long total_size = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<SizeType>());
 
-        return decode(_input, _output, total_size);
-    }
+    return decode(_input, _output, total_size);
+}
+
+
+
 
 };
 

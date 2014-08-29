@@ -6,6 +6,7 @@
 #include <iostream>
 #include "array_fixtures.hpp"
 #include "../src/sqeazy_impl.hpp"
+#include "../src/neighborhood_utils.hpp"
 
 typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 typedef sqeazy::diff_scheme<unsigned short> local_diff_scheme ;
