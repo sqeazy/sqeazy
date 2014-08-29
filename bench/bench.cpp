@@ -46,7 +46,7 @@ typedef sqeazy::bmpl::vector< sqeazy::diff_scheme<unsigned short>,
         sqeazy::lz4_scheme<unsigned short> > diff_bswap1_lz4;
 typedef sqeazy::pipeline<diff_bswap1_lz4> diff_bswap1_lz4_pipe;
 
-typedef sqeazy::bmpl::vector< sqeazy::diff_scheme<unsigned short, sqeazy::last_pixels_on_line_neighborhood<> >,
+typedef sqeazy::bmpl::vector< sqeazy::diff_scheme<unsigned short, sqeazy::last_pixels_on_line_neighborhood<2> >,
         sqeazy::bitswap_scheme<unsigned short>,
         sqeazy::lz4_scheme<unsigned short> > diffonrow_bswap1_lz4;
 typedef sqeazy::pipeline<diffonrow_bswap1_lz4> diffonrow_bswap1_lz4_pipe;
@@ -61,7 +61,7 @@ typedef sqeazy::bmpl::vector< sqeazy::diff_scheme<unsigned short>,
         sqeazy::lz4_scheme<unsigned short> > diff_lz4;
 typedef sqeazy::pipeline<diff_lz4> diff_lz4_pipe;
 
-typedef sqeazy::bmpl::vector< sqeazy::diff_scheme<unsigned short, sqeazy::last_pixels_on_line_neighborhood<> >,
+typedef sqeazy::bmpl::vector< sqeazy::diff_scheme<unsigned short, sqeazy::last_pixels_on_line_neighborhood<2> >,
         sqeazy::lz4_scheme<unsigned short> > diffonrow_lz4;
 typedef sqeazy::pipeline<diffonrow_lz4> diffonrow_lz4_pipe;
 
