@@ -43,8 +43,8 @@ IteratorT median_index(IteratorT begin, IteratorT end) {
 
 }
 
-template <typename IteratorT>
-IteratorT support_index(IteratorT begin, IteratorT end) {
+  template <typename IteratorT,typename ValueT>
+  IteratorT support_index(IteratorT begin, IteratorT end, ValueT threshold) {
 
 //using double is a guess here
     double total_integral = std::accumulate(begin, end,0);
@@ -54,7 +54,7 @@ IteratorT support_index(IteratorT begin, IteratorT end) {
     IteratorT in_begin = begin;
     for(; begin!=end; ++begin) {
         running_integral += *begin;
-        if((running_integral/total_integral) > .95) {
+        if((running_integral/total_integral) > threshold) {
             support = begin /*- 1*/;
             break;
         }
@@ -180,8 +180,6 @@ struct histogram {
         median_variation_value = calc_median_variation();
         mode_value = calc_mode();
         entropy_value = calc_entropy();
-        support_value = calc_support();
-
 
 
     }
@@ -305,11 +303,13 @@ struct histogram {
 
     }
 
-    float calc_support() const {
+  template <typename ValueT>
+    float calc_support(ValueT _threshold = .99) const {
 
         T mindex = support_index(bins.begin()+smallest_populated_bin(),
-                                bins.begin()+largest_populated_bin() +1
-                               ) - bins.begin();
+				 bins.begin()+largest_populated_bin() +1,
+				 _threshold
+				 ) - bins.begin();
         float result = 0;
         if(mindex>0 ) //the underlying distribution has always even number of entries
             result = (bins[mindex]*mindex + bins[mindex-1]*(mindex-1))/float(bins[mindex-1] + bins[mindex]);

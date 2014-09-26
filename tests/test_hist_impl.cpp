@@ -263,8 +263,8 @@ BOOST_AUTO_TEST_CASE( calc_support )
 
     sqeazy::histogram<value_type> of_norm(&to_play_with[0], size);
     
-    BOOST_CHECK_LT(of_norm.mean(), of_norm.support());
-    BOOST_CHECK_CLOSE(mean+(2*sigma), of_norm.support(),5);
+    BOOST_CHECK_LT(of_norm.mean(), of_norm.calc_support<float>());
+    BOOST_CHECK_CLOSE(mean+(3*sigma), of_norm.calc_support<float>(),3.f);
 
 }
 BOOST_AUTO_TEST_SUITE_END()
