@@ -469,8 +469,8 @@ struct remove_background {
 *
 */
 template < typename T,
-         typename Neighborhood = cube_neighborhood<3>,
-         short percentage_below = 75 >
+         typename Neighborhood = cube_neighborhood<5>,
+         short percentage_below = 50 >
 struct flatten_to_neighborhood {
 
     typedef T raw_type;
