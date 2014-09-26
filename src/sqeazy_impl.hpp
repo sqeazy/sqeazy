@@ -665,17 +665,23 @@ struct remove_estimated_background {
 
         std::vector<raw_type> darkest_face;
         extract_darkest_face((const raw_type*)_input, _dims, darkest_face);
-
-        float sd = 0.f;
-        float mean = 0.f;
-
-        mean_and_var(darkest_face.begin(), darkest_face.end(), mean, sd);
-
-	sqeazy::histogram<raw_type> t;
+        
+	sqeazy::histogram<raw_type> t(darkest_face.begin(), darkest_face.end());
 	
-        const float alpha = 1.f;
-        size_type input_length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<size_type>());
-        const float reduce_by = mean+(alpha*sd);
+	unsigned long input_length = std::accumulate(_dims.begin(), _dims.end(), 1);
+
+        const float reduce_by = t.calc_support(.99f);
+
+	#ifdef _SQY_VERBOSE_
+	std::cout << "\nremove_estimated_background :: input data ";
+	for(short i = 0;i<_dims.size();++i){
+	  std::cout << _dims[i] << ((i!=_dims.back()) ? "x" : ", ");
+	}
+	
+	std::cout << " darkest face: backgr_estimate = " << reduce_by << "\n";
+	std::cout << histogram<raw_type>::print_header() << t << "\n";
+	
+	#endif
 
         if(_output) {
             flatten_to_neighborhood<raw_type>::encode(_input, _output, _dims, reduce_by);

@@ -296,7 +296,7 @@ int main(int argc, char *argv[])
         }
 
         std::vector<std::string> filenames(args.begin()+1, args.end());
-        std::cout << "number_of_files\tmin\tmean\tmax\tmedian\tobservable\ttarget name\n";
+
 
         sqeazy_bench::bsuite<unsigned short> suite(filenames.size());
         if(f_func!=prog_flow.end()) {
@@ -323,7 +323,7 @@ int main(int argc, char *argv[])
 
             std::cout << "\t" << f_func->first << "\n";
             std::cout.precision(prec);
-
+	    std::cout << "number_of_files\tmin\tmean\tmax\tmedian\tobservable\ttarget name\n";
 
             if(config.verbose) {
                 std::cout << "\n";

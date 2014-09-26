@@ -17,7 +17,17 @@ IF(TIFF_FOUND)
 add_executable(bench bench.cpp)
 # target_link_libraries(bench ${PROJECT_NAME} tiff)
 target_link_libraries(bench tiff lz4 boost_filesystem boost_system)
-set_target_properties(bench PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")
+SET(BENCH_COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")
+
+
+if(SQY_VERBOSE)
+list(APPEND BENCH_COMPILE_FLAGS " -D_SQY_VERBOSE_=1")
+endif()
+
+STRING(REPLACE ";" " " BENCH_COMPILE_FLAGS ${BENCH_COMPILE_FLAGS})
+message(">> adding compile flag to bench: ${BENCH_COMPILE_FLAGS}")
+set_target_properties(bench PROPERTIES COMPILE_FLAGS "${BENCH_COMPILE_FLAGS}")
+
 SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++11")
 SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -std=c++11")
 
