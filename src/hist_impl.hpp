@@ -43,6 +43,31 @@ IteratorT median_index(IteratorT begin, IteratorT end) {
 
 }
 
+template <typename IteratorT>
+IteratorT support_index(IteratorT begin, IteratorT end) {
+
+//using double is a guess here
+    double total_integral = std::accumulate(begin, end,0);
+
+    double running_integral = 0;
+    IteratorT support = end;
+    IteratorT in_begin = begin;
+    for(; begin!=end; ++begin) {
+        running_integral += *begin;
+        if((running_integral/total_integral) > .95) {
+            support = begin /*- 1*/;
+            break;
+        }
+    }
+
+    if(support<in_begin) {
+        support=in_begin;
+    }
+
+    return support;
+}
+
+
 
 
 template <typename T, typename CounterT = unsigned int >
@@ -67,6 +92,7 @@ struct histogram {
     float median_value;
     float median_variation_value;
     float entropy_value;
+    float support_value;
 
     T mode_value;
     T small_pop_bin_value;
@@ -82,6 +108,7 @@ struct histogram {
         median_value(0),
         median_variation_value(0),
         entropy_value(0),
+	support_value(0),
         mode_value(0),
         small_pop_bin_value(0),
         large_pop_bin_value(std::numeric_limits<T>::max())
@@ -99,6 +126,7 @@ struct histogram {
         median_value(0),
         median_variation_value(0),
         entropy_value(0),
+	support_value(0),
         mode_value(0),
         small_pop_bin_value(0),
         large_pop_bin_value(std::numeric_limits<T>::max())
@@ -118,6 +146,7 @@ struct histogram {
         median_value(0),
         median_variation_value(0),
         entropy_value(0),
+	support_value(0),
         mode_value(0),
         small_pop_bin_value(0),
         large_pop_bin_value(std::numeric_limits<T>::max())
@@ -134,10 +163,8 @@ struct histogram {
     template <typename ItrT>
     void fill_from_image(ItrT _image_begin, ItrT _image_end) {
         num_entries = _image_end - _image_begin;
-        /*
-                if(!num_entries)
-                    return;*/
 
+	std::fill(bins.begin(), bins.end(),0);
 
         for(ItrT Itr = _image_begin; Itr!=_image_end; ++Itr) {
             bins[*Itr]++;
@@ -153,7 +180,7 @@ struct histogram {
         median_variation_value = calc_median_variation();
         mode_value = calc_mode();
         entropy_value = calc_entropy();
-
+        support_value = calc_support();
 
 
 
@@ -208,13 +235,6 @@ struct histogram {
 
         float mean_variation = 0;
         const twice_value_type end = large_pop_bin_value +1;
-
-
-        //unsigned mean_index = round<unsigned>(mean());
-        // float mean_value = 0;
-        // if(mean_index<num_bins) {
-        //     mean_value = bins[mean_index];
-        // }
 
         float temp;
         for(twice_value_type i = smallest_populated_bin(); i<(end); ++i) {
@@ -285,6 +305,21 @@ struct histogram {
 
     }
 
+    float calc_support() const {
+
+        T mindex = support_index(bins.begin()+smallest_populated_bin(),
+                                bins.begin()+largest_populated_bin() +1
+                               ) - bins.begin();
+        float result = 0;
+        if(mindex>0 ) //the underlying distribution has always even number of entries
+            result = (bins[mindex]*mindex + bins[mindex-1]*(mindex-1))/float(bins[mindex-1] + bins[mindex]);
+
+        return result;
+
+    }
+
+
+
     float calc_median_variation() const {
 
         float median_variation = 0;
@@ -336,6 +371,10 @@ struct histogram {
         return entropy_value;
 
     }
+
+  float support() const {
+    return support_value;
+  }
 
     ~histogram() {
 

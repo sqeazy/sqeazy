@@ -642,7 +642,7 @@ struct remove_estimated_background {
 
         _mean = sum/length;
         _var = std::sqrt((sum_of_squares/length) - (_mean*_mean));
-
+	
     }
 
     template <typename size_type>
@@ -671,11 +671,7 @@ struct remove_estimated_background {
 
         mean_and_var(darkest_face.begin(), darkest_face.end(), mean, sd);
 
-	//sqeazy::histogram<raw_type> h_darkest_face(darkest_face.begin(), darkest_face.end());
-	//sqeazy::histogram<raw_type> h_darkest_face(&darkest_face[0], darkest_face.size());
-	
-	//float df_median = h_darkest_face.median();
-	//float df_median_dev = h_darkest_face.median_deviation();
+	sqeazy::histogram<raw_type> t;
 	
         const float alpha = 1.f;
         size_type input_length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<size_type>());

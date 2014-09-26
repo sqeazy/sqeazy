@@ -19,7 +19,7 @@ int SQY_RasterDiffEncode_3D_UI16(int width, int height, int depth, const char* s
 						 reinterpret_cast<const raw_type*>(src),
 						 reinterpret_cast<compressed_type*>(dst)
 						 );
-    
+  
 }
 
 
@@ -251,7 +251,7 @@ int SQY_LZ4_Decompressed_Length(const char* data, long *length){
 int SQY_LZ4Decode(const char* src, long srclength, char* dst){
 
   
-  
+
   int retcode = sqeazy::lz4_scheme<char>::decode(src,dst,srclength);
   
   return retcode;
