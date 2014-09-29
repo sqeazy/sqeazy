@@ -38,8 +38,8 @@ namespace sqeazy {
         const size_type indices[4] = {0,1,_dims[2]-2,_dims[2]-1};
 
         for(size_type z_idx = 0, z_idx_ctr = 0;
-                z_idx < 4;
-                ++z_idx_ctr, z_idx = indices[z_idx_ctr]) {
+	    z_idx < _dims[2] && z_idx_ctr < 4;
+	    ++z_idx_ctr, z_idx = indices[z_idx_ctr]) {
 
             input_index = z_idx*(frame_size);
             const raw_type* begin = _input + input_index;

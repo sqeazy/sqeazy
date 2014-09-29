@@ -675,7 +675,7 @@ struct remove_estimated_background {
 	#ifdef _SQY_VERBOSE_
 	std::cout << "\nremove_estimated_background :: input data ";
 	for(short i = 0;i<_dims.size();++i){
-	  std::cout << _dims[i] << ((i!=_dims.back()) ? "x" : ", ");
+	  std::cout << _dims[i] << ((_dims[i]!=_dims.back()) ? "x" : ", ");
 	}
 	
 	std::cout << " darkest face: backgr_estimate = " << reduce_by << "\n";
