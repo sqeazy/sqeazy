@@ -267,4 +267,28 @@ BOOST_AUTO_TEST_CASE( calc_support )
     BOOST_CHECK_CLOSE(mean+(3*sigma), of_norm.calc_support<float>(),3.f);
 
 }
+
+BOOST_AUTO_TEST_CASE( appended )
+{
+  
+  sqeazy::histogram<value_type> appended;
+  int chunk_size = size/4;
+  
+  for(unsigned num = 0; num<4; ++num) {
+    appended.append_from_image(&incrementing_cube[0]+num*chunk_size, 
+			       &incrementing_cube[0]+(num+1)*chunk_size);
+  }
+  
+  sqeazy::histogram<value_type> filled(incrementing_cube.begin(), 
+				       incrementing_cube.end());
+  
+  float filled_i = filled.integral();
+  float appended_i = appended.calc_integral();
+  BOOST_CHECK_CLOSE(appended_i, filled_i,.1f);
+  BOOST_CHECK_EQUAL(appended.mean(),0);
+  appended.fill_core_from_bins();
+  BOOST_CHECK_CLOSE(appended.mean(), filled.mean(),.1f);
+
+}
+
 BOOST_AUTO_TEST_SUITE_END()

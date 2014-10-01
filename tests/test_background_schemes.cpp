@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE( background_removed_success )
   
   char* input = reinterpret_cast<char*>(&constant_cube[0]);
   char* output = reinterpret_cast<char*>(&to_play_with[0]);
-
+  
   int retcode = SQY_RmBackground_AtMode_UI16(input,
 					     output,
 					     uint16_cube_of_8::size_in_byte,
