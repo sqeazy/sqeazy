@@ -245,9 +245,11 @@ int darkest_face(const std::vector<std::string>& _args) {
     std::vector<std::string> hnames(1);
     std::vector<std::string> htitles(1);
     std::vector<sqeazy::histogram<raw_type>* > histos(1);
+    sqeazy::histogram<unsigned short> ref_hist;
+    std::cout << "filename\t" << sqeazy::histogram<unsigned short>::print_header() << "\tsupport(99%)\n";
 
     for(unsigned fid = 1; fid < _args.size(); ++fid) {
-        tiff_fixture<raw_type> reference(_args[fid]);
+      tiff_fixture<raw_type, false> reference(_args[fid]);
 
         if(reference.empty())
             continue;
@@ -261,7 +263,10 @@ int darkest_face(const std::vector<std::string>& _args) {
 
         sqeazy::extract_darkest_face(
             &reference.tiff_data[0], reference.axis_lengths, darkest_face);
-        sqeazy::histogram<unsigned short> ref_hist(darkest_face.begin(), darkest_face.end());
+       
+	ref_hist.fill_from_image(darkest_face.begin(), darkest_face.end());
+
+	std::cout << basename << ref_hist << "\t" << ref_hist.calc_support(.99f) << "\n";
 
         std::ostringstream hname("");
         hname << basename << "_" << sizeof(unsigned short)*8 << "bit_intensities";
