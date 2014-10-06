@@ -188,7 +188,7 @@ int plot(const std::vector<std::string>& _args) {
 
 
     for(unsigned fid = 1; fid < _args.size(); ++fid) {
-        tiff_fixture<unsigned short> reference(_args[fid]);
+      tiff_fixture<unsigned short,false> reference(_args[fid]);
 
         if(reference.empty())
             continue;

@@ -157,6 +157,47 @@ struct histogram {
     }
 
 
+  void clear(){
+    
+        num_entries= (0);
+	std::fill(bins.begin(), bins.end(),0);
+        integral_value= (0);
+        mean_value= (0);
+        mean_variation_value= (0);
+        median_value= (0);
+        median_variation_value= (0);
+        entropy_value= (0);
+	support_value= (0);
+        mode_value= (0);
+        small_pop_bin_value= (0);
+        large_pop_bin_value= (std::numeric_limits<T>::max());
+  }
+
+  template <typename ItrT>
+  void add_from_image(ItrT _image_begin, ItrT _image_end) {
+    num_entries += _image_end - _image_begin;
+   
+    for(ItrT Itr = _image_begin; Itr!=_image_end; ++Itr) {
+      bins[*Itr]++;
+    }
+
+
+  }
+
+  void fill_stats(){
+      small_pop_bin_value = calc_smallest_populated_bin();
+        large_pop_bin_value = calc_largest_populated_bin();
+
+        integral_value = calc_integral();
+        mean_value = calc_mean();
+        mean_variation_value = calc_mean_variation();
+        median_value = calc_median();
+        median_variation_value = calc_median_variation();
+        mode_value = calc_mode();
+        entropy_value = calc_entropy();
+
+
+  }
 
 
     //TODO: use SFINAE to fill bins for signed histo as well
@@ -170,17 +211,8 @@ struct histogram {
             bins[*Itr]++;
         }
 
-        small_pop_bin_value = calc_smallest_populated_bin();
-        large_pop_bin_value = calc_largest_populated_bin();
-
-        integral_value = calc_integral();
-        mean_value = calc_mean();
-        mean_variation_value = calc_mean_variation();
-        median_value = calc_median();
-        median_variation_value = calc_median_variation();
-        mode_value = calc_mode();
-        entropy_value = calc_entropy();
-
+  
+	fill_stats();
 
     }
 
@@ -303,8 +335,8 @@ struct histogram {
 
     }
 
-  template <typename ValueT>
-    float calc_support(ValueT _threshold = .99) const {
+  
+    float calc_support(float _threshold = .99) const {
 
         T mindex = support_index(bins.begin()+smallest_populated_bin(),
 				 bins.begin()+largest_populated_bin() +1,
