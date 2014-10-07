@@ -423,7 +423,6 @@ struct histogram {
             << std::setw(10) << "med_var"
             << std::setw(10) << "entropy"
             << std::setw(17) << "max_compr_ratio"
-            << "\n"
             ;
 
         return out.str();
