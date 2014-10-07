@@ -245,7 +245,7 @@ int darkest_face(const std::vector<std::string>& _args) {
     std::vector<std::string> hnames(1);
     std::vector<std::string> htitles(1);
     std::vector<sqeazy::histogram<raw_type>* > histos(1);
-    sqeazy::histogram<unsigned short> ref_hist;
+    sqeazy::histogram<unsigned short> darkest_face_hist;
     std::cout << "filename\t" << sqeazy::histogram<unsigned short>::print_header() << "\tsupport(99%)\n";
 
     for(unsigned fid = 1; fid < _args.size(); ++fid) {
@@ -260,13 +260,16 @@ int darkest_face(const std::vector<std::string>& _args) {
         size_t dash_pos = _args[fid].find_last_of("/");
         std::string basename(_args[fid],dash_pos+1, no_suffix.size() - dash_pos-1);
         basename += "_darkest_face";
-
+#ifdef _SQY_VERBOSE_
+	std::cout << "[SQY_VERBOSE] >>> "<< basename <<" <<<\n";
+   
+#endif
         sqeazy::extract_darkest_face(
             &reference.tiff_data[0], reference.axis_lengths, darkest_face);
        
-	ref_hist.fill_from_image(darkest_face.begin(), darkest_face.end());
+	darkest_face_hist.fill_from_image(darkest_face.begin(), darkest_face.end());
 
-	std::cout << basename << ref_hist << "\t" << ref_hist.calc_support(.99f) << "\n";
+	std::cout << basename << "\t" << darkest_face_hist << "\t" << darkest_face_hist.calc_support(.99f) << "\n";
 
         std::ostringstream hname("");
         hname << basename << "_" << sizeof(unsigned short)*8 << "bit_intensities";
@@ -275,7 +278,7 @@ int darkest_face(const std::vector<std::string>& _args) {
         htitles[0] = hname.str();
 
 
-        histos[0] = (&ref_hist);
+        histos[0] = (&darkest_face_hist);
 
         write_as_svg(histos, hnames, htitles, "./");
     }

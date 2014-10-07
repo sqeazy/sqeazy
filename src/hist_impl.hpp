@@ -417,17 +417,17 @@ struct histogram {
         double max_compr_ratio = double(_h.integral()*sizeof(value_type));
         max_compr_ratio/=double(_h.integral()*_h.entropy())/double(CHAR_BIT);
 
-        _cout << std::setw(10) << _h.integral()
-              << std::setw(10) << _h.smallest_populated_bin()
-              << std::setw(10) << _h.largest_populated_bin()
-              << std::setw(10) << _h.mean()
-              << std::setw(10) << _h.mean_variation()
-              << std::setw(10) << _h.mode()
-              << std::setw(10) << _h.median()
-              << std::setw(10) << _h.median_variation()
-              << std::setw(10) << _h.entropy()
-              << std::setw(17) << max_compr_ratio
-              << "\n"
+        _cout << "\t" << _h.integral()
+              << "\t" << _h.smallest_populated_bin()
+              << "\t" << _h.largest_populated_bin()
+              << "\t" << _h.mean()
+              << "\t" << _h.mean_variation()
+              << "\t" << _h.mode()
+              << "\t" << _h.median()
+              << "\t" << _h.median_variation()
+              << "\t" << _h.entropy()
+              << "\t" << max_compr_ratio
+              // << "\n"
               ;
 
         return _cout;
@@ -436,16 +436,16 @@ struct histogram {
     static std::string print_header() {
 
         std::ostringstream out;
-        out << std::setw(10) << "n_entries"
-            << std::setw(10) << "first_bin"
-            << std::setw(10) << "last_bin"
-            << std::setw(10) << "mean"
-            << std::setw(10) << "mean_var"
-            << std::setw(10) << "mode"
-            << std::setw(10) << "median"
-            << std::setw(10) << "med_var"
-            << std::setw(10) << "entropy"
-            << std::setw(17) << "max_compr_ratio"
+        out << "\t" << "n_entries"
+            << "\t" << "first_bin"
+            << "\t" << "last_bin"
+            << "\t" << "mean"
+            << "\t" << "mean_var"
+            << "\t" << "mode"
+            << "\t" << "median"
+            << "\t" << "med_var"
+            << "\t" << "entropy"
+            << "\t" << "max_compr_ratio"
             ;
 
         return out.str();

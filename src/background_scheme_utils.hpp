@@ -33,7 +33,15 @@ namespace sqeazy {
         const index_type frame_size = _dims[1]*_dims[0];
         index_type face_index =0;
 	sqeazy::histogram<raw_type> running_histo;
-
+	float temp = 0;
+	
+	#ifdef _SQY_VERBOSE_
+	std::cout << "[SQY_VERBOSE]\t extract_darkest_face on image ";
+	for(short i = 0;i<_dims.size();++i){
+	  std::cout << _dims[i] << ((_dims[i]!=_dims.back()) ? "x" : " ");
+	}
+	std::cout << "\n";
+#endif
         //faces with z
         const size_type indices[2] = {0,_dims[2]-1};
 
@@ -47,9 +55,15 @@ namespace sqeazy {
 
 	    running_histo.add_from_image(begin, begin + (frame_size));
 
-	    running_histo.fill_stats();//FIXME: maybe only fill the integral that is required by calc_support
+            temp = running_histo.calc_support();
 
-            raw_type temp = running_histo.calc_support();
+#ifdef _SQY_VERBOSE_
+	    running_histo.fill_stats();
+	    std::cout << "[SQY_VERBOSE]\t face z = " << z_idx << " / " << _dims[2] <<" , support = " << temp << ", mean = " << running_histo.calc_mean() << "\n";
+	    
+#endif
+
+
             if(temp < support) {
                 if(_darkest_face.size()<frame_size)
                     _darkest_face.resize(frame_size);
@@ -62,7 +76,6 @@ namespace sqeazy {
 
         //faces with y
         face_index =0;
-	raw_type temp;
 	std::vector<raw_type> face(_dims[0]*_dims[2]);
         for(size_type y_idx = 0; y_idx < _dims[1]; y_idx+=(_dims[1]-1)) {
 
@@ -74,9 +87,13 @@ namespace sqeazy {
 	      running_histo.add_from_image(_input + input_index, _input+input_index+_dims[0]);
 	      
             }
-
-	    running_histo.fill_stats();
+	    
             temp = running_histo.calc_support();
+	    #ifdef _SQY_VERBOSE_
+	    running_histo.fill_stats();
+	    std::cout << "[SQY_VERBOSE]\t face y = " << y_idx << " / "<< _dims[1] << " , support = " << temp << ", mean = " << running_histo.calc_mean() << "\n";
+	    
+#endif
 
             if(temp < support) {
                 if(_darkest_face.size()<_dims[2]*_dims[0])
