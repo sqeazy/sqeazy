@@ -191,6 +191,9 @@ void fill_suite(const std::vector<std::string>& _args,
         if(expected_size>output_data.size()) {
             output_data.resize(expected_size);
         }
+	
+	//create clean output buffer
+	std::fill(output_data.begin(), output_data.end(),0);
 
         //make a cast so API of pipeline is happy
         char* dest = reinterpret_cast<char*>(output_data.data());

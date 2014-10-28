@@ -680,16 +680,20 @@ struct remove_estimated_background {
 	}
 	
 	std::cout << " darkest face: backgr_estimate = " << reduce_by << "\n";
-	std::cout << "[SQY_VERBOSE] " << histogram<raw_type>::print_header() << t << "\n";
+	t.fill_stats();
+	std::cout << "[SQY_VERBOSE] " << histogram<raw_type>::print_header() << "\n[SQY_VERBOSE] " << t << "\n";
 	
 	#endif
 
         if(_output) {
+	    //copies the input to output, skipping pixels that have a neighborhood complying crirteria
             flatten_to_neighborhood<raw_type>::encode(_input, _output, _dims, reduce_by);
+	    //set those pixels to 0 that fall below reduce_by
             remove_background<raw_type>::encode_inplace(_output, input_length, reduce_by);
         }
         else {
             std::cerr << "WARNING ["<< name() <<"::encode]\t inplace operation requested, flatten_to_neighborhood skipped\n";
+	    //set those pixels to 0 that fall below reduce_by
             remove_background<raw_type>::encode_inplace(_input, input_length, reduce_by);
 
         }

@@ -168,12 +168,12 @@ int info(const std::vector<std::string>& _args) {
 
 
         tiff_fixture<value_type, false> reference(_args[fid]);
-
+	
         if(reference.empty())
             continue;
 
         sqeazy::histogram<value_type> hist(reference.data(), reference.size());
-
+	
         std::cout << std::setw(widest_el_itr->size()+2) << _args[fid] << hist;
 
     }
