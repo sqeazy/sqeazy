@@ -519,7 +519,7 @@ struct flatten_to_neighborhood {
     {
 
 
-        unsigned long length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<raw_type>());
+        unsigned long length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<size_type>());
 
         std::vector<size_type> offsets;
         sqeazy::halo<Neighborhood, size_type> geometry(_dims.begin(), _dims.end());
@@ -537,6 +537,9 @@ struct flatten_to_neighborhood {
         unsigned n_neighbors_below_threshold = 0;
         typename std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
 
+#ifdef _SQY_VERBOSE_
+	unsigned long num_pixels_discarded=0;
+#endif
 
         const float cut_fraction = _frac_neighb_to_null*(size<Neighborhood>()-1);
         for(; offsetsItr!=offsets.end(); ++offsetsItr) {
@@ -547,14 +550,23 @@ struct flatten_to_neighborhood {
                                               _dims,
                                               std::bind2nd(std::less<raw_type>(), _threshold)
                                                                               );
-                if(n_neighbors_below_threshold>cut_fraction)
-                    _output[local_index] = 0;
+                if(n_neighbors_below_threshold>cut_fraction){
+#ifdef _SQY_VERBOSE_
+		  num_pixels_discarded++;
+#endif
+		  _output[local_index] = 0;
+		}
                 else
                     _output[local_index] = _input[local_index];
 
             }
         }
-
+#ifdef _SQY_VERBOSE_
+	int prec = std::cout.precision();
+	std::cout.precision(3);
+	std::cout << "[SQY_VERBOSE] flatten_to_neighborhood " << num_pixels_discarded << " / " << length << " ("<< 100*double(num_pixels_discarded)/length <<" %) discarded due to neighborhood\n";
+	std::cout.precision(prec);
+#endif
         return SUCCESS;
     }
 
