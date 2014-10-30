@@ -546,6 +546,8 @@ struct flatten_to_neighborhood {
             for(unsigned long index = 0; index < halo_size_x; ++index) {
 
                 local_index = index + *offsetsItr;
+		if(*(_input + local_index)<_threshold)
+		  continue;
                 n_neighbors_below_threshold = count_neighbors_if<Neighborhood>(_input + local_index,
                                               _dims,
                                               std::bind2nd(std::less<raw_type>(), _threshold)
