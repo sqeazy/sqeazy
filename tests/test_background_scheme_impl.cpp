@@ -1,5 +1,5 @@
 #define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_MODULE TEST_DIFF_SCHEMES
+#define BOOST_TEST_MODULE TEST_BACKGROUND_SCHEME_IMPL
 #include "boost/test/unit_test.hpp"
 #include <numeric>
 #include <vector>
@@ -35,16 +35,27 @@ BOOST_AUTO_TEST_CASE( success )
 BOOST_AUTO_TEST_CASE( selects_correct_plane_in_z )
 {
 
-
+  std::fill(constant_cube.begin(), constant_cube.end(), 1024);
 
     size_t face_size = uint16_cube_of_8::axis_length*uint16_cube_of_8::axis_length;
+    boost::random::mt19937 rng;
+    boost::random::normal_distribution<float> front_data(128,8);
+    boost::random::normal_distribution<float> back_data(128+64,8);
+
+    for(unsigned num = 0; num < face_size; ++num) {
+        constant_cube[num] = front_data(rng);
+	constant_cube[size-face_size+num] = back_data(rng);
+    }
+
     std::vector<unsigned short> face(face_size);
     std::fill(face.begin(), face.end(), 0);
-    const value_type* input = &incrementing_cube[0];
+    const value_type* input = &constant_cube[0];
     sqeazy::extract_darkest_face(input, dims, face);
 
+    sqeazy::histogram<value_type> faceh(face.begin(), face.end());
+
     BOOST_CHECK_EQUAL(face.size(),face_size);
-    BOOST_CHECK_EQUAL_COLLECTIONS(face.begin(),face.end(), incrementing_cube.begin(), incrementing_cube.begin() + face_size);
+    BOOST_CHECK_CLOSE(faceh.mean(), 128,3.f);
 
 }
 
@@ -69,9 +80,7 @@ BOOST_AUTO_TEST_CASE( crops_correct_values )
     sqeazy::histogram<value_type> h_to_play_with(to_play_with.begin(), to_play_with.end());
     BOOST_CHECK_LT(result,h_to_play_with.median());
     BOOST_CHECK_NE(result,h_to_play_with.median_variation());
-//     std::cout << "mad : " << result << "\n"
-//               << sqeazy::histogram<value_type>::print_header() << "\n"
-//               << h_to_play_with << "\n";
+
 
 }
 

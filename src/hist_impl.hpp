@@ -157,16 +157,35 @@ struct histogram {
     }
 
 
-    template <typename ItrT>
-    void append_from_image(ItrT _image_begin, ItrT _image_end) {
-      num_entries += _image_end - _image_begin;
-      for(ItrT Itr = _image_begin; Itr!=_image_end; ++Itr) {
-            bins[*Itr]++;
-      }
+  void clear(){
+    
+        num_entries= (0);
+	std::fill(bins.begin(), bins.end(),0);
+        integral_value= (0);
+        mean_value= (0);
+        mean_variation_value= (0);
+        median_value= (0);
+        median_variation_value= (0);
+        entropy_value= (0);
+	support_value= (0);
+        mode_value= (0);
+        small_pop_bin_value= (0);
+        large_pop_bin_value= (std::numeric_limits<T>::max());
+  }
+
+  template <typename ItrT>
+  void add_from_image(ItrT _image_begin, ItrT _image_end) {
+    num_entries += _image_end - _image_begin;
+   
+    for(ItrT Itr = _image_begin; Itr!=_image_end; ++Itr) {
+      bins[*Itr]++;
     }
-  
-  void fill_core_from_bins() {
-          small_pop_bin_value = calc_smallest_populated_bin();
+
+
+  }
+
+  void fill_stats(){
+      small_pop_bin_value = calc_smallest_populated_bin();
         large_pop_bin_value = calc_largest_populated_bin();
 
         integral_value = calc_integral();
@@ -177,7 +196,9 @@ struct histogram {
         mode_value = calc_mode();
         entropy_value = calc_entropy();
 
+
   }
+
 
     //TODO: use SFINAE to fill bins for signed histo as well
     template <typename ItrT>
@@ -190,7 +211,8 @@ struct histogram {
             bins[*Itr]++;
         }
 
-	fill_core_from_bins();
+  
+	fill_stats();
 
     }
 
@@ -203,7 +225,8 @@ struct histogram {
 
     integral_type integral() const {
 
-      return integral_value;
+        return integral_value;
+
     }
 
     CounterT entries() const {
@@ -312,8 +335,8 @@ struct histogram {
 
     }
 
-  template <typename ValueT>
-    float calc_support(ValueT _threshold = .99) const {
+  
+    float calc_support(float _threshold = .99) const {
 
         T mindex = support_index(bins.begin()+smallest_populated_bin(),
 				 bins.begin()+largest_populated_bin() +1,
@@ -394,17 +417,17 @@ struct histogram {
         double max_compr_ratio = double(_h.integral()*sizeof(value_type));
         max_compr_ratio/=double(_h.integral()*_h.entropy())/double(CHAR_BIT);
 
-        _cout << std::setw(10) << _h.integral()
-              << std::setw(10) << _h.smallest_populated_bin()
-              << std::setw(10) << _h.largest_populated_bin()
-              << std::setw(10) << _h.mean()
-              << std::setw(10) << _h.mean_variation()
-              << std::setw(10) << _h.mode()
-              << std::setw(10) << _h.median()
-              << std::setw(10) << _h.median_variation()
-              << std::setw(10) << _h.entropy()
-              << std::setw(17) << max_compr_ratio
-              << "\n"
+        _cout << "\t" << _h.integral()
+              << "\t" << _h.smallest_populated_bin()
+              << "\t" << _h.largest_populated_bin()
+              << "\t" << _h.mean()
+              << "\t" << _h.mean_variation()
+              << "\t" << _h.mode()
+              << "\t" << _h.median()
+              << "\t" << _h.median_variation()
+              << "\t" << _h.entropy()
+              << "\t" << max_compr_ratio
+              // << "\n"
               ;
 
         return _cout;
@@ -413,16 +436,16 @@ struct histogram {
     static std::string print_header() {
 
         std::ostringstream out;
-        out << std::setw(10) << "n_entries"
-            << std::setw(10) << "first_bin"
-            << std::setw(10) << "last_bin"
-            << std::setw(10) << "mean"
-            << std::setw(10) << "mean_var"
-            << std::setw(10) << "mode"
-            << std::setw(10) << "median"
-            << std::setw(10) << "med_var"
-            << std::setw(10) << "entropy"
-            << std::setw(17) << "max_compr_ratio"
+        out << "\t" << "n_entries"
+            << "\t" << "first_bin"
+            << "\t" << "last_bin"
+            << "\t" << "mean"
+            << "\t" << "mean_var"
+            << "\t" << "mode"
+            << "\t" << "median"
+            << "\t" << "med_var"
+            << "\t" << "entropy"
+            << "\t" << "max_compr_ratio"
             ;
 
         return out.str();

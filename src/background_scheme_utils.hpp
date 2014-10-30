@@ -28,53 +28,80 @@ namespace sqeazy {
 
         typedef typename add_unsigned<typename twice_as_wide<size_type>::type >::type index_type;
 
-        raw_type median = std::numeric_limits<raw_type>::max();
+        raw_type support = std::numeric_limits<raw_type>::max();
         index_type input_index =0;
         const index_type frame_size = _dims[1]*_dims[0];
         index_type face_index =0;
 	sqeazy::histogram<raw_type> running_histo;
-
-        //faces with z (first 2 and last 2)
-        const size_type indices[4] = {0,1,_dims[2]-2,_dims[2]-1};
+	float temp = 0;
+	
+	#ifdef _SQY_VERBOSE_
+	std::cout << "[SQY_VERBOSE]\t extract_darkest_face on image ";
+	for(short i = 0;i<_dims.size();++i){
+	  std::cout << _dims[i] << ((_dims[i]!=_dims.back()) ? "x" : " ");
+	}
+	std::cout << "\n";
+#endif
+        //faces with z
+        const size_type indices[2] = {0,_dims[2]-1};
 
         for(size_type z_idx = 0, z_idx_ctr = 0;
-	    z_idx < _dims[2] && z_idx_ctr < 4;
+	    z_idx < _dims[2] && z_idx_ctr < 2;
 	    ++z_idx_ctr, z_idx = indices[z_idx_ctr]) {
 
             input_index = z_idx*(frame_size);
             const raw_type* begin = _input + input_index;
-	    running_histo.fill_from_image(begin, begin + (frame_size));
-            raw_type temp = running_histo.median()
-	      ;// std::accumulate(begin, begin + (frame_size),0 )/(frame_size)
-            if(temp < median) {
+	    running_histo.clear();
+
+	    running_histo.add_from_image(begin, begin + (frame_size));
+
+            temp = running_histo.calc_support();
+
+#ifdef _SQY_VERBOSE_
+	    running_histo.fill_stats();
+	    std::cout << "[SQY_VERBOSE]\t face z = " << z_idx << " / " << _dims[2] <<" , support = " << temp << ", mean = " << running_histo.calc_mean() << "\n";
+	    
+#endif
+
+
+            if(temp < support) {
                 if(_darkest_face.size()<frame_size)
                     _darkest_face.resize(frame_size);
+
+		//FIXME: do we really need to copy the face out?
                 std::copy(begin, begin + (frame_size),_darkest_face.begin());
-                median = temp;
+                support = temp;
             }
         }
 
         //faces with y
         face_index =0;
-	raw_type temp;
-	std::vector<raw_type> face(_dims[2]*_dims[0]);
+	std::vector<raw_type> face(_dims[0]*_dims[2]);
         for(size_type y_idx = 0; y_idx < _dims[1]; y_idx+=(_dims[1]-1)) {
+
+	  running_histo.clear();
 
             for(size_type z_idx = 0; z_idx < _dims[2]; ++z_idx) {
 	      input_index = z_idx*(frame_size)+y_idx*_dims[0];
 	      std::copy(_input + input_index, _input+input_index+_dims[0], face.begin() + (z_idx*_dims[0]));
+	      running_histo.add_from_image(_input + input_index, _input+input_index+_dims[0]);
+	      
             }
+	    
+            temp = running_histo.calc_support();
+	    #ifdef _SQY_VERBOSE_
+	    running_histo.fill_stats();
+	    std::cout << "[SQY_VERBOSE]\t face y = " << y_idx << " / "<< _dims[1] << " , support = " << temp << ", mean = " << running_histo.calc_mean() << "\n";
+	    
+#endif
 
-	    running_histo.fill_from_image(face.begin(), face.end());
-            temp = running_histo.median();
-
-            if(temp < median) {
+            if(temp < support) {
                 if(_darkest_face.size()<_dims[2]*_dims[0])
                     _darkest_face.resize(_dims[2]*_dims[0]);
-
+		//FIXME: do we really need to copy the face out?
 		std::copy(face.begin(), face.end(),_darkest_face.begin());
 		
-                median = temp;
+                support = temp;
             }
         }
 

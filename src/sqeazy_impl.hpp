@@ -519,7 +519,7 @@ struct flatten_to_neighborhood {
     {
 
 
-        unsigned long length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<raw_type>());
+        unsigned long length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<size_type>());
 
         std::vector<size_type> offsets;
         sqeazy::halo<Neighborhood, size_type> geometry(_dims.begin(), _dims.end());
@@ -537,24 +537,41 @@ struct flatten_to_neighborhood {
         unsigned n_neighbors_below_threshold = 0;
         typename std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
 
+#ifdef _SQY_VERBOSE_
+	unsigned long num_pixels_discarded=0;
+#endif
 
         const float cut_fraction = _frac_neighb_to_null*(size<Neighborhood>()-1);
         for(; offsetsItr!=offsets.end(); ++offsetsItr) {
             for(unsigned long index = 0; index < halo_size_x; ++index) {
 
                 local_index = index + *offsetsItr;
+
+		//skip pixels that are below threshold
+		if(*(_input + local_index)<_threshold)
+		  continue;
+
                 n_neighbors_below_threshold = count_neighbors_if<Neighborhood>(_input + local_index,
                                               _dims,
                                               std::bind2nd(std::less<raw_type>(), _threshold)
                                                                               );
-                if(n_neighbors_below_threshold>cut_fraction)
-                    _output[local_index] = 0;
+                if(n_neighbors_below_threshold>cut_fraction){
+#ifdef _SQY_VERBOSE_
+		  num_pixels_discarded++;
+#endif
+		  _output[local_index] = 0;
+		}
                 else
                     _output[local_index] = _input[local_index];
 
             }
         }
-
+#ifdef _SQY_VERBOSE_
+	int prec = std::cout.precision();
+	std::cout.precision(3);
+	std::cout << "[SQY_VERBOSE] flatten_to_neighborhood " << num_pixels_discarded << " / " << length << " ("<< 100*double(num_pixels_discarded)/length <<" %) discarded due to neighborhood\n";
+	std::cout.precision(prec);
+#endif
         return SUCCESS;
     }
 
@@ -666,29 +683,34 @@ struct remove_estimated_background {
         std::vector<raw_type> darkest_face;
         extract_darkest_face((const raw_type*)_input, _dims, darkest_face);
         
-	sqeazy::histogram<raw_type> t(darkest_face.begin(), darkest_face.end());
+	sqeazy::histogram<raw_type> t;
+	t.add_from_image(darkest_face.begin(), darkest_face.end());
 	
-	unsigned long input_length = std::accumulate(_dims.begin(), _dims.end(), 1);
+	unsigned long input_length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<size_type>());
 
         const float reduce_by = t.calc_support(.99f);
 
 	#ifdef _SQY_VERBOSE_
-	std::cout << "\nremove_estimated_background :: input data ";
+	std::cout << "[SQY_VERBOSE] remove_estimated_background ";
 	for(short i = 0;i<_dims.size();++i){
 	  std::cout << _dims[i] << ((_dims[i]!=_dims.back()) ? "x" : ", ");
 	}
 	
 	std::cout << " darkest face: backgr_estimate = " << reduce_by << "\n";
-	std::cout << histogram<raw_type>::print_header() << t << "\n";
+	t.fill_stats();
+	std::cout << "[SQY_VERBOSE] " << histogram<raw_type>::print_header() << "\n[SQY_VERBOSE] " << t << "\n";
 	
 	#endif
 
         if(_output) {
+	    //copies the input to output, skipping pixels that have a neighborhood complying crirteria
             flatten_to_neighborhood<raw_type>::encode(_input, _output, _dims, reduce_by);
+	    //set those pixels to 0 that fall below reduce_by
             remove_background<raw_type>::encode_inplace(_output, input_length, reduce_by);
         }
         else {
             std::cerr << "WARNING ["<< name() <<"::encode]\t inplace operation requested, flatten_to_neighborhood skipped\n";
+	    //set those pixels to 0 that fall below reduce_by
             remove_background<raw_type>::encode_inplace(_input, input_length, reduce_by);
 
         }
