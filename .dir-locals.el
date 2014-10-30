@@ -12,3 +12,9 @@
 	       )
 	 )
 ))
+
+((company-mode . ((company-clang-arguments . ("-I/home/<steinbac/development/sqeazy/inc"
+					      "-I/home/<steinbac/development/sqeazy/src"
+					      "-I/home/<steinbac/development/sqeazy/tests"
+					      "-I/home/<steinbac/development/sqeazy/bench")))
+	       ))
