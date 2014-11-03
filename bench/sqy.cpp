@@ -8,7 +8,7 @@
 #include <fstream>
 #include <unordered_map>
 
-#include "hist_impl.hpp"
+
 #include "bench_fixtures.hpp"
 #include "bench_utils.hpp"
 #include "bench_common.hpp"
