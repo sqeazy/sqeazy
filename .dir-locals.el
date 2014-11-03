@@ -4,10 +4,6 @@
 			   (file-name-directory
 			    (let ((d (dir-locals-find-file ".")))
 			      (if (stringp d) d (car d))))))
-	      (eval . (progn 
-			(message "[c++-mode] Project directory set to `%s'." my-project-path)
-			(message "[c++-mode] test `%s'." (concat "-I" my-project-path))
-			))
 	      (eval . (progn
 			(defun my-project-specific-function ()
 			  
@@ -23,14 +19,16 @@
 			  
 			  ;;;for company et al
 			  (if (boundp 'company-clang-arguments)
-			      (progn (message 
-				      "[c++-mode] company-clang-arguments exists '%s'" company-clang-arguments)
-				     (setq company-clang-arguments (append company-clang-arguments
-									   (mapcar (lambda (item)(concat "-I." item))
-										   (split-string "/inc /src /tests /bench"))
-									   )
-					   )
-				     )
+			      (progn 
+				(setq company-clang-arguments (append company-clang-arguments
+								      (mapcar (lambda (item)(concat "-I" my-project-path item))
+									      (split-string "inc src tests bench"))
+								      '("-std=c++11")
+								      )
+				      )
+				(message 
+				 "[c++-mode] company-clang-arguments exists '%s'" company-clang-arguments)
+				)
 			    nil)
 
 			  
