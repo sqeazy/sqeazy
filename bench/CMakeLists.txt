@@ -23,7 +23,7 @@ set_target_properties(bench PROPERTIES COMPILE_FLAGS "${BENCH_COMPILE_FLAGS}")
 
 add_executable(sqy sqy.cpp)
 
-target_link_libraries(sqy tiff lz4 boost_filesystem boost_system)
+target_link_libraries(sqy tiff lz4 boost_filesystem boost_system boost_program_options)
 SET(SQY_COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src -std=c++11")
 
 if(SQY_VERBOSE)
