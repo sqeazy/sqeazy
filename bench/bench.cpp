@@ -200,7 +200,6 @@ int main(int argc, char *argv[])
     std::unordered_map<std::string, func_t> prog_flow;
 
     prog_flow["compress_rmbkg_diff_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
-    prog_flow["compress_rmbkg_huff_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
     prog_flow["compress_rmbkg_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_bswap1_lz4_pipe>);
     prog_flow["compress_diff_bswap1_lz4"] = func_t(fill_suite<unsigned short, diff_bswap1_lz4_pipe>);
     prog_flow["compress_diffonrow_bswap1_lz4"] = func_t(fill_suite<unsigned short, diffonrow_bswap1_lz4_pipe>);
@@ -212,9 +211,11 @@ int main(int argc, char *argv[])
         prog_flow["experim_diffonrow_lz4"] = func_t(fill_suite<unsigned short, diffonrow_lz4_pipe>);
     prog_flow["experim_huff_lz4"] = func_t(fill_suite<unsigned short, huff_lz4_pipe>);
     prog_flow["experim_huff_bswap1_lz4"] = func_t(fill_suite<unsigned short, huff_bswap1_lz4_pipe>);
+    prog_flow["experim_rmbkg_huff_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_huff_bswap1_lz4_pipe>);
+    prog_flow["experim_rmbkg_bswap1_huff_lz4"] = func_t(fill_suite<unsigned short, rmbkg_bswap1_huff_lz4_pipe>);
 
     prog_flow["speed_rmbkg_diff_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
-    prog_flow["speed_rmbkg_huff_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
+    prog_flow["speed_rmbkg_huff_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_huff_bswap1_lz4_pipe>);
     prog_flow["speed_rmbkg_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_bswap1_lz4_pipe>);
     prog_flow["speed_diff_bswap1_lz4"] = func_t(fill_suite<unsigned short, diff_bswap1_lz4_pipe>);
     prog_flow["speed_huff_bswap1_lz4"] = func_t(fill_suite<unsigned short, huff_bswap1_lz4_pipe>);

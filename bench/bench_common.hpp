@@ -11,6 +11,13 @@ typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned short
         sqeazy::lz4_scheme<unsigned short> > rmbkg_diff_bswap1_lz4;
 typedef sqeazy::pipeline<rmbkg_diff_bswap1_lz4> rmbkg_diff_bswap1_lz4_pipe;
 
+
+typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned short>,
+        sqeazy::bitswap_scheme<unsigned short>,
+        sqeazy::huffman_scheme<unsigned short>,
+        sqeazy::lz4_scheme<unsigned short> > rmbkg_bswap1_huff_lz4;
+typedef sqeazy::pipeline<rmbkg_bswap1_huff_lz4> rmbkg_bswap1_huff_lz4_pipe;
+
 typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned short>,
         sqeazy::huffman_scheme<unsigned short>,
         sqeazy::bitswap_scheme<unsigned short>,
