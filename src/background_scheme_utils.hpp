@@ -44,34 +44,40 @@ namespace sqeazy {
 #endif
         //faces with z
         const size_type indices[2] = {0,_dims[2]-1};
+	size_type z_idx = 0;
+	
+        for(size_type z_idx_ctr = 0;
+	    z_idx_ctr < 2;
+	    ++z_idx_ctr ) {
 
-        for(size_type z_idx = 0, z_idx_ctr = 0;
-	    z_idx < _dims[2] && z_idx_ctr < 2;
-	    ++z_idx_ctr, z_idx = indices[z_idx_ctr]) {
+	  z_idx = indices[z_idx_ctr];
+	  if(!(z_idx < _dims[2])){
+	    continue;
+	  }
+	  
+	  input_index = z_idx*(frame_size);
+	  const raw_type* begin = _input + input_index;
+	  running_histo.clear();
 
-            input_index = z_idx*(frame_size);
-            const raw_type* begin = _input + input_index;
-	    running_histo.clear();
+	  running_histo.add_from_image(begin, begin + (frame_size));
 
-	    running_histo.add_from_image(begin, begin + (frame_size));
-
-            temp = running_histo.calc_support();
+	  temp = running_histo.calc_support();
 
 #ifdef _SQY_VERBOSE_
-	    running_histo.fill_stats();
-	    std::cout << "[SQY_VERBOSE]\t face z = " << z_idx << " / " << _dims[2] <<" , support = " << temp << ", mean = " << running_histo.calc_mean() << "\n";
+	  running_histo.fill_stats();
+	  std::cout << "[SQY_VERBOSE]\t face z = " << z_idx << " / " << _dims[2] <<" , support = " << temp << ", mean = " << running_histo.calc_mean() << "\n";
 	    
 #endif
 
 
-            if(temp < support) {
-                if(_darkest_face.size()<frame_size)
-                    _darkest_face.resize(frame_size);
+	  if(temp < support) {
+	    if(_darkest_face.size()<frame_size)
+	      _darkest_face.resize(frame_size);
 
-		//FIXME: do we really need to copy the face out?
-                std::copy(begin, begin + (frame_size),_darkest_face.begin());
-                support = temp;
-            }
+	    //FIXME: do we really need to copy the face out?
+	    std::copy(begin, begin + (frame_size),_darkest_face.begin());
+	    support = temp;
+	  }
         }
 
         //faces with y

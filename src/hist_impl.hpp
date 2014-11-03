@@ -8,6 +8,7 @@
 #include <sstream>
 #include <iomanip>
 #include <numeric>
+#include <algorithm>
 #include "sqeazy_traits.hpp"
 
 namespace sqeazy {

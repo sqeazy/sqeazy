@@ -1,80 +1,20 @@
 #define __SQY_BENCH_CPP__
 #include <iostream>
 #include <functional>
-#include <chrono>
 #include <iomanip>
 #include <numeric>
 #include <vector>
-#include <map>
-#include <set>
 #include <cmath>
 #include <fstream>
-
 #include <unordered_map>
+
+#include "hist_impl.hpp"
 #include "bench_fixtures.hpp"
 #include "bench_utils.hpp"
-#include "hist_impl.hpp"
-#include "sqeazy_impl.hpp"
-#include "pipeline.hpp"
-#include "external_encoders.hpp"
+#include "bench_common.hpp"
+
 #include "boost/filesystem.hpp"
 
-typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned short>,
-        sqeazy::diff_scheme<unsigned short>,
-        sqeazy::bitswap_scheme<unsigned short>,
-        sqeazy::lz4_scheme<unsigned short> > rmbkg_diff_bswap1_lz4;
-typedef sqeazy::pipeline<rmbkg_diff_bswap1_lz4> rmbkg_diff_bswap1_lz4_pipe;
-
-typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned short>,
-        sqeazy::huffman_scheme<unsigned short>,
-        sqeazy::bitswap_scheme<unsigned short>,
-        sqeazy::lz4_scheme<unsigned short> > rmbkg_huff_bswap1_lz4;
-typedef sqeazy::pipeline<rmbkg_huff_bswap1_lz4> rmbkg_huff_bswap1_lz4_pipe;
-
-typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned short>,
-        sqeazy::lz4_scheme<unsigned short> > rmbkg_lz4;
-typedef sqeazy::pipeline<rmbkg_lz4> rmbkg_lz4_pipe;
-
-
-typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned short>,
-        sqeazy::bitswap_scheme<unsigned short>,
-        sqeazy::lz4_scheme<unsigned short> > rmbkg_bswap1_lz4;
-typedef sqeazy::pipeline<rmbkg_bswap1_lz4> rmbkg_bswap1_lz4_pipe;
-
-typedef sqeazy::bmpl::vector< sqeazy::diff_scheme<unsigned short>,
-        sqeazy::bitswap_scheme<unsigned short>,
-        sqeazy::lz4_scheme<unsigned short> > diff_bswap1_lz4;
-typedef sqeazy::pipeline<diff_bswap1_lz4> diff_bswap1_lz4_pipe;
-
-typedef sqeazy::bmpl::vector< sqeazy::diff_scheme<unsigned short, sqeazy::last_pixels_on_line_neighborhood<2> >,
-        sqeazy::bitswap_scheme<unsigned short>,
-        sqeazy::lz4_scheme<unsigned short> > diffonrow_bswap1_lz4;
-typedef sqeazy::pipeline<diffonrow_bswap1_lz4> diffonrow_bswap1_lz4_pipe;
-
-typedef sqeazy::bmpl::vector< sqeazy::huffman_scheme<unsigned short>,
-        sqeazy::bitswap_scheme<unsigned short>,
-        sqeazy::lz4_scheme<unsigned short> > huff_bswap1_lz4;
-typedef sqeazy::pipeline<huff_bswap1_lz4> huff_bswap1_lz4_pipe;
-
-
-typedef sqeazy::bmpl::vector< sqeazy::diff_scheme<unsigned short>,
-        sqeazy::lz4_scheme<unsigned short> > diff_lz4;
-typedef sqeazy::pipeline<diff_lz4> diff_lz4_pipe;
-
-typedef sqeazy::bmpl::vector< sqeazy::diff_scheme<unsigned short, sqeazy::last_pixels_on_line_neighborhood<2> >,
-        sqeazy::lz4_scheme<unsigned short> > diffonrow_lz4;
-typedef sqeazy::pipeline<diffonrow_lz4> diffonrow_lz4_pipe;
-
-typedef sqeazy::bmpl::vector< sqeazy::bitswap_scheme<unsigned short>,
-        sqeazy::lz4_scheme<unsigned short> > bswap1_lz4;
-typedef sqeazy::pipeline<bswap1_lz4> bswap1_lz4_pipe;
-
-typedef sqeazy::bmpl::vector< sqeazy::lz4_scheme<unsigned short> > lz4_;
-typedef sqeazy::pipeline<lz4_> lz4_pipe;
-
-
-typedef sqeazy::bmpl::vector< sqeazy::huffman_scheme<unsigned short>, sqeazy::lz4_scheme<unsigned short> > huffman_lz4;
-typedef sqeazy::pipeline<huffman_lz4> huff_lz4_pipe;
 
 template <typename MapT>
 int print_help(const MapT& _av_targets) {
@@ -271,7 +211,7 @@ int main(int argc, char *argv[])
     prog_flow["compress_lz4"] = func_t(fill_suite<unsigned short, lz4_pipe>);
 
     prog_flow["experim_rmbkg_lz4"] = func_t(fill_suite<unsigned short, rmbkg_lz4_pipe>);
-        prog_flow["experim_diffonrow_lz4"] = func_t(fill_suite<unsigned short, diffonrow_lz4_pipe>);
+    prog_flow["experim_diffonrow_lz4"] = func_t(fill_suite<unsigned short, diffonrow_lz4_pipe>);
     prog_flow["experim_huff_lz4"] = func_t(fill_suite<unsigned short, huff_lz4_pipe>);
     prog_flow["experim_huff_bswap1_lz4"] = func_t(fill_suite<unsigned short, huff_bswap1_lz4_pipe>);
 
