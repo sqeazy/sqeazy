@@ -130,6 +130,17 @@ BOOST_AUTO_TEST_CASE( encode_custom_header )
   BOOST_CHECK_EQUAL(instance2.size(),given.size()-3);
 }
 
+BOOST_AUTO_TEST_CASE( decode_dimensions )
+{
+  std::string given = "h,1,32x32x16|bla";
+  std::vector<unsigned> dims = sqeazy::lz4_scheme<short>::decode_dimensions(given.c_str(),given.size());
+  BOOST_CHECK_EQUAL(dims.size(),3);
+  BOOST_CHECK_EQUAL(dims[0],32);
+  BOOST_CHECK_EQUAL(dims[1],32);
+  BOOST_CHECK_EQUAL(dims[2],16);
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()
 
 

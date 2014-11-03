@@ -15,6 +15,10 @@
 
 #include "boost/filesystem.hpp"
 
+struct sqy_config
+{
+  bool verbose;
+};
 
 template <typename MapT>
 int print_help(const MapT& _av_targets) {
@@ -30,7 +34,7 @@ int print_help(const MapT& _av_targets) {
                                       );
     const unsigned field_width = max_el_itr->first.size()+1;
 
-    std::string me = "bench";
+    std::string me = "sqy";
     std::cout << "usage: " << me << " <flags> <target>\n"
               << "flags:\n\t -v \t\t print benchmark stats for every file\n"
               << "\t -r <path>\t perform round trip and save output to <path>/<basefilename>-<targetname>.tif\n"
@@ -53,142 +57,62 @@ int print_help(const MapT& _av_targets) {
     return 1;
 }
 
-struct fill_suite_config {
-
-    bool verbose = false;
-    std::string roundtrip = "";
-    std::string save_encoded = "";
-
-    fill_suite_config(std::vector<std::string>& _args) {
-
-        verbose = sqeazy_bench::pop_if_contained(_args, std::string("-v"));
-        boost::filesystem::path roundtrip_p = sqeazy_bench::pop_next_if_contained(_args, std::string("-r"));
-        boost::filesystem::path save_encoded_p = sqeazy_bench::pop_next_if_contained(_args, std::string("-e"));
-
-        auto morphing = [&](const boost::filesystem::path& _p) {
-            std::string value;
-            if(boost::filesystem::exists(_p))
-            {
-                if(boost::filesystem::is_directory(_p) || boost::filesystem::is_regular_file(_p))
-                {
-                    value = _p.string();
-                }
-                else {
-                    value = roundtrip_p.parent_path().string();
-                }
-            }
-            return value;
-        };
-
-        roundtrip = morphing(roundtrip_p);
-        save_encoded = morphing(save_encoded_p);
-
-        //TODO: the following is not platform independent
-        if(roundtrip[roundtrip.size()-1]!='/')
-            roundtrip += "/";
-
-        if(save_encoded[save_encoded.size()-1]!='/')
-            save_encoded += "/";
-    }
-
-};
 
 template <typename T, typename PipeType>
-void fill_suite(const std::vector<std::string>& _args,
-                sqeazy_bench::bsuite<T>& _suite,
-                const fill_suite_config& _config) {
+void decompress_files(const std::vector<std::string>& _files,
+		      const sqy_config& _config) {
 
-    typedef T value_type;
-    typedef PipeType current_pipe;
+  typedef T value_type;
+  typedef PipeType current_pipe;
 
-    if(_config.verbose)
-        std::cerr << "fill_suite :: " << PipeType::name() << "\n";
+  if(_config.verbose)
+    std::cerr << "fill_suite :: " << PipeType::name() << "\n";
 
-    unsigned num_files = _args.size();
+  std::vector<char> file_data;
+  std::vector<value_type> output_data;
+  std::vector<size_t> output_dims;
+  unsigned long filesize = 0;
+  boost::filesystem::path current_file;
+  boost::filesystem::path output_file;
+  std::fstream inputfile;
 
-    if(_suite.size() != num_files)
-        _suite.cases.resize(num_files);
+  for(const std::string& _file : _files) {
 
-    std::vector<value_type> output_data;
-    std::array<std::string,2> head_tail;
-    boost::filesystem::path current_file;
+    inputfile.open(_file.c_str());
+    current_file = _file;
+    filesize = boost::filesystem::file_size(current_file);
+    
+    //skip the rest if nothing was loaded
+    if(!inputfile.is_open())
+      {
+	std::cerr << "[SQY]\tunable to open " << _file << "\t skipping it\n";
+	inputfile.clear();
+	continue;
+      }
+       
+    //compute the maximum size of the output buffer
+    long expected_size = 0;
+    sqeazy::lz4_scheme<char>::decoded_size_byte(&file_data[0],&expected_size);
+    expected_size /= sizeof(value_type);
 
-    for(unsigned i = 0; i < num_files; ++i) {
+    if(expected_size>output_data.size())
+      output_data.resize(expected_size);
+        
+    //create clean output buffer
+    std::fill(output_data.begin(), output_data.end(),0);
 
-        current_file = _args[i];
-
-	//load image located under current_file
-        tiff_fixture<value_type, false> reference(current_file.string());
-
-	//skip the rest if nothing was loaded
-        if(reference.empty())
-            continue;
-
+    int dec_ret = current_pipe::decompress(&file_data[0],&output_data[0],
+					   filesize);
 	
-
-	//compute the maximum size of the output buffer
-        unsigned long expected_size = std::ceil(current_pipe::max_encoded_size(reference.size_in_byte())/float(sizeof(value_type)));
-        if(expected_size>output_data.size()) {
-            output_data.resize(expected_size);
-        }
-	
-	//create clean output buffer
-	std::fill(output_data.begin(), output_data.end(),0);
-
-        //make a cast so API of pipeline is happy
-        char* dest = reinterpret_cast<char*>(output_data.data());
-	
-	//setup benchmark case for saving time, ratio ... AND START TIMER
-        sqeazy_bench::bcase<value_type> temp_case(current_file.string(), reference.data(), reference.axis_lengths);
-	
-	//perform encoding and write output to output_data
-        temp_case.return_code = current_pipe::compress(reference.data(),
-                                dest,
-                                reference.axis_lengths);
-	//STOP TIMER
-        temp_case.stop(current_pipe::last_num_encoded_bytes);
-	
-	//save benchmark case to suite for later reuse
-        _suite.at(i,temp_case);
-
-	//-e was set
-        if(_config.save_encoded.size()>1) {
-
-            std::string name = _config.save_encoded;
-            name += current_file.stem().string();
-            name += "_";
-            name += PipeType::name();
-            name += "-enc.sqy";
-
-            std::ofstream encoded(name.c_str(), std::ios::binary | std::ios::out);
-            std::cout << "Writing to " << name << "\n";
-            encoded.write(dest,current_pipe::last_num_encoded_bytes);
-            encoded.close();
-        }
-
-        //-r was set
-        if(_config.roundtrip.size()>1) {
-            //decompress what was just compressed
-            int dec_ret = current_pipe::decompress(dest,reference.data(),
-                                                   current_pipe::last_num_encoded_bytes);
-            if(dec_ret & _config.verbose) {
-                std::cerr << "decompression failed! Nothing to write to disk...\n";
-                continue;
-            }
-
-            std::string name = _config.roundtrip;
-            name += current_file.stem().string();
-            name += "_";
-            name += PipeType::name();
-            name += "-enc-dec";
-            name += current_file.extension().string();
-            sqeazy::write_tiff_from_vector(reference.tiff_data, reference.axis_lengths,name);
-        }
-
-
+    if(dec_ret & _config.verbose) {
+      std::cerr << "decompression failed! Nothing to write to disk...\n";
+      continue;
     }
 
-
+    output_file = current_file.replace_extension(".tif");
+    
+    sqeazy::write_tiff_from_vector(output_data, output_dims , output_file.string());
+  }
 
 }
 
@@ -196,56 +120,54 @@ int main(int argc, char *argv[])
 {
 
 
-    typedef std::function<void(const std::vector<std::string>&,
-                               sqeazy_bench::bsuite<unsigned short>&,
-                               const fill_suite_config&) > func_t;
-    std::unordered_map<std::string, func_t> prog_flow;
+    // typedef std::function<void(const std::vector<std::string>&,const sqy_config&) > func_t;
+    // std::unordered_map<std::string, func_t> prog_flow;
 
-    prog_flow["compress_rmbkg_diff_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
-    prog_flow["compress_rmbkg_huff_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
-    prog_flow["compress_rmbkg_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_bswap1_lz4_pipe>);
-    prog_flow["compress_diff_bswap1_lz4"] = func_t(fill_suite<unsigned short, diff_bswap1_lz4_pipe>);
-    prog_flow["compress_diffonrow_bswap1_lz4"] = func_t(fill_suite<unsigned short, diffonrow_bswap1_lz4_pipe>);
-    prog_flow["compress_bswap1_lz4"] = func_t(fill_suite<unsigned short, bswap1_lz4_pipe>);
-    prog_flow["compress_diff_lz4"] = func_t(fill_suite<unsigned short, diff_lz4_pipe>);
-    prog_flow["compress_lz4"] = func_t(fill_suite<unsigned short, lz4_pipe>);
+    // prog_flow["compress_rmbkg_diff_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
+    // prog_flow["compress_rmbkg_huff_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
+    // prog_flow["compress_rmbkg_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_bswap1_lz4_pipe>);
+    // prog_flow["compress_diff_bswap1_lz4"] = func_t(fill_suite<unsigned short, diff_bswap1_lz4_pipe>);
+    // prog_flow["compress_diffonrow_bswap1_lz4"] = func_t(fill_suite<unsigned short, diffonrow_bswap1_lz4_pipe>);
+    // prog_flow["compress_bswap1_lz4"] = func_t(fill_suite<unsigned short, bswap1_lz4_pipe>);
+    // prog_flow["compress_diff_lz4"] = func_t(fill_suite<unsigned short, diff_lz4_pipe>);
+    // prog_flow["compress_lz4"] = func_t(fill_suite<unsigned short, lz4_pipe>);
 
-    prog_flow["experim_rmbkg_lz4"] = func_t(fill_suite<unsigned short, rmbkg_lz4_pipe>);
-    prog_flow["experim_diffonrow_lz4"] = func_t(fill_suite<unsigned short, diffonrow_lz4_pipe>);
-    prog_flow["experim_huff_lz4"] = func_t(fill_suite<unsigned short, huff_lz4_pipe>);
-    prog_flow["experim_huff_bswap1_lz4"] = func_t(fill_suite<unsigned short, huff_bswap1_lz4_pipe>);
+    // prog_flow["experim_rmbkg_lz4"] = func_t(fill_suite<unsigned short, rmbkg_lz4_pipe>);
+    // prog_flow["experim_diffonrow_lz4"] = func_t(fill_suite<unsigned short, diffonrow_lz4_pipe>);
+    // prog_flow["experim_huff_lz4"] = func_t(fill_suite<unsigned short, huff_lz4_pipe>);
+    // prog_flow["experim_huff_bswap1_lz4"] = func_t(fill_suite<unsigned short, huff_bswap1_lz4_pipe>);
 
-    prog_flow["speed_rmbkg_diff_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
-    prog_flow["speed_rmbkg_huff_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
-    prog_flow["speed_rmbkg_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_bswap1_lz4_pipe>);
-    prog_flow["speed_diff_bswap1_lz4"] = func_t(fill_suite<unsigned short, diff_bswap1_lz4_pipe>);
-    prog_flow["speed_huff_bswap1_lz4"] = func_t(fill_suite<unsigned short, huff_bswap1_lz4_pipe>);
-    prog_flow["speed_bswap1_lz4"] = func_t(fill_suite<unsigned short, bswap1_lz4_pipe>);
-    prog_flow["speed_diff_lz4"] = func_t(fill_suite<unsigned short, diff_lz4_pipe>);
-    prog_flow["speed_lz4"] = func_t(fill_suite<unsigned short, lz4_pipe>);
+    // prog_flow["speed_rmbkg_diff_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
+    // prog_flow["speed_rmbkg_huff_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_diff_bswap1_lz4_pipe>);
+    // prog_flow["speed_rmbkg_bswap1_lz4"] = func_t(fill_suite<unsigned short, rmbkg_bswap1_lz4_pipe>);
+    // prog_flow["speed_diff_bswap1_lz4"] = func_t(fill_suite<unsigned short, diff_bswap1_lz4_pipe>);
+    // prog_flow["speed_huff_bswap1_lz4"] = func_t(fill_suite<unsigned short, huff_bswap1_lz4_pipe>);
+    // prog_flow["speed_bswap1_lz4"] = func_t(fill_suite<unsigned short, bswap1_lz4_pipe>);
+    // prog_flow["speed_diff_lz4"] = func_t(fill_suite<unsigned short, diff_lz4_pipe>);
+    // prog_flow["speed_lz4"] = func_t(fill_suite<unsigned short, lz4_pipe>);
 
     int retcode = 0;
     if(argc>1) {
         unsigned int f_index = 1;
 
-        std::unordered_map<std::string, func_t>::const_iterator f_func = prog_flow.end();
+        // std::unordered_map<std::string, func_t>::const_iterator f_func = prog_flow.end();
 
         std::vector<std::string> args(argv+1, argv+argc);
-        fill_suite_config config(args);
+        // fill_suite_config config(args);
 
-        for(f_index = 0; f_index<args.size(); ++f_index) {
-            if((f_func = prog_flow.find(args[f_index])) != prog_flow.end())
-                break;
-        }
+        // for(f_index = 0; f_index<args.size(); ++f_index) {
+        //     if((f_func = prog_flow.find(args[f_index])) != prog_flow.end())
+        //         break;
+        // }
 
-        std::vector<std::string> filenames(args.begin()+1, args.end());
+        // std::vector<std::string> filenames(args.begin()+1, args.end());
 
 	std::cerr << "NOTHING IMPLEMENTED SO FAR\n";
-	print_help(prog_flow);
+	//print_help(prog_flow);
         
     }
     else {
-        retcode = print_help(prog_flow);
+      retcode = 1;//print_help(prog_flow);
     }
 
     return retcode;
