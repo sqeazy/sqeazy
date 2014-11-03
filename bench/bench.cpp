@@ -169,7 +169,7 @@ void fill_suite(const std::vector<std::string>& _args,
             //decompress what was just compressed
             int dec_ret = current_pipe::decompress(dest,reference.data(),
                                                    current_pipe::last_num_encoded_bytes);
-            if(dec_ret & _config.verbose) {
+            if(dec_ret && _config.verbose) {
                 std::cerr << "decompression failed! Nothing to write to disk...\n";
                 continue;
             }

@@ -76,6 +76,15 @@ std::vector<ExtentT> extract_max_extents(TIFF* _tiff_handle, const std::vector< 
 template <typename ValueT>
 std::vector<unsigned> extract_tiff_to_vector(TIFF* _tiff_handle, const std::vector<tdir_t>& _tiff_dirs ,std::vector<ValueT>& _container) {
 
+  int bits_per_sample = 0;
+  TIFFGetField(_tiff_handle, TIFFTAG_BITSPERSAMPLE, &bits_per_sample);
+  if(bits_per_sample!=(sizeof(ValueT)*CHAR_BIT)){
+    std::string fname(TIFFFileName(_tiff_handle));
+    std::ostringstream msg; 
+    msg << "[SQY] ERROR: expected " << sizeof(ValueT)*CHAR_BIT << ", but received " << bits_per_sample << " from " << fname << "\n";
+    throw std::runtime_error(msg.str());
+  }
+
     std::vector<unsigned> extents = extract_max_extents<unsigned>(_tiff_handle, _tiff_dirs );
 
     unsigned w,h;

@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE( encode_header_correct_values_of_dims_corner_cases )
 
 BOOST_AUTO_TEST_CASE( encode_custom_header )
 {
-  std::string given = "h,1,32|bla";
+  std::string given = "s,1,32|bla";
   sqeazy::image_header<value_type> instance(given);
   
   BOOST_CHECK_EQUAL(instance.payload_size(),32);
@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE( encode_custom_header )
   BOOST_CHECK_EQUAL(instance.dims.size(),1);
   BOOST_CHECK_EQUAL(instance.size(),given.size()-3);
   
-  std::string given2 = "h,1,32";
+  std::string given2 = "s,1,32";
   sqeazy::image_header<value_type> instance2(given);
   BOOST_CHECK_EQUAL(instance2.payload_size(),32);
   BOOST_CHECK_EQUAL(instance2.payload_size_byte(),32*sizeof(value_type));
@@ -132,7 +132,7 @@ BOOST_AUTO_TEST_CASE( encode_custom_header )
 
 BOOST_AUTO_TEST_CASE( decode_dimensions )
 {
-  std::string given = "h,1,32x32x16|bla";
+  std::string given = "s,1,32x32x16|bla";
   std::vector<unsigned> dims = sqeazy::lz4_scheme<short>::decode_dimensions(given.c_str(),given.size());
   BOOST_CHECK_EQUAL(dims.size(),3);
   BOOST_CHECK_EQUAL(dims[0],32);
