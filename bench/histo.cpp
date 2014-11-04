@@ -167,7 +167,7 @@ int info(const std::vector<std::string>& _args) {
     for(unsigned fid = 1; fid < _args.size(); ++fid) {
 
 
-        tiff_fixture<value_type, false> reference(_args[fid]);
+      sqeazy_bench::tiff_fixture<value_type, false> reference(_args[fid]);
 	
         if(reference.empty())
             continue;
@@ -188,7 +188,7 @@ int plot(const std::vector<std::string>& _args) {
 
 
     for(unsigned fid = 1; fid < _args.size(); ++fid) {
-      tiff_fixture<unsigned short,false> reference(_args[fid]);
+            sqeazy_bench::tiff_fixture<unsigned short,false> reference(_args[fid]);
 
         if(reference.empty())
             continue;
@@ -249,7 +249,7 @@ int darkest_face(const std::vector<std::string>& _args) {
     std::cout << "filename\t" << sqeazy::histogram<unsigned short>::print_header() << "\tsupport(99%)\n";
 
     for(unsigned fid = 1; fid < _args.size(); ++fid) {
-      tiff_fixture<raw_type, false> reference(_args[fid]);
+            sqeazy_bench::tiff_fixture<raw_type, false> reference(_args[fid]);
 
         if(reference.empty())
             continue;

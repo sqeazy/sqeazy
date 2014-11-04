@@ -6,6 +6,7 @@
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
+#include <typeinfo>
 
 template <typename T = unsigned short, 
 	  //obtained by `getconf -a /usr|grep -i CACHE` on a Intel(R) Core(TM) i7-3520M
@@ -87,8 +88,20 @@ bool file_exists(const std::string& _path){
 
 #include "tiff_utils.h"
 
+namespace sqeazy_bench {
+
+struct data_interface {
+  
+  virtual char* bytes() = 0;
+
+  virtual unsigned long size_in_byte() const = 0;
+  
+  virtual void fill_from(const std::string& _path) = 0;
+
+};
+
 template <typename T = unsigned short, bool verbose = true>
-struct tiff_fixture{
+struct tiff_fixture : public data_interface {
 
   std::string file_loc;
   std::vector<T> tiff_data;
@@ -110,14 +123,15 @@ struct tiff_fixture{
     return &tiff_data[0];
     
   }
-  
-  
-  
-  unsigned long size() const {
+
+
+  char* bytes(){
     
-    return tiff_data.size();
+    return reinterpret_cast<char*>(&tiff_data[0]);
     
   }
+  
+  
   
   void fill_from(const std::string& _path){
     if(!file_exists(_path) || _path.empty()){
@@ -128,9 +142,9 @@ struct tiff_fixture{
 
     TIFF* stack_tiff   = TIFFOpen( _path.c_str() , "r" );
     std::vector<tdir_t> stack_tdirs   ;
-    sqeazy::get_tiff_dirs(stack_tiff,   stack_tdirs  );
+    sqeazy_bench::get_tiff_dirs(stack_tiff,   stack_tdirs  );
 
-    axis_lengths = sqeazy::extract_tiff_to_vector(stack_tiff,   stack_tdirs  , tiff_data     );
+    axis_lengths = sqeazy_bench::extract_tiff_to_vector(stack_tiff,   stack_tdirs  , tiff_data     );
     
     TIFFClose(stack_tiff);
       
@@ -184,13 +198,21 @@ struct tiff_fixture{
   unsigned long size_in_byte() const {
     return tiff_data.size()*sizeof(T);
   }
+  
+  
+  unsigned long size() const {
+    
+    return tiff_data.size();
+    
+  }
+  
 
   friend std::ostream& operator<<(std::ostream& _cout, const tiff_fixture& _self){
     _cout << "loaded " << _self.file_loc << " as ";
     for(int axis_id = 0;axis_id<_self.axis_lengths.size();++axis_id){
       _cout << _self.axis_length(axis_id) << ((axis_id < _self.axis_lengths.size()-1) ? "x" : " ");
     }
-    _cout <<" uint16 = " << _self.size_in_byte()/(1<<20) << " MB ";
+    _cout <<" size("<< typeid(T).name() <<") = " << _self.size_in_byte()/(1<<20) << " MB ";
     return _cout;
   }
 
@@ -199,6 +221,6 @@ struct tiff_fixture{
   }
 };
 
-
+};
 
 #endif /* _BENCH_FIXTURES_H_ */

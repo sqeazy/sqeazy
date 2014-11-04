@@ -116,7 +116,7 @@ void fill_suite(const std::vector<std::string>& _args,
         current_file = _args[i];
 
 	//load image located under current_file
-        tiff_fixture<value_type, false> reference(current_file.string());
+	sqeazy_bench::tiff_fixture<value_type, false> reference(current_file.string());
 
 	//skip the rest if nothing was loaded
         if(reference.empty())
@@ -180,7 +180,7 @@ void fill_suite(const std::vector<std::string>& _args,
             name += PipeType::name();
             name += "-enc-dec";
             name += current_file.extension().string();
-            sqeazy::write_tiff_from_vector(reference.tiff_data, reference.axis_lengths,name);
+            sqeazy_bench::write_tiff_from_vector(reference.tiff_data, reference.axis_lengths,name);
         }
 
 

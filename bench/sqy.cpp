@@ -17,11 +17,6 @@
 namespace po = boost::program_options;
 
 
-struct sqy_config
-{
-  bool verbose;
-};
-
 template <typename ModesContainer, typename ModesMap>
 int print_help(const ModesContainer& _av_pipelines ,
 	       const ModesMap& _modes_args
@@ -56,17 +51,15 @@ int print_help(const ModesContainer& _av_pipelines ,
   return 1;
 }
 
+
+
 template <typename T, typename PipeType>
 void compress_files(const std::vector<std::string>& _files,
-		      const sqy_config& _config) {
+		    const po::variables_map& _config) {
 
   typedef T value_type;
   typedef PipeType current_pipe;
-  typedef tiff_fixture<T> tiff_image;
-
-  if(_config.verbose)
-    std::cerr << "fill_suite :: " << PipeType::name() << "\n";
-
+  typedef sqeazy_bench::tiff_fixture<T> tiff_image;
   
   std::vector<char> output_data;
 
@@ -105,7 +98,7 @@ void compress_files(const std::vector<std::string>& _files,
 					 input_file.axis_lengths, 
 					 compressed_length_byte);
 	
-    if(enc_ret && _config.verbose) {
+    if(enc_ret && _config.count("verbose")) {
       std::cerr << "compression failed! Nothing to write to disk...\n";
       continue;
     }
@@ -130,13 +123,10 @@ void compress_files(const std::vector<std::string>& _files,
 
 template <typename T, typename PipeType>
 void decompress_files(const std::vector<std::string>& _files,
-		      const sqy_config& _config) {
+		      const po::variables_map& _config) {
 
   typedef T value_type;
   typedef PipeType current_pipe;
-
-  if(_config.verbose)
-    std::cerr << "fill_suite :: " << PipeType::name() << "\n";
 
   std::vector<char> file_data;
   std::vector<value_type> output_data;
@@ -183,14 +173,14 @@ void decompress_files(const std::vector<std::string>& _files,
     int dec_ret = current_pipe::decompress(&file_data[0],&output_data[0],
 					   filesize);
 	
-    if(dec_ret && _config.verbose) {
+    if(dec_ret && _config.count("verbose")) {
       std::cerr << "decompression failed! Nothing to write to disk...\n";
       continue;
     }
 
     output_file = current_file.replace_extension(".tif");
     
-    sqeazy::write_tiff_from_vector(output_data, output_dims , output_file.string());
+    sqeazy_bench::write_tiff_from_vector(output_data, output_dims , output_file.string());
     
     sqyfile.close();
   }
@@ -201,17 +191,19 @@ int main(int argc, char *argv[])
 {
 
 
-    typedef std::function<void(const std::vector<std::string>&,const sqy_config&) > func_t;
+    typedef std::function<void(const std::vector<std::string>&,const po::variables_map&) > func_t;
     
     static std::vector<std::string> modes{bswap1_lz4_pipe::name(),
-	rmbkg_bswap1_lz4_pipe::name()
+	rmbkg_bswap1_lz4_pipe::name(),
+	typeid(unsigned char).name() + bswap1_lz4_pipe::name(),
+	typeid(unsigned char).name() + rmbkg_bswap1_lz4_pipe::name()
 	};
     
     std::unordered_map<std::string, func_t> encode_flow;
     encode_flow[modes[0]] = func_t(compress_files<unsigned short, bswap1_lz4_pipe>);
     encode_flow[modes[1]] = func_t(compress_files<unsigned short, rmbkg_bswap1_lz4_pipe>);
-    encode_flow[modes[2]] = func_t(compress_files<unsigned short, bswap1_lz4_pipe>);
-    encode_flow[modes[3]] = func_t(compress_files<unsigned short, rmbkg_bswap1_lz4_pipe>);
+    encode_flow[modes[2]] = func_t(compress_files<unsigned char, char_bswap1_lz4_pipe>);
+    encode_flow[modes[3]] = func_t(compress_files<unsigned char, char_rmbkg_bswap1_lz4_pipe>);
 
     std::unordered_map<std::string, func_t> decode_flow;
     decode_flow[modes[0]] = func_t(decompress_files<unsigned short, bswap1_lz4_pipe>);
@@ -223,15 +215,15 @@ int main(int argc, char *argv[])
 
       descriptions["compress"].add_options()
       ("help", "produce help message")
-      ("verbose,v", "enable verbose output")
-      ("pipeline,p", po::value<std::string>()->default_value(modes[0]), "compression pipeline to be used")
-      ("files", po::value<std::vector<std::string> >()// ->composing()
-       , "")
+	("verbose,v", po::value<bool>()->default_value(false), "enable verbose output")
+	("pipeline,p", po::value<std::string>()->default_value(modes[0]), "compression pipeline to be used")
+	("files", po::value<std::vector<std::string> >()// ->composing()
+	 , "")
       ;
 
       descriptions["decompress"].add_options()
       ("help", "produce help message")
-      ("verbose,v", "enable verbose output")
+	("verbose,v", po::value<bool>()->default_value(false), "enable verbose output")
       ("files", po::value<std::vector<std::string> >()// ->composing()
        , "")
       ;

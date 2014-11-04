@@ -2,6 +2,7 @@
 #define _PIPELINE_HPP_
 #include <string>
 #include <sstream>
+#include <typeinfo>
 #include "boost/mpl/vector.hpp"
 #include "boost/mpl/for_each.hpp"
 #include "boost/mpl/back.hpp"
@@ -13,20 +14,27 @@
 namespace sqeazy {
 
 namespace bmpl = boost::mpl;
-struct get_name {
+
+  struct get_name {
 
     std::string* text;
+
+    get_name(std::string* _str):
+      text(_str){}
+
+    get_name(get_name& _rhs):
+      text(_rhs.text){}
 
     template <typename T>
     void operator()(T any) {
 
-        if(text) {
-            *text += std::string("_");
-            *text += T::name();
-        }
+      if(text) {
+	*text += std::string("_");
+	*text += T::name();
+      }
     }
 
-};
+  };
 
 //TODO: fix the abundant use of memory in loop_encode/_decode
 // 	currently every pipeline step allocates a clone of the input data
@@ -165,13 +173,13 @@ struct pipeline : public bmpl::back<TypeList>::type {
 
     static std::string name() {
 
-        std::string temp;
-        get_name extractor;
-        extractor.text = &temp;
-
-        bmpl::for_each<TypeList>(extractor);
-
-        return std::string(temp, 1);
+      std::string temp;
+      
+      get_name extractor(&temp);
+      
+      bmpl::for_each<TypeList>(extractor);
+      
+      return std::string(temp);
 
     }
 
