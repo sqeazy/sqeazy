@@ -5,6 +5,9 @@
 #include "pipeline.hpp"
 #include "external_encoders.hpp"
 
+////////////////////////////////////////////////////////////////////////////////
+// 16-bit
+
 typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned short>,
         sqeazy::diff_scheme<unsigned short>,
         sqeazy::bitswap_scheme<unsigned short>,
@@ -34,6 +37,8 @@ typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned short
         sqeazy::lz4_scheme<unsigned short> > rmbkg_bswap1_lz4;
 typedef sqeazy::pipeline<rmbkg_bswap1_lz4> rmbkg_bswap1_lz4_pipe;
 
+
+
 typedef sqeazy::bmpl::vector< sqeazy::diff_scheme<unsigned short>,
         sqeazy::bitswap_scheme<unsigned short>,
         sqeazy::lz4_scheme<unsigned short> > diff_bswap1_lz4;
@@ -62,12 +67,28 @@ typedef sqeazy::bmpl::vector< sqeazy::bitswap_scheme<unsigned short>,
         sqeazy::lz4_scheme<unsigned short> > bswap1_lz4;
 typedef sqeazy::pipeline<bswap1_lz4> bswap1_lz4_pipe;
 
+
 typedef sqeazy::bmpl::vector< sqeazy::lz4_scheme<unsigned short> > lz4_;
 typedef sqeazy::pipeline<lz4_> lz4_pipe;
 
 
 typedef sqeazy::bmpl::vector< sqeazy::huffman_scheme<unsigned short>, sqeazy::lz4_scheme<unsigned short> > huffman_lz4;
 typedef sqeazy::pipeline<huffman_lz4> huff_lz4_pipe;
+
+
+////////////////////////////////////////////////////////////////////////////////
+// 8-bit
+
+typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned char>,
+        sqeazy::bitswap_scheme<unsigned char>,
+        sqeazy::lz4_scheme<unsigned char> > char_rmbkg_bswap1_lz4;
+typedef sqeazy::pipeline<char_rmbkg_bswap1_lz4> char_rmbkg_bswap1_lz4_pipe;
+
+
+typedef sqeazy::bmpl::vector< sqeazy::bitswap_scheme<unsigned char>,
+        sqeazy::lz4_scheme<unsigned char> > char_bswap1_lz4;
+typedef sqeazy::pipeline<char_bswap1_lz4> char_bswap1_lz4_pipe;
+
 
 
 #endif /* _BENCH_COMMON_H_ */

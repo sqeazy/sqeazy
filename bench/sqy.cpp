@@ -8,7 +8,6 @@
 #include <fstream>
 #include <unordered_map>
 
-
 #include "bench_fixtures.hpp"
 #include "bench_utils.hpp"
 #include "bench_common.hpp"
@@ -16,6 +15,7 @@
 #include "boost/filesystem.hpp"
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
+
 
 struct sqy_config
 {
@@ -27,34 +27,33 @@ int print_help(const ModesContainer& _av_pipelines ,
 	       const ModesMap& _modes_args
 	       ) {
 
-    std::string me = "sqy";
-    std::cout << "usage: " << me << " <-h|optional> <target> <files|..>\n"
-              << "\n"
-              << "available targets:\n"
-              << "<help>" << "\n";
+  std::string me = "sqy";
+  std::cout << "usage: " << me << " <-h|optional> <target> <files|..>\n"
+	    << "\n"
+	    << "available targets:\n"
+	    << "<help>" << "\n";
 
 
-    
-    if(_modes_args.size()){
+  if(_modes_args.size()){
       
-      for( auto args : _modes_args ){
+    for( auto args : _modes_args ){
 	
-	std::cout << "<" << args.first << ">\n" << args.second << "\n";
-      }
+      std::cout << "<" << args.first << ">\n" << args.second << "\n";
     }
+  }
 
-    std::cout << "available pipelines:\n";
-    std::set<std::string> pipeline_names;
-    for( auto it : _av_pipelines )
-        pipeline_names.insert(it);
+  std::cout << "available pipelines:\n";
+  std::set<std::string> pipeline_names;
+  for( auto it : _av_pipelines )
+    pipeline_names.insert(it);
 
-    for(const std::string& pipeline : pipeline_names ) {
-        std::cout << "\t" << pipeline << "\n";
-    }
+  for(const std::string& pipeline : pipeline_names ) {
+    std::cout << "\t" << pipeline << "\n";
+  }
 
-    std::cout << "\n";
+  std::cout << "\n";
 
-    return 1;
+  return 1;
 }
 
 template <typename T, typename PipeType>
@@ -211,11 +210,14 @@ int main(int argc, char *argv[])
     std::unordered_map<std::string, func_t> encode_flow;
     encode_flow[modes[0]] = func_t(compress_files<unsigned short, bswap1_lz4_pipe>);
     encode_flow[modes[1]] = func_t(compress_files<unsigned short, rmbkg_bswap1_lz4_pipe>);
+    encode_flow[modes[2]] = func_t(compress_files<unsigned short, bswap1_lz4_pipe>);
+    encode_flow[modes[3]] = func_t(compress_files<unsigned short, rmbkg_bswap1_lz4_pipe>);
 
     std::unordered_map<std::string, func_t> decode_flow;
     decode_flow[modes[0]] = func_t(decompress_files<unsigned short, bswap1_lz4_pipe>);
     decode_flow[modes[1]] = func_t(decompress_files<unsigned short, rmbkg_bswap1_lz4_pipe>);
-
+    decode_flow[modes[2]] = func_t(decompress_files<unsigned char, char_bswap1_lz4_pipe>);
+    decode_flow[modes[3]] = func_t(decompress_files<unsigned char, char_rmbkg_bswap1_lz4_pipe>);
 
     static std::unordered_map<std::string,po::options_description> descriptions(2);
 
