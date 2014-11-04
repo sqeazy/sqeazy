@@ -121,6 +121,22 @@ BOOST_AUTO_TEST_CASE( dims_not_extracted_on_void )
 
 }
 
+
+BOOST_AUTO_TEST_CASE( reload )
+{
+  sqeazy_bench::tiff_facet handle;
+
+  handle.reload(path_to_8bit_stack);
+
+  BOOST_CHECK_EQUAL(handle.empty(),false);
+  BOOST_CHECK_EQUAL(handle.size_in_byte(),256*256*256);
+
+  handle.reload("");
+  BOOST_CHECK_EQUAL(handle.empty(),true);
+  BOOST_CHECK_EQUAL(handle.size_in_byte(),0);
+  
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 

@@ -19,7 +19,7 @@ namespace sqeazy_bench {
       while (TIFFReadDirectory(_tiff_handle)) {
 	dircount++;
       }
-
+      TIFFSetDirectory(_tiff_handle,tdir_t(0));
     }
 
     return dircount;
@@ -226,15 +226,24 @@ namespace sqeazy_bench {
     
     boost::filesystem::path location_;
     TIFF* handle_;
-
+    unsigned long pixels_in_byte_;
+    std::vector<unsigned> dims_;
+    
     tiff_facet(const std::string& _path = ""):
       location_(_path),
-      handle_(0)
+      handle_(0),
+      pixels_in_byte_(0),
+      dims_()
     {
       if(boost::filesystem::exists(location_) && boost::filesystem::is_regular_file(location_)){
 	handle_ = TIFFOpen(_path.c_str(), "r");
+	dimensions(dims_);
+	rewind();
+	pixels_in_byte_ = std::accumulate(dims_.begin(), dims_.end(), 1, std::multiplies<unsigned long>());
+	
       } else {
-	std::cerr << "[sqeazy_bench::tiff_facet] \t unable to open " << _path << " does not exist or is not a file\n";
+	if(_path.size())
+	  std::cerr << "[sqeazy_bench::tiff_facet] \t unable to open " << _path << " does not exist or is not a file\n";
       }
     }
 
@@ -249,12 +258,20 @@ namespace sqeazy_bench {
       
     }
 
+    void rewind(){
+      TIFFSetDirectory(handle_,tdir_t(0));
+    }
+
     int bits_per_sample() const {
       
       return empty() ? 0 : get_tiff_bits_per_sample(handle_);
       
     }
     
+    unsigned long size_in_byte() const {
+      return this->pixels_in_byte_;
+    }
+
     template <typename T>
     void dimensions(std::vector<T>& _dims) const {
       _dims.clear();
@@ -279,6 +296,33 @@ namespace sqeazy_bench {
 	  _dims.push_back(n_frames);
 	
       }
+    }
+
+    void reload(const std::string& _path = ""){
+
+      if(!empty()){
+	TIFFClose(handle_);
+	handle_ = 0;
+	dims_.clear();
+	pixels_in_byte_ = 0;
+      }
+
+      location_ = _path;
+
+      if(boost::filesystem::exists(location_) && boost::filesystem::is_regular_file(location_)){
+	handle_ = TIFFOpen(_path.c_str(), "r");
+	dimensions(dims_);
+	rewind();
+	pixels_in_byte_ = std::accumulate(dims_.begin(), dims_.end(), 1, std::multiplies<unsigned long>());
+      } else {
+	if(!_path.empty())
+	  std::cerr << "[sqeazy_bench::tiff_facet] \t unable to open " << _path << " does not exist or is not a file\n";
+      }
+    }
+
+
+    TIFF* tiff_handle(){
+      return handle_;
     }
 
   };

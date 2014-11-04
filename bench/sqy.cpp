@@ -53,18 +53,14 @@ int print_help(const ModesContainer& _av_pipelines ,
 
 
 
-template <typename T, typename PipeType>
+
 void compress_files(const std::vector<std::string>& _files,
 		    const po::variables_map& _config) {
 
-  typedef T value_type;
-  typedef PipeType current_pipe;
-  typedef sqeazy_bench::tiff_fixture<T> tiff_image;
+
   
   std::vector<char> output_data;
-
-  tiff_image input_file;
-
+  
   unsigned long filesize = 0;
   boost::filesystem::path current_file;
   boost::filesystem::path output_file;
@@ -121,12 +117,10 @@ void compress_files(const std::vector<std::string>& _files,
 }
 
 
-template <typename T, typename PipeType>
+
 void decompress_files(const std::vector<std::string>& _files,
 		      const po::variables_map& _config) {
 
-  typedef T value_type;
-  typedef PipeType current_pipe;
 
   std::vector<char> file_data;
   std::vector<value_type> output_data;
@@ -193,30 +187,21 @@ int main(int argc, char *argv[])
 
     typedef std::function<void(const std::vector<std::string>&,const po::variables_map&) > func_t;
     
-    static std::vector<std::string> modes{bswap1_lz4_pipe::name(),
-	rmbkg_bswap1_lz4_pipe::name(),
-	typeid(unsigned char).name() + bswap1_lz4_pipe::name(),
-	typeid(unsigned char).name() + rmbkg_bswap1_lz4_pipe::name()
-	};
-    
-    std::unordered_map<std::string, func_t> encode_flow;
-    encode_flow[modes[0]] = func_t(compress_files<unsigned short, bswap1_lz4_pipe>);
-    encode_flow[modes[1]] = func_t(compress_files<unsigned short, rmbkg_bswap1_lz4_pipe>);
-    encode_flow[modes[2]] = func_t(compress_files<unsigned char, char_bswap1_lz4_pipe>);
-    encode_flow[modes[3]] = func_t(compress_files<unsigned char, char_rmbkg_bswap1_lz4_pipe>);
+    //FIXME:: just a placeholder to make the whole thing compile
 
-    std::unordered_map<std::string, func_t> decode_flow;
-    decode_flow[modes[0]] = func_t(decompress_files<unsigned short, bswap1_lz4_pipe>);
-    decode_flow[modes[1]] = func_t(decompress_files<unsigned short, rmbkg_bswap1_lz4_pipe>);
-    decode_flow[modes[2]] = func_t(decompress_files<unsigned char, char_bswap1_lz4_pipe>);
-    decode_flow[modes[3]] = func_t(decompress_files<unsigned char, char_rmbkg_bswap1_lz4_pipe>);
+    static std::vector<std::string> modes{bswap1_lz4_pipe::name(),
+       rmbkg_bswap1_lz4_pipe::name(),
+       typeid(unsigned char).name() + bswap1_lz4_pipe::name(),
+       typeid(unsigned char).name() + rmbkg_bswap1_lz4_pipe::name()
+       };
+    const static std::string default_compression = bswap1_lz4_pipe::name();
 
     static std::unordered_map<std::string,po::options_description> descriptions(2);
 
       descriptions["compress"].add_options()
       ("help", "produce help message")
 	("verbose,v", po::value<bool>()->default_value(false), "enable verbose output")
-	("pipeline,p", po::value<std::string>()->default_value(modes[0]), "compression pipeline to be used")
+	("pipeline,p", po::value<std::string>()->default_value(default_compression), "compression pipeline to be used")
 	("files", po::value<std::vector<std::string> >()// ->composing()
 	 , "")
       ;
@@ -243,7 +228,7 @@ int main(int argc, char *argv[])
         
 
 	po::options_description* desc = 0;
-	std::unordered_map<std::string, func_t> prog_flow;
+	func_t prog_flow;
 
 	std::string target(argv[1]);
 	
@@ -253,11 +238,11 @@ int main(int argc, char *argv[])
 	
 	//REFACTOR THIS!
 	if(target == "compress"){
-	  prog_flow = encode_flow;
+	  prog_flow = compress_files;
 	}
 
 	if(target == "decompress"){
-	  prog_flow = decode_flow;
+	  prog_flow = decompress_files;
 	}
 
 	if(prog_flow.empty() || !desc){
