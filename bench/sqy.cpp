@@ -11,6 +11,7 @@
 #include "bench_fixtures.hpp"
 #include "bench_utils.hpp"
 #include "bench_common.hpp"
+#include "tiff_utils.hpp"
 
 #include "boost/filesystem.hpp"
 #include <boost/program_options.hpp>
@@ -59,12 +60,15 @@ void compress_files(const std::vector<std::string>& _files,
 
 
   
-  std::vector<char> output_data;
-  
-  unsigned long filesize = 0;
-  boost::filesystem::path current_file;
-  boost::filesystem::path output_file;
-  std::fstream sqyfile;
+  std::vector<char>	output_data;
+  unsigned long			expected_size_byte = 0;
+  boost::filesystem::path	current_file;
+  boost::filesystem::path	output_file;
+  std::fstream			sqyfile;
+  std::vector<unsigned>		input_dims;
+  sqeazy_bench::tiff_facet	input;
+  unsigned long compressed_length_byte = 0;
+  int enc_ret = 0;
 
   for(const std::string& _file : _files) {
 
@@ -76,28 +80,33 @@ void compress_files(const std::vector<std::string>& _files,
     }
 
     //load tiff & extract the dimensions
-    input_file.fill_from(_file);
+    input.reload(_file);
        
     //compute the maximum size of the output buffer
-    filesize = current_pipe::max_encoded_size(input_file.axis_lengths);
+    input.dimensions(input_dims);
 
-    if(filesize!=output_data.size())
-      output_data.resize(filesize);
+    ///////////////////////////////////////////////////////////////
+    // image type specific
+    
+    expected_size_byte = current_pipe::max_encoded_size(input_dims);
 
     //create clean output buffer
+    if(expected_size_byte!=output_data.size())
+      output_data.resize(expected_size_byte);
+    
     std::fill(output_data.begin(), output_data.end(),0);
-    unsigned long compressed_length_byte = 0;
-
+    
     //compress
-    int enc_ret = current_pipe::compress(input_file.data(),
-					 &output_data[0],
-					 input_file.axis_lengths, 
-					 compressed_length_byte);
-	
+    enc_ret = current_pipe::compress(input_file.data(),
+				     &output_data[0],
+				     input_file.axis_lengths, 
+				     compressed_length_byte);
+    
     if(enc_ret && _config.count("verbose")) {
       std::cerr << "compression failed! Nothing to write to disk...\n";
       continue;
     }
+    ///////////////////////////////////////////////////////////////
 
     output_file = current_file.replace_extension(".sqy");
     sqyfile.open(output_file.string(), std::ios_base::binary | std::ios_base::out );
@@ -125,7 +134,7 @@ void decompress_files(const std::vector<std::string>& _files,
   std::vector<char> file_data;
   std::vector<value_type> output_data;
   std::vector<unsigned> output_dims;
-  unsigned long filesize = 0;
+  unsigned long expected_size_byte = 0;
   boost::filesystem::path current_file;
   boost::filesystem::path output_file;
   std::fstream sqyfile;
@@ -142,14 +151,14 @@ void decompress_files(const std::vector<std::string>& _files,
 	continue;
       }
 
-    filesize = boost::filesystem::file_size(current_file);
+    expected_size_byte = boost::filesystem::file_size(current_file);
     sqyfile.open(_file, std::ios_base::binary | std::ios_base::in );
 
     //read the contents of the file
-    if(file_data.size()!=filesize)
-      file_data.resize(filesize);
+    if(file_data.size()!=expected_size_byte)
+      file_data.resize(expected_size_byte);
 
-    sqyfile.get(&file_data[0],filesize);
+    sqyfile.get(&file_data[0],expected_size_byte);
 
     //compute the maximum size of the output buffer
     long expected_size = current_pipe::decoded_size_byte(&file_data[0],file_data.size());
@@ -159,13 +168,13 @@ void decompress_files(const std::vector<std::string>& _files,
       output_data.resize(expected_size);
 
     //extract the dimensions to be expected
-    output_dims = current_pipe::decode_dimensions(&file_data[0],filesize);
+    output_dims = current_pipe::decode_dimensions(&file_data[0],expected_size_byte);
         
     //create clean output buffer
     std::fill(output_data.begin(), output_data.end(),0);
 
     int dec_ret = current_pipe::decompress(&file_data[0],&output_data[0],
-					   filesize);
+					   expected_size_byte);
 	
     if(dec_ret && _config.count("verbose")) {
       std::cerr << "decompression failed! Nothing to write to disk...\n";

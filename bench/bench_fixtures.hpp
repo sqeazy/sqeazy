@@ -86,7 +86,7 @@ bool file_exists(const std::string& _path){
   }
 }
 
-#include "tiff_utils.h"
+#include "tiff_utils.hpp"
 
 namespace sqeazy_bench {
 

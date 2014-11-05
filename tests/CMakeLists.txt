@@ -39,11 +39,16 @@ target_link_libraries(test_hist_impl boost_system boost_filesystem boost_unit_te
 
 add_executable(test_bench_utils_impl test_bench_utils_impl.cpp)
 target_link_libraries(test_bench_utils_impl boost_system boost_filesystem boost_unit_test_framework tiff)
-set_target_properties(test_bench_utils_impl PROPERTIES COMPILE_FLAGS "--std=c++11 -I${PROJECT_SOURCE_DIR}/src")
+set_target_properties(test_bench_utils_impl PROPERTIES COMPILE_FLAGS "-std=c++11 -I${PROJECT_SOURCE_DIR}/src")
 
 add_executable(test_tiff_fixture test_tiff_fixture.cpp)
 target_link_libraries(test_tiff_fixture boost_system boost_filesystem boost_unit_test_framework tiff)
-set_target_properties(test_tiff_fixture PROPERTIES COMPILE_FLAGS "--std=c++11 -I${PROJECT_SOURCE_DIR}/bench ")
+set_target_properties(test_tiff_fixture PROPERTIES COMPILE_FLAGS "-std=c++11 -I${PROJECT_SOURCE_DIR}/bench")
+
+add_executable(test_pipeline_select test_pipeline_select.cpp)
+target_link_libraries(test_pipeline_select boost_system boost_filesystem boost_unit_test_framework tiff lz4)
+set_target_properties(test_pipeline_select PROPERTIES COMPILE_FLAGS "-std=c++11  -I${PROJECT_SOURCE_DIR}/bench -I${PROJECT_SOURCE_DIR}/src ")
+
 
 add_executable(test_huffman_utils_impl test_huffman_utils_impl.cpp)
 target_link_libraries(test_huffman_utils_impl boost_system boost_filesystem boost_unit_test_framework tiff)
