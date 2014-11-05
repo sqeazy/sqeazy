@@ -179,7 +179,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
       
       bmpl::for_each<TypeList>(extractor);
       
-      return std::string(temp);
+      return std::string(temp,1);
 
     }
 

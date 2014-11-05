@@ -208,10 +208,7 @@ int main(int argc, char *argv[])
     //FIXME:: just a placeholder to make the whole thing compile
 
     static std::vector<std::string> modes{bswap1_lz4_pipe::name(),
-       rmbkg_bswap1_lz4_pipe::name(),
-       typeid(unsigned char).name() + bswap1_lz4_pipe::name(),
-       typeid(unsigned char).name() + rmbkg_bswap1_lz4_pipe::name()
-       };
+       rmbkg_bswap1_lz4_pipe::name()};
     const static std::string default_compression = bswap1_lz4_pipe::name();
 
     static std::unordered_map<std::string,po::options_description> descriptions(2);
@@ -220,7 +217,7 @@ int main(int argc, char *argv[])
       ("help", "produce help message")
 	("verbose,v", po::value<bool>()->default_value(false), "enable verbose output")
 	("pipeline,p", po::value<std::string>()->default_value(default_compression), "compression pipeline to be used")
-	("files", po::value<std::vector<std::string> >()// ->composing()
+	("files", po::value<std::vector<std::string> >()->composing()
 	 , "")
       ;
 
@@ -282,6 +279,10 @@ int main(int argc, char *argv[])
 	std::cout << target << " received files \n";
 	for( auto ffile : inputFiles ){
 	  std::cout << "\t"<< ffile << "\n";
+	}
+
+	if(target == "compress"){
+	  compress_files(inputFiles, vm);
 	}
     }
 

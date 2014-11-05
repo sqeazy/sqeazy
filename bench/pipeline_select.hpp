@@ -45,6 +45,7 @@ namespace sqeazy_bench {
       
       compress8_map_t value;
       value[char_rmbkg_bswap1_lz4_pipe::name()] = compress_select::compress8_ftype(char_rmbkg_bswap1_lz4_pipe::compress<std::vector<unsigned>,unsigned long>);
+      value[char_bswap1_lz4_pipe::name()] = compress_select::compress8_ftype(char_bswap1_lz4_pipe::compress<std::vector<unsigned>,unsigned long>);
       return value;
 
     }
@@ -53,6 +54,7 @@ namespace sqeazy_bench {
       
       compress16_map_t value;
       value[rmbkg_bswap1_lz4_pipe::name()] = compress_select::compress16_ftype(rmbkg_bswap1_lz4_pipe::compress<std::vector<unsigned>,unsigned long>);
+      value[bswap1_lz4_pipe::name()] = compress_select::compress16_ftype(bswap1_lz4_pipe::compress<std::vector<unsigned>,unsigned long>);
       return value;
 
     }
