@@ -164,31 +164,36 @@ void decompress_files(const std::vector<std::string>& _files,
 
     sqyfile.get(&file_data[0],expected_size_byte);
 
-    //compute the maximum size of the output buffer
-    long expected_size = current_pipe::decoded_size_byte(&file_data[0],file_data.size());
-    expected_size /= sizeof(value_type);
 
-    if(expected_size>output_data.size())
-      output_data.resize(expected_size);
+    ///////////////////////////////////////////////////////////////
+    // sqy file content specific
 
-    //extract the dimensions to be expected
-    output_dims = current_pipe::decode_dimensions(&file_data[0],expected_size_byte);
+    // //compute the maximum size of the output buffer
+    // long expected_size = current_pipe::decoded_size_byte(&file_data[0],file_data.size());
+    // expected_size /= sizeof(value_type);
+
+    // if(expected_size>output_data.size())
+    //   output_data.resize(expected_size);
+
+    // //extract the dimensions to be expected
+    // output_dims = current_pipe::decode_dimensions(&file_data[0],expected_size_byte);
         
-    //create clean output buffer
-    std::fill(output_data.begin(), output_data.end(),0);
+    // //create clean output buffer
+    // std::fill(output_data.begin(), output_data.end(),0);
 
-    int dec_ret = current_pipe::decompress(&file_data[0],&output_data[0],
-					   expected_size_byte);
+    // int dec_ret = current_pipe::decompress(&file_data[0],&output_data[0],
+    // 					   expected_size_byte);
 	
-    if(dec_ret && _config.count("verbose")) {
-      std::cerr << "decompression failed! Nothing to write to disk...\n";
-      continue;
-    }
+    // if(dec_ret && _config.count("verbose")) {
+    //   std::cerr << "decompression failed! Nothing to write to disk...\n";
+    //   continue;
+    // }
 
-    output_file = current_file.replace_extension(".tif");
+    // output_file = current_file.replace_extension(".tif");
     
-    sqeazy_bench::write_tiff_from_vector(output_data, output_dims , output_file.string());
-    
+    // sqeazy_bench::write_tiff_from_vector(output_data, output_dims , output_file.string());
+    // ///////////////////////////////////////////////////////////////
+
     sqyfile.close();
   }
 
@@ -258,7 +263,7 @@ int main(int argc, char *argv[])
 	  prog_flow = decompress_files;
 	}
 
-	if(prog_flow.empty() || !desc){
+	if(!desc){
 	  std::cerr << "unable to decipher target: " << argv[1] << "\n";
 	  return print_help(modes,descriptions);
 	}
