@@ -214,18 +214,14 @@ int main(int argc, char *argv[])
     static std::unordered_map<std::string,po::options_description> descriptions(2);
 
       descriptions["compress"].add_options()
-      ("help", "produce help message")
+	("help", "produce help message")
 	("verbose,v", po::value<bool>()->default_value(false), "enable verbose output")
 	("pipeline,p", po::value<std::string>()->default_value(default_compression), "compression pipeline to be used")
-	("files", po::value<std::vector<std::string> >()->composing()
-	 , "")
       ;
 
       descriptions["decompress"].add_options()
-      ("help", "produce help message")
+	("help", "produce help message")
 	("verbose,v", po::value<bool>()->default_value(false), "enable verbose output")
-      ("files", po::value<std::vector<std::string> >()// ->composing()
-       , "")
       ;
 
 
@@ -241,49 +237,61 @@ int main(int argc, char *argv[])
     }
     else{
         
+      po::options_description options_to_parse;
+      
+      func_t prog_flow;
 
-	po::options_description* desc = 0;
-	func_t prog_flow;
+      std::string target(argv[1]);
 
-	std::string target(argv[1]);
+      std::vector<char*> new_argv(argv,argv+argc);
+      new_argv.erase(new_argv.begin()+1);
+      
+      if(descriptions.find(target)!=descriptions.end()){
+	options_to_parse.add(descriptions[target]);
+      }
 	
-	if(descriptions.find(target)!=descriptions.end()){
-	  desc = &descriptions[target];
-	}
+
+
+      //REFACTOR THIS!
+      if(target == "compress"){
+	prog_flow = compress_files;
+      }
+
+      if(target == "decompress"){
+	prog_flow = decompress_files;
+      }
+
+
+      po::variables_map vm;
+
+      // try{
+      po::parsed_options parsed = po::command_line_parser(new_argv.size(), &new_argv[0]// argc, argv
+							  ).options(options_to_parse).allow_unregistered().run();
+      po::store(parsed, vm); 
+      // }
+      // catch(std::exception& e){
+      // 	std::cerr << "[sqy]\tparsing options failed\t" << e.what() << "\n";
+      // 	return print_help(modes,descriptions);
+      // }
 	
-	//REFACTOR THIS!
-	if(target == "compress"){
-	  prog_flow = compress_files;
-	}
-
-	if(target == "decompress"){
-	  prog_flow = decompress_files;
-	}
-
-	if(!desc){
-	  std::cerr << "unable to decipher target: " << argv[1] << "\n";
-	  return print_help(modes,descriptions);
-	}
-
-	po::variables_map vm;
-	po::positional_options_description pd;
-	pd.add("files", -1);
+      
+      po::notify(vm);
 	
-	po::store(po::command_line_parser(argc-2, argv+2).options(*desc).positional(pd).allow_unregistered().run(), 
-		  vm); 
-
-	po::notify(vm);
+      std::vector<std::string> inputFiles;// = vm["files"].as<std::vector<std::string> >();
 	
-	std::vector<std::string> inputFiles = vm["files"].as<std::vector<std::string> >();
-	
-	std::cout << target << " received files \n";
-	for( auto ffile : inputFiles ){
-	  std::cout << "\t"<< ffile << "\n";
-	}
+      // std::cout << target << " received files \n";
+      // for( auto ffile : inputFiles ){
+      // 	std::cout << "\t"<< ffile << "\n";
+      // }
 
-	if(target == "compress"){
-	  compress_files(inputFiles, vm);
-	}
+      std::vector<std::string> inputFiles = po::collect_unrecognized(parsed.options, po::include_positional);
+      for( auto to_p : inputFiles ){
+	std::cout << target << " to_p "<< to_p << "\n";
+      }
+      
+      if(target == "compress"){
+	compress_files(inputFiles, vm);
+      }
     }
 
     return retcode;
