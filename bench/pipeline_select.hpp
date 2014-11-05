@@ -57,6 +57,13 @@ namespace sqeazy_bench {
 
     }
 
+
+    compress_select(int _n_bits, std::string _pipe_name = ""):
+      current_(std::make_pair(_n_bits, _pipe_name)){
+            
+    }
+
+
     compress_select(spec_t _spec = std::make_pair(0,"") ):
       current_(_spec){
             
@@ -82,6 +89,10 @@ namespace sqeazy_bench {
       current_ = _spec;
     }
 
+    void set(int _n_bits, std::string _pipe_name = ""){
+      current_ = std::make_pair(_n_bits, _pipe_name);
+    }
+
     int compress(const char* _input, char* _output, std::vector<unsigned>& _dims, unsigned long& _num_encoded){
       
       std::ostringstream msg;
@@ -93,6 +104,7 @@ namespace sqeazy_bench {
 	  value = compress8_map_[current_.second](reinterpret_cast<const unsigned char*>(_input), _output, _dims, _num_encoded);
 	} else {
 	  msg << "[compress_select]\t unable to perform compress in for pipeline "<< current_.second <<"\n";
+	  throw std::runtime_error(msg.str().c_str());
 	}
 	break;
 
@@ -101,6 +113,7 @@ namespace sqeazy_bench {
 	  value = compress16_map_[current_.second](reinterpret_cast<const unsigned short*>(_input), _output, _dims, _num_encoded);
 	} else {
 	  msg << "[compress_select]\t unable to perform compress in for pipeline "<< current_.second <<"\n";
+	  throw std::runtime_error(msg.str().c_str());
 	}
 	break;
       default:

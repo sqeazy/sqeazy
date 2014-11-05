@@ -12,6 +12,7 @@
 #include "bench_utils.hpp"
 #include "bench_common.hpp"
 #include "tiff_utils.hpp"
+#include "pipeline_select.hpp"
 
 #include "boost/filesystem.hpp"
 #include <boost/program_options.hpp>
@@ -67,6 +68,8 @@ void compress_files(const std::vector<std::string>& _files,
   std::fstream			sqyfile;
   std::vector<unsigned>		input_dims;
   sqeazy_bench::tiff_facet	input;
+  sqeazy_bench::compress_select	decide;
+
   unsigned long compressed_length_byte = 0;
   int enc_ret = 0;
 
@@ -84,11 +87,12 @@ void compress_files(const std::vector<std::string>& _files,
        
     //compute the maximum size of the output buffer
     input.dimensions(input_dims);
+    decide.set(input.bits_per_sample(),_config["pipeline"].as<std::string>());
 
     ///////////////////////////////////////////////////////////////
     // image type specific
     
-    expected_size_byte = current_pipe::max_encoded_size(input_dims);
+    expected_size_byte = decide.max_compressed_size()(input.size_in_byte());
 
     //create clean output buffer
     if(expected_size_byte!=output_data.size())
@@ -97,10 +101,10 @@ void compress_files(const std::vector<std::string>& _files,
     std::fill(output_data.begin(), output_data.end(),0);
     
     //compress
-    enc_ret = current_pipe::compress(input_file.data(),
-				     &output_data[0],
-				     input_file.axis_lengths, 
-				     compressed_length_byte);
+    enc_ret = decide.compress(input.data(),
+			      &output_data[0],
+			      input_dims, 
+			      compressed_length_byte);
     
     if(enc_ret && _config.count("verbose")) {
       std::cerr << "compression failed! Nothing to write to disk...\n";
@@ -132,7 +136,7 @@ void decompress_files(const std::vector<std::string>& _files,
 
 
   std::vector<char> file_data;
-  std::vector<value_type> output_data;
+
   std::vector<unsigned> output_dims;
   unsigned long expected_size_byte = 0;
   boost::filesystem::path current_file;

@@ -137,6 +137,29 @@ BOOST_AUTO_TEST_CASE( reload )
   
 }
 
+BOOST_AUTO_TEST_CASE( load_data_to_buffer_8bit )
+{
+  sqeazy_bench::tiff_facet handle;
+
+  handle.reload(path_to_8bit_stack);
+  
+  sqeazy_bench::tiff_fixture<char> reference(path_to_8bit_stack);  
+  BOOST_CHECK_EQUAL_COLLECTIONS(handle.data(), handle.data() + handle.size_in_byte(),
+			       reference.data(), reference.data() + handle.size_in_byte());
+}
+
+BOOST_AUTO_TEST_CASE( load_data_to_buffer_16bit )
+{
+  sqeazy_bench::tiff_facet handle;
+
+  handle.reload(path_to_16bit_stack);
+  
+  sqeazy_bench::tiff_fixture<unsigned short> reference(path_to_16bit_stack);  
+  const char* ref_data = reinterpret_cast<const char*>(reference.data());
+  BOOST_CHECK_EQUAL_COLLECTIONS(handle.data(), handle.data() + handle.size_in_byte(),
+			       ref_data, ref_data + handle.size_in_byte());
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 
