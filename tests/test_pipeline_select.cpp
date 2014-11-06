@@ -5,6 +5,7 @@
 #include "bench_common.hpp"
 #include "array_fixtures.hpp"
 
+
 typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 
 BOOST_FIXTURE_TEST_SUITE( measurements, uint16_cube_of_8 )
@@ -19,8 +20,8 @@ BOOST_AUTO_TEST_CASE( max_compressed_size )
 {
   sqeazy_bench::compress_select decide(std::make_pair(8,char_rmbkg_bswap1_lz4_pipe::name()));
   
-  BOOST_CHECK_NE(decide.max_compressed_size()(42),0);  
-  BOOST_CHECK_GT(decide.max_compressed_size()(42),42);  
+  BOOST_CHECK_NE(decide.max_compressed_size(42),0);  
+  BOOST_CHECK_GT(decide.max_compressed_size(42),42);  
 
 }
 
@@ -28,16 +29,14 @@ BOOST_AUTO_TEST_CASE( max_compressed_size )
 BOOST_AUTO_TEST_CASE( change_current )
 {
   sqeazy_bench::compress_select decide(std::make_pair(8,char_rmbkg_bswap1_lz4_pipe::name()));
+  unsigned result_8bit = decide.max_compressed_size(42);
 
-  sqeazy_bench::compress_select::max_encoded_size_ftype f_8bit = decide.max_compressed_size();
-
-  unsigned result_8bit = decide.max_compressed_size()(42);
   decide.set(std::make_pair(16,char_rmbkg_bswap1_lz4_pipe::name()));
-  unsigned result_16bit = decide.max_compressed_size()(42);
-  sqeazy_bench::compress_select::max_encoded_size_ftype f_16bit = decide.max_compressed_size();
+  unsigned result_16bit = decide.max_compressed_size(42);
+
 
   BOOST_CHECK_EQUAL(result_16bit, result_8bit);  
-  BOOST_CHECK_EQUAL(f_8bit.target_type().name(), f_16bit.target_type().name());  
+
 
 }
 
@@ -83,3 +82,4 @@ BOOST_AUTO_TEST_CASE( compress_throws )
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+

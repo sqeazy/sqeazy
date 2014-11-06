@@ -7,39 +7,31 @@
 #include <stdexcept>
 #include "bench_common.hpp"
 
+#include "boost/variant.hpp"
+
+
 namespace sqeazy_bench {
 
   //
   //FIXME: this selection can be done through boost::variant 
   //
+  
+
   struct compress_select {
 
     typedef std::pair<int, std::string> spec_t;
-    typedef std::function<unsigned long(unsigned long)> max_encoded_size_ftype;
-    typedef std::map<spec_t, max_encoded_size_ftype> max_map_t;
     
     typedef std::function<int(const unsigned char*, char*, std::vector<unsigned>&, unsigned long&)> compress8_ftype;
     typedef std::function<int(const unsigned short*, char*, std::vector<unsigned>&, unsigned long&)> compress16_ftype;
     typedef std::map<std::string, compress8_ftype> compress8_map_t;
     typedef std::map<std::string, compress16_ftype> compress16_map_t;
 
-    static max_map_t max_encoded_size_map_;
-
     static compress8_map_t compress8_map_;
     static compress16_map_t compress16_map_;
 
     spec_t current_;
 
-    static max_map_t fill_max_map(){
-      
-      max_map_t value;
-      value[std::make_pair(8, char_rmbkg_bswap1_lz4_pipe::name())] = compress_select::max_encoded_size_ftype(char_rmbkg_bswap1_lz4_pipe::max_encoded_size<unsigned long>);
-      value[std::make_pair(8, char_bswap1_lz4_pipe::name())] = compress_select::max_encoded_size_ftype(char_bswap1_lz4_pipe::max_encoded_size<unsigned long>);
-      value[std::make_pair(16, rmbkg_bswap1_lz4_pipe::name())] = compress_select::max_encoded_size_ftype(rmbkg_bswap1_lz4_pipe::max_encoded_size<unsigned long>);
-      value[std::make_pair(16, bswap1_lz4_pipe::name())] = compress_select::max_encoded_size_ftype(bswap1_lz4_pipe::max_encoded_size<unsigned>);
-      return value;
-
-    }
+  
 
     static compress8_map_t fill_compress8(){
       
@@ -69,16 +61,6 @@ namespace sqeazy_bench {
     compress_select(spec_t _spec = std::make_pair(0,"") ):
       current_(_spec){
             
-    }
-      
-    max_encoded_size_ftype max_compressed_size()  {
-      if(max_encoded_size_map_.find(current_)!=max_encoded_size_map_.end())
-	return max_encoded_size_map_[current_];
-      else{
-	std::ostringstream msg;
-	msg << "[compress_select]\t unable to retrieve functions for " << current_.second << " in " << current_.first << "-bit mode\n";
-	throw std::runtime_error(msg.str().c_str());
-      }
     }
     	           
     bool empty() const {
@@ -125,10 +107,54 @@ namespace sqeazy_bench {
 
       return value;
     }
+
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //REFACTORING
+
+    //typedef boost::variant<char, unsigned char, short, unsigned short> supported_types_t;
+    typedef boost::variant<char_rmbkg_bswap1_lz4_pipe, char_bswap1_lz4_pipe, rmbkg_bswap1_lz4_pipe, bswap1_lz4_pipe> supported_pipes_t;
+    supported_pipes_t pipeholder_;
+
+
+    struct  give_max_compressed_size : public boost::static_visitor<unsigned long> {
     
+      unsigned long len_in_byte;
+      
+      give_max_compressed_size(unsigned long _in):
+	len_in_byte(_in){}
+
+      template <typename T>
+      unsigned long operator()(T){
+	return T::template max_encoded_size<unsigned long>(len_in_byte);
+      }
+      
+    };
+
+    unsigned long max_compressed_size(unsigned long _in_byte){
+      
+      give_max_compressed_size visitor(_in_byte);
+
+      if(current_.second == char_rmbkg_bswap1_lz4_pipe::name())
+	pipeholder_ = char_rmbkg_bswap1_lz4_pipe();
+      
+      if(current_.second == char_bswap1_lz4_pipe::name())
+	pipeholder_ = char_bswap1_lz4_pipe();
+
+      if(current_.second == rmbkg_bswap1_lz4_pipe::name())
+	pipeholder_ = rmbkg_bswap1_lz4_pipe();
+      
+      if(current_.second == bswap1_lz4_pipe::name())
+	pipeholder_ = bswap1_lz4_pipe();
+
+      unsigned long value = boost::apply_visitor(visitor, pipeholder_);
+      return value;
+      
+    }
+    
+
   };
 
-  compress_select::max_map_t compress_select::max_encoded_size_map_ = compress_select::fill_max_map();
+
   compress_select::compress8_map_t compress_select::compress8_map_ = compress_select::fill_compress8();
   compress_select::compress16_map_t compress_select::compress16_map_ = compress_select::fill_compress16();
   // 
