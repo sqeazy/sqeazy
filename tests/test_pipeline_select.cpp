@@ -25,6 +25,13 @@ BOOST_AUTO_TEST_CASE( max_compressed_size )
 
 }
 
+BOOST_AUTO_TEST_CASE( max_compressed_size_throws_on_unknown )
+{
+  sqeazy_bench::compress_select decide;
+  
+  BOOST_CHECK_THROW(decide.max_compressed_size(42),std::runtime_error);  
+
+}
 
 BOOST_AUTO_TEST_CASE( change_current )
 {
@@ -40,6 +47,8 @@ BOOST_AUTO_TEST_CASE( change_current )
 
 }
 
+
+
 BOOST_AUTO_TEST_CASE( compress_callable )
 {
   sqeazy_bench::compress_select decide(std::make_pair(16,bswap1_lz4_pipe::name()));
@@ -48,6 +57,7 @@ BOOST_AUTO_TEST_CASE( compress_callable )
   
   BOOST_CHECK_NE(incrementing_cube[0], to_play_with[0]);  
   BOOST_CHECK_GT(num_encoded, 0);  
+  BOOST_CHECK_EQUAL(ret,0);
 
 }
 
@@ -81,5 +91,28 @@ BOOST_AUTO_TEST_CASE( compress_throws )
 
 }
 
+BOOST_AUTO_TEST_CASE( refactor_compress_callable )
+{
+  sqeazy_bench::compress_select decide(std::make_pair(16,bswap1_lz4_pipe::name()));
+  unsigned long num_encoded = 0;
+  
+  const char* input = (const char*)&incrementing_cube[0];
+  char* output = (char*)&to_play_with[0];
+
+  int ret = decide.compress(input, output, dims, num_encoded);
+  
+  BOOST_CHECK_NE(incrementing_cube[0], to_play_with[0]);  
+  BOOST_CHECK_GT(num_encoded, 0);  
+
+  output = (char*)&constant_cube[0];
+  int retv = decide.variant_compress(input, output, dims, num_encoded);
+  
+  BOOST_CHECK_EQUAL(ret,retv);
+  BOOST_CHECK_EQUAL(constant_cube[0],to_play_with[0]);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
+
+
+
 

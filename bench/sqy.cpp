@@ -92,7 +92,7 @@ void compress_files(const std::vector<std::string>& _files,
     ///////////////////////////////////////////////////////////////
     // image type specific
     
-    expected_size_byte = decide.max_compressed_size()(input.size_in_byte());
+    expected_size_byte = decide.max_compressed_size(input.size_in_byte());
 
     //create clean output buffer
     if(expected_size_byte!=output_data.size())
