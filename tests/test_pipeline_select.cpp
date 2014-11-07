@@ -109,6 +109,7 @@ BOOST_AUTO_TEST_CASE( refactor_compress_callable )
   
   BOOST_CHECK_EQUAL(ret,retv);
   BOOST_CHECK_EQUAL(constant_cube[0],to_play_with[0]);
+  BOOST_CHECK_EQUAL_COLLECTIONS(&constant_cube[0],&constant_cube[0] + num_encoded*2, &to_play_with[0],&to_play_with[0] + num_encoded*2);  
 }
 
 BOOST_AUTO_TEST_SUITE_END()

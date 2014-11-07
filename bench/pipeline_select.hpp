@@ -8,7 +8,8 @@
 #include "bench_common.hpp"
 
 #include "boost/variant.hpp"
-
+#include "boost/utility/enable_if.hpp"
+#include <boost/type_traits.hpp>
 
 namespace sqeazy_bench {
 
@@ -183,21 +184,38 @@ namespace sqeazy_bench {
 	bytes_encoded_(_bytes_enc)
       {}
 
-      //by default do nothing
-      template <typename T, typename U>
-      int operator()(T, U){
-	return -1;
+
+      template <typename T>
+      int operator()(boost::blank, const T*){
+      	return -1;
+
       }
-      
-      //FIXME: use enable_if to call compress only if FirstT::raw_type matches SecondT
+
+      template <typename T>
+      int operator()(T, const boost::blank*){
+      	return -1;
+
+      }
+
+      int operator()(boost::blank, const boost::blank*){
+      	return -1;
+
+      }
+
       template <typename FirstT, typename SecondT>
-      int operator()(FirstT, SecondT _input){
-	if(sizeof(*_input) == sizeof(typename FirstT::raw_type))
-	  return FirstT::template compress<std::vector<unsigned>, unsigned long>(_input, output_buffer_, *shape_, *bytes_encoded_);
-	else
-	  return -1;
-      }
-      
+      typename boost::enable_if_c<boost::is_same<FirstT,boost::blank>::value == false && 
+				  boost::is_same<SecondT,typename FirstT::raw_type>::value == false,int>::type 
+	operator()(FirstT, const SecondT*){
+      	return -1;
+
+      }      
+
+
+      template <typename FirstT>
+      typename boost::enable_if_c<boost::is_same<FirstT,boost::blank>::value == false,int>::type operator()(FirstT, const typename FirstT::raw_type* _input){
+      	return FirstT::template compress<std::vector<unsigned>, unsigned long>(_input, output_buffer_, *shape_, *bytes_encoded_);
+
+      }      
     };
 
     int variant_compress(const char* _input, char* _output, std::vector<unsigned>& _dims, unsigned long& _num_encoded){
