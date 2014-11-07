@@ -68,7 +68,7 @@ void compress_files(const std::vector<std::string>& _files,
   std::fstream			sqyfile;
   std::vector<unsigned>		input_dims;
   sqeazy_bench::tiff_facet	input;
-  sqeazy_bench::compress_select	decide;
+  sqeazy_bench::pipeline_select	decide;
 
   unsigned long compressed_length_byte = 0;
   int enc_ret = 0;

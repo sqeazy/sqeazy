@@ -6,170 +6,13 @@
 #include "sqeazy.h"
 #include "sqeazy_common.hpp"
 #include "sqeazy_traits.hpp"
+#include "sqeazy_header.hpp"
 
 #ifndef LZ4_VERSION_MAJOR
 #include "lz4.h"
 #endif
 namespace sqeazy {
 
-template <char delimiter, typename T>
-void split_string_to_vector(const std::string& _buffer, std::vector<T>& _v) {
-
-    int num_del = std::count(_buffer.begin(), _buffer.end(), delimiter);
-    if(_v.size() != num_del + 1)
-        _v.resize(num_del+1);
-
-    size_t begin = 0;
-    size_t end = _buffer.find(delimiter);
-
-    std::string token;
-
-    for(int id = 0; id<_v.size(); ++id) {
-        std::istringstream converter(_buffer.substr(begin,end - begin));
-        converter >> _v[id];
-        begin = end +1;
-        end = _buffer.find(delimiter,begin);
-    }
-
-}
-
-static unsigned sizeof_typeinfo(const std::string& _lit) {
-
-    static std::map<std::string,int> type_size_map;
-    type_size_map[typeid(short).name()] = sizeof(short);
-    type_size_map[typeid(unsigned short).name()] = sizeof(unsigned short);
-    type_size_map[typeid(char).name()] = sizeof(char);
-    type_size_map[typeid(unsigned char).name()] = sizeof(unsigned char);
-    type_size_map[typeid(int).name()] = sizeof(int);
-    type_size_map[typeid(unsigned int).name()] = sizeof(unsigned int);
-    type_size_map[typeid(long).name()] = sizeof(long);
-    type_size_map[typeid(unsigned long).name()] = sizeof(unsigned long);
-
-    std::map<std::string,int>::const_iterator found = type_size_map.find(_lit);
-    if(found!=type_size_map.end())
-        return found->second;
-    else
-        return 0;
-}
-
-template <typename T,char major_delim = ',', char minor_delim='x', char header_end_delim = '|'>
-struct image_header {
-
-    std::string header;
-    std::vector<unsigned> dims;
-
-    template <typename S>
-    image_header(const std::vector<S>& _dims):
-        header(pack(_dims)),
-        dims(_dims.begin(), _dims.end()) {
-
-
-    }
-
-
-    image_header(const std::string& _str):
-        header(),
-        dims() {
-
-        size_t header_end = _str.find(header_end_delim);
-        header = _str.substr(0,header_end+1);
-        dims = unpack(header);
-    }
-
-    image_header(const char* _begin, const char* _end):
-        header(_begin,_end),
-        dims() {
-
-        size_t header_end = header.find(header_end_delim);
-        header = header.substr(0,header_end+1);
-        dims = unpack(header);
-
-
-    }
-
-    unsigned size() const {
-
-        return header.size();
-    }
-
-    std::string str() const {
-
-        return header;
-
-    }
-
-    unsigned long payload_size() const {
-
-        unsigned long value = std::accumulate(dims.begin(), dims.end(), 1, std::multiplies<unsigned>());
-        return value;
-    }
-
-    unsigned long payload_size_byte() const {
-
-        unsigned long size_of_type = sizeof(T);
-        if(!header.empty()) {
-            std::string typeinfo_literal = header.substr(0,header.find(major_delim));
-            unsigned found_size_byte = sizeof_typeinfo(typeinfo_literal);
-            if(found_size_byte && found_size_byte!=size_of_type)
-                size_of_type = found_size_byte;
-        }
-        return payload_size()*size_of_type;
-    }
-
-    template <typename vtype>
-    static const std::string pack(const std::vector<vtype>& _dims) {
-
-        std::stringstream header("");
-        header << typeid(T).name() << ","
-               << _dims.size() << ",";
-        for(unsigned i = 0; i<_dims.size(); ++i) {
-            if(i!=(_dims.size()-1))
-                header << _dims[i] << "x";
-            else
-                header << _dims[i];
-        }
-
-        header << header_end_delim;
-        return header.str();
-    }
-
-    static const std::vector<unsigned> unpack(const std::string& _buffer) {
-
-        return unpack(&_buffer[0], _buffer.size());
-    }
-
-    static const std::vector<unsigned> unpack(const char* _buffer, const unsigned& _size) {
-
-        std::vector<unsigned> value;
-
-        std::string in_buffer(_buffer, _buffer+_size);
-
-        size_t header_end = in_buffer.find(header_end_delim);
-        size_t last_comma = in_buffer.rfind(major_delim,header_end);
-        size_t begin = 0;
-        if(last_comma!=std::string::npos)
-            begin = last_comma+1;
-
-        std::string dim_fields(in_buffer,begin,header_end-begin);
-
-        split_string_to_vector<minor_delim>(dim_fields, value);
-        return value;
-    }
-
-    static const int unpack_num_dims(const char* _buffer, const unsigned& _size) {
-
-        std::string in_buffer(_buffer, _buffer+_size);
-
-        size_t dims_begin = in_buffer.find(major_delim)+1;
-        size_t dims_end = in_buffer.find(major_delim,dims_begin+1);
-
-        std::istringstream conv(in_buffer.substr(dims_begin, dims_end - dims_begin));
-
-        int value = 0;
-        conv >> value;
-        return value;
-    }
-};
 
 template < typename T , typename S = unsigned long>
 struct lz4_scheme {
@@ -342,7 +185,7 @@ struct lz4_scheme {
         size_t delimiter_pos = std::find(_buf, _buf+_size,'|') - _buf;
         if((delimiter_pos) >= _size)
             return dims;
-        dims = image_header<raw_type>::unpack(_buf, delimiter_pos+1);
+        dims = image_header<raw_type>::unpack_shape(_buf, delimiter_pos+1);
 
 
         return dims;
