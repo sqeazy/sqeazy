@@ -126,12 +126,12 @@ BOOST_AUTO_TEST_CASE( reload )
 {
   sqeazy_bench::tiff_facet handle;
 
-  handle.reload(path_to_8bit_stack);
+  handle.load(path_to_8bit_stack);
 
   BOOST_CHECK_EQUAL(handle.empty(),false);
   BOOST_CHECK_EQUAL(handle.size_in_byte(),256*256*256);
 
-  handle.reload("");
+  handle.load("");
   BOOST_CHECK_EQUAL(handle.empty(),true);
   BOOST_CHECK_EQUAL(handle.size_in_byte(),0);
   
@@ -141,7 +141,7 @@ BOOST_AUTO_TEST_CASE( load_data_to_buffer_8bit )
 {
   sqeazy_bench::tiff_facet handle;
 
-  handle.reload(path_to_8bit_stack);
+  handle.load(path_to_8bit_stack);
   
   sqeazy_bench::tiff_fixture<char> reference(path_to_8bit_stack);  
   BOOST_CHECK_EQUAL_COLLECTIONS(handle.data(), handle.data() + handle.size_in_byte(),
@@ -152,7 +152,7 @@ BOOST_AUTO_TEST_CASE( load_data_to_buffer_16bit )
 {
   sqeazy_bench::tiff_facet handle;
 
-  handle.reload(path_to_16bit_stack);
+  handle.load(path_to_16bit_stack);
   
   sqeazy_bench::tiff_fixture<unsigned short> reference(path_to_16bit_stack);  
   const char* ref_data = reinterpret_cast<const char*>(reference.data());
@@ -160,6 +160,41 @@ BOOST_AUTO_TEST_CASE( load_data_to_buffer_16bit )
 			       ref_data, ref_data + handle.size_in_byte());
 }
 
+BOOST_AUTO_TEST_CASE( write_to_tiff_native_type )
+{
+  sqeazy_bench::tiff_fixture<unsigned short> reference(path_to_16bit_stack);  
+
+  sqeazy_bench::tiff_facet handle(reference.data(), reference.data() + reference.size(),
+				  reference.axis_lengths);
+
+  boost::filesystem::path name = path_to_16bit_stack;
+  unsigned long long size_16bit_stack = boost::filesystem::file_size(name);
+  name.replace_extension("_native_test.tif");
+ 
+  handle.write(name.string(), 16);
+  
+  double similar = boost::filesystem::file_size(name)/double(size_16bit_stack);
+  BOOST_CHECK_GT(similar,.95);
+
+}
+
+BOOST_AUTO_TEST_CASE( write_to_tiff_8bit_type )
+{
+  sqeazy_bench::tiff_fixture<unsigned char> reference(path_to_8bit_stack);  
+
+  sqeazy_bench::tiff_facet handle(reference.data(), reference.data() + reference.size(),
+				  reference.axis_lengths);
+
+  boost::filesystem::path name = path_to_8bit_stack;
+  unsigned long long size_8bit_stack = boost::filesystem::file_size(name);
+  name.replace_extension("_native_test.tif");
+ 
+  handle.write(name.string(), 8);
+  
+  double similar = boost::filesystem::file_size(name)/double(size_8bit_stack);
+  BOOST_CHECK_GT(similar,.95);
+
+}
 BOOST_AUTO_TEST_SUITE_END()
 
 

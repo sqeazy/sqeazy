@@ -55,9 +55,9 @@ namespace sqeazy {
   template <typename T,char major_delim = ',', char minor_delim='x', char header_end_delim = '|'>
   struct image_header {
 
-    static const char major_delim_ = major_delim;
-    static const char minor_delim_ = minor_delim;
-    static const char header_end_delim_ = header_end_delim;
+    static const char major_delimeter() { return major_delim; }
+    static const char minor_delimeter() { return minor_delim; }
+    static const char header_end_delimeter() { return header_end_delim; }
 
     std::string header;
     std::vector<unsigned> dims;

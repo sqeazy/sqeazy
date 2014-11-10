@@ -175,12 +175,10 @@ namespace sqeazy_bench {
 
 
   template <typename im_vec_type, typename ext_type>
-  void write_tiff_from_vector(const im_vec_type& _stack,
+  void write_tiff_from_array(const im_vec_type* _stack,
 			      const ext_type& _dims,
 			      const std::string& _dest) {
 
-    typedef typename im_vec_type::value_type value_type;
-    //typedef image_stack::const_array_view<1>::type		stack_line;
 
     TIFF *output_image = TIFFOpen(_dest.c_str(), "w");
 
@@ -201,12 +199,12 @@ namespace sqeazy_bench {
       TIFFSetField(output_image, TIFFTAG_IMAGEWIDTH,		w);
       TIFFSetField(output_image, TIFFTAG_IMAGELENGTH,		h);
       TIFFSetField(output_image, TIFFTAG_PAGENUMBER,		frame, z);
-      TIFFSetField(output_image, TIFFTAG_BITSPERSAMPLE,		sizeof(value_type)*CHAR_BIT);
+      TIFFSetField(output_image, TIFFTAG_BITSPERSAMPLE,		sizeof(im_vec_type)*CHAR_BIT);
       TIFFSetField(output_image, TIFFTAG_SAMPLESPERPIXEL,	1);
       TIFFSetField(output_image, TIFFTAG_PLANARCONFIG, 		PLANARCONFIG_CONTIG);
       TIFFSetField(output_image, TIFFTAG_PHOTOMETRIC,  		PHOTOMETRIC_MINISBLACK);
       TIFFSetField(output_image, TIFFTAG_COMPRESSION,  		COMPRESSION_NONE);
-      TIFFSetField(output_image, TIFFTAG_SAMPLEFORMAT, 		tiff_type_equivalent<value_type>::value);
+      TIFFSetField(output_image, TIFFTAG_SAMPLEFORMAT, 		tiff_type_equivalent<im_vec_type>::value);
       TIFFSetField(output_image, TIFFTAG_SUBFILETYPE,		FILETYPE_PAGE);
       TIFFSetField(output_image, TIFFTAG_ROWSPERSTRIP, 		TIFFDefaultStripSize(output_image, 0));
 	
@@ -223,6 +221,13 @@ namespace sqeazy_bench {
   }
 
 
+    template <typename im_vec_type, typename ext_type>
+  void write_tiff_from_vector(const im_vec_type& _stack,
+			      const ext_type& _dims,
+			      const std::string& _dest) {
+      return write_tiff_from_array(&_stack[0], _dims, _dest);
+    }
+
   struct tiff_facet {
     
     boost::filesystem::path location_;
@@ -238,8 +243,26 @@ namespace sqeazy_bench {
       shape_(),
       buffer_()
     {
-      
-      reload(_path);
+      if(!_path.empty())
+	load(_path);
+    }
+    
+    
+    
+
+    template <typename T, typename U>
+    tiff_facet(T* _begin, T* _end, const std::vector<U>& _shape):
+      location_(""),
+      handle_(0),
+      n_pixels_(_end - _begin),
+      shape_(_shape),
+      buffer_()
+    {
+      unsigned type_size = sizeof(T);
+      unsigned long long bytes = n_pixels_*type_size;
+      buffer_.resize(bytes);
+      T* dest_begin = reinterpret_cast<T*>(&buffer_[0]);
+      std::copy(_begin, _end, dest_begin);
     }
 
     bool empty() const {
@@ -300,7 +323,7 @@ namespace sqeazy_bench {
 
     
 
-    void reload(const std::string& _path = ""){
+    void load(const std::string& _path = ""){
 
       if(!empty()){
 	TIFFClose(handle_);
@@ -324,6 +347,31 @@ namespace sqeazy_bench {
       }
     }
 
+    void write(const std::string& _path = "unknown", unsigned _bits_per_sample=8){
+      
+      if(_path.empty()){
+	std::cerr << "[sqeazy_bench::tiff_facet::write] \t unable to open " << _path << " does not exist\n";
+	return;
+      }
+      
+      switch(_bits_per_sample){
+      case 8:
+	write_tiff_from_array(reinterpret_cast<const unsigned char*>(&buffer_[0]), 
+			      shape_,
+			      _path);
+	break;
+      case 16:
+	write_tiff_from_array(reinterpret_cast<const unsigned short*>(&buffer_[0]), 
+			      shape_,
+			      _path);
+	break;
+      default:
+	std::cerr << "[sqeazy_bench::tiff_facet::write] \t unknown number bits per sample " << _bits_per_sample << ", nothing to write to " <<  _path << "\n";
+	
+      }
+
+      return;
+    }
 
     TIFF* tiff_handle(){
       return handle_;

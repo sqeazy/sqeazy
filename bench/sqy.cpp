@@ -70,7 +70,7 @@ void compress_files(const std::vector<std::string>& _files,
   std::vector<unsigned>		input_dims;
   sqeazy_bench::tiff_facet	input;
   sqeazy_bench::pipeline_select	dynamic;
-
+  
   unsigned long compressed_length_byte = 0;
   int enc_ret = 0;
 
@@ -84,7 +84,7 @@ void compress_files(const std::vector<std::string>& _files,
     }
 
     //load tiff & extract the dimensions
-    input.reload(_file);
+    input.load(_file);
        
     //compute the maximum size of the output buffer
     input.dimensions(input_dims);
@@ -137,9 +137,7 @@ void decompress_files(const std::vector<std::string>& _files,
 
 
   std::vector<char> file_data;
-  std::vector<char> output_data;
 
-  std::vector<unsigned> found_shape;
   unsigned long long found_size_byte = 0;
   unsigned long long expected_size_byte = 0;
   boost::filesystem::path current_file;
@@ -149,13 +147,15 @@ void decompress_files(const std::vector<std::string>& _files,
   unsigned found_num_bits;
   sqeazy_bench::pipeline_select dynamic;
 
+  sqeazy_bench::tiff_facet	tiff;
+
   for(const std::string& _file : _files) {
 
     file_data.clear();
     found_pipeline = "unknown";
-    found_shape.clear();
+    tiff.shape_.clear();
     found_num_bits = 0;
-    output_data.clear();
+    tiff.buffer_.clear();
 
     current_file = _file;
 
@@ -177,12 +177,13 @@ void decompress_files(const std::vector<std::string>& _files,
 
     const char* file_ptr =  &file_data[0];
     const char* end_header_ptr =  std::find(file_ptr, file_ptr + found_size_byte, 
-					    sqeazy::image_header<sqeazy::unknown>::header_end_delim_);
+					    sqeazy::image_header<sqeazy::unknown>::header_end_delimeter());
+
     sqeazy::image_header<sqeazy::unknown> sqy_header(file_ptr,
 						     end_header_ptr
 						     );
 
-    found_shape = sqy_header.shape();
+    tiff.shape_ = sqy_header.shape();
     found_pipeline = sqy_header.pipeline();
     found_num_bits = sqy_header.sizeof_header_type()*CHAR_BIT;
     dynamic.set(found_num_bits, found_pipeline);
@@ -193,13 +194,13 @@ void decompress_files(const std::vector<std::string>& _files,
     //compute the maximum size of the output buffer
     expected_size_byte = dynamic.decoded_size_byte(file_ptr, sqy_header.size());
 
-    if(expected_size_byte>output_data.size())
-      output_data.resize(expected_size_byte);
+    if(expected_size_byte>tiff.buffer_.size())
+      tiff.buffer_.resize(expected_size_byte);
         
     //create clean output buffer
-    std::fill(output_data.begin(), output_data.end(),0);
+    std::fill(tiff.buffer_.begin(), tiff.buffer_.end(),0);
 
-    int dec_ret = dynamic.decompress(&file_data[0],&output_data[0],
+    int dec_ret = dynamic.decompress(&file_data[0],&tiff.buffer_[0],
     					   found_size_byte);
 	
     if(dec_ret && _config.count("verbose")) {
@@ -209,8 +210,7 @@ void decompress_files(const std::vector<std::string>& _files,
 
     output_file = current_file.replace_extension(".tif");
     
-    // sqeazy_bench::write_tiff_from_vector(output_data, found_shape , output_file.string());
-    // ///////////////////////////////////////////////////////////////
+    tiff.write(output_file.string(), found_num_bits);
 
     sqyfile.close();
   }

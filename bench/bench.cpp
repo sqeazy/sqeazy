@@ -180,7 +180,9 @@ void fill_suite(const std::vector<std::string>& _args,
             name += PipeType::name();
             name += "-enc-dec";
             name += current_file.extension().string();
-            sqeazy_bench::write_tiff_from_vector(reference.tiff_data, reference.axis_lengths,name);
+            sqeazy_bench::write_tiff_from_vector(reference.tiff_data, 
+						 reference.axis_lengths,
+						 name);
         }
 
 
