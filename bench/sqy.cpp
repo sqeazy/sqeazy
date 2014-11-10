@@ -1,6 +1,7 @@
 #define __SQY_BENCH_CPP__
 #include <iostream>
 #include <functional>
+#include <algorithm>
 #include <iomanip>
 #include <numeric>
 #include <vector>
@@ -145,7 +146,7 @@ void decompress_files(const std::vector<std::string>& _files,
   boost::filesystem::path output_file;
   std::fstream sqyfile;
   std::string found_pipeline;
-  unsigned found_num_bites;
+  unsigned found_num_bits;
   sqeazy_bench::pipeline_select dynamic;
 
   for(const std::string& _file : _files) {
@@ -153,7 +154,7 @@ void decompress_files(const std::vector<std::string>& _files,
     file_data.clear();
     found_pipeline = "unknown";
     found_shape.clear();
-    found_num_bites = 0;
+    found_num_bits = 0;
     output_data.clear();
 
     current_file = _file;
@@ -175,7 +176,8 @@ void decompress_files(const std::vector<std::string>& _files,
     sqyfile.get(&file_data[0],found_size_byte);
 
     const char* file_ptr =  &file_data[0];
-    const char* end_header_ptr =  std::find(file_ptr, file_ptr + found_size_byte);
+    const char* end_header_ptr =  std::find(file_ptr, file_ptr + found_size_byte, 
+					    sqeazy::image_header<sqeazy::unknown>::header_end_delim_);
     sqeazy::image_header<sqeazy::unknown> sqy_header(file_ptr,
 						     end_header_ptr
 						     );
@@ -189,10 +191,10 @@ void decompress_files(const std::vector<std::string>& _files,
     // sqy file content specific
 
     //compute the maximum size of the output buffer
-    expected_size = dynamic.decoded_size_byte(file_ptr, file_ptr + sqy_header.size());
+    expected_size_byte = dynamic.decoded_size_byte(file_ptr, sqy_header.size());
 
-    if(expected_size>output_data.size())
-      output_data.resize(expected_size);
+    if(expected_size_byte>output_data.size())
+      output_data.resize(expected_size_byte);
         
     //create clean output buffer
     std::fill(output_data.begin(), output_data.end(),0);
@@ -293,12 +295,7 @@ int main(int argc, char *argv[])
       
       po::notify(vm);
 	
-      std::vector<std::string> inputFiles;// = vm["files"].as<std::vector<std::string> >();
-	
-      // std::cout << target << " received files \n";
-      // for( auto ffile : inputFiles ){
-      // 	std::cout << "\t"<< ffile << "\n";
-      // }
+
 
       std::vector<std::string> inputFiles = po::collect_unrecognized(parsed.options, po::include_positional);
       for( auto to_p : inputFiles ){
