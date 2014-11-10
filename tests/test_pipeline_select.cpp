@@ -4,7 +4,7 @@
 #include "pipeline_select.hpp"
 #include "bench_common.hpp"
 #include "array_fixtures.hpp"
-
+#include "sqeazy_header.hpp"
 
 typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 
@@ -95,12 +95,107 @@ BOOST_AUTO_TEST_SUITE_END()
 
 
 
-BOOST_FIXTURE_TEST_SUITE( depipeline_select , uint16_cube_of_8 )
+BOOST_FIXTURE_TEST_SUITE( decompess_pipeline_select , uint16_cube_of_8 )
 
-BOOST_AUTO_TEST_CASE( instantiated )
+BOOST_AUTO_TEST_CASE( decoded_size_byte )
 {
-  sqeazy_bench::pipeline_select decide;
-  BOOST_CHECK_EQUAL(decide.empty(),true);  
+  std::string hdr = sqeazy::image_header<value_type>::pack(dims, bswap1_lz4_pipe::name());
+  sqeazy_bench::pipeline_select decide(16, bswap1_lz4_pipe::name());
+  
+  unsigned long long size_ = size;
+  unsigned long long expected_size_byte_all_known = decide.decoded_size_byte(&hdr[0],hdr.size());
+  
+  BOOST_CHECK_GT(expected_size_byte_all_known, size_); 
+
+  decide.set(1, "empty");
+  
+  unsigned long long expected_size_byte_all_unknown = decide.decoded_size_byte(&hdr[0],hdr.size());
+  
+  BOOST_CHECK_GT(expected_size_byte_all_unknown, size_); 
+  BOOST_CHECK_EQUAL(expected_size_byte_all_unknown, expected_size_byte_all_known); 
+  
 }
+
+BOOST_AUTO_TEST_CASE( decoded_size_byte_throws )
+{
+  std::string hdr = sqeazy::image_header<value_type>::pack(dims, bswap1_lz4_pipe::name());
+  sqeazy_bench::pipeline_select decide(24, "");
+  
+  
+  BOOST_CHECK_THROW(decide.decoded_size_byte(&hdr[0],hdr.size()),std::runtime_error); 
+  
+}
+
+BOOST_AUTO_TEST_CASE( decoded_shape )
+{
+  std::string hdr = sqeazy::image_header<value_type>::pack(dims, bswap1_lz4_pipe::name());
+  sqeazy_bench::pipeline_select decide(16, bswap1_lz4_pipe::name());
+  
+  std::vector<unsigned> found_shape = decide.decode_dimensions(&hdr[0],hdr.size());
+
+  BOOST_CHECK_EQUAL_COLLECTIONS(dims.begin(), dims.end(), found_shape.begin(), found_shape.end());  
+
+  decide.set(0,"empty");
+  
+  found_shape = decide.decode_dimensions(&hdr[0],hdr.size());
+
+  BOOST_CHECK_EQUAL_COLLECTIONS(dims.begin(), dims.end(), found_shape.begin(), found_shape.end());  
+
+  //BY INTENTION: mismatching n_bits = 8 with raw_type of bswap1_lz4_pipe (16-bit)
+  decide.set(8,bswap1_lz4_pipe::name());
+  
+  found_shape = decide.decode_dimensions(&hdr[0],hdr.size());
+
+  BOOST_CHECK_EQUAL_COLLECTIONS(dims.begin(), dims.end(), found_shape.begin(), found_shape.end());  
+}
+
+BOOST_AUTO_TEST_CASE( decoded_shape_throws )
+{
+  std::string hdr = sqeazy::image_header<value_type>::pack(dims, bswap1_lz4_pipe::name());
+  sqeazy_bench::pipeline_select decide(16, " ");
+  
+  BOOST_CHECK_THROW(decide.decode_dimensions(&hdr[0],hdr.size()), std::runtime_error);
+
+
+}
+
+BOOST_AUTO_TEST_CASE( decompress_callable )
+{
+
+  sqeazy_bench::pipeline_select decide(16, bswap1_lz4_pipe::name());
+
+
+  char* output_to_decompress = reinterpret_cast<char*>(&to_play_with[0]);
+  
+  unsigned long long bytes_written = 0;
+  bswap1_lz4_pipe::compress(&incrementing_cube[0], output_to_decompress, dims, bytes_written);
+
+  char* output = reinterpret_cast<char*>(&constant_cube[0]);
+  
+  
+  decide.decompress(output_to_decompress, output, bytes_written);
+
+  BOOST_CHECK_EQUAL(incrementing_cube[0],constant_cube[0]);
+  BOOST_CHECK_EQUAL_COLLECTIONS(&incrementing_cube[0],&incrementing_cube[0]+ size,&constant_cube[0],&constant_cube[0]+ size); 
+}
+
+BOOST_AUTO_TEST_CASE( decompress_throws )
+{
+
+  sqeazy_bench::pipeline_select decide(7, bswap1_lz4_pipe::name());
+
+
+  char* output_to_decompress = reinterpret_cast<char*>(&to_play_with[0]);
+ 
+  char* output = reinterpret_cast<char*>(&constant_cube[0]);
+  
+  unsigned long long l_size = 128;
+  BOOST_CHECK_THROW(decide.decompress(output_to_decompress, output, l_size),std::runtime_error);
+
+  decide.set();
+  BOOST_CHECK_THROW(decide.decompress(output_to_decompress, output, l_size),std::runtime_error);
+
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
