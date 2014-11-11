@@ -204,7 +204,8 @@ struct pipeline : public bmpl::back<TypeList>::type {
 	char* output_buffer = reinterpret_cast<char*>(_out);
 	std::copy(hdr.header.begin(), hdr.header.end(), output_buffer);
 	
-        output_type* first_output = reinterpret_cast<output_type*>(_out+hdr.size());
+	unsigned long hdr_shift = hdr.size()/sizeof(output_type);
+        output_type* first_output = reinterpret_cast<output_type*>(_out+hdr_shift);
 
         int value = pipe_loop::apply(_in, first_output, _size);
 	
@@ -228,7 +229,10 @@ struct pipeline : public bmpl::back<TypeList>::type {
 	char* output_buffer = reinterpret_cast<char*>(_out);
 	std::copy(hdr.header.begin(), hdr.header.end(), output_buffer);
 
-        output_type* first_output = reinterpret_cast<output_type*>(_out+hdr.size());
+	unsigned long hdr_shift = hdr.size()/sizeof(output_type);
+
+        output_type* first_output = reinterpret_cast<output_type*>(_out+hdr_shift);
+
         int value = pipe_loop::apply(_in, first_output, _size);
 
         return value;
@@ -249,10 +253,12 @@ struct pipeline : public bmpl::back<TypeList>::type {
 	sqeazy::image_header<raw_type> hdr(_in, _in + _size);
 
         unsigned long temp_size = hdr.payload_size_byte();
-        std::vector<raw_type> temp(temp_size);
+        std::vector<raw_type> temp(temp_size/sizeof(raw_type));
 
-	const compressed_type* input_begin = _in + hdr.size();
-        int dec_result = compressor_type::decode(input_begin, &temp[0], _size, temp_size);
+	unsigned long hdr_shift = hdr.size()/sizeof(compressed_type);
+	const compressed_type* input_begin = _in + hdr_shift;
+	
+        int dec_result = compressor_type::decode(input_begin, &temp[0], _size - hdr.size(), temp_size);
         dec_result *= 10*(type_list_size - 1);
 
 

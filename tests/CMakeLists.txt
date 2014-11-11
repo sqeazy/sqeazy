@@ -22,7 +22,7 @@ add_executable(test_bitswap_scheme_impl test_bitswap_scheme_impl.cpp)
 target_link_libraries(test_bitswap_scheme_impl boost_system boost_filesystem boost_unit_test_framework)
 
 add_executable(test_lz4_encoding test_lz4_encoding.cpp)
-target_link_libraries(test_lz4_encoding ${PROJECT_NAME} boost_system boost_filesystem boost_unit_test_framework)
+target_link_libraries(test_lz4_encoding ${PROJECT_NAME} boost_system boost_filesystem boost_unit_test_framework lz4)
 
 
 add_executable(test_sqeazy_header_impl test_sqeazy_header_impl.cpp)
