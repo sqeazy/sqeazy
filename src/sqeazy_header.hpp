@@ -80,11 +80,12 @@ namespace sqeazy {
 
     image_header(const std::string& _str):
       header(),
-      dims() {
+      dims(),
+      pipeline_() {
 
       std::string::const_iterator header_end = std::find(_str.begin(), _str.end(), header_end_delim);
-      
       header = std::string(_str.begin(), header_end);
+
       try{
 	unpack(header,dims, pipeline_);
       }
@@ -94,11 +95,12 @@ namespace sqeazy {
     }
 
     image_header(const char* _begin, const char* _end):
-      header(_begin,_end),
-      dims() {
+      header(),
+      dims(),
+      pipeline_() {
 
-      size_t header_end = header.find(header_end_delim);
-      header = header.substr(0,header_end+1);
+      const char* header_end = std::find(_begin, _end, header_end_delim);
+      header = std::string(_begin, header_end);
       
       try{
 	unpack(header,dims, pipeline_);

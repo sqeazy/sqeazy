@@ -153,16 +153,7 @@ struct lz4_scheme {
         return lz4_bound + header_size(any);
 
     }
-
-    // template <typename U>
-    // static const unsigned long max_encoded_size(const std::vector<U>& _src_dims) {
-
-    //     image_header<raw_type> artificial_header(_src_dims);
-    //     long lz4_bound = LZ4_compressBound(artificial_header.payload_size());
-
-    //     return lz4_bound + artificial_header.size();
-
-    // }
+    
 
     template <typename U>
     static const unsigned long decoded_size_byte(const compressed_type* _buf, const U& _size) {
@@ -191,8 +182,6 @@ struct lz4_scheme {
         return dims;
 
     }
-
-   
 
 
     template <typename U>

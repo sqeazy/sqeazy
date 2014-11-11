@@ -298,12 +298,11 @@ int main(int argc, char *argv[])
 
 
       std::vector<std::string> inputFiles = po::collect_unrecognized(parsed.options, po::include_positional);
-      for( auto to_p : inputFiles ){
-	std::cout << target << " to_p "<< to_p << "\n";
-      }
-      
-      if(target == "compress"){
-	compress_files(inputFiles, vm);
+
+      if(inputFiles.empty()){
+	std::cout << "[sqy] no input files given, exiting ...\n";
+      } else {
+	prog_flow(inputFiles, vm);
       }
     }
 

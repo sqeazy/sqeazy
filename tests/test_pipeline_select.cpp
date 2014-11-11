@@ -91,6 +91,20 @@ BOOST_AUTO_TEST_CASE( compress_throws )
 
 }
 
+BOOST_AUTO_TEST_CASE( compress_correct_header )
+{
+  sqeazy_bench::pipeline_select decide(std::make_pair(16,bswap1_lz4_pipe::name()));
+  unsigned long num_encoded = 0;
+  int ret = decide.compress((const char*)&incrementing_cube[0], (char*)&to_play_with[0], dims, num_encoded);
+  
+  BOOST_CHECK_EQUAL(ret, 0);  
+  BOOST_CHECK_GT(num_encoded, 0);  
+  const char* output = (char*)&to_play_with[0];
+  sqeazy::image_header<value_type> local(output, output + num_encoded);
+
+  BOOST_CHECK_EQUAL(bswap1_lz4_pipe::name(), local.pipeline());  
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 
