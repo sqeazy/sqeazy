@@ -94,25 +94,28 @@ BOOST_AUTO_TEST_CASE( without_pipeline )
 BOOST_AUTO_TEST_CASE (with_pipeline_apply) {
 
     std::vector<int> test_in(42,1);
-    std::vector<int> test_out(42,0);
+    std::vector<int> test_out(100,0);//42 plus header
 
     typedef sqeazy::bmpl::vector<add_one<int>, square<int> > test_pipe;
     typedef sqeazy::pipeline<test_pipe> current_pipe;
 
-    BOOST_CHECK_NE(current_pipe::name().size(),0);
+    std::string pipe_name = current_pipe::name();
 
-    BOOST_CHECK_NE(current_pipe::name().find("square"),std::string::npos);
-
-    BOOST_CHECK_NE(current_pipe::name().find("add_one"),std::string::npos);
+    BOOST_CHECK_NE(pipe_name.size(),0);
+    BOOST_CHECK_NE(pipe_name.find("square"),std::string::npos);
+    BOOST_CHECK_NE(pipe_name.find("add_one"),std::string::npos);
 
     unsigned long in_size = test_in.size();
+
     current_pipe::compress((const int*)&test_in[0], &test_out[0],in_size);
 
-    BOOST_CHECK_EQUAL(test_in[0],1);
+    BOOST_CHECK_EQUAL(in_size,test_in.size());
+    std::vector<int> expected(test_in.size(),4);
 
-    std::vector<int> expected(42,4);
+    int hdr_size = current_pipe::header_size(42);
+    const int* out_ptr = &test_out[0] + (hdr_size/sizeof(int));
 
-    BOOST_CHECK_EQUAL_COLLECTIONS(test_out.begin(),test_out.end(),
+    BOOST_CHECK_EQUAL_COLLECTIONS(out_ptr, out_ptr + in_size,
                                   expected.begin(),expected.end()
                                  );
 

@@ -313,6 +313,14 @@ struct pipeline : public bmpl::back<TypeList>::type {
     }
   
 
+    static const unsigned long header_size(unsigned long _in) {
+
+      
+      image_header<raw_type> value(_in, pipeline::name());
+	
+      return value.size();
+
+    }
 
   static const unsigned long max_bytes_encoded(unsigned long _data_in_bytes, unsigned _len_header_bytes = 0) {
 
