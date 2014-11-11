@@ -136,13 +136,18 @@ BOOST_AUTO_TEST_CASE( encode_bitswap1 )
 
     std::string pipe_name = current_pipe::name();
 
+    
+
     BOOST_CHECK_NE(pipe_name.size(),0);
-
     BOOST_CHECK_NE(pipe_name.find("lz4"),std::string::npos);
-
-    BOOST_CHECK_NE(current_pipe::name().find("bswap1"),std::string::npos);
+    BOOST_CHECK_NE(pipe_name.find("bswap1"),std::string::npos);
 
     const value_type* input = reinterpret_cast<const value_type*>(&constant_cube[0]);
+
+    long expected_size = current_pipe::max_bytes_encoded(size_in_byte, current_pipe::header_size(size));
+    if(expected_size!=size_in_byte)
+      to_play_with.resize(expected_size);
+
     char* output = reinterpret_cast<char*>(&to_play_with[0]);
 
     unsigned local_size = uint8_cube_of_8::size;
@@ -191,6 +196,9 @@ BOOST_AUTO_TEST_CASE( encode_decode_bitswap_chars )
     typedef sqeazy::bmpl::vector<sqeazy::bitswap_scheme<value_type>, sqeazy::lz4_scheme<value_type> > test_pipe;
     typedef sqeazy::pipeline<test_pipe> current_pipe;
 
+    long expected_size = current_pipe::max_bytes_encoded(size_in_byte, current_pipe::header_size(size));
+    if(expected_size!=size_in_byte)
+      to_play_with.resize(expected_size);
 
     char* output = reinterpret_cast<char*>(&to_play_with[0]);
 
@@ -219,6 +227,9 @@ BOOST_AUTO_TEST_CASE( plain_encode_decode_shorts )
     typedef sqeazy::bmpl::vector<sqeazy::lz4_scheme<value_type> > test_pipe;
     typedef sqeazy::pipeline<test_pipe> current_pipe;
 
+    long expected_size = current_pipe::max_bytes_encoded(size_in_byte, current_pipe::header_size(size));
+    if(expected_size!=size_in_byte)
+      to_play_with.resize(expected_size);
 
     char* output = reinterpret_cast<char*>(&to_play_with[0]);
 
@@ -248,6 +259,10 @@ BOOST_AUTO_TEST_CASE( encode_decode_bitswap_shorts )
     typedef sqeazy::bmpl::vector<sqeazy::bitswap_scheme<value_type>, sqeazy::lz4_scheme<value_type> > test_pipe;
     typedef sqeazy::pipeline<test_pipe> current_pipe;
 
+    long expected_size = current_pipe::max_bytes_encoded(size_in_byte, current_pipe::header_size(size));
+    if(expected_size!=size_in_byte)
+      to_play_with.resize(expected_size);
+
     char* output = reinterpret_cast<char*>(&to_play_with[0]);
 
     const unsigned local_size = size;
@@ -271,6 +286,10 @@ BOOST_AUTO_TEST_CASE( encode_decode_bitswap_shorts_dims_input )
 
     typedef sqeazy::bmpl::vector<sqeazy::bitswap_scheme<value_type>, sqeazy::lz4_scheme<value_type> > test_pipe;
     typedef sqeazy::pipeline<test_pipe> current_pipe;
+
+    long expected_size = current_pipe::max_bytes_encoded(size_in_byte, current_pipe::header_size(size));
+    if(expected_size!=size_in_byte)
+      to_play_with.resize(expected_size);
 
     char* output = reinterpret_cast<char*>(&to_play_with[0]);
 
@@ -298,6 +317,10 @@ BOOST_AUTO_TEST_CASE( encode_decode_diff_shorts_dims_input )
 
     typedef sqeazy::bmpl::vector<sqeazy::diff_scheme<value_type>, sqeazy::lz4_scheme<value_type> > test_pipe;
     typedef sqeazy::pipeline<test_pipe> current_pipe;
+
+    long expected_size = current_pipe::max_bytes_encoded(size_in_byte, current_pipe::header_size(size));
+    if(expected_size!=size_in_byte)
+      to_play_with.resize(expected_size);
 
     char* output = reinterpret_cast<char*>(&to_play_with[0]);
 
@@ -327,6 +350,10 @@ BOOST_AUTO_TEST_CASE( encode_decode_diff_shorts_incrementing_input )
 
     typedef sqeazy::bmpl::vector<sqeazy::diff_scheme<value_type>, sqeazy::lz4_scheme<value_type> > test_pipe;
     typedef sqeazy::pipeline<test_pipe> current_pipe;
+
+    long expected_size = current_pipe::max_bytes_encoded(size_in_byte, current_pipe::header_size(size));
+    if(expected_size!=size_in_byte)
+      to_play_with.resize(expected_size);
 
     char* output = reinterpret_cast<char*>(&to_play_with[0]);
 
