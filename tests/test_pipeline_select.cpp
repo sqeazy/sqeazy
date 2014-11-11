@@ -20,8 +20,8 @@ BOOST_AUTO_TEST_CASE( max_compressed_size )
 {
   sqeazy_bench::pipeline_select decide(std::make_pair(8,char_rmbkg_bswap1_lz4_pipe::name()));
   
-  BOOST_CHECK_NE(decide.max_compressed_size(42),0);  
-  BOOST_CHECK_GT(decide.max_compressed_size(42),42);  
+  BOOST_CHECK_NE(decide.max_compressed_size(42,0),0);  
+  BOOST_CHECK_GT(decide.max_compressed_size(42,0),42);  
 
 }
 
@@ -29,7 +29,7 @@ BOOST_AUTO_TEST_CASE( max_compressed_size_throws_on_unknown )
 {
   sqeazy_bench::pipeline_select decide;
   
-  BOOST_CHECK_THROW(decide.max_compressed_size(42),std::runtime_error);  
+  BOOST_CHECK_THROW(decide.max_compressed_size(42,0),std::runtime_error);  
 
 }
 
@@ -186,7 +186,7 @@ BOOST_AUTO_TEST_CASE( decompress_callable )
 
   char* output = reinterpret_cast<char*>(&constant_cube[0]);
   
-  
+
   decide.decompress(output_to_decompress, output, bytes_written);
 
   BOOST_CHECK_EQUAL(incrementing_cube[0],constant_cube[0]);
@@ -204,6 +204,7 @@ BOOST_AUTO_TEST_CASE( decompress_throws )
   char* output = reinterpret_cast<char*>(&constant_cube[0]);
   
   unsigned long long l_size = 128;
+
   BOOST_CHECK_THROW(decide.decompress(output_to_decompress, output, l_size),std::runtime_error);
 
   decide.set();

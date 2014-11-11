@@ -125,7 +125,7 @@ void fill_suite(const std::vector<std::string>& _args,
 	
 
 	//compute the maximum size of the output buffer
-        unsigned long expected_size = std::ceil(current_pipe::max_encoded_size(reference.size_in_byte())/float(sizeof(value_type)));
+        unsigned long expected_size = std::ceil(current_pipe::max_bytes_encoded(reference.size_in_byte())/float(sizeof(value_type)));
         if(expected_size>output_data.size()) {
             output_data.resize(expected_size);
         }

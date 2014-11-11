@@ -7,6 +7,7 @@
 #include <sstream>
 #include <map>
 #include <stdexcept>
+#include <typeinfo>
 
 namespace sqeazy {
 
@@ -65,12 +66,27 @@ namespace sqeazy {
 
     template <typename S>
     image_header(const std::vector<S>& _dims, const std::string& _pipe_name = "no_pipeline"):
-      header(),
+      header(""),
       dims(_dims.begin(), _dims.end()),
       pipeline_(_pipe_name)
     {
       try{
-	header = pack(_dims,_pipe_name);
+	header = pack(dims,_pipe_name);
+      }
+      catch(...){
+	std::cerr << "["<< __FILE__ <<":" << __LINE__ <<"]\t unable to pack pipe!\n";
+      }
+    }
+
+
+    image_header(unsigned long _size_in_byte, const std::string& _pipe_name = "no_pipeline"):
+      header(""),
+      dims(1),
+      pipeline_(_pipe_name)
+    {
+      dims[0] = _size_in_byte;
+      try{
+	header = pack(dims,_pipe_name);
       }
       catch(...){
 	std::cerr << "["<< __FILE__ <<":" << __LINE__ <<"]\t unable to pack pipe!\n";
@@ -84,23 +100,25 @@ namespace sqeazy {
       pipeline_() {
 
       std::string::const_iterator header_end = std::find(_str.begin(), _str.end(), header_end_delim);
-      header = std::string(_str.begin(), header_end);
+      header = std::string(_str.begin(), header_end + 1);
 
       try{
 	unpack(header,dims, pipeline_);
       }
       catch(...){
 	std::cerr << "["<< __FILE__ <<":" << __LINE__ <<"]\t unable to unpack header (" << _str <<")!\n";
-      }
+header = "";
+}
     }
 
-    image_header(const char* _begin, const char* _end):
+    template <typename Iter>
+    image_header(Iter _begin, Iter _end):
       header(),
       dims(),
       pipeline_() {
 
-      const char* header_end = std::find(_begin, _end, header_end_delim);
-      header = std::string(_begin, header_end);
+      Iter header_end = std::find(_begin, _end, header_end_delim);
+      header = std::string(_begin, header_end + 1);
       
       try{
 	unpack(header,dims, pipeline_);
@@ -116,9 +134,11 @@ namespace sqeazy {
       return header.size();
     }
 
-    std::vector<unsigned> shape() const {
-      return dims;
+     std::vector<unsigned> const * shape() const {
+      return &dims;
     }
+
+    
 
     std::string str() const {
 
@@ -213,6 +233,7 @@ namespace sqeazy {
 
       const char* header_end_ptr = std::find(_buffer, _buffer + _size, header_end_delim);
 
+      //let's omit the header_end_ptr to make splitting easier
       std::string header(_buffer, header_end_ptr);
       
       if(!valid_header(header)){
@@ -231,6 +252,7 @@ namespace sqeazy {
     static const std::vector<unsigned> unpack_shape(const char* _buffer, const unsigned& _size) {
 
       const char* header_end_ptr = std::find(_buffer, _buffer + _size, header_end_delim);
+      //let's omit the header_end_ptr to make splitting easier
       std::string header(_buffer, header_end_ptr);
       
       if(!valid_header(header)){
@@ -251,6 +273,7 @@ namespace sqeazy {
     static const int unpack_num_dims(const char* _buffer, const unsigned& _size) {
 
       const char* header_end_ptr = std::find(_buffer, _buffer + _size, header_end_delim);
+      //let's omit the header_end_ptr to make splitting easier
       std::string in_buffer(_buffer, header_end_ptr);
 
       if(!valid_header(in_buffer)){

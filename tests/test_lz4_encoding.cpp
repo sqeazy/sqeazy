@@ -4,8 +4,9 @@
 #include <numeric>
 #include <vector>
 #include <iostream>
-#include "array_fixtures.hpp"
 #include <bitset>
+
+#include "array_fixtures.hpp"
 
 extern "C" {
 #include "sqeazy.h"
@@ -54,22 +55,26 @@ BOOST_AUTO_TEST_CASE( decode_length )
   
   const char* input = reinterpret_cast<char*>(&constant_cube[0]);
   
-  
-
+  long input_in_bytes = size_in_byte;
   long expected_size = size_in_byte;
+
   int retcode = SQY_LZ4_Max_Compressed_Length(&expected_size);
-char* compressed = new char[expected_size];
+
+  char* compressed = new char[expected_size];
   long output_length = size_in_byte;
   retcode += SQY_LZ4Encode(input,
 			      uint16_cube_of_8::size*sizeof(value_type),
 			      compressed,
 			      &output_length
 			      );
-  
+
+  BOOST_CHECK_NE(output_length,input_in_bytes);
+    
   retcode = SQY_LZ4_Decompressed_Length(compressed,&output_length);
   BOOST_CHECK_EQUAL(retcode,0);
   unsigned expected = uint16_cube_of_8::size_in_byte;
-  BOOST_CHECK_EQUAL(output_length,expected);
+  
+  BOOST_CHECK_EQUAL(output_length, expected);
 
   
   delete [] compressed;
@@ -98,9 +103,14 @@ BOOST_AUTO_TEST_CASE( decode_encoded )
   BOOST_CHECK_LT(output_length,uint16_cube_of_8::size*sizeof(value_type));
 
   long uncompressed_max_size = output_length;
-  retcode += SQY_LZ4_Decompressed_Length(compressed,&uncompressed_max_size);
 
+  retcode += SQY_LZ4_Decompressed_Length(compressed,&uncompressed_max_size);
   BOOST_CHECK_EQUAL(retcode,0);
+
+  long hdr_size = output_length;
+  SQY_Header_Size(compressed,&hdr_size);
+  BOOST_CHECK_GT(hdr_size,0);
+  BOOST_CHECK_LT(hdr_size,30);
 
   char* uncompressed = new char[uncompressed_max_size];
   std::fill(uncompressed,uncompressed + uncompressed_max_size,0);
@@ -112,12 +122,11 @@ BOOST_AUTO_TEST_CASE( decode_encoded )
 			   );
   
   BOOST_CHECK_EQUAL(retcode,0);
-  // BOOST_CHECK_EQUAL(to_play_with[0],constant_cube[0]);
-  BOOST_CHECK_EQUAL(uncompressed[0],constant_cube[0]);
-  // BOOST_CHECK_EQUAL_COLLECTIONS(&constant_cube[0], &constant_cube[0] + uint16_cube_of_8::size,
-  // 				&to_play_with[0], &to_play_with[0] + uint16_cube_of_8::size);
 
+
+  
   value_type* uncompressed_right = reinterpret_cast<value_type*>(&uncompressed[0]);
+  BOOST_CHECK_EQUAL(uncompressed_right[0],constant_cube[0]);
   BOOST_CHECK_EQUAL_COLLECTIONS(&constant_cube[0], &constant_cube[0] + uint16_cube_of_8::size,
   				&uncompressed_right[0], &uncompressed_right[0] + uint16_cube_of_8::size);
 

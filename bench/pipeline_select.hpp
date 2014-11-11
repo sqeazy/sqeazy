@@ -86,13 +86,16 @@ namespace sqeazy_bench {
     struct  give_max_compressed_size : public boost::static_visitor<unsigned long> {
     
       unsigned long len_in_byte;
+      unsigned header_in_byte;
       
-      explicit give_max_compressed_size(unsigned long _in):
-	len_in_byte(_in){}
+      explicit give_max_compressed_size(unsigned long _in, unsigned _header_size):
+	len_in_byte(_in),
+	header_in_byte(_header_size)
+      {}
 
       template <typename T>
       unsigned long operator()(T){
-	return T::template max_encoded_size<unsigned long>(len_in_byte);
+	return T::max_bytes_encoded(len_in_byte, header_in_byte);
       }
       
       unsigned long operator()(boost::blank){
@@ -101,12 +104,10 @@ namespace sqeazy_bench {
 
     };
 
-    unsigned long max_compressed_size(unsigned long _in_byte){
+    unsigned long max_compressed_size(unsigned long _in_byte,  unsigned _header_size = 0){
       
-      give_max_compressed_size visitor(_in_byte);
+      give_max_compressed_size visitor(_in_byte, _header_size);
       
-      
-
       if(!pipeholder_.which()){
 	std::ostringstream msg;
 	msg << "[pipeline_select]\t unknown pipeline "<< current_.second <<" queried in max_compressed_size\n";
@@ -290,10 +291,10 @@ namespace sqeazy_bench {
       unsigned long long* len_input_bytes_;
       
       explicit perform_decompress(const char* _in,
-				  unsigned long long* _len
+				  unsigned long long* _len_in
 				):
 	input_buffer_(_in),
-	len_input_bytes_(_len)
+	len_input_bytes_(_len_in)
       {}
 
 

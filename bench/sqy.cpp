@@ -183,7 +183,7 @@ void decompress_files(const std::vector<std::string>& _files,
 						     end_header_ptr
 						     );
 
-    tiff.shape_ = sqy_header.shape();
+    tiff.shape_ = *(sqy_header.shape());
     found_pipeline = sqy_header.pipeline();
     found_num_bits = sqy_header.sizeof_header_type()*CHAR_BIT;
     dynamic.set(found_num_bits, found_pipeline);

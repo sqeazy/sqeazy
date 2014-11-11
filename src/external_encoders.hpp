@@ -6,7 +6,7 @@
 #include "sqeazy.h"
 #include "sqeazy_common.hpp"
 #include "sqeazy_traits.hpp"
-#include "sqeazy_header.hpp"
+
 
 #ifndef LZ4_VERSION_MAJOR
 #include "lz4.h"
@@ -32,9 +32,6 @@ struct lz4_scheme {
     }
 
 
-
-
-
     /**
      * @brief encode input raw_type buffer and write to output (not owned, not allocated)
      *
@@ -57,17 +54,13 @@ struct lz4_scheme {
 
         const compressed_type* input = reinterpret_cast<const compressed_type*>(_input);
 
-        std::string header = image_header<raw_type>::pack(_dims);
+        size_type num_written_bytes = LZ4_compress_limitedOutput(input,
+								 _output,
+								 total_length_in_byte,
+								 max_payload_length_in_byte);
 
-        std::copy(header.begin(),header.end(),_output);
-
-        compressed_type* output_begin = &_output[header.size()];
-        size_type num_written_bytes = LZ4_compress_limitedOutput(input,output_begin,
-                                total_length_in_byte,
-                                max_payload_length_in_byte);
-
-        if(num_written_bytes) {
-            _bytes_written = num_written_bytes+header.size();
+        if(num_written_bytes > 0) {
+            _bytes_written = num_written_bytes;
             last_num_encoded_bytes = _bytes_written;
             return SUCCESS;
         }
@@ -113,22 +106,14 @@ struct lz4_scheme {
      */
     static const error_code decode(const compressed_type* _input,
                                    raw_type* _output,
-                                   const size_type& _length
+                                   const size_type& _len_in,
+                                   const size_type& _len_out
                                   ) {
 
-        size_t delimiter_pos = std::find(_input, _input+_length,'|') - _input;
-        if((delimiter_pos) >= _length)
-            return FAILURE;
+      compressed_type* output = reinterpret_cast<compressed_type*>(_output);
+      int num_bytes_decoded = LZ4_decompress_safe(_input,output,_len_in, _len_out);
 
-        image_header<raw_type> found_header(_input, _input + delimiter_pos + 1);
-
-        long maxOutputSize = found_header.payload_size_byte();
-
-        compressed_type* output = reinterpret_cast<compressed_type*>(_output);
-        const compressed_type* begin_payload = _input + found_header.size();
-        int num_bytes_decoded = LZ4_decompress_safe(begin_payload,output,_length - found_header.size(), maxOutputSize);
-
-        return num_bytes_decoded == maxOutputSize ? SUCCESS : FAILURE;
+      return ( num_bytes_decoded > 0 && num_bytes_decoded == _len_out ) ? SUCCESS : FAILURE;
 
     }
 
@@ -137,62 +122,16 @@ struct lz4_scheme {
     //      -> refactor to policy!
 
     template <typename U>
-    static const unsigned long header_size(const std::vector<U>& _in) {
-
-        image_header<raw_type> value(_in);
-        return value.header.size();
-
-    }
-
-    template <typename U>
     static const unsigned long max_encoded_size(U _src_length_in_bytes) {
 
-        long lz4_bound = LZ4_compressBound(_src_length_in_bytes);
+        unsigned long lz4_bound = LZ4_compressBound(_src_length_in_bytes);
 
-        std::vector<unsigned> any(1,_src_length_in_bytes);
-        return lz4_bound + header_size(any);
+        return lz4_bound;
 
     }
     
 
-    template <typename U>
-    static const unsigned long decoded_size_byte(const compressed_type* _buf, const U& _size) {
 
-        size_t delimiter_pos = std::find(_buf, _buf+_size,'|') - _buf;
-        if((delimiter_pos) >= _size)
-            return 0;
-
-        image_header<raw_type> found_header(_buf, _buf + delimiter_pos+1);
-
-        return found_header.payload_size_byte();
-
-    }
-
-    template <typename U>
-    static const std::vector<unsigned> decode_dimensions(const compressed_type* _buf, const U& _size) {
-
-        std::vector<unsigned> dims;
-
-        size_t delimiter_pos = std::find(_buf, _buf+_size,'|') - _buf;
-        if((delimiter_pos) >= _size)
-            return dims;
-        dims = image_header<raw_type>::unpack_shape(_buf, delimiter_pos+1);
-
-
-        return dims;
-
-    }
-
-
-    template <typename U>
-    static const int decoded_num_dims(const compressed_type* _buf, const U& _size) {
-        size_t delimiter_pos = std::find(_buf, _buf+_size,'|') - _buf;
-        if((delimiter_pos) >= _size)
-            return 0;
-        return image_header<raw_type>::unpack_num_dims(_buf, delimiter_pos+1);
-
-
-    }
 };
 
 template < typename T , typename S>

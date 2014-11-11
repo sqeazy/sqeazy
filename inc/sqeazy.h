@@ -329,5 +329,5 @@ SQY_FUNCTION_PREFIX int SQY_LZ4_Decompressed_Length(const char* data, long *leng
 */
 SQY_FUNCTION_PREFIX int SQY_LZ4Decode(const char* src, long srclength, char* dst);
 
-
+SQY_FUNCTION_PREFIX int SQY_Header_Size(const char* src, long* length);
 #endif

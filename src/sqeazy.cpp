@@ -1,6 +1,9 @@
 #define SQEAZY_CPP_
 #include "sqeazy.h"
 #include "sqeazy_impl.hpp"
+#include "sqeazy_header.hpp"
+
+
 
 /*
 *	Sqeazy - Fast and flexible volume compression library
@@ -220,11 +223,15 @@ int SQY_RmBackground_Estimated_UI16(int width, int height, int depth, char* src,
 
 #ifndef LZ4_VERSION_MAJOR
 #include "external_encoders.hpp"
-#endif
+#include "pipeline.hpp"
+typedef sqeazy::bmpl::vector< sqeazy::lz4_scheme<char> > lz4_;
+typedef sqeazy::pipeline<lz4_> lz4_pipe;
+
 
 int SQY_LZ4Encode(const char* src, long srclength, char* dst, long* dstlength){
 
-  int retvalue = sqeazy::lz4_scheme<char,long>::encode(src,dst,srclength,*dstlength);
+  int retvalue = lz4_pipe::compress(src,dst,srclength,*dstlength);
+    //sqeazy::lz4_scheme<char,long>::encode(src,dst,srclength,*dstlength);
   
   return retvalue;
 }
@@ -232,7 +239,11 @@ int SQY_LZ4Encode(const char* src, long srclength, char* dst, long* dstlength){
 
 int SQY_LZ4_Max_Compressed_Length(long* length){
   
-  long value = sqeazy::lz4_scheme<char>::max_encoded_size(*length);//compression size + one long to encode size of
+  std::vector<unsigned> shape(1);
+  shape[0] = *length;
+  sqeazy::image_header<char> hdr(shape, lz4_pipe::name());
+  
+  long value = lz4_pipe::max_bytes_encoded(*length, hdr.size());//compression size + one long to encode size of
   *length = value;
   return 0;
 
@@ -240,8 +251,11 @@ int SQY_LZ4_Max_Compressed_Length(long* length){
 
 int SQY_LZ4_Decompressed_Length(const char* data, long *length){
   
-  
-  *length = sqeazy::lz4_scheme<char>::decoded_size_byte(data,*length);
+  sqeazy::image_header<sqeazy::unknown> hdr(data, data + *length);
+  if(sqeazy::image_header<sqeazy::unknown>::valid_header(hdr.header))
+    *length = hdr.payload_size_byte();
+  else
+    *length = 0;
   return 0;
 
 }
@@ -250,10 +264,18 @@ int SQY_LZ4_Decompressed_Length(const char* data, long *length){
 
 int SQY_LZ4Decode(const char* src, long srclength, char* dst){
 
-  
-
-  int retcode = sqeazy::lz4_scheme<char>::decode(src,dst,srclength);
+  //  sqeazy::image_header<sqeazy::unknown> hdr(src, src + srclength);
+  int retcode = lz4_pipe::decompress(src,dst,srclength);
   
   return retcode;
 }
 
+int SQY_Header_Size(const char* src, long *srclength){
+
+  sqeazy::image_header<sqeazy::unknown> hdr(src, src + *srclength);
+  *srclength = hdr.size();
+  
+  return 0;
+}
+
+#endif
