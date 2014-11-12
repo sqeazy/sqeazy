@@ -136,7 +136,7 @@ void decompress_files(const std::vector<std::string>& _files,
 		      const po::variables_map& _config) {
 
 
-  std::vector<char> file_data;
+  std::string file_data;
 
   unsigned long long found_size_byte = 0;
   unsigned long long expected_size_byte = 0;
@@ -146,7 +146,7 @@ void decompress_files(const std::vector<std::string>& _files,
   std::string found_pipeline;
   unsigned found_num_bits;
   sqeazy_bench::pipeline_select dynamic;
-
+  std::istringstream buf;
   sqeazy_bench::tiff_facet	tiff;
 
   for(const std::string& _file : _files) {
@@ -169,13 +169,12 @@ void decompress_files(const std::vector<std::string>& _files,
     found_size_byte = boost::filesystem::file_size(current_file);
     sqyfile.open(_file, std::ios_base::binary | std::ios_base::in );
 
-    //read the contents of the file
-    if(file_data.size()!=found_size_byte)
-      file_data.resize(found_size_byte);
+    file_data = std::string((std::istreambuf_iterator<char>(sqyfile)), 
+			    std::istreambuf_iterator<char>());
 
-    sqyfile.get(&file_data[0],found_size_byte);
 
-    const char* file_ptr =  &file_data[0];
+
+    const char* file_ptr = &file_data[0];
     const char* end_header_ptr =  std::find(file_ptr, file_ptr + found_size_byte, 
 					    sqeazy::image_header<sqeazy::unknown>::header_end_delimeter());
 
