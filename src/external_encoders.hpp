@@ -15,7 +15,7 @@ namespace sqeazy {
 
 
 template < typename T , typename S = unsigned long>
-struct lz4_scheme {
+struct lz4_scheme : public compressor_tag {
 
     typedef T raw_type;
     typedef char compressed_type;

@@ -13,8 +13,27 @@
 #include "boost/utility/enable_if.hpp"
 
 #include "sqeazy_header.hpp"
+#include "sqeazy_common.hpp"
 
 namespace sqeazy {
+
+  template <typename T, bool flag>
+  struct max_bytes_encoded_detail {
+    unsigned long operator()(unsigned long _data_in_bytes, 
+  			     unsigned _len_header_bytes){
+      return _data_in_bytes+_len_header_bytes;
+    }
+  };
+
+  template <typename T>
+  struct max_bytes_encoded_detail<T,true> {
+    unsigned long operator()(unsigned long _data_in_bytes, 
+  			     unsigned _len_header_bytes){
+      unsigned long compressor_bound = T::max_encoded_size(_data_in_bytes);
+    return compressor_bound+_len_header_bytes;
+    }
+  };
+
 
 namespace bmpl = boost::mpl;
 
@@ -188,7 +207,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
     }
 
     template <typename SizeType, typename ScalarType>
-    static typename boost::enable_if_c<sizeof(SizeType) && compressor_type::is_compressor,int>::type
+    static typename boost::enable_if_c<sizeof(ScalarType) && compressor_type::is_compressor,int>::type
     compress(const raw_type* _in, 
 	     compressed_type* _out,
              SizeType& _size,
@@ -211,14 +230,17 @@ struct pipeline : public bmpl::back<TypeList>::type {
         int value = pipe_loop::apply(_in, first_output, _size);
 	
         _num_compressed_bytes = compressor_type::last_num_encoded_bytes+hdr.size();
+	compressor_type::last_num_encoded_bytes += hdr.size();
+
         return value;
 
     }
 
 
     template <typename SizeType>
-    static int compress(const raw_type* _in, compressed_type* _out,
-                        SizeType& _size) {
+    static int compress(const raw_type* _in, 
+	       compressed_type* _out,
+	       SizeType& _size) {
 
         typedef typename first_step::compressed_type output_type;
 
@@ -237,6 +259,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
 
         int value = pipe_loop::apply(_in, first_output, _size);
 
+	
         return value;
     }
 
@@ -330,13 +353,20 @@ struct pipeline : public bmpl::back<TypeList>::type {
 
     }
 
-  static const unsigned long max_bytes_encoded(unsigned long _data_in_bytes, unsigned _len_header_bytes = 0) {
+  static const // typename boost::enable_if_c<compressor_type::is_compressor==true,
+				     unsigned long// >::type
+    max_bytes_encoded(unsigned long _data_in_bytes, 
+		      unsigned _len_header_bytes = 0
+		      ) {
 
-    unsigned long compressor_bound = compressor_type::max_encoded_size(_data_in_bytes);
+    max_bytes_encoded_detail<compressor_type, compressor_type::is_compressor> detail;
 
-    return compressor_bound+_len_header_bytes;
-
+    return detail(_data_in_bytes, _len_header_bytes);
+    
   }
+
+
+
 
 
   template <typename U>

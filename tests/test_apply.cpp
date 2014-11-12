@@ -10,35 +10,32 @@
 template <typename T>
 struct add_one {
 
-    typedef T raw_type;
-    typedef T compressed_type;
-    static const bool is_compressor = false;
+  typedef T raw_type;
+  typedef T compressed_type;
+  static const bool is_compressor = false;
 
-    static std::string name() {
+  static std::string name() {
 
-        return std::string("add_one");
+    return std::string("add_one");
 
-    }
+  }
 
 
-    T operator()( const T& _in) {
-        return _in + 1;
-    }
+  T operator()( const T& _in) {
+    return _in + 1;
+  }
 
-    static int encode( const T* _in, T* _out, const unsigned long& _size) {
-        const T* begin = _in;
-        const T* end = begin + _size;
+  static int encode( const T* _in, T* _out, const unsigned long& _size) {
+    const T* begin = _in;
+    const T* end = begin + _size;
+   
+    add_one<T> adder;
+    std::transform(begin, end, _out, adder);
 
-//     for(;begin!=end;++begin, ++_out){
-//       *_out = *begin + 1;
-//     }
-        add_one<T> adder;
-        std::transform(begin, end, _out, adder);
+    return 0;
+  }
 
-        return 0;
-    }
-
-  static unsigned long max_encoded_size(unsigned long _size_bytes){
+  static const unsigned long max_encoded_size(unsigned long _size_bytes){
     return _size_bytes;
   }
 
@@ -47,31 +44,31 @@ struct add_one {
 template <typename T >
 struct square {
 
-    typedef T raw_type;
-    typedef T compressed_type;
-    static const bool is_compressor = false;
+  typedef T raw_type;
+  typedef T compressed_type;
+  static const bool is_compressor = false;
 
-    static std::string name() {
+  static std::string name() {
 
-        return std::string("square");
+    return std::string("square");
 
-    }
+  }
 
-    T operator()( const T& _in) {
-        return _in * _in;
-    }
+  T operator()( const T& _in) {
+    return _in * _in;
+  }
 
-    static int encode( const T* _in, T* _out, const unsigned long& _size) {
-        const T* begin = _in;
-        const T* end = begin + _size;
+  static int encode( const T* _in, T* _out, const unsigned long& _size) {
+    const T* begin = _in;
+    const T* end = begin + _size;
 
-        square<T> operation;
-        std::transform(begin, end, _out, operation);
+    square<T> operation;
+    std::transform(begin, end, _out, operation);
 
-        return 0;
-    }
+    return 0;
+  }
 
-  static unsigned long max_encoded_size(unsigned long _size_bytes){
+  static const unsigned long max_encoded_size(unsigned long _size_bytes){
     return _size_bytes;
   }
   
@@ -298,23 +295,25 @@ BOOST_AUTO_TEST_CASE( encode_decode_bitswap_shorts_dims_input )
     typedef sqeazy::bmpl::vector<sqeazy::bitswap_scheme<value_type>, sqeazy::lz4_scheme<value_type> > test_pipe;
     typedef sqeazy::pipeline<test_pipe> current_pipe;
 
-    long expected_size = current_pipe::max_bytes_encoded(size_in_byte, current_pipe::header_size(size));
-    if(expected_size!=size_in_byte)
-      to_play_with.resize(expected_size);
+    long hdr_size = current_pipe::header_size(size);
+    long expected_size_byte = current_pipe::max_bytes_encoded(size_in_byte, hdr_size);
+    std::vector<char> output(expected_size_byte,'z');
 
-    char* output = reinterpret_cast<char*>(&to_play_with[0]);
 
     std::vector<int> dims(3);
     const unsigned local_axis_length = axis_length;
     std::fill(dims.begin(), dims.end(), local_axis_length);
-//     const unsigned local_size = size;
-    int enc_ret = current_pipe::compress(&constant_cube[0], output, dims);
 
+    //COMPRESS
+    unsigned written_bytes = 0;
+    int enc_ret = current_pipe::compress(&constant_cube[0], &output[0], dims,written_bytes);
 
-    const unsigned written_bytes = current_pipe::last_num_encoded_bytes;
-    std::vector<char> temp(output,output + written_bytes);
+    BOOST_CHECK_EQUAL(output[0],'b');
+    
+    std::vector<char> temp(output.begin(),output.begin() + written_bytes);
     std::fill(to_play_with.begin(), to_play_with.end(),0);
 
+    //DECOMPRESS
     int dec_ret = current_pipe::decompress(&temp[0], &to_play_with[0], written_bytes);
     BOOST_REQUIRE_EQUAL(enc_ret,0);
     BOOST_REQUIRE_EQUAL(dec_ret,0);
@@ -372,11 +371,10 @@ BOOST_AUTO_TEST_CASE( encode_decode_diff_shorts_incrementing_input )
     std::vector<int> dims(3);
     const unsigned local_axis_length = axis_length;
     std::fill(dims.begin(), dims.end(), local_axis_length);
-//     const unsigned local_size = size;
-    int enc_ret = current_pipe::compress(&incrementing_cube[0], output, dims);
 
+    unsigned written_bytes = 0;
+    int enc_ret = current_pipe::compress(&incrementing_cube[0], output, dims, written_bytes);
 
-    const unsigned written_bytes = current_pipe::last_num_encoded_bytes;
     std::vector<char> temp(output,output + written_bytes);
 
     int dec_ret = current_pipe::decompress(&temp[0], &to_play_with[0], written_bytes);
@@ -395,16 +393,18 @@ BOOST_AUTO_TEST_CASE( encode_decode_diff_shorts_incrementing_input_last_pixels_o
             sqeazy::lz4_scheme<value_type> > test_pipe;
     typedef sqeazy::pipeline<test_pipe> current_pipe;
 
+    long expected_size = current_pipe::max_bytes_encoded(size_in_byte, current_pipe::header_size(size));
+    if(expected_size!=size_in_byte)
+      to_play_with.resize(expected_size);
     char* output = reinterpret_cast<char*>(&to_play_with[0]);
 
     std::vector<int> dims(3);
     const unsigned local_axis_length = axis_length;
     std::fill(dims.begin(), dims.end(), local_axis_length);
-//     const unsigned local_size = size;
-    int enc_ret = current_pipe::compress(&incrementing_cube[0], output, dims);
 
+    unsigned written_bytes = 0;
+    int enc_ret = current_pipe::compress(&incrementing_cube[0], output, dims, written_bytes);
 
-    const unsigned written_bytes = current_pipe::last_num_encoded_bytes;
     std::vector<char> temp(output,output + written_bytes);
 
     int dec_ret = current_pipe::decompress(&temp[0], &to_play_with[0], written_bytes);
@@ -427,6 +427,10 @@ BOOST_AUTO_TEST_CASE( encode_decode_diff_shorts_incrementing_onrow_types )
     typedef sqeazy::bmpl::vector<sqeazy::diff_scheme<value_type, sqeazy::last_pixels_on_line_neighborhood<> >,
 				 sqeazy::bitswap_scheme<signed_value_type,1> > var_raw_type_;
     typedef sqeazy::pipeline<var_raw_type_> var_type_pipe;
+
+    long expected_size = const_raw_type_pipe::max_bytes_encoded(size_in_byte, const_raw_type_pipe::header_size(size));
+    if(expected_size!=size_in_byte)
+      to_play_with.resize(expected_size);
 
     std::vector<value_type> const_result = to_play_with;
     std::vector<signed_value_type> var_result(to_play_with.begin(),to_play_with.end());
