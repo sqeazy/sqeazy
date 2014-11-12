@@ -110,6 +110,7 @@ void fill_suite(const std::vector<std::string>& _args,
     std::vector<value_type> output_data;
     std::array<std::string,2> head_tail;
     boost::filesystem::path current_file;
+    unsigned long written_bytes = 0;
 
     for(unsigned i = 0; i < num_files; ++i) {
 
@@ -122,7 +123,7 @@ void fill_suite(const std::vector<std::string>& _args,
         if(reference.empty())
             continue;
 
-	
+	written_bytes = 0;
 
 	//compute the maximum size of the output buffer
         unsigned long expected_size = std::ceil(current_pipe::max_bytes_encoded(reference.size_in_byte())/float(sizeof(value_type)));
@@ -140,11 +141,13 @@ void fill_suite(const std::vector<std::string>& _args,
         sqeazy_bench::bcase<value_type> temp_case(current_file.string(), reference.data(), reference.axis_lengths);
 	
 	//perform encoding and write output to output_data
+	
         temp_case.return_code = current_pipe::compress(reference.data(),
-                                dest,
-                                reference.axis_lengths);
+						       dest,
+						       reference.axis_lengths,
+						       written_bytes);
 	//STOP TIMER
-        temp_case.stop(current_pipe::last_num_encoded_bytes);
+        temp_case.stop(written_bytes);
 	
 	//save benchmark case to suite for later reuse
         _suite.at(i,temp_case);
@@ -168,7 +171,7 @@ void fill_suite(const std::vector<std::string>& _args,
         if(_config.roundtrip.size()>1) {
             //decompress what was just compressed
             int dec_ret = current_pipe::decompress(dest,reference.data(),
-                                                   current_pipe::last_num_encoded_bytes);
+                                                   written_bytes);
             if(dec_ret && _config.verbose) {
                 std::cerr << "decompression failed! Nothing to write to disk...\n";
                 continue;

@@ -180,7 +180,7 @@ void decompress_files(const std::vector<std::string>& _files,
 					    sqeazy::image_header<sqeazy::unknown>::header_end_delimeter());
 
     sqeazy::image_header<sqeazy::unknown> sqy_header(file_ptr,
-						     end_header_ptr
+						     end_header_ptr+1
 						     );
 
     tiff.shape_ = *(sqy_header.shape());
@@ -201,7 +201,7 @@ void decompress_files(const std::vector<std::string>& _files,
     std::fill(tiff.buffer_.begin(), tiff.buffer_.end(),0);
 
     int dec_ret = dynamic.decompress(&file_data[0],&tiff.buffer_[0],
-    					   found_size_byte);
+				     found_size_byte);
 	
     if(dec_ret && _config.count("verbose")) {
       std::cerr << "decompression failed! Nothing to write to disk...\n";
