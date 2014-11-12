@@ -204,8 +204,9 @@ struct pipeline : public bmpl::back<TypeList>::type {
 	char* output_buffer = reinterpret_cast<char*>(_out);
 	std::copy(hdr.header.begin(), hdr.header.end(), output_buffer);
 	
-	unsigned long hdr_shift = hdr.size()/sizeof(output_type);
-        output_type* first_output = reinterpret_cast<output_type*>(_out+hdr_shift);
+	unsigned long hdr_shift = hdr.size()// /sizeof(output_type)
+	  ;
+        output_type* first_output = reinterpret_cast<output_type*>(output_buffer+hdr_shift);
 
         int value = pipe_loop::apply(_in, first_output, _size);
 	
@@ -229,9 +230,10 @@ struct pipeline : public bmpl::back<TypeList>::type {
 	char* output_buffer = reinterpret_cast<char*>(_out);
 	std::copy(hdr.header.begin(), hdr.header.end(), output_buffer);
 
-	unsigned long hdr_shift = hdr.size()/sizeof(output_type);
+	unsigned long hdr_shift_bytes = hdr.size()// /sizeof(output_type)
+	  ;
 
-        output_type* first_output = reinterpret_cast<output_type*>(_out+hdr_shift);
+        output_type* first_output = reinterpret_cast<output_type*>(output_buffer+hdr_shift_bytes);
 
         int value = pipe_loop::apply(_in, first_output, _size);
 
@@ -252,13 +254,15 @@ struct pipeline : public bmpl::back<TypeList>::type {
 
 	sqeazy::image_header<raw_type> hdr(_in, _in + _size);
 
-        unsigned long temp_size = hdr.payload_size_byte();
-        std::vector<raw_type> temp(temp_size/sizeof(raw_type));
+	//assumption: raw_type == first_step_input_type
+        unsigned long temp_size_byte = hdr.payload_size_byte();
+        std::vector<raw_type> temp(temp_size_byte/sizeof(raw_type));
 
 	unsigned long hdr_shift = hdr.size()/sizeof(compressed_type);
 	const compressed_type* input_begin = _in + hdr_shift;
 	
-        int dec_result = compressor_type::decode(input_begin, &temp[0], _size - hdr.size(), temp_size);
+	unsigned long input_size = _size - (hdr.size()/sizeof(compressed_type));
+        int dec_result = compressor_type::decode(input_begin, &temp[0], input_size , temp_size_byte);
         dec_result *= 10*(type_list_size - 1);
 
 
@@ -268,19 +272,23 @@ struct pipeline : public bmpl::back<TypeList>::type {
         unsigned found_num_dims = hdr.shape()->size();
 
         int ret_value = 0;
-        first_step_output_type* first_out= reinterpret_cast<first_step_output_type*>(_out);
-        first_step_input_type* first_in = reinterpret_cast<first_step_input_type*>(&temp[0]);
 
-        if(found_num_dims==1) {
+	first_step_output_type* first_out= reinterpret_cast<first_step_output_type*>(_out);
+	first_step_input_type* first_in = reinterpret_cast<first_step_input_type*>(&temp[0]);
 
-            ret_value = pipe_loop::apply(first_in, first_out, temp_size);
+	if(found_num_dims==1) {
+	  unsigned first_in_n_el = temp_size_byte;
+	  if(!boost::is_same<first_step_input_type,void>::value)
+	    first_in_n_el/=sizeof(first_step_input_type);
 
-        }
+	  ret_value = pipe_loop::apply(first_in, first_out, first_in_n_el);
 
-        if(found_num_dims>1) {
+	}
+
+	if(found_num_dims>1) {
 	  std::vector<unsigned> found_dims = *hdr.shape();
 	  ret_value = pipe_loop::apply(first_in, first_out, found_dims);
-        }
+	}
 
         return ret_value+dec_result;
     }

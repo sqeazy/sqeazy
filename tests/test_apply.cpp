@@ -38,6 +38,9 @@ struct add_one {
         return 0;
     }
 
+  static unsigned long max_encoded_size(unsigned long _size_bytes){
+    return _size_bytes;
+  }
 
 };
 
@@ -68,7 +71,10 @@ struct square {
         return 0;
     }
 
-
+  static unsigned long max_encoded_size(unsigned long _size_bytes){
+    return _size_bytes;
+  }
+  
 };
 
 typedef add_one<int> add_one_to_ints;
@@ -94,10 +100,15 @@ BOOST_AUTO_TEST_CASE( without_pipeline )
 BOOST_AUTO_TEST_CASE (with_pipeline_apply) {
 
     std::vector<int> test_in(42,1);
-    std::vector<int> test_out(100,0);//42 plus header
+    std::vector<int> test_out;
 
     typedef sqeazy::bmpl::vector<add_one<int>, square<int> > test_pipe;
     typedef sqeazy::pipeline<test_pipe> current_pipe;
+
+    unsigned hdr_size_bytes = current_pipe::header_size(test_in.size());
+    long expected_size_bytes = current_pipe::max_bytes_encoded(test_in.size()*sizeof(int), hdr_size_bytes);
+    test_out.resize(expected_size_bytes/sizeof(int));
+    std::fill(test_out.begin(), test_out.end(),0);
 
     std::string pipe_name = current_pipe::name();
 
@@ -112,10 +123,10 @@ BOOST_AUTO_TEST_CASE (with_pipeline_apply) {
     BOOST_CHECK_EQUAL(in_size,test_in.size());
     std::vector<int> expected(test_in.size(),4);
 
-    int hdr_size = current_pipe::header_size(42);
-    const int* out_ptr = &test_out[0] + (hdr_size/sizeof(int));
 
-    BOOST_CHECK_EQUAL_COLLECTIONS(out_ptr, out_ptr + in_size,
+
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(test_out.begin() + (hdr_size_bytes/sizeof(int)),test_out.end(),
                                   expected.begin(),expected.end()
                                  );
 
@@ -259,25 +270,25 @@ BOOST_AUTO_TEST_CASE( encode_decode_bitswap_shorts )
     typedef sqeazy::bmpl::vector<sqeazy::bitswap_scheme<value_type>, sqeazy::lz4_scheme<value_type> > test_pipe;
     typedef sqeazy::pipeline<test_pipe> current_pipe;
 
-    long expected_size = current_pipe::max_bytes_encoded(size_in_byte, current_pipe::header_size(size));
-    if(expected_size!=size_in_byte)
-      to_play_with.resize(expected_size);
-
-    char* output = reinterpret_cast<char*>(&to_play_with[0]);
+    long hdr_size = current_pipe::header_size(size);
+    long expected_size_byte = current_pipe::max_bytes_encoded(size_in_byte, hdr_size);
+    
+    std::vector<char> output(expected_size_byte,'z');
 
     const unsigned local_size = size;
-    int enc_ret = current_pipe::compress(&constant_cube[0], output, local_size);
+    unsigned written_bytes = 0;
+    int enc_ret = current_pipe::compress(&constant_cube[0], &output[0], local_size, written_bytes);
 
+    BOOST_CHECK_GT(written_bytes,0);
 
-    const unsigned written_bytes = current_pipe::last_num_encoded_bytes;
-    std::vector<char> temp(output,output + written_bytes);
-
-    int dec_ret = current_pipe::decompress(&temp[0], &to_play_with[0], written_bytes);
+    std::vector<char> temp(output.begin(),output.begin() + written_bytes);
+    unsigned temp_size = temp.size();
+    int dec_ret = current_pipe::decompress(&temp[0], &to_play_with[0], temp_size);
     BOOST_REQUIRE_EQUAL(enc_ret,0);
     BOOST_REQUIRE_EQUAL(dec_ret,0);
 
     BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(), constant_cube.end(),
-                                  &to_play_with[0], &to_play_with[0] + size
+                                  to_play_with.begin(), to_play_with.begin() + size
                                  );
 }
 
@@ -302,6 +313,7 @@ BOOST_AUTO_TEST_CASE( encode_decode_bitswap_shorts_dims_input )
 
     const unsigned written_bytes = current_pipe::last_num_encoded_bytes;
     std::vector<char> temp(output,output + written_bytes);
+    std::fill(to_play_with.begin(), to_play_with.end(),0);
 
     int dec_ret = current_pipe::decompress(&temp[0], &to_play_with[0], written_bytes);
     BOOST_REQUIRE_EQUAL(enc_ret,0);

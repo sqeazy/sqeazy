@@ -124,27 +124,25 @@ BOOST_AUTO_TEST_CASE( encode_custom_header )
   BOOST_CHECK_EQUAL(instance.payload_size(),32);
   BOOST_CHECK_EQUAL(instance.payload_size_byte(),32*sizeof(value_type));
   BOOST_CHECK_EQUAL(instance.dims.size(),1);
-  BOOST_CHECK_EQUAL(instance.size(),given.size()-4);
+  BOOST_CHECK_EQUAL(instance.size(),given.size()-3);
   
   std::string given2 = "no_pipeline,s,1,32";
-  
-  
+    
   sqeazy::image_header<value_type> instance2(given2);
 
   BOOST_CHECK_EQUAL(sqeazy::image_header<value_type>::valid_header(given2),true);
   BOOST_CHECK_EQUAL(instance2.payload_size(),32);
   BOOST_CHECK_EQUAL(instance2.payload_size_byte(),32*sizeof(value_type));
   BOOST_CHECK_EQUAL(instance2.dims.size(),1);
-  BOOST_CHECK_EQUAL(instance2.size(),given2.size());
+  BOOST_CHECK_EQUAL(instance2.size(),given2.size()+1);
   
 
   sqeazy::image_header<sqeazy::unknown> instance_void(given2);
 
-
   BOOST_CHECK_EQUAL(instance_void.payload_size(),32);
   BOOST_CHECK_EQUAL(instance_void.payload_size_byte(),32*sizeof(value_type));
   BOOST_CHECK_EQUAL(instance_void.dims.size(),1);
-  BOOST_CHECK_EQUAL(instance_void.size(),given2.size());
+  BOOST_CHECK_EQUAL(instance_void.size(),given2.size()+1);
   
 }
 

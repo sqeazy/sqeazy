@@ -59,6 +59,8 @@ namespace sqeazy {
     static const char major_delimeter() { return major_delim; }
     static const char minor_delimeter() { return minor_delim; }
     static const char header_end_delimeter() { return header_end_delim; }
+    
+    typedef T value_type;
 
     std::string header;
     std::vector<unsigned> dims;
@@ -206,16 +208,25 @@ header = "";
       header << _pipe_name << major_delim ;
       header << typeid(T).name() << major_delim
     	     << _dims.size() << major_delim;
+
+      if(_dims.size()>1){
       for(unsigned i = 0; i<_dims.size(); ++i) {
     	if(i!=(_dims.size()-1))
     	  header << _dims[i] << minor_delim;
     	else
     	  header << _dims[i];
       }
+      } else {
+	header << _dims[0] ;
+      }
       
-      // if(header.str().size() % 2 == 0)
-      // 	header << " ";
-      
+      int final_size_in_byte = header.str().size() + 1;
+      if(final_size_in_byte % sizeof(T) != 0){
+	int n_spaces_to_fill = final_size_in_byte % sizeof(T);
+	for(int i = 0;i<n_spaces_to_fill;++i)
+	  header << " ";
+      }
+	
       header << header_end_delim;
 
       return header.str();
