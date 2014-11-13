@@ -9,9 +9,10 @@
 #include <stdexcept>
 #include <typeinfo>
 
+#include "sqeazy_common.hpp"
+
 namespace sqeazy {
 
-  struct unknown {};
 
   template <char delimiter, typename T>
   void split_string_to_vector(const std::string& _buffer, std::vector<T>& _v) {

@@ -113,8 +113,8 @@ struct loop_encode {
 template <typename TList>
 struct loop_encode<TList, -1 > {
 
-    typedef void raw_type;
-    typedef void compressed_type;
+    typedef sqeazy::unknown raw_type;
+    typedef sqeazy::unknown compressed_type;
 
     template <typename T, typename U, typename S>
     static int apply(const T* _in, U* _out, S& _size) {
@@ -170,8 +170,8 @@ struct loop_decode {
 template <typename TList>
 struct loop_decode<TList, -1 > {
 
-    typedef void raw_type;
-    typedef void compressed_type;
+    typedef sqeazy::unknown raw_type;
+    typedef sqeazy::unknown compressed_type;
 
     template <typename T, typename U, typename S>
     static int apply(const T* _in, U* _out, S& _size) {

@@ -264,7 +264,6 @@ int SQY_LZ4_Decompressed_Length(const char* data, long *length){
 
 int SQY_LZ4Decode(const char* src, long srclength, char* dst){
 
-  //  sqeazy::image_header<sqeazy::unknown> hdr(src, src + srclength);
   int retcode = lz4_pipe::decompress(src,dst,srclength);
   
   return retcode;

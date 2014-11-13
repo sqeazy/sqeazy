@@ -9,11 +9,31 @@
 			  
 			  ;;;for auto-complete-clang-async
 			  (if (boundp 'ac-clang-cflags)
-			      (progn (setq ac-clang-cflags (append 
-						      ac-clang-cflags '("-I/home/steinbac/development/sqeazy/inc" "-I/home/steinbac/development/sqeazy/src" "-I/home/steinbac/development/sqeazy/tests" "-I/home/steinbac/development/sqeazy/bench")
-			  				)
+			      (progn (setq ac-clang-cflags 
+					   (append ac-clang-cflags 
+								      (mapcar (lambda (item)(concat "-I" my-project-path item))
+									      (split-string "inc src tests bench"))
+								      '("-std=c++11")
+								      )
 					   )
 				     (ac-clang-update-cmdlineargs)
+				     (message "[c++-mode] ac-clang-cflags updated")
+				     
+				     )
+			    nil)
+			  
+			  ;;for auto-complete-clang
+			  (if (boundp 'ac-clang-flags)
+			      (progn (setq ac-clang-flags 
+					   (append ac-clang-flags
+								      (mapcar (lambda (item)(concat "-I" my-project-path item))
+									      (split-string "inc src tests bench"))
+								      '("-std=c++11")
+								      )
+					   )
+				     ;;(ac-clang-update-cmdlineargs)
+				     (message "[c++-mode] ac-clang-flags updated")
+				     
 				     )
 			    nil)
 			  
@@ -26,8 +46,7 @@
 								      '("-std=c++11")
 								      )
 				      )
-				(message 
-				 "[c++-mode] company-clang-arguments exists '%s'" company-clang-arguments)
+				(message "[c++-mode] company-clang-arguments updated" )
 				)
 			    nil)
 

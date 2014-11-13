@@ -11,8 +11,7 @@ enum error_code {
 
 };
 
-  struct compressor_tag {};
-  struct unknown_tag {};
+  struct unknown {};
 
 };//sqeazy
 
