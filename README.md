@@ -1,4 +1,4 @@
-# README #
+# Sqeazy #
 
 Sqeazy - Fast and Flexible Volume Compression Library
 
