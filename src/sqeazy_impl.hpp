@@ -245,17 +245,19 @@ struct bitswap_scheme {
         const raw_type mask = ~(~0 << (raw_type_num_bits_per_segment));
         raw_type value = 0;
 
-        for(size_type seg_index = 0; seg_index<num_segments; ++seg_index) {
-
-            size_type input_bit_offset = seg_index*raw_type_num_bits_per_segment;
-
-            for(size_type index = 0; index < _length; ++index) {
+	for(size_type index = 0; index < _length; ++index) {
+	  
 
                 value = xor_if_signed(_input[index]);
                 value = rotate_left<1>(value);
-                raw_type extracted_bits = (value >> input_bit_offset) & mask;
-                size_type output_bit_offset = ((index % num_segments)*raw_type_num_bits_per_segment);
-                size_type output_index = ((num_segments-1-seg_index)*segment_length) + (index/num_segments);
+
+		for(size_type seg_index = 0; seg_index<num_segments; ++seg_index) {
+
+		  size_type input_bit_offset = seg_index*raw_type_num_bits_per_segment;
+
+		  raw_type extracted_bits = (value >> input_bit_offset) & mask;
+		  size_type output_bit_offset = ((index % num_segments)*raw_type_num_bits_per_segment);
+		  size_type output_index = ((num_segments-1-seg_index)*segment_length) + (index/num_segments);
 
                 _output[output_index] = setbits_of_integertype(_output[output_index],extracted_bits,
                                         output_bit_offset,
