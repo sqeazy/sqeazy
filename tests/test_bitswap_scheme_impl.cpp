@@ -271,3 +271,179 @@ BOOST_AUTO_TEST_CASE( apply_xor )
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+typedef sqeazy::bitswap_scheme<unsigned short> bswap1_scheme;
+typedef sqeazy::bitswap_scheme<unsigned short,2> bswap2_scheme;
+typedef sqeazy::bitswap_scheme<unsigned short,4> bswap4_scheme;
+
+struct incrementing_array
+{
+  std::vector<unsigned short> input;
+  std::vector<unsigned short> plane1_encoded_by_hand;
+  std::vector<unsigned short> plane2_encoded_by_hand;
+  std::vector<unsigned short> plane4_encoded_by_hand;
+  std::vector<unsigned short> output;
+
+  incrementing_array():
+    input(16,0),
+    plane1_encoded_by_hand(16,0),
+    plane2_encoded_by_hand(16,0),
+    plane4_encoded_by_hand(16,0),
+    output(16,0)
+  {
+
+    for (int i = 0; i < 16; ++i)
+      {
+	input[i] = i;
+      }
+
+    plane1_encoded_by_hand[11] = 0xff;// = 255
+    plane1_encoded_by_hand[12] = 0xf0f;// = 3855
+    plane1_encoded_by_hand[13] = 0x3333;// = 13107
+    plane1_encoded_by_hand[14] = 0x5555;// = 21845
+
+    //bswap2
+    plane2_encoded_by_hand[11] = 0x5555;
+    plane2_encoded_by_hand[12] = 0x05af;
+    plane2_encoded_by_hand[13] = plane2_encoded_by_hand[12];
+    plane2_encoded_by_hand[14] = 0x2222;
+    plane2_encoded_by_hand[15] = plane2_encoded_by_hand[14];
+
+    //bswap4
+    plane4_encoded_by_hand[10] = 0x1111;
+    plane4_encoded_by_hand[11] = 0x1111;
+    plane4_encoded_by_hand[12] = 0x0246;
+    plane4_encoded_by_hand[13] = 0x8ace;
+    plane4_encoded_by_hand[14] = 0x0246;
+    plane4_encoded_by_hand[15] = 0x8ace;
+
+  }
+
+  
+};
+
+BOOST_FIXTURE_TEST_SUITE( encode_decode_loop, incrementing_array )
+
+BOOST_AUTO_TEST_CASE( encoded_equals_by_hand_planewidth1 )
+{
+
+  int rv = bswap1_scheme::encode(&input[0], &output[0],input.size());
+
+
+  BOOST_CHECK(rv == 0);
+  for(unsigned i = 0;i<input.size();++i){
+        
+    BOOST_CHECK_MESSAGE(output[i] == plane1_encoded_by_hand[i],  
+			"bswap1_scheme::encode input["<< i <<"] = " <<  input[i] 
+			<<  ",  output = " << output[i]
+			<<  ",  by_hand = " << plane1_encoded_by_hand[i] );
+  }
+
+}
+
+BOOST_AUTO_TEST_CASE( decode_encoded_by_hand_planewidth1 )
+{
+
+  int rv = bswap1_scheme::decode(&plane1_encoded_by_hand[0], &output[0],input.size());
+
+
+  BOOST_CHECK(rv == 0);
+  for(unsigned i = 0;i<input.size();++i){
+        
+    BOOST_CHECK_MESSAGE(output[i] == input[i],  
+			"bswap1_scheme::decode input["<< i <<"] = " <<  plane1_encoded_by_hand[i] 
+			<<  ",  output = " << output[i]
+			<<  ",  expected = " << input[i] );
+  }
+
+}
+
+BOOST_AUTO_TEST_CASE( encoded_equals_by_hand_planewidth2 )
+{
+
+  int rv = bswap2_scheme::encode(&input[0], &output[0],input.size());
+
+
+  BOOST_CHECK(rv == 0);
+  for(unsigned i = 0;i<input.size();++i){
+        
+    BOOST_CHECK_MESSAGE(output[i] == plane2_encoded_by_hand[i],  
+			"bswap2_scheme::encode input["<< i <<"] = " <<  input[i] 
+			<<  ",  output = " << output[i]
+			<<  ",  by_hand = " << plane2_encoded_by_hand[i] );
+  }
+
+}
+
+BOOST_AUTO_TEST_CASE( decode_encoded_by_hand_planewidth2 )
+{
+
+  int rv = bswap2_scheme::decode(&plane2_encoded_by_hand[0], &output[0],input.size());
+
+
+  BOOST_CHECK(rv == 0);
+  for(unsigned i = 0;i<input.size();++i){
+        
+    BOOST_CHECK_MESSAGE(output[i] == input[i],  
+			"bswap2_scheme::decode input["<< i <<"] = " <<  plane2_encoded_by_hand[i] 
+			<<  ",  output = " << output[i]
+			<<  ",  expected = " << input[i] );
+  }
+
+}
+
+BOOST_AUTO_TEST_CASE( encoded_equals_by_hand_planewidth4 )
+{
+
+  int rv = bswap4_scheme::encode(&input[0], &output[0],input.size());
+
+
+  BOOST_CHECK(rv == 0);
+  for(unsigned i = 0;i<input.size();++i){
+        
+    BOOST_CHECK_MESSAGE(output[i] == plane4_encoded_by_hand[i],  
+			"bswap4_scheme::encode input["<< i <<"] = " <<  input[i] 
+			<<  ",  output = " << output[i]
+			<<  ",  by_hand = " << plane4_encoded_by_hand[i] );
+  }
+
+}
+
+BOOST_AUTO_TEST_CASE( decode_encoded_by_hand_planewidth4 )
+{
+
+  int rv = bswap4_scheme::decode(&plane4_encoded_by_hand[0], &output[0],input.size());
+
+
+  BOOST_CHECK(rv == 0);
+  for(unsigned i = 0;i<input.size();++i){
+        
+    BOOST_CHECK_MESSAGE(output[i] == input[i],  
+			"bswap4_scheme::decode input["<< i <<"] = " <<  plane4_encoded_by_hand[i] 
+			<<  ",  output = " << output[i]
+			<<  ",  expected = " << input[i] );
+  }
+
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+
+BOOST_AUTO_TEST_CASE( setbits_on_integertype )
+{
+  unsigned short zero = 0;
+  unsigned short one = 1;
+  BOOST_CHECK(sqeazy::setbits_of_integertype(zero, one, 5u, 1u) == 1 << 5);
+
+  unsigned short max_char = 0xff;
+  BOOST_CHECK(sqeazy::setbits_of_integertype(max_char, one, 10u, 1u) == (max_char + (1 << 10)));
+
+  BOOST_CHECK(sqeazy::setbits_of_integertype(max_char, zero, 4u, 4u) == 0xf);
+  
+  unsigned short msb_short = 1 << 15;
+  unsigned short three = 3;
+  //three is truncated if it maps to more than 16 bits (here)
+  BOOST_CHECK(sqeazy::setbits_of_integertype(zero, three, 15u, 2u) == 0x8000);
+}
+
+

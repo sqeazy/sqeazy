@@ -13,16 +13,33 @@ extern "C" {
 
 typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 
-template <unsigned encode_width,typename T>
+/**
+   \brief produce the bit pattern (as T) that would appear in an 
+   encoded bit stream where only values of _const appear.
+   If the input only contains the value 1 as 16bit integer, the exepected output element 
+   can be constructed by hand as in:
+   value_type condensed = ((constant_cube[0] << 1) << 4) + (constant_cube[0] << 1);
+   condensed += condensed << 8;
+
+   \param[in] _const single value that appears in encoding input buffer
+   
+   \return type T
+   \retval 
+   
+*/
+template <unsigned plane_width,typename T>
 T condense_constant(const T& _const){
 
-  if(_const > (1<<encode_width))
+  if(_const > (1<<plane_width))
     return 0;
   
   T condensed = 0;
 
-  for(int i = 0;i<(CHAR_BIT/encode_width);++i)
-    condensed += ((_const << 1) << i*encode_width);
+  for(int i = 0;i<(CHAR_BIT/plane_width);++i){
+    T temp = _const << 1;//emulates rotate_left<1>
+    
+    condensed += (temp << i*plane_width);
+  }
 
   if(sizeof(T)>1){
     for(unsigned i = 1;i<=sizeof(T);++i)
@@ -63,7 +80,7 @@ BOOST_AUTO_TEST_CASE( encode_constant_correct )
 
   //constant cube has all elements set to 1
   //BitSwap4Encode splits each element into 4 pieces: Ai, Bi, Ci, Di
-  //the output the is filled as [Ai,..,Bi,..,Ci,..,Di,..]
+  //the output is filled as [Ai,..,Bi,..,Ci,..,Di,..]
   //if the input only contains the value 1 as 16bit integer, the exepected output element 
   //can be constructed by hand
   // value_type condensed = ((constant_cube[0] << 1) << 4) + (constant_cube[0] << 1);
@@ -125,8 +142,13 @@ BOOST_AUTO_TEST_CASE( is_synthetic_input_valid )
   
   BOOST_CHECK_EQUAL(retcode,0);
   BOOST_CHECK_EQUAL(to_play_with[0],output[0]);
-  BOOST_CHECK_EQUAL_COLLECTIONS(&output[0], &output[0] + uint16_cube_of_8::size,
-				&to_play_with[0], &to_play_with[0] + uint16_cube_of_8::size);
+  try{
+    BOOST_REQUIRE_EQUAL_COLLECTIONS(&output[0], &output[0] + uint16_cube_of_8::size,
+				    &to_play_with[0], &to_play_with[0] + uint16_cube_of_8::size);
+  }catch(...){
+    BOOST_TEST_MESSAGE("is_synthetic_input_valid threw exception");
+    throw;
+  }
 
 }
 

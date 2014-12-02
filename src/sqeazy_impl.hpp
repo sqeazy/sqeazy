@@ -180,7 +180,7 @@ struct diff_scheme {
 };
 
 
-template < typename T, const unsigned raw_type_num_bits_per_segment = 1  >
+template < typename T, const unsigned num_bits_per_plane = 1  >
 struct bitswap_scheme {
 
     typedef T raw_type;
@@ -189,7 +189,7 @@ struct bitswap_scheme {
     static const bool is_compressor = false;
 
     static const unsigned raw_type_num_bits = sizeof(T)*CHAR_BIT;
-    static const unsigned num_segments = raw_type_num_bits/raw_type_num_bits_per_segment;
+    static const unsigned num_planes = raw_type_num_bits/num_bits_per_plane;
 
     /**
          * @brief producing the name of this scheme and return it as a string
@@ -199,7 +199,7 @@ struct bitswap_scheme {
     static const std::string name() {
 
         std::ostringstream val("");
-        val << "bswap" << raw_type_num_bits_per_segment;
+        val << "bswap" << num_bits_per_plane;
         return val.str();
 
     }
@@ -207,8 +207,8 @@ struct bitswap_scheme {
     template <typename S>
     /**
      * @brief performs bitplane encoding, every bit of any value from _input is written to the respective 
-     * compartment in _output, the granularity of the bit decomposition is given by raw_type_num_bits_per_segment
-     * that means if raw_type_num_bits_per_segment = 1 and the input type is 8-bit wide then the output buffer is 
+     * compartment in _output, the granularity of the bit decomposition is given by num_bits_per_plane
+     * that means if num_bits_per_plane = 1 and the input type is 8-bit wide then the output buffer is 
      * divided in 8 compartments in which the values of the nth bit of every input value are written to
      * 
      * @param _input 3D input stack
@@ -227,8 +227,8 @@ struct bitswap_scheme {
     
     /**
      * @brief performs bitplane encoding, every bit of any value from _input is written to the respective 
-     * compartment in _output, the granularity of the bit decomposition is given by raw_type_num_bits_per_segment
-     * that means if raw_type_num_bits_per_segment = 1 and the input type is 8-bit wide then the output buffer is 
+     * compartment in _output, the granularity of the bit decomposition is given by num_bits_per_plane
+     * that means if num_bits_per_plane = 1 and the input type is 8-bit wide then the output buffer is 
      * divided in 8 compartments in which the values of the nth bit of every input value are written to
      * 
      * @param _input 3D input stack
@@ -241,8 +241,10 @@ struct bitswap_scheme {
                                    const size_type& _length)
     {
 
-        const unsigned segment_length = _length/num_segments;
-        const raw_type mask = ~(~0 << (raw_type_num_bits_per_segment));
+        const unsigned segment_length = _length/num_planes;
+	static const unsigned type_width = CHAR_BIT*sizeof(raw_type);
+
+        const raw_type mask = ~(~0 << (num_bits_per_plane));
         raw_type value = 0;
 
 	for(size_type index = 0; index < _length; ++index) {
@@ -251,17 +253,19 @@ struct bitswap_scheme {
                 value = xor_if_signed(_input[index]);
                 value = rotate_left<1>(value);
 
-		for(size_type seg_index = 0; seg_index<num_segments; ++seg_index) {
+		size_type output_bit_offset = (type_width - num_bits_per_plane) - ((index % num_planes)*num_bits_per_plane);
 
-		  size_type input_bit_offset = seg_index*raw_type_num_bits_per_segment;
+		for(size_type plane_index = 0; plane_index<num_planes; ++plane_index) {
 
+		  size_type input_bit_offset = plane_index*num_bits_per_plane;
 		  raw_type extracted_bits = (value >> input_bit_offset) & mask;
-		  size_type output_bit_offset = ((index % num_segments)*raw_type_num_bits_per_segment);
-		  size_type output_index = ((num_segments-1-seg_index)*segment_length) + (index/num_segments);
 
-                _output[output_index] = setbits_of_integertype(_output[output_index],extracted_bits,
-                                        output_bit_offset,
-                                        raw_type_num_bits_per_segment);
+		  size_type output_index = ((num_planes-1-plane_index)*segment_length) + (index/num_planes);
+
+                _output[output_index] = setbits_of_integertype(_output[output_index],
+							       extracted_bits,
+							       output_bit_offset,
+							       num_bits_per_plane);
             }
         }
 
@@ -282,24 +286,24 @@ struct bitswap_scheme {
                                    const size_type& _length)
     {
 
-        const unsigned segment_length = _length/num_segments;
-        const raw_type mask = ~(~0 << (raw_type_num_bits_per_segment));
+        const unsigned segment_length = _length/num_planes;
+        const raw_type mask = ~(~0 << (num_bits_per_plane));
+	static const unsigned type_width = CHAR_BIT*sizeof(raw_type);
 
-        for(size_type seg_index = 0; seg_index<num_segments; ++seg_index) {
-            for(size_type index = 0; index < _length; ++index) {
-
-                size_type input_bit_offset = (index % num_segments)*raw_type_num_bits_per_segment;
-
-                size_type input_index = ((num_segments-1-seg_index)*segment_length) + index/num_segments;
-                raw_type extracted_bits = (_input[input_index] >> input_bit_offset) & mask;
-
-                size_type output_bit_offset = seg_index*raw_type_num_bits_per_segment;
+        for(size_type plane_index = 0; plane_index<num_planes; ++plane_index) {
 
 
+	  size_type output_bit_offset = (plane_index*num_bits_per_plane);
+		
+	  for(size_type index = 0; index < _length; ++index) {
 
-                _output[index] = setbits_of_integertype(_output[index],extracted_bits,
-                                                        output_bit_offset,raw_type_num_bits_per_segment);
-            }
+	    size_type input_bit_offset = (type_width - num_bits_per_plane) - (index % num_planes)*num_bits_per_plane;
+	    size_type input_index = ((num_planes-1-plane_index)*segment_length) + index/num_planes;
+	    raw_type extracted_bits = (_input[input_index] >> input_bit_offset) & mask;
+
+	    _output[index] = setbits_of_integertype(_output[index],extracted_bits,
+						    output_bit_offset,num_bits_per_plane);
+	  }
         }
 
         for(size_type index = 0; index < _length; ++index) {
