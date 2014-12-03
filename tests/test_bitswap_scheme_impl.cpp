@@ -149,7 +149,7 @@ BOOST_AUTO_TEST_CASE( encoding_decoding_injective_on_unsigned )
 sqeazy::rotate_left<1>(xor_if_signed(test_signed[i]));
 
     unsigned short result =  
-xor_if_signed(sqeazy::rotate_right<1>(intermediate));
+      xor_if_signed(sqeazy::rotate_right<1>(intermediate));
 
     BOOST_CHECK_EQUAL(test_signed[i], result);
   }

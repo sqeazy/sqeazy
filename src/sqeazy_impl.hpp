@@ -240,36 +240,7 @@ struct bitswap_scheme {
                                    raw_type* _output,
                                    const size_type& _length)
     {
-
-        const unsigned segment_length = _length/num_planes;
-	static const unsigned type_width = CHAR_BIT*sizeof(raw_type);
-
-        const raw_type mask = ~(~0 << (num_bits_per_plane));
-        raw_type value = 0;
-
-	for(size_type index = 0; index < _length; ++index) {
-	  
-
-                value = xor_if_signed(_input[index]);
-                value = rotate_left<1>(value);
-
-		size_type output_bit_offset = (type_width - num_bits_per_plane) - ((index % num_planes)*num_bits_per_plane);
-
-		for(size_type plane_index = 0; plane_index<num_planes; ++plane_index) {
-
-		  size_type input_bit_offset = plane_index*num_bits_per_plane;
-		  raw_type extracted_bits = (value >> input_bit_offset) & mask;
-
-		  size_type output_index = ((num_planes-1-plane_index)*segment_length) + (index/num_planes);
-
-                _output[output_index] = setbits_of_integertype(_output[output_index],
-							       extracted_bits,
-							       output_bit_offset,
-							       num_bits_per_plane);
-            }
-        }
-
-        return SUCCESS;
+      return sqeazy::detail::scalar_bitplane_reorder_encode<num_bits_per_plane>(_input, _output, _length);
     }
 
     template <typename S>
@@ -286,31 +257,7 @@ struct bitswap_scheme {
                                    const size_type& _length)
     {
 
-        const unsigned segment_length = _length/num_planes;
-        const raw_type mask = ~(~0 << (num_bits_per_plane));
-	static const unsigned type_width = CHAR_BIT*sizeof(raw_type);
-
-        for(size_type plane_index = 0; plane_index<num_planes; ++plane_index) {
-
-
-	  size_type output_bit_offset = (plane_index*num_bits_per_plane);
-		
-	  for(size_type index = 0; index < _length; ++index) {
-
-	    size_type input_bit_offset = (type_width - num_bits_per_plane) - (index % num_planes)*num_bits_per_plane;
-	    size_type input_index = ((num_planes-1-plane_index)*segment_length) + index/num_planes;
-	    raw_type extracted_bits = (_input[input_index] >> input_bit_offset) & mask;
-
-	    _output[index] = setbits_of_integertype(_output[index],extracted_bits,
-						    output_bit_offset,num_bits_per_plane);
-	  }
-        }
-
-        for(size_type index = 0; index < _length; ++index) {
-            _output[index] = xor_if_signed(rotate_right<1>(_output[index]));
-        }
-
-        return SUCCESS;
+      return sqeazy::detail::scalar_bitplane_reorder_decode<num_bits_per_plane>(_input, _output, _length);
     }
 
 

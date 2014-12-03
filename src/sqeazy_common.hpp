@@ -13,6 +13,21 @@ enum error_code {
 
   struct unknown {};
 
+  /**
+     \brief this namespace is meant for helpers related to the platform sqeazy was compiled on
+          
+  */
+  namespace platform {
+    
+    struct no_vectorisation {};
+    struct has_sse2 {};
+    struct has_sse4_1 {};
+    struct has_sse4_2 {};
+
+    
+    
+  };
+
 };//sqeazy
 
 #endif /* _SQY_COMMON_HPP_ */
