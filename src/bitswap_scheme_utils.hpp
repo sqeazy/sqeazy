@@ -4,6 +4,7 @@
 #include <climits>
 #include <iostream>
 #include "sqeazy_traits.hpp"
+#include "sqeazy_common.hpp"
 #include "bitplane_reorder_detail.hpp"
 
 namespace sqeazy {
@@ -161,13 +162,13 @@ namespace sqeazy {
 	      typename raw_type , 
 	      typename size_type
 	      >
-    static const int sse_bitplane_reorder_encode(const raw_type* _input,
+    static const error_code sse_bitplane_reorder_encode(const raw_type* _input,
       raw_type* _output,
-      const unsigned& _length)
+      const size_type& _length)
     {
     //unable to perform this task input array does fit into __m128
     if(_length*sizeof(raw_type)<16)
-      return 1;
+      return FAILURE;
 
     static const unsigned items_per_register = 128/(CHAR_BIT*sizeof(raw_type));
     static const unsigned raw_type_num_bits = sizeof(raw_type)*CHAR_BIT;
@@ -217,7 +218,7 @@ namespace sqeazy {
       
   }
 
-    return 0;
+    return SUCCESS;
   }
 
 

@@ -111,6 +111,15 @@ ELSE()
 MESSAGE(">> using ${CMAKE_BUILD_TYPE} build flags: ${CMAKE_CXX_FLAGS_DEBUG}")
 ENDIF()
 
+if(SQY_EXPERIMENTAL)
+list(APPEND CMAKE_CXX_FLAGS " -D_SQY_X_=${SQY_EXPERIMENTAL}")
+list(APPEND CMAKE_C_FLAGS " -D_SQY_X_=${SQY_EXPERIMENTAL}")
+MESSAGE(">> appended experimental flags: ${CMAKE_CXX_FLAGS}")
+else(SQY_EXPERIMENTAL)
+list(APPEND CMAKE_CXX_FLAGS " -D_SQY_X_=0")
+list(APPEND CMAKE_C_FLAGS " -D_SQY_X_=0")
+endif(SQY_EXPERIMENTAL)
+
 check_cxx_compiler_flag(-std=c++11 HAS_CPP11_COMPILERFLAG)
 
 #lz4 is needed for the entire project, so let's include it here

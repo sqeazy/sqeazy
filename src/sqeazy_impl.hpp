@@ -240,7 +240,22 @@ struct bitswap_scheme {
                                    raw_type* _output,
                                    const size_type& _length)
     {
-      return sqeazy::detail::scalar_bitplane_reorder_encode<num_bits_per_plane>(_input, _output, _length);
+      if(sqeazy::platform::use_vectorisation::value && num_bits_per_plane==1){
+#ifdef _SQY_VERBOSE_
+	  std::cout << "[bitplane encode]\tusing see method\n";
+#endif
+	return sqeazy::detail::sse_bitplane_reorder_encode<num_bits_per_plane>(_input, 
+									       _output, 
+									       _length);
+      }
+      else{
+#ifdef _SQY_VERBOSE_
+	  std::cout << "[bitplane encode]\tusing scalar method\n";
+#endif	
+	  return sqeazy::detail::scalar_bitplane_reorder_encode<num_bits_per_plane>(_input, 
+										    _output, 
+										    									    _length);
+      }
     }
 
     template <typename S>

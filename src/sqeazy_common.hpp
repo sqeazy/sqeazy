@@ -18,13 +18,14 @@ enum error_code {
           
   */
   namespace platform {
-    
-    struct no_vectorisation {};
-    struct has_sse2 {};
-    struct has_sse4_1 {};
-    struct has_sse4_2 {};
+  
+    struct has_sse2   {const static bool value = __SSE2__ && __SSE2_MATH__;};
+    struct has_sse3   {const static bool value = __SSE3__ && __SSSE3__;};
+    struct has_sse4   {const static bool value = __SSE4_2__ && __SSE4_1__;};
 
-    
+    struct use_vectorisation {
+      const static bool value = (has_sse2::value && has_sse3::value && has_sse4::value) && _SQY_X_;
+    };
     
   };
 
