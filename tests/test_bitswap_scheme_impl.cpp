@@ -440,7 +440,6 @@ BOOST_AUTO_TEST_CASE( setbits_on_integertype )
 
   BOOST_CHECK(sqeazy::setbits_of_integertype(max_char, zero, 4u, 4u) == 0xf);
   
-  unsigned short msb_short = 1 << 15;
   unsigned short three = 3;
   //three is truncated if it maps to more than 16 bits (here)
   BOOST_CHECK(sqeazy::setbits_of_integertype(zero, three, 15u, 2u) == 0x8000);

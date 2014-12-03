@@ -27,6 +27,19 @@ namespace sqeazy {
   template	<> struct twice_as_wide<int>	       { typedef long		type; };
   template	<> struct twice_as_wide<long>	       { typedef long long	type; };
   template	<> struct twice_as_wide<float>	       { typedef double		type; };
+
+  
+  template <bool Assert, typename T>
+  struct enable_if {
+
+    typedef T type;
+
+  };
+
+  template <typename T>
+  struct enable_if<false,T> {
+
+  };
 } // sqeazy
 
 #endif /* _SQEAZY_TRAITS_H_ */
