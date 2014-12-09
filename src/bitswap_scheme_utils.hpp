@@ -163,65 +163,65 @@ namespace sqeazy {
 	      typename size_type
 	      >
     static const error_code sse_bitplane_reorder_encode(const raw_type* _input,
-      raw_type* _output,
-      const size_type& _length)
+							raw_type* _output,
+							const size_type& _length)
     {
-    //unable to perform this task input array does fit into __m128
-    if(_length*sizeof(raw_type)<16)
-      return FAILURE;
+      //unable to perform this task input array does fit into __m128
+      if(_length*sizeof(raw_type)<16)
+	return FAILURE;
 
-    static const unsigned items_per_register = 128/(CHAR_BIT*sizeof(raw_type));
-    static const unsigned raw_type_num_bits = sizeof(raw_type)*CHAR_BIT;
-    static const unsigned num_planes = raw_type_num_bits/num_bits_per_plane;
+      static const unsigned items_per_register = 128/(CHAR_BIT*sizeof(raw_type));
+      static const unsigned raw_type_num_bits = sizeof(raw_type)*CHAR_BIT;
+      static const unsigned num_planes = raw_type_num_bits/num_bits_per_plane;
 
-    //prepare output array of pointers
-    std::vector<raw_type*> output_ptr(num_planes,0);
-    const unsigned plane_width = _length/num_planes;
-    unsigned offset = 0;
-    for(unsigned i = 0;i<output_ptr.size();++i){
-    output_ptr[i] = _output + offset;
-    offset += plane_width;
-  }
+      //prepare output array of pointers
+      std::vector<raw_type*> output_ptr(num_planes,0);
+      const unsigned plane_width = _length/num_planes;
+      unsigned offset = 0;
+      for(unsigned i = 0;i<output_ptr.size();++i){
+	output_ptr[i] = _output + offset;
+	offset += plane_width;
+      }
 
-    //one item of the output array may contain multiple results of the iterations
-    unsigned planesets_per_output = sizeof(raw_type)*CHAR_BIT/items_per_register;
+      //one item of the output array may contain multiple results of the iterations
+      unsigned planesets_per_output = sizeof(raw_type)*CHAR_BIT/items_per_register;
 
-    //
-    unsigned shift_reorder_by = sizeof(raw_type)*CHAR_BIT/planesets_per_output;
-    if(planesets_per_output==1)
-      shift_reorder_by = 0;
+      //
+      unsigned shift_reorder_by = sizeof(raw_type)*CHAR_BIT/planesets_per_output;
+      if(planesets_per_output==1)
+	shift_reorder_by = 0;
 
-    vec_xor<raw_type> xoring;
-    vec_rotate_left<raw_type> rotate;
-    __m128i input;
-    unsigned count = 0;
+      vec_xor<raw_type> xoring;
+      vec_rotate_left<raw_type> rotate;
+      __m128i input;
+      unsigned count = 0;
 
-    for(unsigned index = 0; index < _length; index += items_per_register, count++ ) {
+      for(unsigned index = 0; index < _length; index += items_per_register, count++ ) {
 
-    input = _mm_load_si128(reinterpret_cast<const __m128i*>(&_input[index]));
+	input = _mm_load_si128(reinterpret_cast<const __m128i*>(&_input[index]));
 
-    // no need to xor, but we implement it anyway for the sake of completeness
-    if(std::numeric_limits<raw_type>::is_signed)
-      xoring(&input);
+	// no need to xor, but we implement it anyway for the sake of completeness
+	if(std::numeric_limits<raw_type>::is_signed)
+	  xoring(&input);
 
-    input = rotate(&input);
+	input = rotate(&input);
       
-    //bitplane reordering starts here!
-    reorder_bitplanes<num_bits_per_plane>(input, output_ptr,(count % planesets_per_output == 0) ? shift_reorder_by : 0);
+	//bitplane reordering starts here!
+	reorder_bitplanes<num_bits_per_plane>(input, output_ptr,(count % planesets_per_output == 0) ? shift_reorder_by : 0);
     
-    //moving the pointers to the output array forward
-    if(count % 2 != 0){
-    for(unsigned i = 0;i<output_ptr.size();++i){
-    ++output_ptr[i];
-  }
-  }
+	//moving the pointers to the output array forward
+	if(count % 2 != 0){
+	  for(unsigned i = 0;i<output_ptr.size();++i){
+	    ++output_ptr[i];
+	  }
+	}
       
-  }
+      }
 
-    return SUCCESS;
-  }
+      return SUCCESS;
+    }
 
 
   };
-  }; //sqeazy
+}; //sqeazy
 #endif /* _BITSWAP_SCHEME_UTILS_H_ */

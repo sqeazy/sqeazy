@@ -488,6 +488,7 @@ void reorder_bitplanes(const __m128i& _block,
 					    //(which is the higher half of the original)
 					    left_shift_to_msb
 					);
+
     //invert the sequence of v_second_items
     v_second_items = _mm_shuffle_epi32(v_second_items, _MM_SHUFFLE(0,1,2,3));
 
