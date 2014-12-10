@@ -25,6 +25,11 @@ add_executable(test_bitplane_reorder_impl test_bitplane_reorder_impl.cpp)
 target_link_libraries(test_bitplane_reorder_impl boost_system boost_filesystem boost_unit_test_framework)
 set_target_properties(test_bitplane_reorder_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src -march=native")
 
+add_executable(test_shift_by_intrinsics test_shift_by_intrinsics.cpp)
+target_link_libraries(test_shift_by_intrinsics boost_system boost_filesystem boost_unit_test_framework)
+set_target_properties(test_shift_by_intrinsics PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src -march=native")
+
+
 add_executable(test_lz4_encoding test_lz4_encoding.cpp)
 target_link_libraries(test_lz4_encoding ${PROJECT_NAME} boost_system boost_filesystem boost_unit_test_framework lz4)
 
