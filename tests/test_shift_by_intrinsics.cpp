@@ -96,7 +96,6 @@ BOOST_AUTO_TEST_CASE( shift_right_by_one ){
 
 BOOST_AUTO_TEST_CASE( shift_left_by_one ){
 
-
     __m128i v_in = _mm_load_si128(reinterpret_cast<const __m128i*>(&input[0]));
 
     v_in = _mm_slli_epi16(v_in,1);
@@ -107,7 +106,7 @@ BOOST_AUTO_TEST_CASE( shift_left_by_one ){
     
     try{
     BOOST_REQUIRE(output[0]==4);
-    BOOST_REQUIRE(std::accumulate(output.begin(), output.end(),0u)==4*output.size());
+    BOOST_REQUIRE(std::accumulate(output.begin(), output.end(),0u)==4*8);
     }
     catch(...){
       std::copy(output.begin(), output.end(), std::ostream_iterator<unsigned short>(std::cout, " "));
@@ -149,7 +148,7 @@ BOOST_AUTO_TEST_CASE( shift_right_by_constant ){
   __m128i result = shifter(v_const,1);
   _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);
 
-  BOOST_REQUIRE(output[0] == (4 >> 1));
+  BOOST_REQUIRE(output[0] == (2 >> 1));
 }
 
 BOOST_AUTO_TEST_CASE( shift_lsb_right_by_constant ){
@@ -388,7 +387,7 @@ BOOST_AUTO_TEST_CASE( shift_left_by_constant ){
 
 BOOST_AUTO_TEST_CASE( shift_left_msb_by_constant ){
 
-    static const __m128i v_msb = _mm_set1_epi8(0x80);
+    static const __m128i v_msb = _mm_set1_epi8(0x8000);
 
     shift_left_m128i<unsigned> shifter;
     
@@ -408,7 +407,7 @@ BOOST_AUTO_TEST_CASE( shift_left_msb_by_constant ){
 
 BOOST_AUTO_TEST_CASE( shift_right_msb_by_constant ){
 
-    static const __m128i v_lsb = _mm_set1_epi8(1);
+    static const __m128i v_lsb = _mm_set1_epi32(1);
 
     shift_right_m128i<unsigned> shifter;
     
