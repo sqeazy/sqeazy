@@ -16,62 +16,12 @@
 #include <smmintrin.h>
 
 
-template <unsigned num_bits_, typename T>
-struct set_bits
-{
-
-  static const void inside(T& _dest, const T& _src, const unsigned& _at){
-    throw std::runtime_error("set_bits]\tno implemented yet");
-  }
-
-};
-
-template <unsigned num_bits_>
-struct set_bits<num_bits_,unsigned short>
-{
-  typedef __m128i vec_type;
-
-
-  
-  static const void inside(vec_type& _dest, const vec_type& _src, const unsigned& _at){
-
-    static const vec_type v_num_bits = _mm_set1_epi16((1 << num_bits_) - 1);
-
-    // T where_to_insert = (( 1 << numbits )-1)<<at;
-    vec_type where_to_insert = _mm_slli_epi16(v_num_bits,_at);
-
-    // T dest_or_where = where_to_insert|destination;
-    _dest = _mm_or_si128(where_to_insert, _dest);
-
-    // T src_prep_for_xor = (~source<<at) & where_to_insert;
-    where_to_insert = _mm_and_si128(//left-shift
-				    _mm_slli_epi16(//negate _src
-						   _mm_xor_si128(_src,
-								 // generate 0xFFFFFFFF
-								 _mm_cmpeq_epi32(
-										 _src,_src
-										 )
-								 ),
-						   _at), 
-				    where_to_insert);
-
-    // T value = (dest_or_where)^(src_prep_for_xor);
-    _dest = _mm_xor_si128(_dest, where_to_insert);
-    
-    return;
-  }
-
-};
-
-
 typedef const_anyvalue_fixture<8, 2> default_128bit_fixture; 
 typedef const_anyvalue_fixture<16, 2, unsigned char> default_128bit_ofuchar_fixture;
 typedef const_anyvalue_fixture<16, 2, char> default_128bit_ofchar_fixture;
 typedef const_anyvalue_fixture<4, 2, unsigned> default_128bit_ofunsigned_fixture;
 typedef const_anyvalue_fixture<(1 << 8), 2> default_cv_fixture; 
-typedef const_anyvalue_fixture<(1 << 15), 0xff00> default_hicv_fixture; 
-typedef const_anyvalue_fixture<(1 << 15), 0xff> default_locv_fixture; 
-typedef const_anyvalue_fixture<(1 << 15), 0x0ff0> default_micv_fixture; 
+
 
 BOOST_FIXTURE_TEST_SUITE( shift_16_bits, default_cv_fixture )
 

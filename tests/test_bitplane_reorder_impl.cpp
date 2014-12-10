@@ -217,3 +217,25 @@ BOOST_AUTO_TEST_CASE( versus_default_all ){
   }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+//TODO!
+// TEST_CASE("2-bit extraction for 16bit input of all bits to short","[bp2-reorder-const]"){
+
+//   unsigned short value = 1 << 15;
+//   __m128i testi = _mm_set1_epi16(value);
+    
+//   std::vector<unsigned short> bitplanes(16,0);
+
+//   std::vector<unsigned short*> bitplanes_ptr(16);
+//   for(int i = 0;i<bitplanes.size();++i)
+//     bitplanes_ptr[i] = &bitplanes[i];
+    
+//   reorder_bitplanes<2>(testi, bitplanes_ptr,8);
+    
+//   REQUIRE(bitplanes[0] == (0xaa00 << 1));
+//   for(int i = 1;i<bitplanes.size();++i)
+//     REQUIRE(bitplanes[i] == 0);
+
+  
+// }
+
