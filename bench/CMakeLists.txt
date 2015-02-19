@@ -9,7 +9,6 @@ ENDIF()
 FIND_PACKAGE(TIFF REQUIRED)
 IF(TIFF_FOUND)
 add_executable(bench bench.cpp)
-# target_link_libraries(bench ${PROJECT_NAME} tiff)
 target_link_libraries(bench tiff lz4 boost_filesystem boost_system)
 SET(BENCH_COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src -std=c++11")
 
