@@ -12,8 +12,11 @@ add_executable(bench bench.cpp)
 target_link_libraries(bench tiff lz4 boost_filesystem boost_system)
 SET(BENCH_COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")
 
+
 IF(NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
-SET(BENCH_COMPILE_FLAGS "${BENCH_COMPILE_FLAGS} ${HAS_CPP11_COMPILERFLAG}")
+IF(HAS_CPP11_COMPILERFLAG)
+SET(BENCH_COMPILE_FLAGS "${BENCH_COMPILE_FLAGS} -std=c++11")
+ENDIF()
 ENDIF()
 
 if(SQY_VERBOSE)
@@ -21,7 +24,7 @@ list(APPEND BENCH_COMPILE_FLAGS " -D_SQY_VERBOSE_=1")
 endif(SQY_VERBOSE)
 
 STRING(REPLACE ";" " " BENCH_COMPILE_FLAGS ${BENCH_COMPILE_FLAGS})
-message(">> adding compile flag to bench: ${BENCH_COMPILE_FLAGS}")
+MESSAGE(STATUS ">> adding compile flag to bench: ${BENCH_COMPILE_FLAGS}")
 set_target_properties(bench PROPERTIES COMPILE_FLAGS "${BENCH_COMPILE_FLAGS}")
 
 add_executable(sqy sqy.cpp)
@@ -30,7 +33,9 @@ target_link_libraries(sqy tiff lz4 boost_filesystem boost_system boost_program_o
 SET(SQY_COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")
 
 IF(NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
-SET(SQY_COMPILE_FLAGS "${BENCH_COMPILE_FLAGS} ${HAS_CPP11_COMPILERFLAG}")
+IF(HAS_CPP11_COMPILERFLAG)
+SET(SQY_COMPILE_FLAGS "${SQY_COMPILE_FLAGS} -std=c++11")
+ENDIF()
 ENDIF()
 
 if(SQY_VERBOSE)
@@ -38,7 +43,7 @@ list(APPEND SQY_COMPILE_FLAGS " -D_SQY_VERBOSE_=1")
 endif(SQY_VERBOSE)
 
 STRING(REPLACE ";" " " SQY_COMPILE_FLAGS ${SQY_COMPILE_FLAGS})
-message(">> adding compile flag to sqy: ${SQY_COMPILE_FLAGS}")
+MESSAGE(STATUS ">> adding compile flag to sqy: ${SQY_COMPILE_FLAGS}")
 set_target_properties(sqy PROPERTIES COMPILE_FLAGS "${SQY_COMPILE_FLAGS}")
 
 
@@ -55,7 +60,9 @@ execute_process(
 
 SET(HISTO_COMPILE_FLAGS "${ROOT_INCLUDE_FLAGS} -I${PROJECT_SOURCE_DIR}/src")
 IF(NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
-SET(HISTO_COMPILE_FLAGS "${BENCH_COMPILE_FLAGS} ${HAS_CPP11_COMPILERFLAG}")
+IF(HAS_CPP11_COMPILERFLAG)
+SET(HISTO_COMPILE_FLAGS "${HISTO_COMPILE_FLAGS} -std=c++11")
+ENDIF()
 ENDIF()
 
 if(SQY_VERBOSE)
@@ -64,10 +71,9 @@ endif(SQY_VERBOSE)
 
 STRING(REPLACE ";" " " HISTO_COMPILE_FLAGS ${HISTO_COMPILE_FLAGS})
 set_target_properties(histo PROPERTIES COMPILE_FLAGS "${HISTO_COMPILE_FLAGS}")
-Message("Building histo, added \n\t${ROOT_LIBRARIES}\n\t${ROOT_INCLUDE_FLAGS}")
-
+MESSAGE(STATUS ">> adding compile flag to histo: ${HISTO_COMPILE_FLAGS}")
 ELSE(ROOT_FOUND)
-message(">> Skipping optional bench/histo utility, ROOT libraries not found!")
+MESSAGE(STATUS ">> Skipping optional bench/histo utility, ROOT libraries not found!")
 ENDIF(ROOT_FOUND)
 
 
