@@ -43,9 +43,9 @@ IF(UNIX)
 ELSE(UNIX)
   IF(WIN32 AND NOT CYGWIN)
     set(INSTALL_SHARE_DIR CMake CACHE PATH "Installation directory for shared files")
-  ELSE(WIN32)
+  ELSE(WIN32 AND NOT CYGWIN)
     MESSAGE(FATAL_ERROR ">> UNKNOWN ARCHITECTURE .. unable to set share dir")
-  ENDIF(WIN32)
+  ENDIF(WIN32 AND NOT CYGWIN)
 ENDIF(UNIX)
  
 # Make relative paths absolute (needed later on)
@@ -65,22 +65,35 @@ ENDIF(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
 MESSAGE(">> Setting up ${CMAKE_BUILD_TYPE} build")
 
 #C/C++ specific flags
+#for GCC
 IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
   SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -ggdb3 -Wno-overflow")
   SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -ggdb3 -Wno-overflow")
   check_cxx_compiler_flag(-ftree-vectorize HAS_GCC_TREE_VECTORIZE_COMPILERFLAG)
+  check_cxx_compiler_flag(-march=native HAS_MARCH_COMPILERFLAG)
+  check_cxx_compiler_flag(-ffast-math HAS_FAST_MATH_COMPILERFLAG)
 ENDIF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
  
-IF("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -ggdb3 -Wno-overflow")
-  SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -ggdb3 -Wno-overflow")
-  check_cxx_compiler_flag(-fvectorize HAS_CLANG_VECTORIZE_COMPILERFLAG)
+ #for clang
+IF("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang" OR "$}" STREQUAL "Clang")
+   SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -ggdb3 -Wno-overflow")
+   SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -ggdb3 -Wno-overflow")
+   check_cxx_compiler_flag(-fvectorize HAS_CLANG_VECTORIZE_COMPILERFLAG)
+   check_cxx_compiler_flag(-march=native HAS_MARCH_COMPILERFLAG)
+   check_cxx_compiler_flag(-ffast-math HAS_FAST_MATH_COMPILERFLAG)
 ENDIF()
 
-check_cxx_compiler_flag(-march=native HAS_MARCH_COMPILERFLAG)
-check_cxx_compiler_flag(-ffast-math HAS_FAST_MATH_COMPILERFLAG)
-
+#TODO: think about support parallel studio as well
+IF(UNIX)
 SET(HOST_COMPILER_RELEASE_FLAGS "-Wall -O3")
+ELSE(UNIX)
+IF(WIN32)
+MESSAGE("[Win32] Compiler used ${CMAKE_CXX_COMPILER_ID}")
+MESSAGE("[Win32] default HOST_COMPILER_RELEASE_FLAGS : ${HOST_COMPILER_RELEASE_FLAGS}")
+SET(HOST_COMPILER_RELEASE_FLAGS "/Ox /MD /W3 /EHsc")
+MESSAGE("[Win32] updated HOST_COMPILER_RELEASE_FLAGS : ${HOST_COMPILER_RELEASE_FLAGS}")
+ENDIF(WIN32)
+ENDIF(UNIX)
 
 IF(HAS_CLANG_VECTORIZE_COMPILERFLAG)
   SET(HOST_COMPILER_RELEASE_FLAGS "${HOST_COMPILER_RELEASE_FLAGS} -fvectorize")
@@ -120,7 +133,11 @@ list(APPEND CMAKE_CXX_FLAGS " -D_SQY_X_=0")
 list(APPEND CMAKE_C_FLAGS " -D_SQY_X_=0")
 endif(SQY_EXPERIMENTAL)
 
+IF(UNIX)
 check_cxx_compiler_flag(-std=c++11 HAS_CPP11_COMPILERFLAG)
+ELSE(UNIX)
+SET(HAS_CPP11_COMPILERFLAG "NOT NEEDED")
+ENDIF(UNIX)
 
 #lz4 is needed for the entire project, so let's include it here
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
