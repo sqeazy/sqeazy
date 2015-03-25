@@ -2,6 +2,11 @@ INCLUDE_DIRECTORIES(.)
 
 IF(WIN32)
 SET(Boost_USE_STATIC_LIBS ON)
+add_library(ext_lz4 STATIC IMPORTED)
+set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_STATIC_LIB}") 
+ELSE(WIN32)
+add_library(ext_lz4 SHARED IMPORTED)
+set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}") 
 ENDIF(WIN32)
 
 FIND_PACKAGE (Boost 1.42 QUIET COMPONENTS system filesystem unit_test_framework REQUIRED)
@@ -87,7 +92,7 @@ target_link_libraries(test_lz4_encoding ${PROJECT_NAME} ext_boost_system ext_boo
 endif()
 
 add_executable(test_apply test_apply.cpp)
-target_link_libraries(test_apply ext_boost_system ext_boost_filesystem ext_boost_unit_test_framework lz4)
+target_link_libraries(test_apply ${Boost_LIBRARIES} ext_lz4)
 
 add_executable(test_pipeline_select test_pipeline_select.cpp)
 target_link_libraries(test_pipeline_select ext_boost_system ext_boost_filesystem ext_boost_unit_test_framework tiff lz4)
