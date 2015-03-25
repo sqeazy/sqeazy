@@ -1,9 +1,11 @@
 INCLUDE_DIRECTORIES(.)
 
+ add_library(ext_lz4 STATIC IMPORTED)
+ set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}") 
 
 #DYNAMIC LIBRARY
 add_library(${PROJECT_NAME} SHARED sqeazy.cpp)
-target_link_libraries(${PROJECT_NAME} lz4)
+target_link_libraries(${PROJECT_NAME} ext_lz4)
 SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${PROJECT_SOURCE_DIR}/inc/sqeazy.h") 
 SET(SQY_SRC_TARGETS ${PROJECT_NAME})
 
@@ -11,9 +13,9 @@ SET(SQY_SRC_TARGETS ${PROJECT_NAME})
 #STATIC LIBRARY
 if(EXISTS ${LZ4_STATIC_LIB})
   add_library(${PROJECT_NAME}_static STATIC sqeazy.cpp)
-  add_library(lz4_static STATIC IMPORTED)
-  set_target_properties(lz4_static PROPERTIES IMPORTED_LOCATION "${LZ4_STATIC_LIB}") 
-  target_link_libraries(${PROJECT_NAME}_static lz4_static) 
+  add_library(ext_lz4_static STATIC IMPORTED)
+  set_target_properties(ext_lz4_static PROPERTIES IMPORTED_LOCATION "${LZ4_STATIC_LIB}") 
+  target_link_libraries(${PROJECT_NAME}_static ext_lz4_static) 
   IF(UNIX)
     SET_TARGET_PROPERTIES(${PROJECT_NAME}_static PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
   ENDIF(UNIX)
@@ -24,7 +26,6 @@ endif()
 
 
 
-#INSTALL(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_static
 INSTALL(TARGETS ${SQY_SRC_TARGETS}
   EXPORT sqeazy-targets 
   LIBRARY DESTINATION "${INSTALL_LIB_DIR}" 
@@ -32,8 +33,3 @@ INSTALL(TARGETS ${SQY_SRC_TARGETS}
   PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}" COMPONENT inc)
 
 
-
-# INSTALL(TARGETS ${PROJECT_NAME}_static
-#   EXPORT sqeazy-targets 
-#   LIBRARY DESTINATION "${INSTALL_LIB_DIR}" COMPONENT shlib
-#   PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}" COMPONENT inc)
