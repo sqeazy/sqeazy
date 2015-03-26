@@ -24,7 +24,7 @@ BOOST_AUTO_TEST_CASE( success )
   BOOST_CHECK_EQUAL(testme2.has_run(),false);
   BOOST_CHECK_EQUAL(testme2.filename.empty(),false);
   testme2.stop(1024);
-  BOOST_CHECK_EQUAL(testme2.time_in_microseconds()>0,true);
+  BOOST_CHECK_MESSAGE(testme2.time_in_microseconds()>0.,"success received " << testme2.time_in_microseconds() << " ms");
   BOOST_CHECK_EQUAL(testme2.histogram.mean()==1,true);
   
 }
@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE( copied )
   BOOST_CHECK_EQUAL(testme2.filename.empty(),false);
   
   testme2.stop(1024);
-  BOOST_CHECK_EQUAL(testme2.time_in_microseconds()>0,true);
+  BOOST_CHECK_EQUAL(testme2.time_in_microseconds()>0.,true);
   BOOST_CHECK_EQUAL(testme2.histogram.mean(),testme.histogram.mean());
   
 }
