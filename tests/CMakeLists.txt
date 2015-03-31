@@ -24,10 +24,13 @@ add_library( ext_boost_unit_test_framework  SHARED IMPORTED )
 set_target_properties( ext_boost_unit_test_framework PROPERTIES IMPORTED_LOCATION ${BOOST_LIB_DIR}/libboost_unit_test_framework.so )
 
 
-
+#this is the way that is recommended by FindBOOST.cmake
+#FIXME: see what works better on windows
 add_executable(test_diff_schemes test_diff_schemes.cpp)
-target_link_libraries(test_diff_schemes ${PROJECT_NAME} ext_boost_system ext_boost_filesystem ext_boost_unit_test_framework)
+target_link_libraries(test_diff_schemes ${PROJECT_NAME} ${Boost_LIBRARIES})
 
+#this is the way that seems more flexible to me
+#FIXME: see what works better on windows
 add_executable(test_diff_scheme_impl test_diff_scheme_impl.cpp)
 target_link_libraries(test_diff_scheme_impl ext_boost_system ext_boost_filesystem ext_boost_unit_test_framework)
 
@@ -89,5 +92,6 @@ set_target_properties(test_pipeline_select PROPERTIES COMPILE_FLAGS "-std=c++11 
 
 add_executable(test_huffman_utils_impl test_huffman_utils_impl.cpp)
 target_link_libraries(test_huffman_utils_impl ext_boost_system ext_boost_filesystem ext_boost_unit_test_framework tiff)
+
 
 
