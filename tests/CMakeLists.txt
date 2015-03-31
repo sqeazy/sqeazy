@@ -6,6 +6,7 @@ INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS}) 
 ENDIF()
 
+#FIXME: not portable
 IF(DEFINED ${BOOST_ROOT} AND ${BOOST_ROOT} MATCHES ".*/.*")
   SET(BOOST_LIB_DIR ${BOOST_ROOT}/lib)
 ELSE()
@@ -37,6 +38,7 @@ add_executable(test_bitswap_scheme_impl test_bitswap_scheme_impl.cpp)
 target_link_libraries(test_bitswap_scheme_impl ext_boost_system ext_boost_filesystem ext_boost_unit_test_framework)
 
 add_executable(test_bitplane_reorder_impl test_bitplane_reorder_impl.cpp)
+
 target_link_libraries(test_bitplane_reorder_impl ext_boost_system ext_boost_filesystem ext_boost_unit_test_framework)
 set_target_properties(test_bitplane_reorder_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src -march=native")
 
@@ -47,8 +49,6 @@ set_target_properties(test_shift_by_intrinsics PROPERTIES COMPILE_FLAGS "-I${PRO
 add_executable(test_rotate_by_intrinsics test_rotate_by_intrinsics.cpp)
 target_link_libraries(test_rotate_by_intrinsics ext_boost_system ext_boost_filesystem ext_boost_unit_test_framework)
 set_target_properties(test_rotate_by_intrinsics PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src -march=native")
-
-
 
 add_executable(test_sqeazy_header_impl test_sqeazy_header_impl.cpp)
 target_link_libraries(test_sqeazy_header_impl ${PROJECT_NAME} ext_boost_system ext_boost_filesystem ext_boost_unit_test_framework)
@@ -64,6 +64,7 @@ add_executable(test_hist_impl test_hist_impl.cpp)
 target_link_libraries(test_hist_impl ext_boost_system ext_boost_filesystem ext_boost_unit_test_framework)
 
 add_executable(test_bench_utils_impl test_bench_utils_impl.cpp)
+
 target_link_libraries(test_bench_utils_impl ext_boost_system ext_boost_filesystem ext_boost_unit_test_framework tiff)
 set_target_properties(test_bench_utils_impl PROPERTIES COMPILE_FLAGS "-std=c++11 -I${PROJECT_SOURCE_DIR}/src")
 
@@ -88,12 +89,5 @@ set_target_properties(test_pipeline_select PROPERTIES COMPILE_FLAGS "-std=c++11 
 
 add_executable(test_huffman_utils_impl test_huffman_utils_impl.cpp)
 target_link_libraries(test_huffman_utils_impl ext_boost_system ext_boost_filesystem ext_boost_unit_test_framework tiff)
-# FIND_PACKAGE(TIFF REQUIRED)
-# IF(TIFF_FOUND)
-# add_executable(test_view_from_disk_fixture test_view_from_disk_fixture.cpp)
-# target_link_libraries(test_view_from_disk_fixture ext_boost_system ext_boost_filesystem ext_boost_unit_test_framework tiff)
-# ELSE(TIFF_FOUND)
-# WARNING("Skipping tests based on reference images, libtiff not found\!")
-# ENDIF(TIFF_FOUND)
 
 
