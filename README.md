@@ -32,7 +32,7 @@ Sqeazy is currently undergoing constant development. If you want to test-drive i
 
 ## Build instructions
 
-In order to build sqeazy, use the following:
+In order to build sqeazy, use the following (tested on Linux and OSX):
 
 ```bash
 $ cd sqeazy
@@ -43,7 +43,17 @@ $ make
 ```
 
 The are some cmake build flags that are supported:
-to be filled!
+* (required if not in environment) `LZ4_LIB_PATH` the location of the lz4 static and dynamic libraries
+* (required if not found in `LZ4_LIB_PATH`) `LZ4_INC_PATH` the location of lz4 header files (`lz4.h` etc)
+* (required if not in environment) `BOOST_ROOT` the location of the boost libraries
+* (required if not in environment) `TIFF_LIBRARY` the location of tiff libraries
+* (required if not found in `TIFF_LIBRARY`) `TIFF_INCLUDE_PATH` the location of tiff header files (`tiff.h` etc)
+
+### Building on Windows 7
+
+This library must be built with MinGW-w64 on Windows in order to obtain obtimal performance and remain flexible. Please install MinGW from
+<http://nuwen.net/mingw.html>
+in order to build sqeazy.
 
 # License
 
