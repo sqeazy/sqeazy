@@ -55,6 +55,8 @@ This library must be built with MinGW-w64 on Windows in order to obtain obtimal 
 <http://nuwen.net/mingw.html>
 in order to build sqeazy.
 
+*libsqeazy does not build on Windows 7 yet!*
+
 # License
 
 There is not license yet, as there is not production ready code.
