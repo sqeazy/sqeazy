@@ -6,11 +6,30 @@ INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS}) 
 ENDIF()
 
+#FIXME: OS dependent
+IF(DEFINED ${BOOST_ROOT} AND ${BOOST_ROOT} MATCHES ".*/.*")
+  SET(BOOST_LIB_DIR ${BOOST_ROOT}/lib)
+ELSE()
+  SET(BOOST_LIB_DIR ${Boost_LIBRARY_DIRS})
+ENDIF()
+
+add_library( ext_boost_system  SHARED IMPORTED )
+set_target_properties( ext_boost_system PROPERTIES IMPORTED_LOCATION ${BOOST_LIB_DIR}/libboost_system.so )
+
+add_library( ext_boost_filesystem  SHARED IMPORTED )
+set_target_properties( ext_boost_filesystem PROPERTIES IMPORTED_LOCATION ${BOOST_LIB_DIR}/libboost_filesystem.so )
+
+add_library( ext_boost_program_options  SHARED IMPORTED )
+set_target_properties( ext_boost_program_options PROPERTIES IMPORTED_LOCATION ${BOOST_LIB_DIR}/libboost_program_options.so )
+
+
 FIND_PACKAGE(TIFF REQUIRED)
 IF(TIFF_FOUND)
 add_executable(bench bench.cpp)
 target_link_libraries(bench tiff lz4 boost_filesystem boost_system)
 SET(BENCH_COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")
+
+
 
 
 IF(NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
@@ -29,7 +48,7 @@ set_target_properties(bench PROPERTIES COMPILE_FLAGS "${BENCH_COMPILE_FLAGS}")
 
 add_executable(sqy sqy.cpp)
 
-target_link_libraries(sqy tiff lz4 boost_filesystem boost_system boost_program_options)
+target_link_libraries(sqy tiff lz4 ext_boost_filesystem ext_boost_system ext_boost_program_options)
 SET(SQY_COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")
 
 IF(NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
@@ -51,7 +70,7 @@ set_target_properties(sqy PROPERTIES COMPILE_FLAGS "${SQY_COMPILE_FLAGS}")
 FIND_PACKAGE(ROOT QUIET)
 IF(ROOT_FOUND)
 add_executable(histo histo.cpp)
-target_link_libraries(histo tiff ${ROOT_LIBRARIES} boost_system boost_filesystem)
+target_link_libraries(histo tiff ${ROOT_LIBRARIES} ext_boost_system ext_boost_filesystem)
 
 execute_process(
     COMMAND ${ROOT_CONFIG_EXECUTABLE} --cflags
