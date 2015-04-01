@@ -1,33 +1,38 @@
 INCLUDE_DIRECTORIES(.)
+IF(WIN32)
+SET(Boost_USE_STATIC_LIBS ON)
+add_library(ext_lz4 STATIC IMPORTED)
+set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_STATIC_LIB}") 
+ELSE(WIN32)
+add_library(ext_lz4 SHARED IMPORTED)
+set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}") 
+ENDIF(WIN32)
 
-FIND_PACKAGE (Boost 1.42 QUIET COMPONENTS system filesystem unit_test_framework REQUIRED)
+
+
+
+
+FIND_PACKAGE (Boost 1.42 QUIET COMPONENTS system filesystem program_options REQUIRED)
 IF(Boost_FOUND)
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS}) 
 ENDIF()
 
-#FIXME: OS dependent
-IF(DEFINED ${BOOST_ROOT} AND ${BOOST_ROOT} MATCHES ".*/.*")
-  SET(BOOST_LIB_DIR ${BOOST_ROOT}/lib)
-ELSE()
-  SET(BOOST_LIB_DIR ${Boost_LIBRARY_DIRS})
-ENDIF()
-
-#FIXME: OS dependent
-add_library( ext_boost_system  SHARED IMPORTED )
-set_target_properties( ext_boost_system PROPERTIES IMPORTED_LOCATION ${BOOST_LIB_DIR}/libboost_system.so )
-
-add_library( ext_boost_filesystem  SHARED IMPORTED )
-set_target_properties( ext_boost_filesystem PROPERTIES IMPORTED_LOCATION ${BOOST_LIB_DIR}/libboost_filesystem.so )
-
-add_library( ext_boost_program_options  SHARED IMPORTED )
-set_target_properties( ext_boost_program_options PROPERTIES IMPORTED_LOCATION ${BOOST_LIB_DIR}/libboost_program_options.so )
-
 
 FIND_PACKAGE(TIFF REQUIRED)
+
 IF(TIFF_FOUND)
+IF(WIN32)
+add_library(ext_tiff STATIC IMPORTED)
+set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIBRARIES}") 
+ELSE(WIN32)
+add_library(ext_tiff SHARED IMPORTED)
+set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIBRARIES}") 
+ENDIF(WIN32)
+MESSAGE("::BENCH:: using ${TIFF_LIBRARIES} for tiff")
+
 add_executable(bench bench.cpp)
-target_link_libraries(bench tiff lz4 ext_boost_filesystem ext_boost_system)
+target_link_libraries(bench ext_tiff ext_lz4 ${Boost_LIBRARIES})
 IF(UNIX)
 SET(BENCH_COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")
 ELSE(UNIX)
@@ -54,7 +59,7 @@ set_target_properties(bench PROPERTIES COMPILE_FLAGS "${BENCH_COMPILE_FLAGS}")
 
 add_executable(sqy sqy.cpp)
 
-target_link_libraries(sqy tiff lz4 ext_boost_filesystem ext_boost_system ext_boost_program_options)
+target_link_libraries(sqy ext_tiff ext_lz4 ${Boost_LIBRARIES})
 
 IF(UNIX)
 SET(SQY_COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")
@@ -89,7 +94,7 @@ set_target_properties(sqy PROPERTIES COMPILE_FLAGS "${SQY_COMPILE_FLAGS}")
 FIND_PACKAGE(ROOT QUIET)
 IF(ROOT_FOUND)
 add_executable(histo histo.cpp)
-target_link_libraries(histo tiff ${ROOT_LIBRARIES} ext_boost_system ext_boost_filesystem)
+target_link_libraries(histo ext_tiff ${ROOT_LIBRARIES} ${Boost_LIBRARIES})
 
 execute_process(
     COMMAND ${ROOT_CONFIG_EXECUTABLE} --cflags

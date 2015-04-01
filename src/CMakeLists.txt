@@ -1,6 +1,6 @@
 INCLUDE_DIRECTORIES(.)
 
- add_library(ext_lz4 STATIC IMPORTED)
+ add_library(ext_lz4 SHARED IMPORTED)
  set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}") 
 
 #DYNAMIC LIBRARY
