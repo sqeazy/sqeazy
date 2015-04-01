@@ -2,11 +2,16 @@ INCLUDE_DIRECTORIES(.)
 
 
 #DYNAMIC LIBRARY
-message("::SRC:: ${LZ4_SHARED_LIB}")
 
 add_library(${PROJECT_NAME} SHARED sqeazy.cpp)
-add_library(ext_lz4 SHARED IMPORTED)
+add_library(ext_lz4 SHARED IMPORTED )
 set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}") 
+IF(WIN32)
+STRING(REPLACE dll lib LZ4_SHARED_IMPLIB ${LZ4_SHARED_LIB})
+set_target_properties(ext_lz4 PROPERTIES IMPORTED_IMPLIB "${LZ4_SHARED_LIB}")
+ENDIF(WIN32)
+
+message("::SRC:: ${LZ4_SHARED_LIB}")
 
 target_link_libraries(${PROJECT_NAME} ext_lz4)
 SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${PROJECT_SOURCE_DIR}/inc/sqeazy.h") 
