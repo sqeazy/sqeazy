@@ -5,6 +5,8 @@
 #include <iostream>
 #include <bitset>
 #include <map>
+#include <chrono>
+#include <thread>
 #include "array_fixtures.hpp"
 #include "../bench/bench_utils.hpp"
 
@@ -23,6 +25,9 @@ BOOST_AUTO_TEST_CASE( success )
   sqeazy_bench::bcase<value_type> testme2("/tmp/something", &constant_cube[0], dims);
   BOOST_CHECK_EQUAL(testme2.has_run(),false);
   BOOST_CHECK_EQUAL(testme2.filename.empty(),false);
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
   testme2.stop(1024);
   BOOST_CHECK_MESSAGE(testme2.time_in_microseconds()>0.,"success received " << testme2.time_in_microseconds() << " ms");
   BOOST_CHECK_EQUAL(testme2.histogram.mean()==1,true);
