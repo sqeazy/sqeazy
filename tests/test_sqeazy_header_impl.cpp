@@ -1,4 +1,3 @@
-#define BOOST_TEST_DYN_LINK 
 #define BOOST_TEST_MODULE TEST_LZ4_ENCODING_IMPL
 #include "boost/test/unit_test.hpp"
 #include <numeric>

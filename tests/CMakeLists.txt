@@ -7,6 +7,7 @@ set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_STATIC_LIB}")
 ELSE(WIN32)
 add_library(ext_lz4 SHARED IMPORTED)
 set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}") 
+add_definitions(-DBOOST_TEST_DYN_LINK)
 ENDIF(WIN32)
 
 FIND_PACKAGE (Boost 1.42 QUIET COMPONENTS system filesystem unit_test_framework REQUIRED)

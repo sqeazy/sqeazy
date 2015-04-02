@@ -1,4 +1,3 @@
-#define BOOST_TEST_DYN_LINK 
 #define BOOST_TEST_MODULE TEST_PIPELINE_SELECT
 #include "boost/test/unit_test.hpp"
 #include "pipeline_select.hpp"

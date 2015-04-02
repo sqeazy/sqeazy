@@ -1,4 +1,3 @@
-#define BOOST_TEST_DYN_LINK 
 #define BOOST_TEST_MODULE TEST_TIFF_FIXTURE
 #include "boost/test/unit_test.hpp"
 #include "bench_fixtures.hpp"
