@@ -4,10 +4,12 @@ IF(WIN32)
 SET(Boost_USE_STATIC_LIBS ON)
 add_library(ext_lz4 STATIC IMPORTED)
 set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_STATIC_LIB}") 
+SET(SQY_LIB ${PROJECT_NAME}_static)
 ELSE(WIN32)
 add_library(ext_lz4 SHARED IMPORTED)
 set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}") 
 add_definitions(-DBOOST_TEST_DYN_LINK)
+SET(SQY_LIB ${PROJECT_NAME})
 ENDIF(WIN32)
 
 FIND_PACKAGE (Boost 1.42 QUIET COMPONENTS system filesystem unit_test_framework REQUIRED)
@@ -28,13 +30,13 @@ set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIBRARIES}")
 ENDIF(TIFF_FOUND)
 
 add_executable(test_diff_schemes test_diff_schemes.cpp)
-target_link_libraries(test_diff_schemes ${PROJECT_NAME} ${Boost_LIBRARIES})
+target_link_libraries(test_diff_schemes ${SQY_LIB} ${Boost_LIBRARIES})
 
 add_executable(test_diff_scheme_impl test_diff_scheme_impl.cpp)
 target_link_libraries(test_diff_scheme_impl ${Boost_LIBRARIES})
 
 add_executable(test_bitswap_schemes test_bitswap_schemes.cpp)
-target_link_libraries(test_bitswap_schemes ${PROJECT_NAME} ${Boost_LIBRARIES})
+target_link_libraries(test_bitswap_schemes ${SQY_LIB} ${Boost_LIBRARIES})
 
 add_executable(test_bitswap_scheme_impl test_bitswap_scheme_impl.cpp)
 target_link_libraries(test_bitswap_scheme_impl ${Boost_LIBRARIES})
@@ -53,13 +55,13 @@ target_link_libraries(test_rotate_by_intrinsics ${Boost_LIBRARIES})
 set_target_properties(test_rotate_by_intrinsics PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src -march=native")
 
 add_executable(test_sqeazy_header_impl test_sqeazy_header_impl.cpp)
-target_link_libraries(test_sqeazy_header_impl ${PROJECT_NAME} ${Boost_LIBRARIES})
+target_link_libraries(test_sqeazy_header_impl ${SQY_LIB} ${Boost_LIBRARIES})
 
 add_executable(test_background_schemes test_background_schemes.cpp)
-target_link_libraries(test_background_schemes ${PROJECT_NAME} ${Boost_LIBRARIES})
+target_link_libraries(test_background_schemes ${SQY_LIB} ${Boost_LIBRARIES})
 
 add_executable(test_background_scheme_impl test_background_scheme_impl.cpp)
-target_link_libraries(test_background_scheme_impl ${PROJECT_NAME} ${Boost_LIBRARIES})
+target_link_libraries(test_background_scheme_impl ${SQY_LIB} ${Boost_LIBRARIES})
 
 
 add_executable(test_hist_impl test_hist_impl.cpp)
@@ -89,7 +91,7 @@ ENDIF(TIFF_FOUND)
 
 
 add_executable(test_lz4_encoding test_lz4_encoding.cpp)
-if(EXISTS ${LZ4_STATIC_LIB})
+if(EXISTS ${LZ4_STATIC_LIB} OR WIN32)
 target_link_libraries(test_lz4_encoding ${PROJECT_NAME}_static ${Boost_LIBRARIES})
 else()
 target_link_libraries(test_lz4_encoding ${PROJECT_NAME} ${Boost_LIBRARIES} ext_lz4)
