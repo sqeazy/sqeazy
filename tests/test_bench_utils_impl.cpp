@@ -5,10 +5,11 @@
 #include <iostream>
 #include <bitset>
 #include <map>
-#include <chrono>
-#include <thread>
 #include "array_fixtures.hpp"
 #include "../bench/bench_utils.hpp"
+
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/thread/thread.hpp> 
 
 typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 
@@ -26,7 +27,8 @@ BOOST_AUTO_TEST_CASE( success )
   BOOST_CHECK_EQUAL(testme2.has_run(),false);
   BOOST_CHECK_EQUAL(testme2.filename.empty(),false);
 
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+  boost::this_thread::sleep(boost::posix_time::milliseconds(100));
 
   testme2.stop(1024);
   BOOST_CHECK_MESSAGE(testme2.time_in_microseconds()>0.,"success received " << testme2.time_in_microseconds() << " ms");

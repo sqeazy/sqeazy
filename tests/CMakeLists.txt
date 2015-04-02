@@ -66,13 +66,21 @@ target_link_libraries(test_background_scheme_impl ${SQY_LIB} ${Boost_LIBRARIES})
 
 add_executable(test_hist_impl test_hist_impl.cpp)
 target_link_libraries(test_hist_impl ${Boost_LIBRARIES})
-
 add_executable(test_bench_utils_impl test_bench_utils_impl.cpp)
 
-IF(TIFF_FOUND)
 
-target_link_libraries(test_bench_utils_impl ${Boost_LIBRARIES} ext_tiff)
-set_target_properties(test_bench_utils_impl PROPERTIES COMPILE_FLAGS "-std=c++11 -I${PROJECT_SOURCE_DIR}/src")
+add_executable(test_lz4_encoding test_lz4_encoding.cpp)
+if(EXISTS ${LZ4_STATIC_LIB} OR WIN32)
+target_link_libraries(test_lz4_encoding ${PROJECT_NAME}_static ${Boost_LIBRARIES})
+else()
+target_link_libraries(test_lz4_encoding ${PROJECT_NAME} ${Boost_LIBRARIES} ext_lz4)
+endif()
+
+add_executable(test_apply test_apply.cpp)
+target_link_libraries(test_apply ${Boost_LIBRARIES} ext_lz4)
+
+
+IF(TIFF_FOUND)
 
 add_executable(test_tiff_fixture test_tiff_fixture.cpp)
 target_link_libraries(test_tiff_fixture ${Boost_LIBRARIES} ext_tiff)
@@ -87,18 +95,13 @@ add_executable(test_huffman_utils_impl test_huffman_utils_impl.cpp)
 target_link_libraries(test_huffman_utils_impl ${Boost_LIBRARIES} ext_tiff)
 
 
+
+FIND_PACKAGE (Boost 1.42 QUIET COMPONENTS system filesystem unit_test_framework thread date_time REQUIRED)
+target_link_libraries(test_bench_utils_impl ${Boost_LIBRARIES} ext_tiff)
+set_target_properties(test_bench_utils_impl PROPERTIES COMPILE_FLAGS "-std=c++11 -I${PROJECT_SOURCE_DIR}/src")
+
+
 ENDIF(TIFF_FOUND)
-
-
-add_executable(test_lz4_encoding test_lz4_encoding.cpp)
-if(EXISTS ${LZ4_STATIC_LIB} OR WIN32)
-target_link_libraries(test_lz4_encoding ${PROJECT_NAME}_static ${Boost_LIBRARIES})
-else()
-target_link_libraries(test_lz4_encoding ${PROJECT_NAME} ${Boost_LIBRARIES} ext_lz4)
-endif()
-
-add_executable(test_apply test_apply.cpp)
-target_link_libraries(test_apply ${Boost_LIBRARIES} ext_lz4)
 
 
 
