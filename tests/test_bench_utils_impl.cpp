@@ -28,7 +28,7 @@ BOOST_AUTO_TEST_CASE( success )
   BOOST_CHECK_EQUAL(testme2.filename.empty(),false);
 
 
-  boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+  boost::this_thread::sleep(boost::posix_time::milliseconds(50));
 
   testme2.stop(1024);
   BOOST_CHECK_MESSAGE(testme2.time_in_microseconds()>0.,"success received " << testme2.time_in_microseconds() << " ms");
@@ -47,6 +47,8 @@ BOOST_AUTO_TEST_CASE( copied )
   BOOST_CHECK_EQUAL(testme2.filename.empty(),false);
   
   testme2.stop(1024);
+
+  boost::this_thread::sleep(boost::posix_time::milliseconds(50));
   BOOST_CHECK_EQUAL(testme2.time_in_microseconds()>0.,true);
   BOOST_CHECK_EQUAL(testme2.histogram.mean(),testme.histogram.mean());
   
@@ -68,8 +70,9 @@ BOOST_AUTO_TEST_CASE( load )
   sqeazy_bench::bcase<value_type> const_case("/tmp/something", &constant_cube[0], dims);
   sqeazy_bench::bcase<value_type> inc_case("/tmp/something", &incrementing_cube[0], dims);
   
-  sqeazy_bench::bsuite<value_type> testme(2); 
-  
+sqeazy_bench::bsuite<value_type> testme(2); 
+boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+
   const_case.stop(42);
   inc_case.stop(42);
   
