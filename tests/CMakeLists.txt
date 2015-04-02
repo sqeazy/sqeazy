@@ -16,13 +16,20 @@ INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS}) 
 ENDIF()
 
-#this is the way that is recommended by FindBOOST.cmake
-#FIXME: see what works better on windows
+FIND_PACKAGE(TIFF REQUIRED)
+IF(TIFF_FOUND)
+INCLUDE_DIRECTORIES(${TIFF_INCLUDE_DIR})
+IF(WIN32)
+add_library(ext_tiff STATIC IMPORTED)
+ELSE(WIN32)
+add_library(ext_tiff SHARED IMPORTED)
+ENDIF(WIN32)
+set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIBRARIES}") 
+ENDIF(TIFF_FOUND)
+
 add_executable(test_diff_schemes test_diff_schemes.cpp)
 target_link_libraries(test_diff_schemes ${PROJECT_NAME} ${Boost_LIBRARIES})
 
-#this is the way that seems more flexible to me
-#FIXME: see what works better on windows
 add_executable(test_diff_scheme_impl test_diff_scheme_impl.cpp)
 target_link_libraries(test_diff_scheme_impl ${Boost_LIBRARIES})
 
@@ -60,30 +67,37 @@ target_link_libraries(test_hist_impl ${Boost_LIBRARIES})
 
 add_executable(test_bench_utils_impl test_bench_utils_impl.cpp)
 
-target_link_libraries(test_bench_utils_impl ${Boost_LIBRARIES} tiff)
+IF(TIFF_FOUND)
+
+target_link_libraries(test_bench_utils_impl ${Boost_LIBRARIES} ext_tiff)
 set_target_properties(test_bench_utils_impl PROPERTIES COMPILE_FLAGS "-std=c++11 -I${PROJECT_SOURCE_DIR}/src")
 
 add_executable(test_tiff_fixture test_tiff_fixture.cpp)
-target_link_libraries(test_tiff_fixture ${Boost_LIBRARIES} tiff)
+target_link_libraries(test_tiff_fixture ${Boost_LIBRARIES} ext_tiff)
 set_target_properties(test_tiff_fixture PROPERTIES COMPILE_FLAGS "-std=c++11 -I${PROJECT_SOURCE_DIR}/bench")
+
+add_executable(test_pipeline_select test_pipeline_select.cpp)
+target_link_libraries(test_pipeline_select ${Boost_LIBRARIES} ext_tiff ext_lz4)
+set_target_properties(test_pipeline_select PROPERTIES COMPILE_FLAGS "-std=c++11 -I${PROJECT_SOURCE_DIR}/bench -I${PROJECT_SOURCE_DIR}/src ")
+
+
+add_executable(test_huffman_utils_impl test_huffman_utils_impl.cpp)
+target_link_libraries(test_huffman_utils_impl ${Boost_LIBRARIES} ext_tiff)
+
+
+ENDIF(TIFF_FOUND)
+
 
 add_executable(test_lz4_encoding test_lz4_encoding.cpp)
 if(EXISTS ${LZ4_STATIC_LIB})
 target_link_libraries(test_lz4_encoding ${PROJECT_NAME}_static ${Boost_LIBRARIES})
 else()
-target_link_libraries(test_lz4_encoding ${PROJECT_NAME} ${Boost_LIBRARIES} lz4)
+target_link_libraries(test_lz4_encoding ${PROJECT_NAME} ${Boost_LIBRARIES} ext_lz4)
 endif()
 
 add_executable(test_apply test_apply.cpp)
 target_link_libraries(test_apply ${Boost_LIBRARIES} ext_lz4)
 
-add_executable(test_pipeline_select test_pipeline_select.cpp)
-target_link_libraries(test_pipeline_select ${Boost_LIBRARIES} tiff lz4)
-set_target_properties(test_pipeline_select PROPERTIES COMPILE_FLAGS "-std=c++11 -I${PROJECT_SOURCE_DIR}/bench -I${PROJECT_SOURCE_DIR}/src ")
-
-
-add_executable(test_huffman_utils_impl test_huffman_utils_impl.cpp)
-target_link_libraries(test_huffman_utils_impl ${Boost_LIBRARIES} tiff)
 
 
 

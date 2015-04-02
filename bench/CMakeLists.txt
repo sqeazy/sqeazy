@@ -31,7 +31,6 @@ add_library(ext_tiff SHARED IMPORTED)
 set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIBRARIES}") 
 ENDIF(WIN32)
 
-MESSAGE("[BENCH] added ${TIFF_LIBRARIES} ${TIFF_LIBRARY}")
 
 add_executable(bench bench.cpp)
 target_link_libraries(bench ext_tiff ext_lz4 ${Boost_LIBRARIES})
