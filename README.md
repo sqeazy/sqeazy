@@ -7,7 +7,7 @@ The core library is written in C++ with bindings for C, Java (to be implemented)
 
 # Dependencies
 
-To build sqeazy, the cmake build system (any version higher than 2.8) is required as well as a standard compiler and linker (gcc, llvm/clang were tested).
+To build sqeazy, the cmake build system (any version higher than 2.8) is required as well as a gcc or clang compiler and affiliated linkers.
 
 ## libsqy
 
@@ -28,7 +28,7 @@ To build sqeazy, the cmake build system (any version higher than 2.8) is require
 
 # General Remarks
 
-Sqeazy is currently undergoing constant development. If you want to test-drive it, use the `sqy` application in `bench/`. Beware of using it for production data, we guarantee nothing in this case!
+Sqeazy is currently undergoing constant development. If you want to test-drive it, use the `sqy` application in `bench/`. Beware of using it for production data, we guarantee nothing in this case! We intend sqeazy to be build out-of-source.
 
 ## Build instructions
 
@@ -51,11 +51,32 @@ The are some cmake build flags that are supported:
 
 ### Building on Windows 7
 
-This library must be built with MinGW-w64 on Windows in order to obtain obtimal performance and remain flexible. Please install MinGW from
-<http://nuwen.net/mingw.html>
-in order to build sqeazy.
+This library must be built with MinGW-w64 on Windows in order to obtain obtimal performance and remain flexible. Please install MinGW from <http://nuwen.net/mingw.html>!
 
-*libsqeazy does not build on Windows 7 yet!*
+Here is a list of items to check before building on Win 7 :
+
+* build lz4 with mingw-w64, using this lz4 Makefile
+https://github.com/psteinb/lz4/blob/master/lib/Makefile.mingw64
+
+* build libtiff as usual on windows
+
+* use the boost installation coming with mingw-distro
+
+* mingw-w64 has been observed to perform poorly on detecting the correct CPU architecture, hence please add
+```
+CMAKE_CXX_FLAGS = -msse4
+```
+to your cmake install.
+
+Sqeazy will build as much as possible using static libraries on Windows in order to reduce administrative overhead. If you encounter any problems or have questions, please use the bug tracker.
+
+# Experimental Features
+
+In order to try SIMD support of sqeazy encoders and decoders, build sqeazy with:
+
+```
+cmake -DSQY_EXPERIMENTAL=ON <other flags> ..
+```
 
 # License
 
