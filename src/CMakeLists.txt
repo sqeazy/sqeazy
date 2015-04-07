@@ -1,6 +1,12 @@
 INCLUDE_DIRECTORIES(.)
 
 
+#needed for MPL include path
+FIND_PACKAGE (Boost 1.42 QUIET  REQUIRED)
+IF(Boost_FOUND)
+INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+ENDIF()
+
 #DYNAMIC LIBRARY
 
 add_library(${PROJECT_NAME} SHARED sqeazy.cpp)

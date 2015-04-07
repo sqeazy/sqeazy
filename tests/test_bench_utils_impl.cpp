@@ -46,9 +46,10 @@ BOOST_AUTO_TEST_CASE( copied )
   BOOST_CHECK_EQUAL(testme2.has_run(),false);
   BOOST_CHECK_EQUAL(testme2.filename.empty(),false);
   
+  boost::this_thread::sleep(boost::posix_time::milliseconds(50));
   testme2.stop(1024);
 
-  boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+  
   BOOST_CHECK_EQUAL(testme2.time_in_microseconds()>0.,true);
   BOOST_CHECK_EQUAL(testme2.histogram.mean(),testme.histogram.mean());
   
