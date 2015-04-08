@@ -1,0 +1,25 @@
+-library ASDK
+#!-beautifyNames
+-f
+-o src\
+-rootPackage src
+-package asdk.bindings
+-arch win64 
+-libFile lib\asdk\ASDK.lib lib\asdk\ASDK.dll lib\asdk\ait_eth.dll lib\asdk\ait_pci7350.dll  lib\asdk\ait_pci7200.dll lib\asdk\ait_sim.dll lib\asdk\ait_pci7300.dll   
+-runtime BridJ
+-mode Directory
+-jar asdk.jar
+lib\asdk\asdkWrapper.h
+lib\asdk\asdkType.h
+#!lib\asdk\asdkErrNo.h
+
+
+#!lib\asdk\asdkDM.h
+#!lib\asdk\acedev5.h  
+
+
+ 
+
+
+
+  
