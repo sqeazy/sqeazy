@@ -277,4 +277,12 @@ int SQY_Header_Size(const char* src, long *srclength){
   return 0;
 }
 
+int SQY_version_triple(int* version){
+  version[0] = 0;//placeholder
+  version[1] = 0;//placeholder
+  version[2] = 0;//placeholder
+
+  return 0;
+}
+
 #endif
