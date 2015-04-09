@@ -1,0 +1,24 @@
+-library sqeazy
+#!-beautifyNames
+-f
+-o java
+-rootPackage src
+-package sqeazy.bindings
+-arch linux_x64
+-libFile lib/libsqeazy.so
+-runtime BridJ
+-mode Directory
+-jar sqeazy.jar
+include/sqeazy.h
+
+
+#!lib\asdk\asdkErrNo.h
+#!lib\asdk\asdkDM.h
+#!lib\asdk\acedev5.h  
+
+
+ 
+
+
+
+  
