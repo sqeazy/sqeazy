@@ -1,1 +1,1 @@
-java -jar ./jnaerator.jar asdk.config.linux.jnaerator
+java -jar ./jnaerator.jar sqeazy.config.linux.jnaerator

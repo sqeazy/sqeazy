@@ -1,49 +1,12 @@
 INCLUDE_DIRECTORIES(.)
 
-
-#needed for MPL include path
-FIND_PACKAGE (Boost 1.42 QUIET  REQUIRED)
-IF(Boost_FOUND)
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-ENDIF()
-
-#DYNAMIC LIBRARY
-
-add_library(${PROJECT_NAME} SHARED sqeazy.cpp)
-add_library(ext_lz4 SHARED IMPORTED )
-set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}") 
-IF(WIN32)
-STRING(REPLACE dll lib LZ4_SHARED_IMPLIB ${LZ4_SHARED_LIB})
-set_target_properties(ext_lz4 PROPERTIES IMPORTED_IMPLIB "${LZ4_SHARED_LIB}")
-ENDIF(WIN32)
-
-message("::SRC:: ${LZ4_SHARED_LIB}")
-
-target_link_libraries(${PROJECT_NAME} ext_lz4)
-SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${PROJECT_SOURCE_DIR}/inc/sqeazy.h") 
-SET(SQY_SRC_TARGETS ${PROJECT_NAME})
-
-
-#STATIC LIBRARY
-if(EXISTS ${LZ4_STATIC_LIB})
-  add_library(${PROJECT_NAME}_static STATIC sqeazy.cpp)
-  add_library(ext_lz4_static STATIC IMPORTED)
-  set_target_properties(ext_lz4_static PROPERTIES IMPORTED_LOCATION "${LZ4_STATIC_LIB}") 
-  target_link_libraries(${PROJECT_NAME}_static ext_lz4_static) 
-  IF(UNIX)
-    SET_TARGET_PROPERTIES(${PROJECT_NAME}_static PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
-  ENDIF(UNIX)
-  SET(SQY_SRC_TARGETS ${SQY_SRC_TARGETS} ${PROJECT_NAME}_static)
-else()
-  message(WARNING "static lz4 library not found, static libsqeazy cannot be built")
-endif()
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD        # Adds a post-build event to MyTest
+  COMMAND ${CMAKE_COMMAND} -E copy_directory  # which executes "cmake - E copy_if_different..."
+  "${PROJECT_BINARY_DIR}/java"      # <--this is in-file
+  ${INSTALL_JAVA_DIR})                 # <--this is out-file path
 
 
 
-INSTALL(TARGETS ${SQY_SRC_TARGETS}
-  EXPORT sqeazy-targets 
-  LIBRARY DESTINATION "${INSTALL_LIB_DIR}" 
-  ARCHIVE DESTINATION "${INSTALL_LIB_DIR}"
-  PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}" COMPONENT inc)
-
+# Install the sqeazy-config.cmake and sqeazy-config-version.cmake
+install(DIRECTORY java DESTINATION ${INSTALL_JAVA_DIR})
 

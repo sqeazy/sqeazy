@@ -1,3 +1,6 @@
+//***********************************************************************************
+// BUILD
+
 plugins {
 	id "com.jfrog.bintray" version "1.0"
 }
@@ -44,9 +47,6 @@ test
     {
         events "passed", "skipped", "failed"
     }
-
-    exclude '**/demo/**'
-    exclude '**/run/**'
 
     maxHeapSize = "4G"
 }
@@ -129,20 +129,21 @@ if(hasProperty('bintray_user') && hasProperty('bintray_key') )
 		publish = true //If version should be auto published after an upload
 		pkg {
 			repo = 'Drivers'
-			userOrg = 'rtlib' //An optional organization name when the repo belongs to one of the user's orgs
+			userOrg = 'sqeazy' //An optional organization name when the repo belongs to one of the user's orgs
 			name = project.name
 			desc = project.name
-			websiteUrl = 'https://github.com/RTlib/ASDKJ'
-			issueTrackerUrl = 'https://github.com/RTlib/ASDKJ/issues'
-			vcsUrl = 'https://github.com/RTlib/ASDKJ.git'
+			websiteUrl = 'https://bitbucket.org/sqeazy/sqeazy'
+			issueTrackerUrl = 'https://bitbucket.org/sqeazy/sqeazy/issues'
+			vcsUrl = 'https://bitbucket.org/sqeazy/sqeazy.git'
 			//licenses = ['Apache-2.0']
 			labels = [
-				'RTlib',
-				'Drivers',
+				'sqeazy',
 				'Devices',
 				'Hardware',
 				'Microscopy',
-				'Real-time'
+				'Real-time',
+				'Compression',
+				'3D'
 			]
 			publicDownloadNumbers = true
 			//attributes= ['a': ['ay1', 'ay2'], 'b': ['bee'], c: 'cee'] //Optional package-level attributes

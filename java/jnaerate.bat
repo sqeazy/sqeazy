@@ -1,1 +1,1 @@
-java.exe -jar ./tools/jnaerator.jar asdk.config.win.jnaerator
+java.exe -jar ./jnaerator.jar sqeazy.config.win.jnaerator
