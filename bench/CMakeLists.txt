@@ -98,7 +98,11 @@ set_target_properties(sqy PROPERTIES COMPILE_FLAGS "${ADDITIONAL_COMPILE_FLAGS}"
 FIND_PACKAGE(ROOT QUIET)
 IF(ROOT_FOUND)
 add_executable(histo histo.cpp)
-target_link_libraries(histo ext_tiff ${ROOT_LIBRARIES} ${Boost_LIBRARIES})
+IF(EXISTS ${TIFF_STATIC_LIB})
+target_link_libraries(histo ext_static_tiff ${ROOT_LIBRARIES} ${Boost_LIBRARIES})
+ELSE()
+target_link_libraries(histo ext_dyn_tiff ${ROOT_LIBRARIES} ${Boost_LIBRARIES})
+ENDIF()
 
 execute_process(
     COMMAND ${ROOT_CONFIG_EXECUTABLE} --cflags
