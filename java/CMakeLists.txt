@@ -1,6 +1,6 @@
 INCLUDE_DIRECTORIES(.)
 
-MESSAGE("[java] simple copy_directory to ${INSTALL_JAVA_DIR}")
+FIND_PACKAGE(Java QUIET REQUIRED)
 
 #TODO: make this configurable
 SET(SQY_JNAERATE_PATH "${PROJECT_SOURCE_DIR}/java/jnaerator.jar")
@@ -28,10 +28,10 @@ ENDIF()
 
 configure_file(sqeazy.config.arch.jnaerator.in sqeazy.config.${SQY_JNAERATE_ARCH}.jnaerator @ONLY)
 
-MESSAGE("[cwd: ${PROJECT_BINARY_DIR}/java] $ java -jar ${SQY_JNAERATE_PATH} sqeazy.config.${SQY_JNAERATE_ARCH}.jnaerator")
+MESSAGE("[cwd: ${PROJECT_BINARY_DIR}/java] calling java -jar ${SQY_JNAERATE_PATH} sqeazy.config.${SQY_JNAERATE_ARCH}.jnaerator")
 add_custom_command(
   OUTPUT ${PROJECT_BINARY_DIR}/java/sqeazy.jar
-  COMMAND java -jar ${SQY_JNAERATE_PATH} sqeazy.config.${SQY_JNAERATE_ARCH}.jnaerator
+  COMMAND ${Java_JAVA_EXECUTABLE} -jar ${SQY_JNAERATE_PATH} sqeazy.config.${SQY_JNAERATE_ARCH}.jnaerator
   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/java
   )
 add_custom_target(${PROJECT_NAME}_java_bindings ALL DEPENDS ${PROJECT_NAME} ${PROJECT_BINARY_DIR}/java/sqeazy.jar)
