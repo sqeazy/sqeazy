@@ -1,1 +1,0 @@
-gradle clean cleanEclipse eclipse build publishToMavenLocal 

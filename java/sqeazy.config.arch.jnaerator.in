@@ -1,0 +1,13 @@
+#JNAERATOR COMMAND LINE OPTIONS
+-library sqeazy
+#!-beautifyNames
+-f
+-o java
+-rootPackage sqeazy
+-package bindings
+-arch @SQY_JNAERATE_ARCH@
+-libFile @PROJECT_BINARY_DIR@/src/libsqeazy.a
+-runtime BridJ
+-mode Directory
+-jar @PROJECT_BINARY_DIR@/java/sqeazy.jar
+@PROJECT_SOURCE_DIR@/inc/sqeazy.h
