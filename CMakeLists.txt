@@ -154,8 +154,10 @@ LINK_DIRECTORIES(${LZ4_LIBRARY_DIRS})
 ENDIF()
 
 # add subdirectories
+# src
 ADD_SUBDIRECTORY(src) # source code of the library
 
+# bench
 IF(HAS_CPP11_COMPILERFLAG)
 ADD_SUBDIRECTORY(bench) # source code of the benchmark suite
 export(TARGETS bench ${PROJECT_NAME}
@@ -164,6 +166,7 @@ ELSE()
 MESSAGE(WARNING ">> unable to build benchmark suite due to missing C++11 support")
 ENDIF()
 
+# test
 FIND_PACKAGE (Boost 1.42 COMPONENTS system filesystem unit_test_framework thread REQUIRED)
 IF(Boost_FOUND)
 ADD_SUBDIRECTORY(tests)
@@ -173,6 +176,10 @@ ELSE()
 MESSAGE(WARNING ">> Boost libraries not found, unable to compile tests (skipping)")
 ENDIF()
 
+#java
+ADD_SUBDIRECTORY(java)
+
+# export stuff
 export(PACKAGE ${PROJECT_NAME})
 # Create the sqeazy-config.cmake and sqeazy-config-version files
 file(RELATIVE_PATH REL_INCLUDE_DIR "${INSTALL_SHARE_DIR}"
