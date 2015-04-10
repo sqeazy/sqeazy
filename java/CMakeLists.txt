@@ -28,6 +28,7 @@ ENDIF()
 
 configure_file(sqeazy.config.arch.jnaerator.in sqeazy.config.${SQY_JNAERATE_ARCH}.jnaerator @ONLY)
 
+MESSAGE("[cwd: ${PROJECT_BINARY_DIR}/java] $ java -jar ${SQY_JNAERATE_PATH} sqeazy.config.${SQY_JNAERATE_ARCH}.jnaerator")
 add_custom_command(
   OUTPUT ${PROJECT_BINARY_DIR}/java/sqeazy.jar
   COMMAND java -jar ${SQY_JNAERATE_PATH} sqeazy.config.${SQY_JNAERATE_ARCH}.jnaerator

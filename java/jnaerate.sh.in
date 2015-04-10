@@ -1,1 +1,0 @@
-java -jar @SQY_JNAERATE_PATH@ sqeazy.config.@SQY_JNAERATE_ARCH@.jnaerator
