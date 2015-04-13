@@ -14,7 +14,7 @@ IF(UNIX)
       SET(SQY_JNAERATE_ARCH "linux_x86")
     ENDIF()
   ENDIF()
-  configure_file(jnaerate.sh.in jnaerate.sh @ONLY)
+
 ELSE()
   IF(WIN32)
   IF(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -22,7 +22,6 @@ ELSE()
   ELSE()
     SET(SQY_JNAERATE_ARCH "win32")
   ENDIF()
-  configure_file(jnaerate.bat.in jnaerate.bat @ONLY)
   ENDIF()
 ENDIF()
 
@@ -35,4 +34,5 @@ add_custom_command(
   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/java
   )
 add_custom_target(${PROJECT_NAME}_java_bindings ALL DEPENDS ${PROJECT_NAME} ${PROJECT_BINARY_DIR}/java/sqeazy.jar)
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bindings DESTINATION ${INSTALL_JAVA_DIR})
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sqeazy.jar DESTINATION ${INSTALL_JAVA_DIR})
