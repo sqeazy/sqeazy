@@ -81,7 +81,7 @@ template<>
 struct shift_left_m128i<char> {
   __m128i operator()(const __m128i& _block, int num_bits) const {
     
-    shift_left_m128i<unsigned char> left_shifter;
+    shift_left_m128i<unsigned char> left_shifter = {};
     return left_shifter(_block,num_bits);
     
   }
@@ -325,8 +325,8 @@ struct vec_rotate_left<unsigned char>
     static const value_type num_bits = (sizeof(value_type) * CHAR_BIT) - shift;
 
 
-    static const shift_left_m128i<value_type> left_shifter;
-    static const shift_right_m128i<value_type> right_shifter;
+    static const shift_left_m128i<value_type> left_shifter = {};
+    static const shift_right_m128i<value_type> right_shifter = {};
 
     // type shifted = _in << shift;
     __m128i value = *_in;
