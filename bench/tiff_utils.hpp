@@ -4,6 +4,7 @@
 #include <climits>
 #include <set>
 #include <algorithm>
+#include <numeric>
 #include "tiffio.h"
 #include "boost/filesystem.hpp"
 
