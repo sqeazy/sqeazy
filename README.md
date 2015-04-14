@@ -26,6 +26,7 @@ To build sqeazy, the cmake build system (any version higher than 2.8) is require
 * boost (> 1.42)
 * root
 
+
 # General Remarks
 
 Sqeazy is currently undergoing constant development. If you want to test-drive it, use the `sqy` application in `bench/`. Beware of using it for production data, we guarantee nothing in this case! We intend sqeazy to be build out-of-source.
@@ -38,11 +39,11 @@ In order to build sqeazy, use the following (tested on Linux and OSX):
 $ cd sqeazy
 $ mkdir build
 $ cd build
-$ cmake ..
+$ cmake <flags> ..
 $ make 
 ```
 
-The are some cmake build flags that are supported:
+The are some cmake build flags that are supported/required:
 * (required if not in environment) `LZ4_LIB_PATH` the location of the lz4 static and dynamic libraries
 * (required if not found in `LZ4_LIB_PATH`) `LZ4_INC_PATH` the location of lz4 header files (`lz4.h` etc)
 * (required if not in environment) `BOOST_ROOT` the location of the boost libraries
@@ -82,4 +83,4 @@ cmake -DSQY_EXPERIMENTAL=ON <other flags> ..
 
 # License
 
-There is not license yet, as there is not production ready code.
+There is no license yet, as there is no production ready code.
