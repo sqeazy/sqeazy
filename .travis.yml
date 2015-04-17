@@ -1,0 +1,8 @@
+language: java
+script: "gradle build"
+jdk:
+  - oraclejdk8
+  - oraclejdk7
+  - oraclejdk6
+install: gradle assemble --stacktrace
+
