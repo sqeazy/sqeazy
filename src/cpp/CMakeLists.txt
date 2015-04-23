@@ -25,7 +25,6 @@ SET (SQEAZY_VENDOR_URL "www.mpi-cbg.de")
 SET (SQEAZY_ID "${SQEAZY_VENDOR_ID}.${PROJECT_NAME}")
 
 # trying to setup paths so this package can be picked up
-set(INSTALL_JAVA_DIR java CACHE PATH "Installation directory for java interface")
 set(INSTALL_BIN_DIR bin CACHE PATH "Installation directory for executables")
 set(INSTALL_LIB_DIR lib CACHE PATH "Installation directory for libraries")
 set(INSTALL_INCLUDE_DIR include CACHE PATH "Installation directory for header files")
@@ -50,7 +49,7 @@ ELSE(UNIX)
 ENDIF(UNIX)
  
 # Make relative paths absolute (needed later on)
-foreach(p BIN LIB INCLUDE SHARE JAVA)
+foreach(p BIN LIB INCLUDE SHARE)
   set(var INSTALL_${p}_DIR)
   if(NOT IS_ABSOLUTE "${${var}}")
     set(${var} "${CMAKE_INSTALL_PREFIX}/${${var}}")
@@ -176,8 +175,6 @@ ELSE()
 MESSAGE(WARNING ">> Boost libraries not found, unable to compile tests (skipping)")
 ENDIF()
 
-#java
-ADD_SUBDIRECTORY(java)
 
 # export stuff
 export(PACKAGE ${PROJECT_NAME})

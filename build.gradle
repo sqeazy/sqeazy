@@ -7,26 +7,87 @@ apply plugin: 'eclipse'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
 
+
 // Build natives:
 task buildnative(type:Exec) {
 	workingDir '.'
 
+	println "BEGIN COMPILING NATIVE"
+
 	if (Os.isFamily(Os.FAMILY_WINDOWS)) 
   	{
-		commandLine 'cmd', '/c', 'buildnatives.bat'
+		commandLine 'cmd', '/c', 'let_me_build_that_for_you.bat'
 	} 
 	else if (Os.isFamily(Os.FAMILY_MAC)) 
 	{
-		commandLine './buildnative.sh'
+		commandLine './let_me_build_that_for_you.sh'
 	} 
 	else if (Os.isFamily(Os.FAMILY_UNIX)) 
 	{
-		commandLine './buildnative.sh'
+		commandLine './let_me_build_that_for_you.sh'
 	}
+
+	println "END COMPILING NATIVE"
+}
+
+// Build natives:
+task java_bindings(type:JavaExec) {
+
+  workingDir '.'
+  def jnaerate_arch = ""
+  def is_64 = (System.getProperty("os.arch").indexOf("64") != -1)
+	
+  println "BEGIN JAVA BINDINGS"
+
+  if (Os.isFamily(Os.FAMILY_WINDOWS)) 
+	  {
+	    if(is_64){
+	      jnaerate_arch = "win64"
+	    }
+	    else{
+	      jnaerate_arch = "win32"
+	    }
+	  } 
+	  else if (Os.isFamily(Os.FAMILY_MAC)) 
+  {
+    jnaerate_arch = "darwin_universal"
+  } 
+  else if (Os.isFamily(Os.FAMILY_UNIX)) 
+  {
+    if(is_64){
+      jnaerate_arch = "linux_x64"
+    }
+    else{
+      jnaerate_arch = "linux_x86"
+    }
+  }
+
+  //see  https://github.com/mike-plummer/NativeGroovy/blob/master/build.gradle 
+  description 'Execute JNAerator to auto-generate BridJ bindings'
+  main = 'com.ochafik.lang.jnaerator.JNAerator'
+  args '-library','sqeazy',
+	'-f',
+  	'-o','src/java/',
+	'-rootPackage','src',
+  	'-package','bindings.sqeazy',
+  	'-arch',jnaerate_arch,
+  	'-libFile','src/cpp/build/src/libsqeazy.a',
+  	'-runtime','BridJ',
+  	'-mode','Directory',
+  	'-jar','src/java/sqeazy.jar',
+  	'src/cpp/inc/sqeazy.h'
+  	
+  
+  classpath = files('src/java/jnaerator.jar')
+  classpath += sourceSets.main.runtimeClasspath
+
+  println "cmdline to be called: " + commandLine
+	
+  println "END JAVA BINDINGS"
 }
 
 build.dependsOn buildnative
-
+build.dependsOn java_bindings
 
 //***********************************************************************************
 // JAVA CODE BUILDING
