@@ -19,6 +19,7 @@ task buildnative(type:Exec) {
   }
   
   workingDir native_build_dir
+  
 
   println "BEGIN COMPILING NATIVE (CROSS FINGERS THAT ALL DEPENDENCIES ARE MET)"
   def sqy_x = project.hasProperty("sqy_experimental") ? sqy_experimental : "0"
@@ -45,12 +46,16 @@ task buildnative(type:Exec) {
     
   } 
   else if (Os.isFamily(Os.FAMILY_MAC)){
-    commandLine cmake_call
-    commandLine 'make'
+
+      commandLine cmake_call
+      commandLine 'make'
+
   } 
   else if (Os.isFamily(Os.FAMILY_UNIX)){
-    commandLine cmake_call
-    commandLine 'make'
+
+      commandLine cmake_call
+      commandLine 'make'
+
   }
 
   
@@ -63,19 +68,25 @@ task java_bindings(type:JavaExec) {
   workingDir '.'
   def jnaerate_arch = ""
   def is_64 = (System.getProperty("os.arch").indexOf("64") != -1)
-	
+
+  FileTree cpp_tree = fileTree(dir: 'src/cpp')
+  File libsqeazy_file = cpp_tree.matching{ include '**/libsqeazy.so' }.getSingleFile()
+  File sqeazy_header = cpp_tree.matching{ include '**/sqeazy.h' }.getSingleFile()
+
   println "BEGIN JAVA BINDINGS"
 
-  if (Os.isFamily(Os.FAMILY_WINDOWS)) 
-	  {
-	    if(is_64){
-	      jnaerate_arch = "win64"
-	    }
-	    else{
-	      jnaerate_arch = "win32"
-	    }
-	  } 
-	  else if (Os.isFamily(Os.FAMILY_MAC)) 
+  if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+	    
+    libsqeazy_file = cpp_tree.matching{ include '**/libsqeazy.a' }.getSingleFile()
+    
+    if(is_64){
+      jnaerate_arch = "win64"
+    }
+    else{
+      jnaerate_arch = "win32"
+    }
+  } 
+  else if (Os.isFamily(Os.FAMILY_MAC)) 
   {
     jnaerate_arch = "darwin_universal"
   } 
@@ -98,11 +109,11 @@ task java_bindings(type:JavaExec) {
 	'-rootPackage','src',
   	'-package','bindings.sqeazy',
   	'-arch',jnaerate_arch,
-  	'-libFile','src/cpp/build/src/libsqeazy.a',
+  	'-libFile',libsqeazy_file.absolutePath,//'src/cpp/build/src/libsqeazy.a'
   	'-runtime','BridJ',
   	'-mode','Directory',
   	'-jar','src/java/sqeazy.jar',
-  	'src/cpp/inc/sqeazy.h'
+  	sqeazy_header.absolutePath
   	
   
   classpath = files('src/java/jnaerator.jar')
