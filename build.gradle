@@ -7,27 +7,54 @@ apply plugin: 'eclipse'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
 
+def native_build_dir = new File('src/cpp/build')
+def native_static_lib = ""
+def native_shared_lib = ""
 
 // Build natives:
 task buildnative(type:Exec) {
-	workingDir '.'
 
-	println "BEGIN COMPILING NATIVE"
+  if(!native_build_dir.isDirectory()){
+    native_build_dir.mkdirs()
+  }
+  
+  workingDir native_build_dir
 
-	if (Os.isFamily(Os.FAMILY_WINDOWS)) 
-  	{
-		commandLine 'cmd', '/c', 'let_me_build_that_for_you.bat'
-	} 
-	else if (Os.isFamily(Os.FAMILY_MAC)) 
-	{
-		commandLine './let_me_build_that_for_you.sh'
-	} 
-	else if (Os.isFamily(Os.FAMILY_UNIX)) 
-	{
-		commandLine './let_me_build_that_for_you.sh'
-	}
+  println "BEGIN COMPILING NATIVE (CROSS FINGERS THAT ALL DEPENDENCIES ARE MET)"
+  def sqy_x = project.hasProperty("sqy_experimental") ? sqy_experimental : "0"
+  def path_to_lz4 = project.hasProperty("lz4_path") ? lz4_path : ""
+  def path_to_boost = project.hasProperty("boost_path") ? lz4_path : ""
 
-	println "END COMPILING NATIVE"
+  def cmake_args = ""
+  if(sqy_x != "0"){
+    cmake_args += "-DSQY_EXPERIMENTAL=ON "
+  }
+    
+  if(path_to_lz4){
+    cmake_args += "-DLZ4_ROOT=" + path_to_lz4 + " " 
+  }
+
+  if(path_to_boost){
+    cmake_args += "-DBOOST_ROOT=" + path_to_boost + " " 
+  }
+  
+  def cmake_call = "cmake "+cmake_args+'..'
+  println cmake_call
+  //DEFINE DEFAULTS
+  if (Os.isFamily(Os.FAMILY_WINDOWS)){
+    
+  } 
+  else if (Os.isFamily(Os.FAMILY_MAC)){
+    commandLine cmake_call
+    commandLine 'make'
+  } 
+  else if (Os.isFamily(Os.FAMILY_UNIX)){
+    commandLine cmake_call
+    commandLine 'make'
+  }
+
+  
+  println "END COMPILING NATIVE"
 }
 
 // Build natives:
@@ -80,14 +107,13 @@ task java_bindings(type:JavaExec) {
   
   classpath = files('src/java/jnaerator.jar')
   classpath += sourceSets.main.runtimeClasspath
-
-  println "cmdline to be called: " + commandLine
 	
   println "END JAVA BINDINGS"
 }
 
-build.dependsOn buildnative
+// build.dependsOn buildnative
 build.dependsOn java_bindings
+java_bindings.dependsOn buildnative
 
 //***********************************************************************************
 // JAVA CODE BUILDING
