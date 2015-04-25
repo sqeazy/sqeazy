@@ -88,6 +88,9 @@ task make(type:Exec) {
 // Build java bindings:
 task java_bindings(type:JavaExec) {
 
+  inputs.file './src/cpp/inc/sqeazy.h'
+  outputs.file 'src/java/src/sqeazy/bindings/SqeazyLibrary.java'
+
   workingDir '.'
   def jnaerate_arch = ""
   def is_64 = (System.getProperty("os.arch").indexOf("64") != -1)

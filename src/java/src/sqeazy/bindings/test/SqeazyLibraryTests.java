@@ -54,7 +54,7 @@ public class SqeazyLibraryTests
 		for (int i = 0; i < lBufferLength; i++)
 		{
 			final Byte lByte = lDecodedBytes.get(i);
-			System.out.format("i=%d, b=%d \n", (byte) i, lByte);
+			// System.out.format("i=%d, b=%d \n", (byte) i, lByte);
 			assertEquals((byte) i, lByte, 0);
 		}
 
