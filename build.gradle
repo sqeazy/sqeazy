@@ -7,21 +7,21 @@ apply plugin: 'eclipse'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
 
-def native_build_dir = new File('src/cpp/build')
+
+def native_build_dir = './build/cpp'
 def native_static_lib = ""
 def native_shared_lib = ""
 
-// Build natives:
-task buildnative(type:Exec) {
+new File(native_build_dir).mkdirs()
 
-  if(!native_build_dir.isDirectory()){
-    native_build_dir.mkdirs()
-  }
+// cmake task:
+task cmake(type:Exec) {
   
   workingDir native_build_dir
   
+  inputs.file './src/cpp/CMakeLists.txt'
+  outputs.dir './build/cpp/Makefile'
 
-  println "BEGIN COMPILING NATIVE (CROSS FINGERS THAT ALL DEPENDENCIES ARE MET)"
   def sqy_x = project.hasProperty("sqy_experimental") ? sqy_experimental : "0"
   def path_to_lz4 = project.hasProperty("lz4_path") ? lz4_path : ""
   def path_to_boost = project.hasProperty("boost_path") ? lz4_path : ""
@@ -38,42 +38,63 @@ task buildnative(type:Exec) {
   if(path_to_boost){
     cmake_args += "-DBOOST_ROOT=" + path_to_boost + " " 
   }
-  
-  def cmake_call = "cmake "+cmake_args+'..'
-  println cmake_call
+
+  cmake_args += '../../src/cpp'
+
+  //println "cmake_args=${cmake_args}"
+
   //DEFINE DEFAULTS
   if (Os.isFamily(Os.FAMILY_WINDOWS)){
     
   } 
-  else if (Os.isFamily(Os.FAMILY_MAC)){
-
-      commandLine cmake_call
-      commandLine 'make'
-
+  else if (Os.isFamily(Os.FAMILY_MAC))
+  {
+	executable 'cmake'
+	args cmake_args
   } 
-  else if (Os.isFamily(Os.FAMILY_UNIX)){
-
-      commandLine cmake_call
-      commandLine 'make'
-
+  else if (Os.isFamily(Os.FAMILY_UNIX))
+  {
+	executable 'cmake'
+	args cmake_args
   }
 
-  
-  println "END COMPILING NATIVE"
 }
 
-// Build natives:
+
+// make task:
+task make(type:Exec) {
+  
+  inputs.file './build/cpp/Makefile'
+  outputs.files './build/cpp/src/libsqeazy.dylib', './build/cpp/src/libsqeazy.dll'
+
+  workingDir native_build_dir
+  
+  if (Os.isFamily(Os.FAMILY_WINDOWS))
+  {
+    
+  } 
+  else if (Os.isFamily(Os.FAMILY_MAC))
+  {
+	executable 'make'
+  } 
+  else if (Os.isFamily(Os.FAMILY_UNIX))
+  {
+    executable 'make'
+  }
+
+}
+
+
+// Build java bindings:
 task java_bindings(type:JavaExec) {
 
   workingDir '.'
   def jnaerate_arch = ""
   def is_64 = (System.getProperty("os.arch").indexOf("64") != -1)
 
-  FileTree cpp_tree = fileTree(dir: 'src/cpp')
-  File libsqeazy_file = cpp_tree.matching{ include '**/libsqeazy.so' }.getSingleFile()
-  File sqeazy_header = cpp_tree.matching{ include '**/sqeazy.h' }.getSingleFile()
+  File libsqeazy_file;
+  File sqeazy_header;
 
-  println "BEGIN JAVA BINDINGS"
 
   if (Os.isFamily(Os.FAMILY_WINDOWS)) {
 	    
@@ -89,6 +110,8 @@ task java_bindings(type:JavaExec) {
   else if (Os.isFamily(Os.FAMILY_MAC)) 
   {
     jnaerate_arch = "darwin_universal"
+    libsqeazy_file = new File(native_build_dir,'./src/libsqeazy.dylib')
+  	sqeazy_header = new File('src/cpp/inc/sqeazy.h')
   } 
   else if (Os.isFamily(Os.FAMILY_UNIX)) 
   {
@@ -105,26 +128,26 @@ task java_bindings(type:JavaExec) {
   main = 'com.ochafik.lang.jnaerator.JNAerator'
   args '-library','sqeazy',
 	'-f',
-  	'-o','src/java/',
+  	'-o','src/java/src',
 	'-rootPackage','src',
-  	'-package','bindings.sqeazy',
+  	'-package','sqeazy.bindings',
   	'-arch',jnaerate_arch,
   	'-libFile',libsqeazy_file.absolutePath,//'src/cpp/build/src/libsqeazy.a'
   	'-runtime','BridJ',
   	'-mode','Directory',
-  	'-jar','src/java/sqeazy.jar',
+  	//'-jar','src/java/sqeazy.jar',
   	sqeazy_header.absolutePath
   	
   
-  classpath = files('src/java/jnaerator.jar')
-  classpath += sourceSets.main.runtimeClasspath
+  classpath = files('tools/jnaerator.jar')
 	
-  println "END JAVA BINDINGS"
 }
 
-// build.dependsOn buildnative
-build.dependsOn java_bindings
-java_bindings.dependsOn buildnative
+// Task dependencies:
+
+make.dependsOn cmake
+java_bindings.dependsOn make
+compileJava.dependsOn java_bindings
 
 //***********************************************************************************
 // JAVA CODE BUILDING
@@ -136,14 +159,14 @@ sourceSets
 		java
 		{ srcDir 'src/java/src' }
 		resources
-		{  srcDir 'src/java/src' }
+		{ srcDir 'src/java/src' }
 	}
 	test
 	{
 		java
 		{ srcDir 'src/java/src' }
 		resources
-		{  srcDir 'src/java/src' }
+		{ srcDir 'src/java/src' }
 	}
 }
 
