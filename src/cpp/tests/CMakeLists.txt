@@ -70,7 +70,9 @@ add_executable(test_bench_utils_impl test_bench_utils_impl.cpp)
 
 
 add_executable(test_lz4_encoding test_lz4_encoding.cpp)
-if(EXISTS ${LZ4_STATIC_LIB} OR WIN32)
+
+if(EXISTS ${LZ4_STATIC_LIB})
+#if static libsqeazy exists, it will contain lz4, no need to link against it yet another time
 target_link_libraries(test_lz4_encoding ${PROJECT_NAME}_static ${Boost_LIBRARIES})
 else()
 target_link_libraries(test_lz4_encoding ${PROJECT_NAME} ${Boost_LIBRARIES} ext_lz4)
