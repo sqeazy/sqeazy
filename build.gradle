@@ -7,26 +7,34 @@ apply plugin: 'eclipse'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
 
-
+def project_root = file(".").absolutePath
 def native_build_dir = './build/cpp'
+def native_source_dir = './src/cpp'
 def native_static_lib = ""
 def native_shared_lib = ""
 
-new File(native_build_dir).mkdirs()
+
+task create_build_dir << {
+
+
+  new File(native_build_dir).mkdirs()
+
+}
 
 // cmake task:
 task cmake(type:Exec) {
   
   workingDir native_build_dir
   
-  inputs.file './src/cpp/CMakeLists.txt'
-  outputs.dir './build/cpp/Makefile'
+  inputs.file file(native_source_dir).absolutePath + '/CMakeLists.txt'
+  outputs.file file(native_build_dir).absolutePath + '/Makefile'
 
+  def native_build_type = project.hasProperty("sqy_build_type") ? sqy_build_type : "Release"
   def sqy_x = project.hasProperty("sqy_experimental") ? sqy_experimental : "0"
   def path_to_lz4 = project.hasProperty("lz4_path") ? lz4_path : ""
   def path_to_boost = project.hasProperty("boost_path") ? lz4_path : ""
 
-  def cmake_args = ""
+  def cmake_args = " -DCMAKE_BUILD_TYPE=\""+native_build_type+"\" "
   if(sqy_x != "0"){
     cmake_args += "-DSQY_EXPERIMENTAL=ON "
   }
@@ -39,46 +47,49 @@ task cmake(type:Exec) {
     cmake_args += "-DBOOST_ROOT=" + path_to_boost + " " 
   }
 
-  cmake_args += '../../src/cpp'
 
-  //println "cmake_args=${cmake_args}"
+  cmake_args += file(native_source_dir).absolutePath
 
   //DEFINE DEFAULTS
   if (Os.isFamily(Os.FAMILY_WINDOWS)){
-    
+    //TODO
+    executable 'cmake.exe'
   } 
   else if (Os.isFamily(Os.FAMILY_MAC))
   {
-	executable 'cmake'
-	args cmake_args
+    executable 'cmake'
+    args cmake_args
   } 
   else if (Os.isFamily(Os.FAMILY_UNIX))
   {
-	executable 'cmake'
-	args cmake_args
+    executable 'cmake'
+    args cmake_args
   }
 
+  println commandLine
+  
 }
 
 
 // make task:
 task make(type:Exec) {
   
-  inputs.file './build/cpp/Makefile'
-  outputs.files './build/cpp/src/libsqeazy.dylib', './build/cpp/src/libsqeazy.dll'
+  inputs.file file(native_build_dir).absolutePath + '/Makefile'
 
   workingDir native_build_dir
   
   if (Os.isFamily(Os.FAMILY_WINDOWS))
   {
-    
+    outputs.file './build/cpp/src/libsqeazy.dll'
   } 
   else if (Os.isFamily(Os.FAMILY_MAC))
   {
-	executable 'make'
+    outputs.file './build/cpp/src/libsqeazy.dylib'
+    executable 'make'
   } 
   else if (Os.isFamily(Os.FAMILY_UNIX))
   {
+    outputs.file './build/cpp/src/libsqeazy.so'
     executable 'make'
   }
 
@@ -88,7 +99,17 @@ task make(type:Exec) {
 // Build java bindings:
 task java_bindings(type:JavaExec) {
 
-  inputs.file './src/cpp/inc/sqeazy.h'
+  if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+    inputs.files './src/cpp/inc/sqeazy.h', './build/cpp/src/libsqeazy.dll'
+  } 
+  else if (Os.isFamily(Os.FAMILY_MAC)) 
+  {
+    inputs.files './src/cpp/inc/sqeazy.h', './build/cpp/src/libsqeazy.dylib'}
+  else if (Os.isFamily(Os.FAMILY_UNIX)) 
+  {
+    inputs.files './src/cpp/inc/sqeazy.h', './build/cpp/src/libsqeazy.so'
+  }
+
   outputs.file 'src/java/src/sqeazy/bindings/SqeazyLibrary.java'
 
   workingDir '.'
@@ -98,11 +119,11 @@ task java_bindings(type:JavaExec) {
   File libsqeazy_file;
   File sqeazy_header;
 
-
   if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-	    
-    libsqeazy_file = cpp_tree.matching{ include '**/libsqeazy.a' }.getSingleFile()
-    
+
+    libsqeazy_file = file( native_build_dir + "/src/libsqeazy.dll" )
+    sqeazy_header = file( native_source_dir + "/inc/sqeazy.h" )
+
     if(is_64){
       jnaerate_arch = "win64"
     }
@@ -113,11 +134,16 @@ task java_bindings(type:JavaExec) {
   else if (Os.isFamily(Os.FAMILY_MAC)) 
   {
     jnaerate_arch = "darwin_universal"
-    libsqeazy_file = new File(native_build_dir,'./src/libsqeazy.dylib')
-  	sqeazy_header = new File('src/cpp/inc/sqeazy.h')
+    libsqeazy_file = file( native_build_dir + "/src/libsqeazy.dylib" )
+    sqeazy_header = file( native_source_dir + "/inc/sqeazy.h" )
+
   } 
   else if (Os.isFamily(Os.FAMILY_UNIX)) 
   {
+
+    libsqeazy_file = file( native_build_dir + "/src/libsqeazy.so" )
+    sqeazy_header = file( native_source_dir + "/inc/sqeazy.h" )
+
     if(is_64){
       jnaerate_arch = "linux_x64"
     }
@@ -135,7 +161,7 @@ task java_bindings(type:JavaExec) {
 	'-rootPackage','src',
   	'-package','sqeazy.bindings',
   	'-arch',jnaerate_arch,
-  	'-libFile',libsqeazy_file.absolutePath,//'src/cpp/build/src/libsqeazy.a'
+  	'-libFile',libsqeazy_file.absolutePath,
   	'-runtime','BridJ',
   	'-mode','Directory',
   	//'-jar','src/java/sqeazy.jar',
@@ -147,7 +173,7 @@ task java_bindings(type:JavaExec) {
 }
 
 // Task dependencies:
-
+cmake.dependsOn create_build_dir
 make.dependsOn cmake
 java_bindings.dependsOn make
 compileJava.dependsOn java_bindings
