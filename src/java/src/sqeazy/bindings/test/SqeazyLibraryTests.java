@@ -11,6 +11,16 @@ import sqeazy.bindings.SqeazyLibrary;
 public class SqeazyLibraryTests
 {
 
+    	@Test
+	public void testSQY_VERSION()
+	{
+	    final Pointer<Integer> version = Pointer.allocateInts((long)3);
+	    SqeazyLibrary.SQY_version_triple(version);
+	    assertEquals((Integer)2015,version.get(0));
+	    assertEquals((Integer)4,version.get(1));
+	    assertEquals((Integer)28,version.get(2));
+	}
+
 	@Test
 	public void testLZ4()
 	{
