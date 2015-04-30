@@ -231,7 +231,6 @@ typedef sqeazy::pipeline<lz4_> lz4_pipe;
 int SQY_LZ4Encode(const char* src, long srclength, char* dst, long* dstlength){
 
   int retvalue = lz4_pipe::compress(src,dst,srclength,*dstlength);
-    //sqeazy::lz4_scheme<char,long>::encode(src,dst,srclength,*dstlength);
   
   return retvalue;
 }
@@ -278,9 +277,9 @@ int SQY_Header_Size(const char* src, long *srclength){
 }
 
 int SQY_version_triple(int* version){
-  version[0] = 0;//placeholder
-  version[1] = 0;//placeholder
-  version[2] = 0;//placeholder
+  version[0] = 2015;//placeholder
+  version[1] = 4;//placeholder
+  version[2] = 28;//placeholder
 
   return 0;
 }
