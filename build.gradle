@@ -199,6 +199,7 @@ make.dependsOn cmake
 java_bindings.dependsOn make
 compileJava.dependsOn java_bindings
 ctest.dependsOn make
+test.dependsOn ctest
 
 //***********************************************************************************
 // JAVA CODE BUILDING
