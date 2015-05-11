@@ -172,11 +172,33 @@ task java_bindings(type:JavaExec) {
 	
 }
 
+// make task:
+task ctest(type:Exec) {
+  
+  inputs.dir file(native_build_dir).absolutePath
+  workingDir native_build_dir
+  
+  if (Os.isFamily(Os.FAMILY_WINDOWS))
+  {
+    executable 'ctest.exe'
+  } 
+  else if (Os.isFamily(Os.FAMILY_MAC))
+  {
+    executable 'ctest'
+  } 
+  else if (Os.isFamily(Os.FAMILY_UNIX))
+  {
+    executable 'ctest'
+  }
+
+}
+
 // Task dependencies:
 cmake.dependsOn create_build_dir
 make.dependsOn cmake
 java_bindings.dependsOn make
 compileJava.dependsOn java_bindings
+ctest.dependsOn make
 
 //***********************************************************************************
 // JAVA CODE BUILDING
