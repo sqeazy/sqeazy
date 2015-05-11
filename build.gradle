@@ -15,10 +15,7 @@ def native_shared_lib = ""
 
 
 task create_build_dir << {
-
-
   new File(native_build_dir).mkdirs()
-
 }
 
 // cmake task:
@@ -26,7 +23,7 @@ task cmake(type:Exec) {
   
   workingDir native_build_dir
   
-  inputs.file file(native_source_dir).absolutePath + '/CMakeLists.txt'
+  inputs.dir file(native_source_dir).absolutePath
   outputs.file file(native_build_dir).absolutePath + '/Makefile'
 
   def native_build_type = project.hasProperty("sqy_build_type") ? sqy_build_type : "Release"
@@ -34,21 +31,24 @@ task cmake(type:Exec) {
   def path_to_lz4 = project.hasProperty("lz4_path") ? lz4_path : ""
   def path_to_boost = project.hasProperty("boost_path") ? lz4_path : ""
 
-  def cmake_args = " -DCMAKE_BUILD_TYPE=\""+native_build_type+"\" "
+  def cmake_args = [] as List
+
+  cmake_args.add("-DCMAKE_BUILD_TYPE=\""+native_build_type+"\" ")
   if(sqy_x != "0"){
-    cmake_args += "-DSQY_EXPERIMENTAL=ON "
+    cmake_args.add("-DSQY_EXPERIMENTAL=ON")
   }
     
   if(path_to_lz4){
-    cmake_args += "-DLZ4_ROOT=" + path_to_lz4 + " " 
+    cmake_args.add("-DLZ4_ROOT=" + path_to_lz4 + " ")
   }
 
   if(path_to_boost){
-    cmake_args += "-DBOOST_ROOT=" + path_to_boost + " " 
+    cmake_args.add("-DBOOST_ROOT=" + path_to_boost + " ") 
   }
 
-
   cmake_args += file(native_source_dir).absolutePath
+
+  println "cmake_args: "+cmake_args
 
   //DEFINE DEFAULTS
   if (Os.isFamily(Os.FAMILY_WINDOWS)){
@@ -74,7 +74,7 @@ task cmake(type:Exec) {
 // make task:
 task make(type:Exec) {
   
-  inputs.file file(native_build_dir).absolutePath + '/Makefile'
+  inputs.dir file(native_build_dir).absolutePath
 
   workingDir native_build_dir
   
