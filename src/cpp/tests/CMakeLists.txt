@@ -1,16 +1,47 @@
 INCLUDE_DIRECTORIES(.)
 
+SET(HDF5_USE_STATIC_LIBRARIES TRUE)#only works on Unix
+FIND_PACKAGE(HDF5 QUIET REQUIRED CXX )
+IF(HDF5_FOUND)
+INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIRS})
+ADD_DEFINITIONS(${HDF5_DEFINITIONS})
+LINK_DIRECTORIES(${HDF5_LIBRARY_DIRS}) 
+ENDIF()
+
+FIND_PACKAGE(TIFF REQUIRED)
+IF(TIFF_FOUND)
+INCLUDE_DIRECTORIES(${TIFF_INCLUDE_DIR})
+ENDIF(TIFF_FOUND)
+
+##LZ4, HDF5. TIFF
 IF(WIN32)
-SET(Boost_USE_STATIC_LIBS ON)
-add_library(ext_lz4 STATIC IMPORTED)
-set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_STATIC_LIB}") 
-SET(SQY_LIB ${PROJECT_NAME}_static)
+  set(Boost_USE_STATIC_LIBS ON)
+
+  add_library(ext_lz4 STATIC IMPORTED)
+  set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_STATIC_LIB}")
+  
+  add_library(ext_hdf5 STATIC IMPORTED)
+  set_target_properties(ext_hdf5 PROPERTIES IMPORTED_LOCATION "${HDF5_LIBRARIES}")
+
+  add_library(ext_tiff STATIC IMPORTED)
+
+  set(SQY_LIB ${PROJECT_NAME}_static)
+  
 ELSE(WIN32)
-add_library(ext_lz4 SHARED IMPORTED)
-set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}") 
-add_definitions(-DBOOST_TEST_DYN_LINK)
-SET(SQY_LIB ${PROJECT_NAME})
+
+  add_library(ext_lz4 SHARED IMPORTED)
+  set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}")
+
+  add_library(ext_hdf5 SHARED IMPORTED)
+  set_target_properties(ext_hdf5 PROPERTIES IMPORTED_LOCATION "${HDF5_LIBRARIES}") 
+
+  add_library(ext_tiff SHARED IMPORTED)
+  add_definitions(-DBOOST_TEST_DYN_LINK)
+
+  set(SQY_LIB ${PROJECT_NAME})
 ENDIF(WIN32)
+
+set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIBRARIES}") 
 
 FIND_PACKAGE (Boost 1.42 QUIET COMPONENTS system filesystem unit_test_framework REQUIRED)
 IF(Boost_FOUND)
@@ -18,16 +49,6 @@ INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS}) 
 ENDIF()
 
-FIND_PACKAGE(TIFF REQUIRED)
-IF(TIFF_FOUND)
-INCLUDE_DIRECTORIES(${TIFF_INCLUDE_DIR})
-IF(WIN32)
-add_library(ext_tiff STATIC IMPORTED)
-ELSE(WIN32)
-add_library(ext_tiff SHARED IMPORTED)
-ENDIF(WIN32)
-set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIBRARIES}") 
-ENDIF(TIFF_FOUND)
 
 add_executable(test_diff_schemes test_diff_schemes.cpp)
 target_link_libraries(test_diff_schemes ${SQY_LIB} ${Boost_LIBRARIES})
@@ -70,12 +91,15 @@ add_executable(test_bench_utils_impl test_bench_utils_impl.cpp)
 
 
 add_executable(test_lz4_encoding test_lz4_encoding.cpp)
+add_executable(test_hdf5_interface test_hdf5_interface.cpp)
 
 if(EXISTS ${LZ4_STATIC_LIB})
 #if static libsqeazy exists, it will contain lz4, no need to link against it yet another time
 target_link_libraries(test_lz4_encoding ${PROJECT_NAME}_static ${Boost_LIBRARIES})
+target_link_libraries(test_hdf5_interface ${PROJECT_NAME}_static ${Boost_LIBRARIES})
 else()
-target_link_libraries(test_lz4_encoding ${PROJECT_NAME} ${Boost_LIBRARIES} ext_lz4)
+  target_link_libraries(test_lz4_encoding ${PROJECT_NAME} ${Boost_LIBRARIES} ext_lz4)
+  target_link_libraries(test_hdf5_interface ${PROJECT_NAME} ${Boost_LIBRARIES} ext_lz4 ext_hdf5)
 endif()
 
 add_executable(test_apply test_apply.cpp)
