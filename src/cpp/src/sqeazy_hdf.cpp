@@ -45,17 +45,17 @@ size_t H5Z_filter_sqy(unsigned int _flags, //is it encode or decode
 
     /* Prepare the output buffer. */
 
- char* c_input = reinterpret_cast<char*>(*_buf);
+    char* c_input = reinterpret_cast<char*>(*_buf);
 
-outbuflen = sqeazy::bswap1_lz4_pipe::decoded_size_byte(c_input, _nbytes);
+    outbuflen = sqeazy::bswap1_lz4_pipe::decoded_size_byte(c_input, _nbytes);
 
     outbuf = new char[outbuflen];
 
     /* Start decompression. */
 
-unsigned short* output = reinterpret_cast<unsigned short*>(outbuf);
+    unsigned short* output = reinterpret_cast<unsigned short*>(outbuf);
 
-ret = sqeazy::bswap1_lz4_pipe::decompress(c_input, output, _nbytes);
+    ret = sqeazy::bswap1_lz4_pipe::decompress(c_input, output, _nbytes);
 
     /* End decompression. */
 
@@ -68,30 +68,30 @@ ret = sqeazy::bswap1_lz4_pipe::decompress(c_input, output, _nbytes);
      ** data.  This allows us to use the simplified one-shot interface to
      ** compression.
      **/
-unsigned long input_nelem = _nbytes/sizeof(unsigned short);
-outbuflen = sqeazy::bswap1_lz4_pipe::max_bytes_encoded(_nbytes,
-						       sqeazy::bswap1_lz4_pipe::header_size(input_nelem)
-						       ); 
+    unsigned long input_nelem = _nbytes/sizeof(unsigned short);
+    outbuflen = sqeazy::bswap1_lz4_pipe::max_bytes_encoded(_nbytes,
+							   sqeazy::bswap1_lz4_pipe::header_size(input_nelem)
+							   ); 
 
-outbuf = new char[outbuflen];
-unsigned short* input = reinterpret_cast<unsigned short*>(*_buf);
+    outbuf = new char[outbuflen];
+    unsigned short* input = reinterpret_cast<unsigned short*>(*_buf);
 
     /* Compress data. */
-ret = sqeazy::bswap1_lz4_pipe::compress(input, outbuf, input_nelem);
+    ret = sqeazy::bswap1_lz4_pipe::compress(input, outbuf, input_nelem);
 
   }
 
   /* Always replace the input buffer with the output buffer. */
-if(!ret){
-  delete [] _buf;
-  *_buf = outbuf;
-  *_buf_size = outbuflen;
+  if(!ret){
+    delete [] _buf;
+    *_buf = outbuf;
+    *_buf_size = outbuflen;
 
 
-}
- else{
-delete [] outbuf;
-}
+  }
+  else{
+    delete [] outbuf;
+  }
   return ret;
   
 }
