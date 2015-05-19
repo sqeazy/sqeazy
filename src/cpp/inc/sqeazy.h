@@ -269,7 +269,7 @@ SQY_FUNCTION_PREFIX int SQY_RmBackground_Estimated_UI16(int width, int height,  
 	src 					: contiguous array of voxels (externally allocated)
 	srclength 				: length in bytes of source buffer
 	dst 					: LZ4 compressed buffer (already allocated)
-	dstlength 				: length in bytes of externally allocated destination buffer,
+	dstlength 				: length in bytes of externally allocated destination buffer (needs to give the length of dst in Bytes),
 							  modified by function call to reflect the effective 
 							  compressed buffer length after the call.
 
