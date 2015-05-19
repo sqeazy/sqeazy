@@ -311,7 +311,7 @@ public class SqeazyLibrary {
 	 * src 					: contiguous array of voxels (externally allocated)<br>
 	 * srclength 				: length in bytes of source buffer<br>
 	 * dst 					: LZ4 compressed buffer (already allocated)<br>
-	 * dstlength 				: length in bytes of externally allocated destination buffer,<br>
+	 * dstlength 				: length in bytes of externally allocated destination buffer (needs to give the length of dst in Bytes),<br>
 	 * modified by function call to reflect the effective <br>
 	 * compressed buffer length after the call.<br>
 	 * Returns 0 if success, another code if there was an error (error codes provided below)<br>
