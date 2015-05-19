@@ -20,31 +20,22 @@ extern "C" {
     using namespace H5;
 #endif
 
-template <typename T>
-struct hdf5_constants {
-  static PredType dataset_tid;
-  static PredType wrote_tid;
-};
-
-template<> PredType hdf5_constants<int>::dataset_tid = PredType::STD_I32BE;
-template<> PredType hdf5_constants<int>::wrote_tid = PredType::NATIVE_INT;
-
-template<> PredType hdf5_constants<short>::dataset_tid = PredType::STD_I16BE;
-template<> PredType hdf5_constants<short>::wrote_tid = PredType::NATIVE_SHORT;
-
-template<> PredType hdf5_constants<unsigned short>::dataset_tid = PredType::STD_U16BE;
-template<> PredType hdf5_constants<unsigned short>::wrote_tid = PredType::NATIVE_USHORT;
-
-
-// template <> struct hdf5_constants<int> {
-//   static const PredType dataset_tid = PredType::STD_I32BE;
-//   static const PredType wrote_tid = PredType::NATIVE_INT;
+// template <typename T>
+// struct hdf5_constants {
+//   static PredType dataset_tid;
+//   static PredType wrote_tid;
 // };
 
-// template <> struct hdf5_constants<short> {
-//   static const PredType dataset_tid = PredType::STD_I16BE;
-//   static const PredType wrote_tid = PredType::NATIVE_SHORT;
-// };
+// template<> PredType hdf5_constants<int>::dataset_tid = PredType::STD_I32BE;
+// template<> PredType hdf5_constants<int>::wrote_tid = PredType::NATIVE_INT;
+
+// template<> PredType hdf5_constants<short>::dataset_tid = PredType::STD_I16BE;
+// template<> PredType hdf5_constants<short>::wrote_tid = PredType::NATIVE_SHORT;
+
+// template<> PredType hdf5_constants<unsigned short>::dataset_tid = PredType::STD_U16BE;
+// template<> PredType hdf5_constants<unsigned short>::wrote_tid = PredType::NATIVE_USHORT;
+
+
 
 template <typename T, typename U>
 int h5_compress_arb_dataset(
@@ -87,12 +78,16 @@ int h5_compress_arb_dataset(
 
 	// Create the dataset.      
 	DataSet *dataset = new DataSet(file.createDataSet( _dname, 
-							   hdf5_constants<T>::dataset_tid, 
+							   //hdf5_constants<T>::dataset_tid,
+							   PredType::STD_U16BE,
 							   *dataspace, 
 							   *plist) );
 
 	// Write data to dataset.
-	dataset->write(&_data[0], hdf5_constants<T>::wrote_tid);
+	dataset->write(&_data[0],
+		       //hdf5_constants<T>::wrote_tid
+		       PredType::NATIVE_USHORT
+		       );
 
 	// Close objects and file.  Either approach will close the HDF5 item.
 	delete dataspace;
@@ -219,18 +214,33 @@ typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 
 BOOST_FIXTURE_TEST_SUITE( encode_decode_using_hdf5_filter, uint16_cube_of_8 )
 
-BOOST_AUTO_TEST_CASE( encode_success )
-{
-  boost::filesystem::path	cfile = "sqy_encoded.h5";
-  std::string dname = "compressed_data";
-  
-  h5_compress_arb_dataset(cfile.string(),
-			  dname,
-			  constant_cube,
-			  dims);
+BOOST_AUTO_TEST_CASE( filter_available ){
 
-  BOOST_CHECK(boost::filesystem::exists(cfile));
+  DSetCreatPropList  *plist = new  DSetCreatPropList;
+  unsigned flags = 0;
+  size_t cd_nelmts = 3;
+  std::vector<unsigned> cd_values(cd_nelmts);
+  std::string name;name.resize(20);
+  unsigned filter_config = 0;
+  plist->getFilterById(H5Z_FILTER_SQY, flags, cd_nelmts, &cd_values[0], name.size(), &name[0], filter_config);
+  delete plist;
+
+  BOOST_CHECK(filter_config!=0);
+  
 }
+
+// BOOST_AUTO_TEST_CASE( encode_success )
+// {
+//   boost::filesystem::path	cfile = "sqy_encoded.h5";
+//   std::string dname = "compressed_data";
+  
+//   h5_compress_arb_dataset(cfile.string(),
+// 			  dname,
+// 			  constant_cube,
+// 			  dims);
+
+//   BOOST_CHECK(boost::filesystem::exists(cfile));
+// }
 
 
  BOOST_AUTO_TEST_SUITE_END()
