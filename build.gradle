@@ -1,0 +1,365 @@
+plugins { id "com.jfrog.bintray" version "1.0" }
+
+import org.apache.tools.ant.taskdefs.condition.Os
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+
+def project_root = file(".").absolutePath
+def native_build_dir = './build/cpp'
+def native_source_dir = './src/cpp'
+def native_static_lib = ""
+def native_shared_lib = ""
+
+
+task create_build_dir << {
+  new File(native_build_dir).mkdirs()
+}
+
+// cmake task:
+task cmake(type:Exec) {
+  
+  workingDir native_build_dir
+  
+  inputs.dir file(native_source_dir).absolutePath
+  outputs.file file(native_build_dir).absolutePath + '/Makefile'
+
+  def native_build_type = project.hasProperty("sqy_build_type") ? sqy_build_type : "Release"
+  def sqy_x = project.hasProperty("sqy_experimental") ? sqy_experimental : "0"
+  def path_to_lz4 = project.hasProperty("lz4_path") ? lz4_path : ""
+  def path_to_boost = project.hasProperty("boost_path") ? lz4_path : ""
+
+  def cmake_args = [] as List
+
+  cmake_args.add("-DCMAKE_BUILD_TYPE=\""+native_build_type+"\" ")
+  if(sqy_x != "0"){
+    cmake_args.add("-DSQY_EXPERIMENTAL=ON")
+  }
+    
+  if(path_to_lz4){
+    cmake_args.add("-DLZ4_ROOT=" + path_to_lz4 + " ")
+  }
+
+  if(path_to_boost){
+    cmake_args.add("-DBOOST_ROOT=" + path_to_boost + " ") 
+  }
+
+  cmake_args += file(native_source_dir).absolutePath
+
+  println "cmake_args: "+cmake_args
+
+  //DEFINE DEFAULTS
+  if (Os.isFamily(Os.FAMILY_WINDOWS)){
+    //TODO
+    executable 'cmake.exe'
+  } 
+  else if (Os.isFamily(Os.FAMILY_MAC))
+  {
+    executable 'cmake'
+    args cmake_args
+  } 
+  else if (Os.isFamily(Os.FAMILY_UNIX))
+  {
+    executable 'cmake'
+    args cmake_args
+  }
+
+  println commandLine
+  
+}
+
+
+// make task:
+task make(type:Exec) {
+  
+  inputs.dir file(native_build_dir).absolutePath
+
+  workingDir native_build_dir
+  
+  if (Os.isFamily(Os.FAMILY_WINDOWS))
+  {
+    outputs.file './build/cpp/src/libsqeazy.dll'
+  } 
+  else if (Os.isFamily(Os.FAMILY_MAC))
+  {
+    outputs.file './build/cpp/src/libsqeazy.dylib'
+    executable 'make'
+  } 
+  else if (Os.isFamily(Os.FAMILY_UNIX))
+  {
+    outputs.file './build/cpp/src/libsqeazy.so'
+    executable 'make'
+  }
+
+}
+
+
+// Build java bindings:
+task java_bindings(type:JavaExec) {
+
+  if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+    inputs.files './src/cpp/inc/sqeazy.h', './build/cpp/src/libsqeazy.dll'
+  } 
+  else if (Os.isFamily(Os.FAMILY_MAC)) 
+  {
+    inputs.files './src/cpp/inc/sqeazy.h', './build/cpp/src/libsqeazy.dylib'}
+  else if (Os.isFamily(Os.FAMILY_UNIX)) 
+  {
+    inputs.files './src/cpp/inc/sqeazy.h', './build/cpp/src/libsqeazy.so'
+  }
+
+  outputs.file 'src/java/src/sqeazy/bindings/SqeazyLibrary.java'
+
+  workingDir '.'
+  def jnaerate_arch = ""
+  def is_64 = (System.getProperty("os.arch").indexOf("64") != -1)
+
+  File libsqeazy_file;
+  File sqeazy_header;
+
+  if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+
+    libsqeazy_file = file( native_build_dir + "/src/libsqeazy.dll" )
+    sqeazy_header = file( native_source_dir + "/inc/sqeazy.h" )
+
+    if(is_64){
+      jnaerate_arch = "win64"
+    }
+    else{
+      jnaerate_arch = "win32"
+    }
+  } 
+  else if (Os.isFamily(Os.FAMILY_MAC)) 
+  {
+    jnaerate_arch = "darwin_universal"
+    libsqeazy_file = file( native_build_dir + "/src/libsqeazy.dylib" )
+    sqeazy_header = file( native_source_dir + "/inc/sqeazy.h" )
+
+  } 
+  else if (Os.isFamily(Os.FAMILY_UNIX)) 
+  {
+
+    libsqeazy_file = file( native_build_dir + "/src/libsqeazy.so" )
+    sqeazy_header = file( native_source_dir + "/inc/sqeazy.h" )
+
+    if(is_64){
+      jnaerate_arch = "linux_x64"
+    }
+    else{
+      jnaerate_arch = "linux_x86"
+    }
+  }
+
+  //see  https://github.com/mike-plummer/NativeGroovy/blob/master/build.gradle 
+  description 'Execute JNAerator to auto-generate BridJ bindings'
+  main = 'com.ochafik.lang.jnaerator.JNAerator'
+  args '-library','sqeazy',
+	'-f',
+  	'-o','src/java/src',
+	'-rootPackage','src',
+  	'-package','sqeazy.bindings',
+  	'-arch',jnaerate_arch,
+  	'-libFile',libsqeazy_file.absolutePath,
+  	'-runtime','BridJ',
+  	'-mode','Directory',
+  	//'-jar','src/java/sqeazy.jar',
+  	sqeazy_header.absolutePath
+  	
+  
+  classpath = files('tools/jnaerator.jar')
+	
+}
+
+// make task:
+task ctest(type:Exec) {
+  
+  inputs.dir file(native_build_dir).absolutePath
+  workingDir native_build_dir
+  
+  if (Os.isFamily(Os.FAMILY_WINDOWS))
+  {
+    executable 'ctest.exe'
+  } 
+  else if (Os.isFamily(Os.FAMILY_MAC))
+  {
+    executable 'ctest'
+  } 
+  else if (Os.isFamily(Os.FAMILY_UNIX))
+  {
+    executable 'ctest'
+  }
+
+}
+
+// Task dependencies:
+cmake.dependsOn create_build_dir
+make.dependsOn cmake
+java_bindings.dependsOn make
+compileJava.dependsOn java_bindings
+ctest.dependsOn make
+test.dependsOn ctest
+
+//***********************************************************************************
+// JAVA CODE BUILDING
+
+sourceSets
+{
+	main
+	{
+		java
+		{ srcDir 'src/java/src' }
+		resources
+		{ srcDir 'src/java/src' }
+	}
+	test
+	{
+		java
+		{ srcDir 'src/java/src' }
+		resources
+		{ srcDir 'src/java/src' }
+	}
+}
+
+sourceCompatibility = 1.6
+
+test
+{
+	testLogging.showStandardStreams = true
+	testLogging
+	{ events "passed", "skipped", "failed" }
+
+	exclude '**/demo/**'
+	exclude '**/run/**'
+
+	maxHeapSize = "4G"
+}
+
+dependencies
+{
+
+	compile group: 'commons-collections', name: 'commons-collections', version: '3.2.1'
+	compile group: 'commons-lang', name: 'commons-lang', version: '2.6'
+	compile group: 'commons-io', name: 'commons-io', version: '2.4'
+	compile group: 'org.apache.commons', name: 'commons-math3', version: '3.4.1'
+	compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.1'
+	compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.1'
+
+	compile 'net.sf.trove4j:trove4j:3.0.3'
+	compile 'com.nativelibs4java:bridj:0.7.0'
+
+	compile group: 'junit', name: 'junit', version: '4.11'
+	testCompile group: 'junit', name: 'junit', version: '4.11'
+}
+
+repositories
+{
+	mavenCentral()
+	maven
+	{ url "http://oss.sonatype.org/content/groups/public" }
+}
+
+
+task sourcesJar(type: Jar, dependsOn:classes) {
+	classifier = 'sources'
+	from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn:javadoc) {
+	classifier = 'javadoc'
+	from javadoc.destinationDir
+}
+
+if (JavaVersion.current().isJava8Compatible()) {
+	allprojects {
+		tasks.withType(Javadoc) {
+			options.addStringOption('Xdoclint:none', '-quiet')
+		}
+	}
+}
+
+//***********************************************************************************
+// PUBLISHING
+
+
+group = 'net.coremem'
+version = '0.1.0'
+
+artifacts
+{
+	archives sourcesJar
+	archives javadocJar
+}
+
+publishing {
+	publications {
+		maven(MavenPublication) {
+			from components.java
+			artifact sourcesJar { classifier "sources" }
+		}
+	}
+}
+
+if(hasProperty('bintray_user') && hasProperty('bintray_key') )
+{
+	bintray {
+
+		// property must be set in ~/.gradle/gradle.properties
+		user = bintray_user
+		key =  bintray_key
+
+		publications = [
+			'maven'] //When uploading configuration files
+		dryRun = false //Whether to run this as dry-run, without deploying
+		publish = true //If version should be auto published after an upload
+		pkg {
+			repo = 'CoreMem'
+			userOrg = 'rtlib' //An optional organization name when the repo belongs to one of the user's orgs
+			name = 'CoreMem'
+			desc = 'CoreMem'
+			websiteUrl = 'https://github.com/RTlib/CoreMem'
+			issueTrackerUrl = 'https://github.com/RTlib/CoreMem/issues'
+			vcsUrl = 'https://github.com/RTlib/CoreMem.git'
+			//licenses = ['Apache-2.0']
+			labels = [
+				'Native Memory',
+				'Memory Mapping',
+				'GC',
+				'Off-heap memory'
+			]
+			publicDownloadNumbers = true
+			//attributes= ['a': ['ay1', 'ay2'], 'b': ['bee'], c: 'cee'] //Optional package-level attributes
+			//Optional version descriptor
+			version {
+				name = project.version //Bintray logical version name
+				desc = '.'
+				released  = new java.util.Date()
+				vcsTag = project.version
+				/*attributes = ['gradle-plugin': 'com.use.less:com.use.less.gradle:gradle-useless-plugin'] //Optional version-level attributes
+				 gpg {
+				 sign = false //Determines whether to GPG sign the files. The default is false
+				 passphrase = 'passphrase' //Optional. The passphrase for GPG signing'
+				 }
+				 mavenCentralSync {
+				 sync = false //Optional (true by default). Determines whether to sync the version to Maven Central.
+				 user = 'userToken' //OSS user token
+				 password = 'paasword' //OSS user password
+				 close = '1' //Optional property. By default the staging repository is closed and artifacts are released to Maven Central. You can optionally turn this behaviour off (by puting 0 as value) and release the version manually.
+				 }  /**/          
+			}
+		}
+		/**/
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
