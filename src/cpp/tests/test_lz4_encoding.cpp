@@ -159,6 +159,64 @@ BOOST_AUTO_TEST_CASE( decode_encoded )
   delete [] compressed;
 }
 
+BOOST_AUTO_TEST_CASE( decode_encoded_ramp )
+{
+
+  const char* input = reinterpret_cast<char*>(&constant_cube[0]);
+  for(int i = 0; i < constant_cube.size();i++)
+    constant_cube[i] = char(i % 128);
+  
+  long expected_size = size_in_byte;
+  int retcode = SQY_LZ4_Max_Compressed_Length(&expected_size);
+  BOOST_CHECK_EQUAL(retcode,0);
+
+  std::vector<char> compressed(expected_size,0);
+  long output_length = size_in_byte;
+  retcode += SQY_LZ4Encode(input,
+			      uint16_cube_of_8::size_in_byte,
+			      &compressed[0],
+			      &output_length
+			      );
+ 
+  BOOST_CHECK_EQUAL(retcode,0);
+  BOOST_CHECK_NE(output_length,0);
+  long size_ = uint16_cube_of_8::size_in_byte;
+  BOOST_CHECK_LT(output_length,size_);
+
+  long uncompressed_max_size = output_length;
+
+  retcode += SQY_LZ4_Decompressed_Length(&compressed[0],&uncompressed_max_size);
+  BOOST_CHECK_EQUAL(retcode,0);
+
+  long hdr_size = output_length;
+  SQY_Header_Size(&compressed[0],&hdr_size);
+  BOOST_CHECK_GT(hdr_size,0);
+  BOOST_CHECK_LT(hdr_size,30);
+
+ 
+  
+  std::vector<char> uncompressed(uncompressed_max_size,0);
+
+  retcode += SQY_LZ4Decode(&compressed[0],
+			   output_length,
+			   &uncompressed[0]
+			   );
+  
+  BOOST_CHECK_EQUAL(retcode,0);
+
+  int lz4_ret = LZ4_decompress_safe(&compressed[0] + hdr_size, (char*)&to_play_with[0], output_length-hdr_size, size_);
+  BOOST_CHECK_NE(lz4_ret,0);  
+  BOOST_CHECK_EQUAL_COLLECTIONS(&constant_cube[0], &constant_cube[0] + uint16_cube_of_8::size,
+  				&to_play_with[0], &to_play_with[0] + uint16_cube_of_8::size);
+
+  value_type* uncompressed_as_short = reinterpret_cast<value_type*>(&uncompressed[0]);
+  BOOST_CHECK_EQUAL(uncompressed_as_short[0],constant_cube[0]);
+  BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(), constant_cube.end(),
+				uncompressed_as_short, uncompressed_as_short + constant_cube.size());
+
+
+
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 
