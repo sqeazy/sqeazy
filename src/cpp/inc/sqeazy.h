@@ -332,4 +332,33 @@ SQY_FUNCTION_PREFIX int SQY_LZ4Decode(const char* src, long srclength, char* dst
 SQY_FUNCTION_PREFIX int SQY_Header_Size(const char* src, long* length);
 
 SQY_FUNCTION_PREFIX int SQY_version_triple(int* version);
+
+///////////////////////////////////////////////////////////////////////////////////
+// HDF5 interface
+//
+// references:
+// http://www.hdfgroup.org/HDF5/doc/Advanced/DynamicallyLoadedFilters/HDF5DynamicallyLoadedFilters.pdf
+// http://www.hdfgroup.org/HDF5/doc/H5.user/Filters.html
+// http://www.hdfgroup.org/HDF5/faq/compression.html
+
+#include "hdf5.h"
+#include "H5PLextern.h"
+
+/* use an integer greater than 256 to be id of the registered filter. */
+//#define H5Z_FILTER_SQY 01307;//zip code of MPI CBG
+static const H5Z_filter_t H5Z_FILTER_SQY = 01307;
+
+
+/* declare a hdf5 filter function */
+SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned flags,
+					  size_t cd_nelmts,
+					  const unsigned cd_values[],
+					  size_t nbytes,
+					  size_t *buf_size,
+					  void**buf);
+
+// declare hdf5 plugin info functions
+SQY_FUNCTION_PREFIX H5PL_type_t   H5PLget_plugin_type();
+SQY_FUNCTION_PREFIX const void*   H5PLget_plugin_info();
+
 #endif

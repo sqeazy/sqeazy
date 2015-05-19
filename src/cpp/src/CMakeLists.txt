@@ -1,5 +1,11 @@
 INCLUDE_DIRECTORIES(.)
 
+SET(HDF5_USE_STATIC_LIBRARIES TRUE)#only works on Unix
+FIND_PACKAGE(HDF5 QUIET REQUIRED CXX )
+IF(HDF5_FOUND)
+INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIRS})
+ADD_DEFINITIONS(${HDF5_DEFINITIONS})
+ENDIF()
 
 #needed for MPL include path
 FIND_PACKAGE (Boost 1.42 QUIET REQUIRED)
@@ -8,26 +14,28 @@ INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 ENDIF()
 
 #DYNAMIC LIBRARY
-
-add_library(${PROJECT_NAME} SHARED sqeazy.cpp)
+add_library(${PROJECT_NAME} SHARED sqeazy.cpp sqeazy_hdf.cpp)
+set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-I${HDF5_INCLUDE_DIRS}")
 add_library(ext_lz4 SHARED IMPORTED )
 set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}") 
 IF(WIN32)
 STRING(REPLACE dll lib LZ4_SHARED_IMPLIB ${LZ4_SHARED_LIB})
 set_target_properties(ext_lz4 PROPERTIES IMPORTED_IMPLIB "${LZ4_SHARED_LIB}")
+#TODO: #add HDF5_cxx_libraries in a similar fashion
 ENDIF(WIN32)
 
-target_link_libraries(${PROJECT_NAME} ext_lz4)
+target_link_libraries(${PROJECT_NAME} ext_lz4 ${HDF5_CXX_LIBRARIES})
 SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${PROJECT_SOURCE_DIR}/inc/sqeazy.h") 
 SET(SQY_SRC_TARGETS ${PROJECT_NAME})
 
 
 #STATIC LIBRARY
 if(EXISTS ${LZ4_STATIC_LIB})
-  add_library(${PROJECT_NAME}_static STATIC sqeazy.cpp)
+  add_library(${PROJECT_NAME}_static STATIC sqeazy.cpp sqeazy_hdf.cpp)
+  set_target_properties(${PROJECT_NAME}_static PROPERTIES COMPILE_FLAGS "-I${HDF5_INCLUDE_DIRS}")
   add_library(ext_lz4_static STATIC IMPORTED)
   set_target_properties(ext_lz4_static PROPERTIES IMPORTED_LOCATION "${LZ4_STATIC_LIB}") 
-  target_link_libraries(${PROJECT_NAME}_static ext_lz4_static) 
+  target_link_libraries(${PROJECT_NAME}_static ext_lz4_static ${HDF5_CXX_LIBRARIES}) 
   IF(UNIX)
     SET_TARGET_PROPERTIES(${PROJECT_NAME}_static PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
   ENDIF(UNIX)
