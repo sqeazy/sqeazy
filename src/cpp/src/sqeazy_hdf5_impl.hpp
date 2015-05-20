@@ -6,18 +6,6 @@
 #include "sqeazy_header.hpp"
 #include "sqeazy_predef_pipelines.hpp"
 
-const H5Z_class2_t H5Z_SQY[1] = {{
-    H5Z_CLASS_T_VERS,       /* H5Z_class_t version */
-    (H5Z_filter_t)H5Z_FILTER_SQY,         /* Filter id number             */
-    1,              /* encoder_present flag (set to true) */
-    1,              /* decoder_present flag (set to true) */
-    "sqy",                  /* Filter name for debugging    */
-    NULL,                       /* The "can apply" callback     */
-    NULL,                       /* The "set local" callback     */
-    (H5Z_func_t)H5Z_filter_sqy,         /* The actual filter function   */
-}};
-
-
 size_t H5Z_filter_sqy(unsigned int _flags, //is it encode or decode
 			size_t _cd_nelmts,
 			const unsigned int _cd_values[], 
@@ -96,6 +84,16 @@ size_t H5Z_filter_sqy(unsigned int _flags, //is it encode or decode
   
 }
 
+// H5Z_SQY[1] = {
+//   H5Z_CLASS_T_VERS, /* H5Z_class_t version */
+//   H5Z_FILTER_SQY, /* Filter id number */
+//   1, /* encoder_present flag (set to true) */
+//   1, /* decoder_present flag (set to true) */
+//   "HDF5 sqy filter; see https://bitbucket.org/sqeazy/sqeazy",  /* Filter info */
+//   NULL, /* The "can apply" callback */
+//   NULL, /* The "set local" callback */
+//   (H5Z_func_t) H5Z_filter_sqy,  /* The filter function */
+// };
 
 
 H5PL_type_t   H5PLget_plugin_type() {return H5PL_TYPE_FILTER;}

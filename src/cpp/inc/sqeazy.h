@@ -345,8 +345,9 @@ SQY_FUNCTION_PREFIX int SQY_version_triple(int* version);
 #include "H5PLextern.h"
 
 /* use an integer greater than 256 to be id of the registered filter. */
-//#define H5Z_FILTER_SQY 01307;//zip code of MPI CBG
+//zip code of MPI CBG
 static const H5Z_filter_t H5Z_FILTER_SQY = 01307;
+
 
 
 /* declare a hdf5 filter function */
@@ -360,5 +361,17 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned flags,
 // declare hdf5 plugin info functions
 SQY_FUNCTION_PREFIX H5PL_type_t   H5PLget_plugin_type();
 SQY_FUNCTION_PREFIX const void*   H5PLget_plugin_info();
+
+static const H5Z_class2_t H5Z_SQY[1] = {
+  H5Z_CLASS_T_VERS, /* H5Z_class_t version */
+  H5Z_FILTER_SQY, /* Filter id number */
+  1, /* encoder_present flag (set to true) */
+  1, /* decoder_present flag (set to true) */
+  "HDF5 sqy filter; see https://bitbucket.org/sqeazy/sqeazy",  /* Filter info */
+  NULL, /* The "can apply" callback */
+  NULL, /* The "set local" callback */
+  (H5Z_func_t) H5Z_filter_sqy,  /* The filter function */
+};
+
 
 #endif

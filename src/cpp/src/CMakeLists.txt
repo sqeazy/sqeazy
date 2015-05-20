@@ -15,7 +15,7 @@ INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 ENDIF()
 
 #DYNAMIC LIBRARY
-add_library(${PROJECT_NAME} SHARED sqeazy.cpp sqeazy_hdf.cpp)
+add_library(${PROJECT_NAME} SHARED sqeazy.cpp)
 set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-I${HDF5_INCLUDE_DIRS}")
 add_library(ext_lz4 SHARED IMPORTED )
 set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}") 
@@ -32,7 +32,7 @@ SET(SQY_SRC_TARGETS ${PROJECT_NAME})
 
 #STATIC LIBRARY
 if(EXISTS ${LZ4_STATIC_LIB})
-  add_library(${PROJECT_NAME}_static STATIC sqeazy.cpp sqeazy_hdf.cpp)
+  add_library(${PROJECT_NAME}_static STATIC sqeazy.cpp)
   set_target_properties(${PROJECT_NAME}_static PROPERTIES COMPILE_FLAGS "-I${HDF5_INCLUDE_DIRS}")
   SET_TARGET_PROPERTIES(${PROJECT_NAME}_static PROPERTIES PUBLIC_HEADER "${PROJECT_SOURCE_DIR}/inc/sqeazy.h;${PROJECT_SOURCE_DIR}/inc/H5PLextern.h")
   add_library(ext_lz4_static STATIC IMPORTED)

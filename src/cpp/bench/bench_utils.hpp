@@ -16,10 +16,6 @@
 #include <boost/accumulators/statistics/min.hpp>
 #include <boost/accumulators/statistics/max.hpp>
 
-extern "C" {
-#include "sqeazy.h"
-}
-
 namespace sqeazy_bench {
 
 template <typename T>

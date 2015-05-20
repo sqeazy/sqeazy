@@ -3,7 +3,6 @@
 #include <map>
 #include <string>
 #include <typeinfo>
-#include "sqeazy.h"
 #include "sqeazy_common.hpp"
 #include "sqeazy_traits.hpp"
 

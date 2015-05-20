@@ -284,4 +284,6 @@ int SQY_version_triple(int* version){
   return 0;
 }
 
+#include "sqeazy_hdf5_impl.hpp"
+
 #endif

@@ -19,7 +19,7 @@ namespace sqeazy {
   void split_string_to_vector(const std::string& _buffer, std::vector<T>& _v) {
 
     int num_del = std::count(_buffer.begin(), _buffer.end(), delimiter);
-    if(_v.size() != num_del + 1)
+    if(_v.size() != size_t(num_del + 1))
       _v.resize(num_del+1);
 
     size_t begin = 0;
@@ -27,7 +27,7 @@ namespace sqeazy {
 
     std::string token;
 
-    for(int id = 0; id<_v.size(); ++id) {
+    for(size_t id = 0; id<_v.size(); ++id) {
       std::istringstream converter(_buffer.substr(begin,end - begin));
       converter >> _v[id];
       begin = end +1;
