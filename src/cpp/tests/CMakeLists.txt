@@ -1,6 +1,6 @@
 INCLUDE_DIRECTORIES(.)
 
-SET(HDF5_USE_STATIC_LIBRARIES TRUE)#only works on Unix
+#SET(HDF5_USE_STATIC_LIBRARIES TRUE)#only works on Unix
 FIND_PACKAGE(HDF5 QUIET REQUIRED CXX )
 IF(HDF5_FOUND)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIRS})
@@ -20,7 +20,7 @@ IF(WIN32)
   add_library(ext_lz4 STATIC IMPORTED)
   set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_STATIC_LIB}")
   
-  add_library(ext_hdf5 STATIC IMPORTED)
+  add_library(ext_hdf5 SHARED IMPORTED)
   set_target_properties(ext_hdf5 PROPERTIES IMPORTED_LOCATION "${HDF5_LIBRARIES}")
 
   add_library(ext_tiff STATIC IMPORTED)

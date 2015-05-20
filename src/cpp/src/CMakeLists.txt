@@ -1,6 +1,7 @@
 INCLUDE_DIRECTORIES(.)
 
-SET(HDF5_USE_STATIC_LIBRARIES TRUE)#only works on Unix
+
+#SET(HDF5_USE_STATIC_LIBRARIES TRUE)#only works on Unix and requires static lib to be compiled with -fPIC
 FIND_PACKAGE(HDF5 QUIET REQUIRED CXX )
 IF(HDF5_FOUND)
   INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIRS})
@@ -25,6 +26,7 @@ set_target_properties(ext_lz4 PROPERTIES IMPORTED_IMPLIB "${LZ4_SHARED_LIB}")
 #TODO: #add HDF5_cxx_libraries in a similar fashion
 ENDIF(WIN32)
 
+message("[sqy] hdf5 libs used: ${HDF5_CXX_LIBRARIES}")
 target_link_libraries(${PROJECT_NAME} ext_lz4 ${HDF5_CXX_LIBRARIES})
 SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${PROJECT_SOURCE_DIR}/inc/sqeazy.h;${PROJECT_SOURCE_DIR}/inc/H5PLextern.h")
 SET(SQY_SRC_TARGETS ${PROJECT_NAME})
