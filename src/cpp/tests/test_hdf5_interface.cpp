@@ -20,12 +20,44 @@ extern "C" {
     using namespace H5;
 #endif
 
+bool sqy_used_in_h5_file(const std::string& _fname, const std::string& _dname = ""){
+  bool value = false;
+  
+  H5File file(_fname, H5F_ACC_RDONLY);
+  DataSet *	dataset = new DataSet(file.openDataSet( _dname ));
 
-template <typename T, typename U>
+  int        numfilt;
+  size_t     nelmts={1}, namelen={1};
+  unsigned  flags, filter_info, cd_values[1];
+  char       name[1];
+  H5Z_filter_t filter_type;
+	
+  // Get the create property list of the dataset.
+  DSetCreatPropList plist(dataset->getCreatePlist ());
+	
+  // Get the number of filters associated with the dataset.
+  numfilt = plist.getNfilters();
+
+  for (unsigned idx=0; idx < numfilt; idx++) {
+    nelmts = 0;
+
+    filter_type = plist.getFilter(idx, flags, nelmts, cd_values, namelen, name , filter_info);
+
+    if(filter_type == H5Z_FILTER_SQY_ID){
+      value = true;
+      break;
+    }
+  }
+  
+  file.close();
+  return value;
+}
+
+template <typename U>
 int h5_compress_arb_dataset(
 			    const H5std_string& _fname,
 			    const H5std_string& _dname,
-			    const std::vector<T> _data,
+			    const std::vector<unsigned short> _data,
 			    const std::vector<U> _shape)
 {
   std::vector<hsize_t> dims(_shape.begin(), _shape.end());
@@ -49,7 +81,10 @@ int h5_compress_arb_dataset(
 	// // Modify dataset creation property to enable chunking
 	DSetCreatPropList  *plist = new  DSetCreatPropList;
 	// plist->setChunk(2, chunk_dims);
-	plist->setFilter(H5Z_FILTER_SQY_ID);
+	plist->setFilter(H5Z_FILTER_SQY_ID,
+			 H5Z_FLAG_MANDATORY);// ,
+			 // size_t cd_nelmts=0, //how long is cd_values
+			 // const unsigned int cd_values[]=NULL);
 
 	////////////////////////////////////////////////////////////////////////////////////
 	// from HDF5DynamicallyLoadedFilters.pdf:
@@ -62,7 +97,6 @@ int h5_compress_arb_dataset(
 
 	// Create the dataset.      
 	DataSet *dataset = new DataSet(file.createDataSet( _dname, 
-							   //hdf5_constants<T>::dataset_tid,
 							   PredType::STD_U16LE,
 							   *dataspace, 
 							   *plist) );
@@ -225,19 +259,20 @@ BOOST_AUTO_TEST_CASE( filter_supports_decoding ){
   
 }
 
+BOOST_AUTO_TEST_CASE( h5_write_file_with_filter ){
 
-// BOOST_AUTO_TEST_CASE( encode_success )
-// {
-//   boost::filesystem::path	cfile = "sqy_encoded.h5";
-//   std::string dname = "compressed_data";
+  boost::filesystem::path fname = "test_hdf5_interface.h5";
+  std::string dname = "write_file_with_filter";
+
+  h5_compress_arb_dataset(fname.string(),
+			  dname,
+			  constant_cube,
+			  dims);
   
-//   h5_compress_arb_dataset(cfile.string(),
-// 			  dname,
-// 			  constant_cube,
-// 			  dims);
-
-//   BOOST_CHECK(boost::filesystem::exists(cfile));
-// }
-
+  
+  BOOST_CHECK(boost::filesystem::exists(fname));
+  BOOST_CHECK(sqy_used_in_h5_file(fname.string(),dname));
+  
+}
 
  BOOST_AUTO_TEST_SUITE_END()
