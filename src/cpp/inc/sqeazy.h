@@ -346,7 +346,7 @@ SQY_FUNCTION_PREFIX int SQY_version_triple(int* version);
 
 /* use an integer greater than 256 to be id of the registered filter. */
 //zip code of MPI CBG
-static const H5Z_filter_t H5Z_FILTER_SQY_ID = 01307;
+static const H5Z_filter_t H5Z_FILTER_SQY = 01307;
 
 
 
@@ -364,7 +364,7 @@ SQY_FUNCTION_PREFIX const void*   H5PLget_plugin_info();
 
 static const H5Z_class2_t H5Z_SQY[1] = {{
   H5Z_CLASS_T_VERS, /* H5Z_class_t version */
-  H5Z_FILTER_SQY_ID, /* Filter id number */
+  H5Z_FILTER_SQY, /* Filter id number */
   1, /* encoder_present flag (set to true) */
   1, /* decoder_present flag (set to true) */
   "HDF5 sqy filter; see https://bitbucket.org/sqeazy/sqeazy",  /* Filter info */
