@@ -26,13 +26,13 @@ extern "C" {
 //   static PredType wrote_tid;
 // };
 
-// template<> PredType hdf5_constants<int>::dataset_tid = PredType::STD_I32BE;
+// template<> PredType hdf5_constants<int>::dataset_tid = PredType::STD_I32LE;
 // template<> PredType hdf5_constants<int>::wrote_tid = PredType::NATIVE_INT;
 
-// template<> PredType hdf5_constants<short>::dataset_tid = PredType::STD_I16BE;
+// template<> PredType hdf5_constants<short>::dataset_tid = PredType::STD_I16LE;
 // template<> PredType hdf5_constants<short>::wrote_tid = PredType::NATIVE_SHORT;
 
-// template<> PredType hdf5_constants<unsigned short>::dataset_tid = PredType::STD_U16BE;
+// template<> PredType hdf5_constants<unsigned short>::dataset_tid = PredType::STD_U16LE;
 // template<> PredType hdf5_constants<unsigned short>::wrote_tid = PredType::NATIVE_USHORT;
 
 
@@ -79,7 +79,7 @@ int h5_compress_arb_dataset(
 	// Create the dataset.      
 	DataSet *dataset = new DataSet(file.createDataSet( _dname, 
 							   //hdf5_constants<T>::dataset_tid,
-							   PredType::STD_U16BE,
+							   PredType::STD_U16LE,
 							   *dataspace, 
 							   *plist) );
 
@@ -216,16 +216,10 @@ BOOST_FIXTURE_TEST_SUITE( encode_decode_using_hdf5_filter, uint16_cube_of_8 )
 
 BOOST_AUTO_TEST_CASE( filter_available ){
 
-  DSetCreatPropList  *plist = new  DSetCreatPropList;
-  unsigned flags = 0;
-  size_t cd_nelmts = 3;
-  std::vector<unsigned> cd_values(cd_nelmts);
-  std::string name;name.resize(20);
-  unsigned filter_config = 0;
-  plist->getFilterById(H5Z_FILTER_SQY, flags, cd_nelmts, &cd_values[0], name.size(), &name[0], filter_config);
-  delete plist;
+  htri_t avail;
+  avail = H5Zfilter_avail(H5Z_FILTER_SQY);
 
-  BOOST_CHECK(filter_config!=0);
+  BOOST_CHECK(avail);
   
 }
 
