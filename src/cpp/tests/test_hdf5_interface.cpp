@@ -20,22 +20,6 @@ extern "C" {
     using namespace H5;
 #endif
 
-// template <typename T>
-// struct hdf5_constants {
-//   static PredType dataset_tid;
-//   static PredType wrote_tid;
-// };
-
-// template<> PredType hdf5_constants<int>::dataset_tid = PredType::STD_I32LE;
-// template<> PredType hdf5_constants<int>::wrote_tid = PredType::NATIVE_INT;
-
-// template<> PredType hdf5_constants<short>::dataset_tid = PredType::STD_I16LE;
-// template<> PredType hdf5_constants<short>::wrote_tid = PredType::NATIVE_SHORT;
-
-// template<> PredType hdf5_constants<unsigned short>::dataset_tid = PredType::STD_U16LE;
-// template<> PredType hdf5_constants<unsigned short>::wrote_tid = PredType::NATIVE_USHORT;
-
-
 
 template <typename T, typename U>
 int h5_compress_arb_dataset(
@@ -65,7 +49,7 @@ int h5_compress_arb_dataset(
 	// // Modify dataset creation property to enable chunking
 	DSetCreatPropList  *plist = new  DSetCreatPropList;
 	// plist->setChunk(2, chunk_dims);
-	plist->setFilter(H5Z_FILTER_SQY);
+	plist->setFilter(H5Z_FILTER_SQY_ID);
 
 	////////////////////////////////////////////////////////////////////////////////////
 	// from HDF5DynamicallyLoadedFilters.pdf:
@@ -217,7 +201,7 @@ BOOST_FIXTURE_TEST_SUITE( encode_decode_using_hdf5_filter, uint16_cube_of_8 )
 BOOST_AUTO_TEST_CASE( filter_available ){
 
   htri_t avail;
-  avail = H5Zfilter_avail(H5Z_FILTER_SQY);
+  avail = H5Zfilter_avail(H5Z_FILTER_SQY_ID);
 
   BOOST_CHECK(avail);
   
@@ -227,7 +211,7 @@ BOOST_AUTO_TEST_CASE( filter_supports_encoding ){
 
   H5Zregister(H5Z_SQY);
   unsigned filter_config = 0;
-  herr_t status = H5Zget_filter_info (H5Z_FILTER_SQY, &filter_config);
+  herr_t status = H5Zget_filter_info (H5Z_FILTER_SQY_ID, &filter_config);
   
   BOOST_CHECK(filter_config & H5Z_FILTER_CONFIG_ENCODE_ENABLED);
   
@@ -237,7 +221,7 @@ BOOST_AUTO_TEST_CASE( filter_supports_decoding ){
 
   H5Zregister(H5Z_SQY);
   unsigned filter_config = 0;
-  herr_t status = H5Zget_filter_info (H5Z_FILTER_SQY, &filter_config);
+  herr_t status = H5Zget_filter_info (H5Z_FILTER_SQY_ID, &filter_config);
   
   BOOST_CHECK(filter_config & H5Z_FILTER_CONFIG_DECODE_ENABLED);
   
