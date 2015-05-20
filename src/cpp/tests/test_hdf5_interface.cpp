@@ -223,6 +223,27 @@ BOOST_AUTO_TEST_CASE( filter_available ){
   
 }
 
+BOOST_AUTO_TEST_CASE( filter_supports_encoding ){
+
+  H5Zregister(H5Z_SQY);
+  unsigned filter_config = 0;
+  herr_t status = H5Zget_filter_info (H5Z_FILTER_SQY, &filter_config);
+  
+  BOOST_CHECK(filter_config & H5Z_FILTER_CONFIG_ENCODE_ENABLED);
+  
+}
+
+BOOST_AUTO_TEST_CASE( filter_supports_decoding ){
+
+  H5Zregister(H5Z_SQY);
+  unsigned filter_config = 0;
+  herr_t status = H5Zget_filter_info (H5Z_FILTER_SQY, &filter_config);
+  
+  BOOST_CHECK(filter_config & H5Z_FILTER_CONFIG_DECODE_ENABLED);
+  
+}
+
+
 // BOOST_AUTO_TEST_CASE( encode_success )
 // {
 //   boost::filesystem::path	cfile = "sqy_encoded.h5";
