@@ -102,7 +102,7 @@ namespace sqeazy {
 #endif
 
             if(temp < support) {
-                if(_darkest_face.size()<_dims[2]*_dims[0])
+	      if(_darkest_face.size()<(size_t)(_dims[2]*_dims[0]))
                     _darkest_face.resize(_dims[2]*_dims[0]);
 		//FIXME: do we really need to copy the face out?
 		std::copy(face.begin(), face.end(),_darkest_face.begin());

@@ -82,7 +82,7 @@ struct diff_scheme {
 
         typename std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
         for(; offsetsItr!=offsets.end(); ++offsetsItr) {
-            for(unsigned long index = 0; index < halo_size_x; ++index) {
+	  for(unsigned long index = 0; index < (unsigned long)halo_size_x; ++index) {
 
                 local_index = index + *offsetsItr;
                 local_sum = naive_sum<Neighborhood>(_input,local_index,_width, _height,_depth);
@@ -143,7 +143,7 @@ struct diff_scheme {
         const sum_type n_traversed_pixels = sqeazy::num_traversed_pixels<Neighborhood>();
 
         for(; offsetsItr!=offsets.end(); ++offsetsItr) {
-            for(unsigned long index = 0; index < halo_size_x; ++index) {
+	  for(unsigned long index = 0; index < (unsigned long)halo_size_x; ++index) {
 
                 const size_type local_index = index + *offsetsItr;
                 local_sum = naive_sum<Neighborhood>(_output,local_index,_width, _height,_depth);
@@ -359,8 +359,8 @@ struct remove_background {
             const size_type& _length,
             const raw_type& _threshold)
     {
-
-        for(unsigned long vox = 0; vox<_length; ++vox) {
+      const unsigned long size = _length;
+        for(unsigned long vox = 0; vox<size; ++vox) {
             _output[vox] = (_input[vox] > _threshold) ? _input[vox] - _threshold : 0;
         }
 
@@ -381,8 +381,8 @@ struct remove_background {
                                            const size_type& _length,
                                            const raw_type& _threshold)
     {
-
-        for(unsigned long vox = 0; vox<_length; ++vox) {
+       const unsigned long size = _length;
+        for(unsigned long vox = 0; vox<size; ++vox) {
             _input[vox] = (_input[vox] > _threshold) ? _input[vox] - _threshold : 0;
         }
 
