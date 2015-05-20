@@ -110,7 +110,7 @@ struct lz4_scheme {
                                   ) {
 
       compressed_type* output = reinterpret_cast<compressed_type*>(_output);
-      int num_bytes_decoded = LZ4_decompress_safe(_input,output,_len_in, _len_out);
+      size_type num_bytes_decoded = LZ4_decompress_safe(_input,output,_len_in, _len_out);
 
       return ( num_bytes_decoded > 0 && num_bytes_decoded == _len_out ) ? SUCCESS : FAILURE;
 

@@ -97,7 +97,7 @@ namespace sqeazy {
 
 	size_type output_bit_offset = (type_width - num_bits_per_plane) - ((index % num_planes)*num_bits_per_plane);
 
-	for(size_type plane_index = 0; plane_index<num_planes; ++plane_index) {
+	for(unsigned plane_index = 0; plane_index<num_planes; ++plane_index) {
 
 	  size_type input_bit_offset = plane_index*num_bits_per_plane;
 	  raw_type extracted_bits = (value >> input_bit_offset) & mask;
@@ -196,7 +196,7 @@ namespace sqeazy {
       __m128i input;
       unsigned count = 0;
 
-      for(unsigned index = 0; index < _length; index += items_per_register, count++ ) {
+      for(size_type index = 0; index < _length; index += items_per_register, count++ ) {
 
 	input = _mm_load_si128(reinterpret_cast<const __m128i*>(&_input[index]));
 

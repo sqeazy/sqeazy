@@ -19,7 +19,7 @@ static const int offset_begin_on_axis(const int& _dim_number) {
             Neighborhood::z_offset_begin
                                                 };
 
-    if(_dim_number<Neighborhood::num_dims) {
+    if(_dim_number<(int)Neighborhood::num_dims) {
         return begins[_dim_number];
     }
     else
@@ -35,7 +35,7 @@ static const int offset_end_on_axis(const int& _dim_number) {
             Neighborhood::z_offset_end
                                               };
 
-    if(_dim_number<Neighborhood::num_dims) {
+    if(_dim_number<(int)Neighborhood::num_dims) {
         return ends[_dim_number];
     }
     else
@@ -205,7 +205,7 @@ struct halo {
         int non_halo_length = 0;
         for(int i = world.size()-1; i>0; --i) {
             non_halo_length = non_halo_end(i) - non_halo_begin(i);
-            if(non_halo_length!=world.at(i))
+            if(non_halo_length!=(int)world.at(i))
                 num_offsets_required *= non_halo_length;
         }
 

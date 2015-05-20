@@ -209,7 +209,7 @@ struct tiff_fixture : public data_interface {
 
   friend std::ostream& operator<<(std::ostream& _cout, const tiff_fixture& _self){
     _cout << "loaded " << _self.file_loc << " as ";
-    for(int axis_id = 0;axis_id<_self.axis_lengths.size();++axis_id){
+    for(size_t axis_id = 0;axis_id<_self.axis_lengths.size();++axis_id){
       _cout << _self.axis_length(axis_id) << ((axis_id < _self.axis_lengths.size()-1) ? "x" : " ");
     }
     _cout <<" size("<< typeid(T).name() <<") = " << _self.size_in_byte()/(1<<20) << " MB ";

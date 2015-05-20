@@ -306,8 +306,8 @@ struct histogram {
     T calc_smallest_populated_bin() const {
 
         T value = 0;
-
-        for(twice_value_type i = 0; i<num_bins; ++i) {
+	const twice_value_type size = num_bins;
+        for(twice_value_type i = 0; i<size; ++i) {
             if(bins[i]) {
                 value = i;
                 break;

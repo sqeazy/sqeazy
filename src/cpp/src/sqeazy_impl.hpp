@@ -511,7 +511,7 @@ struct flatten_to_neighborhood {
 
         const float cut_fraction = _frac_neighb_to_null*(size<Neighborhood>()-1);
         for(; offsetsItr!=offsets.end(); ++offsetsItr) {
-            for(unsigned long index = 0; index < halo_size_x; ++index) {
+	  for(unsigned long index = 0; index < (unsigned long)halo_size_x; ++index) {
 
                 local_index = index + *offsetsItr;
 
