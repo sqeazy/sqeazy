@@ -209,7 +209,6 @@ BOOST_AUTO_TEST_CASE( filter_available ){
 
 BOOST_AUTO_TEST_CASE( filter_supports_encoding ){
 
-  H5Zregister(H5Z_SQY);
   unsigned filter_config = 0;
   herr_t status = H5Zget_filter_info (H5Z_FILTER_SQY_ID, &filter_config);
   
@@ -219,7 +218,6 @@ BOOST_AUTO_TEST_CASE( filter_supports_encoding ){
 
 BOOST_AUTO_TEST_CASE( filter_supports_decoding ){
 
-  H5Zregister(H5Z_SQY);
   unsigned filter_config = 0;
   herr_t status = H5Zget_filter_info (H5Z_FILTER_SQY_ID, &filter_config);
   
