@@ -1,6 +1,7 @@
 #define _SQEAZY_HDF_CPP_
 
-#include "hdf5.h"
+#include "H5Cpp.h"
+//#include "hdf5.h"
 #include "sqeazy.h"
 #include "sqeazy_impl.hpp"
 #include "sqeazy_header.hpp"
@@ -98,3 +99,21 @@ size_t H5Z_filter_sqy(unsigned int _flags, //is it encode or decode
 
 H5PL_type_t   H5PLget_plugin_type() {return H5PL_TYPE_FILTER;}
 const void*   H5PLget_plugin_info() {return H5Z_SQY;}         
+
+namespace sqeazy {
+
+  struct loaded_hdf5_plugin {
+
+    loaded_hdf5_plugin(){
+      H5Zregister(H5Z_SQY);
+    }
+
+    ~loaded_hdf5_plugin(){
+      H5Zunregister(H5Z_FILTER_SQY_ID);
+    }
+    
+  };
+
+  static loaded_hdf5_plugin always_load;
+
+}
