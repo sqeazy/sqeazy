@@ -22,7 +22,8 @@ extern "C" {
 
 bool sqy_used_in_h5_file(const std::string& _fname, const std::string& _dname = ""){
   bool value = false;
-  
+
+  try{
   H5File file(_fname, H5F_ACC_RDONLY);
   DataSet *	dataset = new DataSet(file.openDataSet( _dname ));
 
@@ -43,13 +44,35 @@ bool sqy_used_in_h5_file(const std::string& _fname, const std::string& _dname = 
 
     filter_type = plist.getFilter(idx, flags, nelmts, cd_values, namelen, name , filter_info);
 
-    if(filter_type == H5Z_FILTER_SQY_ID){
+    if(filter_type == H5Z_FILTER_SQY){
       value = true;
       break;
     }
   }
   
   file.close();
+  }
+   // catch failure caused by the H5File operations
+  catch(FileIException error)
+    {
+      error.printError();
+      return value;
+    }
+
+  // catch failure caused by the DataSet operations
+  catch(DataSetIException error)
+    {
+      error.printError();
+      return value;
+    }
+
+  // catch failure caused by the DataSpace operations
+  catch(DataSpaceIException error)
+    {
+      error.printError();
+      return value;
+    }
+  
   return value;
 }
 
@@ -61,83 +84,83 @@ int h5_compress_arb_dataset(
 			    const std::vector<U> _shape)
 {
   std::vector<hsize_t> dims(_shape.begin(), _shape.end());
-  int     i,j;
-  const unsigned long n_elements = std::accumulate(dims.begin(), dims.end(),1,std::multiplies<int>());
+  //int     i,j;
+  //  const unsigned long n_elements = std::accumulate(dims.begin(), dims.end(),1,std::multiplies<int>());
   
 
-    // Try block to detect exceptions raised by any of the calls inside it
-    try
+  // Try block to detect exceptions raised by any of the calls inside it
+  try
     {
-	// Turn off the auto-printing when failure occurs so that we can
-	// handle the errors appropriately
-	Exception::dontPrint();
+      // Turn off the auto-printing when failure occurs so that we can
+      // handle the errors appropriately
+      Exception::dontPrint();
 
-	// Create a new file using the default property lists. 
-	H5File file(_fname, H5F_ACC_TRUNC);
+      // Create a new file using the default property lists. 
+      H5File file(_fname, H5F_ACC_TRUNC);
 
-	// Create the data space for the dataset.
-	DataSpace *dataspace = new DataSpace(_shape.size(), &dims[0]);
+      // Create the data space for the dataset.
+      DataSpace *dataspace = new DataSpace(_shape.size(), &dims[0]);
 
-	// // Modify dataset creation property to enable chunking
-	DSetCreatPropList  *plist = new  DSetCreatPropList;
-	// plist->setChunk(2, chunk_dims);
-	plist->setFilter(H5Z_FILTER_SQY_ID,
-			 H5Z_FLAG_MANDATORY);// ,
-			 // size_t cd_nelmts=0, //how long is cd_values
-			 // const unsigned int cd_values[]=NULL);
+      // // Modify dataset creation property to enable chunking
+      DSetCreatPropList  *plist = new  DSetCreatPropList;
+      // plist->setChunk(2, chunk_dims);
+      plist->setFilter(H5Z_FILTER_SQY,
+		       H5Z_FLAG_MANDATORY);// ,
+      // size_t cd_nelmts=0, //how long is cd_values
+      // const unsigned int cd_values[]=NULL);
 
-	////////////////////////////////////////////////////////////////////////////////////
-	// from HDF5DynamicallyLoadedFilters.pdf:
-	// --------------------------------------
-	// dcpl = H5Pcreate (H5P_DATASET_CREATE);
-	// status = H5Pset_filter (dcpl,
-	//			   H5Z_FILTER_BZIP2, H5Z_FLAG_MANDATORY,
-	// 			   (size_t)6, cd_values);
-	//			   //config for dynamic bzip2 filter: cd_values[1] = {6};
+      ////////////////////////////////////////////////////////////////////////////////////
+      // from HDF5DynamicallyLoadedFilters.pdf:
+      // --------------------------------------
+      // dcpl = H5Pcreate (H5P_DATASET_CREATE);
+      // status = H5Pset_filter (dcpl,
+      //			   H5Z_FILTER_BZIP2, H5Z_FLAG_MANDATORY,
+      // 			   (size_t)6, cd_values);
+      //			   //config for dynamic bzip2 filter: cd_values[1] = {6};
 
-	// Create the dataset.      
-	DataSet *dataset = new DataSet(file.createDataSet( _dname, 
-							   PredType::STD_U16LE,
-							   *dataspace, 
-							   *plist) );
+      // Create the dataset.      
+      DataSet *dataset = new DataSet(file.createDataSet( _dname, 
+							 PredType::STD_U16LE,
+							 *dataspace, 
+							 *plist) );
 
-	// Write data to dataset.
-	dataset->write(&_data[0],
-		       //hdf5_constants<T>::wrote_tid
-		       PredType::NATIVE_USHORT
-		       );
+      // Write data to dataset.
+      dataset->write(&_data[0],
+		     //hdf5_constants<T>::wrote_tid
+		     PredType::NATIVE_USHORT
+		     );
 
-	// Close objects and file.  Either approach will close the HDF5 item.
-	delete dataspace;
-	delete dataset;
-	delete plist;
-	file.close();
+      // Close objects and file.  Either approach will close the HDF5 item.
+      delete dataspace;
+      delete dataset;
+      delete plist;
+      file.close();
 
 
     }  // end of try block
 
-    // catch failure caused by the H5File operations
-    catch(FileIException error)
+  // catch failure caused by the H5File operations
+  catch(FileIException error)
     {
-	error.printError();
-	return -1;
+      error.printError();
+      return -1;
     }
 
-    // catch failure caused by the DataSet operations
-    catch(DataSetIException error)
+  // catch failure caused by the DataSet operations
+  catch(DataSetIException error)
     {
-	error.printError();
-	return -1;
+      error.printError();
+      return -1;
     }
 
-    // catch failure caused by the DataSpace operations
-    catch(DataSpaceIException error)
+  // catch failure caused by the DataSpace operations
+  catch(DataSpaceIException error)
     {
-	error.printError();
-	return -1;
+      error.printError();
+      return -1;
     }
 
-    return 0;  // successfully terminated
+  return 0;  // successfully terminated
 }
 
 // int h5_decompress_arb_dataset(
@@ -235,7 +258,7 @@ BOOST_FIXTURE_TEST_SUITE( encode_decode_using_hdf5_filter, uint16_cube_of_8 )
 BOOST_AUTO_TEST_CASE( filter_available ){
 
   htri_t avail;
-  avail = H5Zfilter_avail(H5Z_FILTER_SQY_ID);
+  avail = H5Zfilter_avail(H5Z_FILTER_SQY);
 
   BOOST_CHECK(avail);
   
@@ -244,7 +267,7 @@ BOOST_AUTO_TEST_CASE( filter_available ){
 BOOST_AUTO_TEST_CASE( filter_supports_encoding ){
 
   unsigned filter_config = 0;
-  herr_t status = H5Zget_filter_info (H5Z_FILTER_SQY_ID, &filter_config);
+  herr_t status = H5Zget_filter_info (H5Z_FILTER_SQY, &filter_config);
   
   BOOST_CHECK(filter_config & H5Z_FILTER_CONFIG_ENCODE_ENABLED);
   
@@ -253,7 +276,7 @@ BOOST_AUTO_TEST_CASE( filter_supports_encoding ){
 BOOST_AUTO_TEST_CASE( filter_supports_decoding ){
 
   unsigned filter_config = 0;
-  herr_t status = H5Zget_filter_info (H5Z_FILTER_SQY_ID, &filter_config);
+  herr_t status = H5Zget_filter_info (H5Z_FILTER_SQY, &filter_config);
   
   BOOST_CHECK(filter_config & H5Z_FILTER_CONFIG_DECODE_ENABLED);
   
@@ -264,13 +287,14 @@ BOOST_AUTO_TEST_CASE( h5_write_file_with_filter ){
   boost::filesystem::path fname = "test_hdf5_interface.h5";
   std::string dname = "write_file_with_filter";
 
+  
   h5_compress_arb_dataset(fname.string(),
 			  dname,
 			  constant_cube,
 			  dims);
   
-  
   BOOST_CHECK(boost::filesystem::exists(fname));
+  
   BOOST_CHECK(sqy_used_in_h5_file(fname.string(),dname));
   
 }

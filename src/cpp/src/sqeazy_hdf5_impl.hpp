@@ -107,7 +107,7 @@ namespace sqeazy {
     }
 
     ~loaded_hdf5_plugin(){
-      H5Zunregister(H5Z_FILTER_SQY_ID);
+      H5Zunregister(H5Z_FILTER_SQY);
     }
     
   };
