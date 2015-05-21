@@ -156,19 +156,19 @@ int h5_compress_arb_dataset(
       //			   //config for dynamic bzip2 filter: cd_values[1] = {6};
 
       // Create the dataset.      
-      DataSet  dataset(file.createDataSet( _dname, 
-					   PredType::STD_U16LE,
-					   dataspace, 
-					   plist) );
+      DataSet*  dataset = new DataSet(file.createDataSet( _dname, 
+							  PredType::STD_U16LE,
+							  dataspace, 
+							  plist) );
 
       // Write data to dataset.
-      dataset.write(&_data[0],
+      dataset->write(&_data[0],
 		    PredType::NATIVE_USHORT
 		    );
 
       // Close objects and file.  Either approach will close the HDF5 item.
       //    delete dataspace;
-      //      delete dataset;
+      delete dataset;
       //    delete plist;
       file.close();
 
@@ -182,8 +182,7 @@ int h5_compress_arb_dataset(
       std::cout << __LINE__ << ": caught FileIException("<< _fname << ":" << _dname
 		<<"):\t" << error.getDetailMsg() << "\n";
       H5::Exception::printErrorStack();
-      throw;
-      //      return -1;
+      return 1;
     }
 
   // catch failure caused by the DataSet operations
@@ -192,7 +191,7 @@ int h5_compress_arb_dataset(
       error.printError();
       std::cout << __LINE__ << ": caught DataSetIException("<< _fname << ":" << _dname
 		<<"):\t" << error.getDetailMsg() << "\n";
-      throw;
+      return 1;
     }
 
   // catch failure caused by the DataSpace operations
@@ -201,9 +200,16 @@ int h5_compress_arb_dataset(
       error.printError();
       std::cout << __LINE__ << ": caught DataSpaceIException("<< _fname << ":" << _dname
 		<<"):\t" << error.getDetailMsg() << "\n";
-      throw;
+      return 1;
     }
 
+  catch(Exception & error){
+    error.printError();
+    std::cout << __LINE__ << ": caught Exception("<< _fname << ":" << _dname
+	      <<"):\t" << error.getDetailMsg() << "\n";
+    return 1;
+
+  }
   return 0;  // successfully terminated
 }
 

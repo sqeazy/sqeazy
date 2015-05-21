@@ -21,6 +21,7 @@ size_t H5Z_filter_sqy_impl(unsigned int _flags, //is it encode or decode
   char *outbuf = NULL;
   size_t outbuflen = 0; //in byte
   int ret = 1;
+  size_t value = 0;
 
   if (_flags & H5Z_FLAG_REVERSE) {
 
@@ -81,13 +82,15 @@ size_t H5Z_filter_sqy_impl(unsigned int _flags, //is it encode or decode
     delete [] *_buf;
     *_buf = outbuf;
     *_buf_size = outbuflen;
-
+    value = outbuflen;
 
   }
-  else{
+  else{//failed
     delete [] outbuf;
+    value = 0;
   }
-  return ret;
+  
+  return value;
   
 }
 
@@ -99,12 +102,13 @@ size_t H5Z_filter_sqy(unsigned int _flags, //is it encode or decode
 			void **_buf
 			)
 {
-  std::cout << "H5Z_filter_sqy: received "
-	    << "flags: " << _flags << " "
-	    << "cd_values: " << (_cd_nelmts ? _cd_values[0] : -1) << " "
-    	    << "nbytes: " << _nbytes << " "
-    	    << "_buf_size: " << _buf_size[1]<< " "
-	    << "\n";
+
+  // std::cout << "H5Z_filter_sqy: received "
+  // 	    << "flags: " << _flags << " "
+  // 	    << "cd_values: " << (_cd_nelmts ? _cd_values[0] : -1) << " "
+  //   	    << "nbytes: " << _nbytes << " "
+  //   	    << "_buf_size: " << _buf_size[1]<< " "
+  // 	    << "\n";
   return H5Z_filter_sqy_impl(_flags, _cd_nelmts, _cd_values, _nbytes, _buf_size, _buf);
 }
 

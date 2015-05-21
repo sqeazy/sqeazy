@@ -23,13 +23,14 @@ extern "C" {
 #include "sqeazy_hdf5_impl.hpp"
 #include "hdf5_utils.hpp"
 
-static sqeazy::loaded_hdf5_plugin always_load;/*
-					  as the loaded_hdf5_plugin class is instantiated as a static object, 
-					  the sqy h5 filter will be registered at the start of any program that 
-					  includes this (either by code or by linking against the library).
-					  The filter will be unregistered once the app/lib finishes running
-					  or being called. 
-					*/
+// static sqeazy::loaded_hdf5_plugin always_load;
+/*
+  as the loaded_hdf5_plugin class is instantiated as a static object, 
+  the sqy h5 filter will be registered at the start of any program that 
+  includes this (either by code or by linking against the library).
+  The filter will be unregistered once the app/lib finishes running
+  or being called. 
+*/
 
 typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 
@@ -38,6 +39,7 @@ BOOST_FIXTURE_TEST_SUITE( encode_decode_using_hdf5_filter, uint16_cube_of_8 )
 
 BOOST_AUTO_TEST_CASE( filter_available ){
 
+  sqeazy::loaded_hdf5_plugin now;
   htri_t avail;
   avail = H5Zfilter_avail(H5Z_FILTER_SQY);
 
@@ -47,6 +49,7 @@ BOOST_AUTO_TEST_CASE( filter_available ){
 
 BOOST_AUTO_TEST_CASE( filter_supports_encoding ){
 
+  sqeazy::loaded_hdf5_plugin now;
   unsigned filter_config = 0;
   herr_t status = H5Zget_filter_info (H5Z_FILTER_SQY, &filter_config);
   
@@ -56,6 +59,7 @@ BOOST_AUTO_TEST_CASE( filter_supports_encoding ){
 
 BOOST_AUTO_TEST_CASE( filter_supports_decoding ){
 
+  sqeazy::loaded_hdf5_plugin now;
   unsigned filter_config = 0;
   herr_t status = H5Zget_filter_info (H5Z_FILTER_SQY, &filter_config);
   
@@ -86,16 +90,16 @@ BOOST_AUTO_TEST_CASE( h5_write_file_with_sqy ){
   boost::filesystem::path fname = "test_hdf5_interface_with_sqy.h5";
   std::string dname = "write_file_with_sqy";
 
-  
-  BOOST_CHECK_NO_THROW(h5_compress_arb_dataset(fname.string(),
-					       dname,
-					       constant_cube,
-					       dims,
-					       true));
+  unsigned ret = 0;
+  ret = h5_compress_arb_dataset(fname.string(),
+					      dname,
+					      constant_cube,
+					      dims,
+					      true);
   
   BOOST_CHECK(boost::filesystem::exists(fname));
 
-  
+  BOOST_REQUIRE(ret==0);
   BOOST_REQUIRE(sqy_used_in_h5_file(fname.string(),dname));
   boost::filesystem::remove(fname);//remove test file if all is fine
 }
