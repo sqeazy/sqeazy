@@ -73,7 +73,7 @@ BOOST_AUTO_TEST_CASE( h5_write_file ){
   std::string dname = "write_file";
 
   
-  BOOST_CHECK_NO_THROW(h5_compress_arb_dataset(fname.string(),
+  BOOST_CHECK_NO_THROW(h5_compress_ushort_dataset(fname.string(),
 			  dname,
 			  constant_cube,
 					       dims));
@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE( h5_write_file_with_sqy ){
   std::string dname = "write_file_with_sqy";
 
   unsigned ret = 0;
-  ret = h5_compress_arb_dataset(fname.string(),
+  ret = h5_compress_ushort_dataset(fname.string(),
 					      dname,
 					      constant_cube,
 					      dims,
@@ -103,5 +103,33 @@ BOOST_AUTO_TEST_CASE( h5_write_file_with_sqy ){
   BOOST_REQUIRE(sqy_used_in_h5_file(fname.string(),dname));
   boost::filesystem::remove(fname);//remove test file if all is fine
 }
+
+BOOST_AUTO_TEST_CASE( h5_encode_decode_with_sqy ){
+
+  boost::filesystem::path fname = "test_hdf5_interface_with_sqy.h5";
+  std::string dname = "write_file_with_sqy";
+
+  unsigned ret = 0;
+  ret = h5_compress_ushort_dataset(fname.string(),
+				dname,
+				constant_cube,
+				dims,
+				true);
+  
+  BOOST_REQUIRE(ret==0);
+  BOOST_REQUIRE(sqy_used_in_h5_file(fname.string(),dname));
+  ret = 1;
+  ret = h5_decompress_ushort_dataset(fname.string(),
+				  dname,
+				  to_play_with,
+				  dims);
+  
+  BOOST_REQUIRE(ret==0);
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(constant_cube.begin(), constant_cube.end(),to_play_with.begin(), to_play_with.end());
+
+  
+  boost::filesystem::remove(fname);//remove test file if all is fine, aka no exception thrown by REQUIRE tests
+}
+
 
  BOOST_AUTO_TEST_SUITE_END()

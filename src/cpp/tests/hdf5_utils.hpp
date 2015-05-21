@@ -109,7 +109,7 @@ bool sqy_used_in_h5_file(const std::string& _fname, const std::string& _dname = 
 }
 
 template <typename U>
-int h5_compress_arb_dataset(
+int h5_compress_ushort_dataset(
 			    const H5std_string& _fname,
 			    const H5std_string& _dname,
 			    const std::vector<unsigned short> _data,
@@ -213,91 +213,109 @@ int h5_compress_arb_dataset(
   return 0;  // successfully terminated
 }
 
-// int h5_decompress_arb_dataset(
-// 			    const H5std_string& _fname,
-// 			    const H5std_string& _dname,
-// 			    const std::vector<int> _content)
-// {
-//   std::vector<hsize_t> dims(_shape.begin(), _shape.end());
-//   std::vector<hsize_t> chunk_shape(dims.size(), 20);
-//   int     i,j;
-//   const unsigned long n_elements = std::accumulate(dims.begin(), dims.end(),1,std::multiplies<int>());
-//   std::vector<int> buf(n_elements);
+template <typename U>
+int h5_decompress_ushort_dataset(
+				 const H5std_string& _fname,
+				 const H5std_string& _dname,
+				 std::vector<unsigned short>& _content,
+				 const std::vector<U>& _exp_shape
+				 )
+{
+  std::vector<hsize_t> dims(_exp_shape.begin(), _exp_shape.end());
+  std::vector<hsize_t> chunk_shape(dims);
 
-//   try{
-//     	// -----------------------------------------------
-// 	// Re-open the file and dataset, retrieve filter 
-// 	// information for dataset and read the data back.
-// 	// -----------------------------------------------
+  //   int     i,j;
+  //   const unsigned long n_elements = std::accumulate(dims.begin(), dims.end(),1,std::multiplies<int>());
+  //   std::vector<int> buf(n_elements);
+
+  try{
+    // -----------------------------------------------
+    // Re-open the file and dataset, retrieve filter 
+    // information for dataset and read the data back.
+    // -----------------------------------------------
+
+    // Open the file and the dataset in the file.
+    H5File			file(_fname, H5F_ACC_RDONLY);
+    DataSet			dataset(file.openDataSet( _dname ));
+    DSetCreatPropList	plist(dataset.getCreatePlist ());
+
+    int		numfilt = plist.getNfilters();
+    H5Z_filter_t 	filter_type;
+    char         	filter_name[1];
+    size_t		filter_name_size = {1};
+    size_t		cd_values_size = {0};
+    unsigned	flags=0;
+    unsigned	filter_info = 0;
+    unsigned	cd_values[1];
 	
-// 	std::vector<int>        rbuf(n_elements);
-// 	int        numfilt;
-// 	size_t     nelmts={1}, namelen={1};
-// 	unsigned  flags, filter_info, cd_values[1], idx;
-// 	char       name[1];
-// 	H5Z_filter_t filter_type;
+    for(int i = 0;i < numfilt;i++){
+      cd_values_size = 0;
+      filter_info = 0;
+      flags = 0;
+	  
+      filter_type = plist.getFilter(i,
+				    flags,
+				    cd_values_size,
+				    cd_values,
+				    filter_name_size,
+				    filter_name,
+				    filter_info
+				    );
 
-// 	// Open the file and the dataset in the file.
-// 	file.openFile(_fname, H5F_ACC_RDONLY);
-// 	dataset = new DataSet(file.openDataSet( DATASET_NAME));
+      if(filter_type == H5Z_FILTER_SQY)
+	break;
+    }
 
-// 	// Get the create property list of the dataset.
-// 	plist = new DSetCreatPropList(dataset->getCreatePlist ());
+    unsigned size_u_short = std::accumulate(_exp_shape.begin(), _exp_shape.end(),1.,std::multiplies<int>());
+    if(_content.size()!=size_u_short)
+      _content.resize(size_u_short);
 
-// 	// Get the number of filters associated with the dataset.
-// 	numfilt = plist->getNfilters();
-// 	cout << "Number of filters associated with dataset: " << numfilt << endl;
+    dataset.read(&_content[0], PredType::NATIVE_USHORT);
 
-// 	for (idx=0; idx < numfilt; idx++) {
-// 	    nelmts = 0;
+    // delete plist; 
+    // delete dataset;
+    file.close();	// can be skipped
+	
+  }
+ 
+  // catch failure caused by the H5File operations
+  catch(FileIException & error)
+    {
+      error.printError();
+      std::cout << __LINE__ << ": caught FileIException("<< _fname << ":" << _dname
+		<<"):\t" << error.getDetailMsg() << "\n";
+      H5::Exception::printErrorStack();
+      return 1;
+    }
 
-// 	    filter_type = plist->getFilter(idx, flags, nelmts, cd_values, namelen, name , filter_info);
+  // catch failure caused by the DataSet operations
+  catch(DataSetIException & error)
+    {
+      error.printError();
+      std::cout << __LINE__ << ": caught DataSetIException("<< _fname << ":" << _dname
+		<<"):\t" << error.getDetailMsg() << "\n";
+      return 1;
+    }
 
-// 	    cout << "Filter Type: ";
+  // catch failure caused by the DataSpace operations
+  catch(DataSpaceIException & error)
+    {
+      error.printError();
+      std::cout << __LINE__ << ": caught DataSpaceIException("<< _fname << ":" << _dname
+		<<"):\t" << error.getDetailMsg() << "\n";
+      return 1;
+    }
 
-// 	    switch (filter_type) {
-// 	      case H5Z_FILTER_DEFLATE:
-// 	           cout << "H5Z_FILTER_DEFLATE" << endl;
-// 	           break;
-// 	      case H5Z_FILTER_SZIP:
-// 	           cout << "H5Z_FILTER_SZIP" << endl; 
-// 	           break;
-// 	      default:
-// 	           cout << "Other filter type included." << endl;
-// 	      }
-// 	}
+  catch(Exception & error){
+    error.printError();
+    std::cout << __LINE__ << ": caught Exception("<< _fname << ":" << _dname
+	      <<"):\t" << error.getDetailMsg() << "\n";
+    return 1;
 
-// 	// Read data.
-// 	dataset->read(rbuf, PredType::NATIVE_INT);
+  }
+  
+  return 0;
 
-// 	delete plist; 
-// 	delete dataset;
-// 	file.close();	// can be skipped
-
-//   }
-//   // catch failure caused by the H5File operations
-//     catch(FileIException error)
-//     {
-// 	error.printError();
-// 	return -1;
-//     }
-
-//     // catch failure caused by the DataSet operations
-//     catch(DataSetIException error)
-//     {
-// 	error.printError();
-// 	return -1;
-//     }
-
-//     // catch failure caused by the DataSpace operations
-//     catch(DataSpaceIException error)
-//     {
-// 	error.printError();
-// 	return -1;
-//     }
-
-//   return 0;
-
-// }
+}
 
 #endif /* _HDF5_UTILS_H_ */
