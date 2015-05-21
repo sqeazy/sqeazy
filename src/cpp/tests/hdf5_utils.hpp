@@ -213,16 +213,13 @@ int h5_compress_ushort_dataset(
   return 0;  // successfully terminated
 }
 
-template <typename U>
 int h5_decompress_ushort_dataset(
 				 const H5std_string& _fname,
 				 const H5std_string& _dname,
-				 std::vector<unsigned short>& _content,
-				 const std::vector<U>& _exp_shape
+				 std::vector<unsigned short>& _content
 				 )
 {
-  std::vector<hsize_t> dims(_exp_shape.begin(), _exp_shape.end());
-  std::vector<hsize_t> chunk_shape(dims);
+  std::vector<hsize_t> dims;
 
   //   int     i,j;
   //   const unsigned long n_elements = std::accumulate(dims.begin(), dims.end(),1,std::multiplies<int>());
@@ -266,7 +263,15 @@ int h5_decompress_ushort_dataset(
 	break;
     }
 
-    unsigned size_u_short = std::accumulate(_exp_shape.begin(), _exp_shape.end(),1.,std::multiplies<int>());
+    DataSpace dataspace = dataset.getSpace();
+    int rank = dataspace.getSimpleExtentNdims();
+    if(rank!=dims.size()){
+      dims.resize(rank);
+      int ndims = dataspace.getSimpleExtentDims( &dims[0], NULL);
+    }
+      
+    
+    unsigned size_u_short = std::accumulate(dims.begin(), dims.end(),1.,std::multiplies<int>());
     if(_content.size()!=size_u_short)
       _content.resize(size_u_short);
 

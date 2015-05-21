@@ -121,8 +121,7 @@ BOOST_AUTO_TEST_CASE( h5_encode_decode_with_sqy ){
   ret = 1;
   ret = h5_decompress_ushort_dataset(fname.string(),
 				  dname,
-				  to_play_with,
-				  dims);
+				  to_play_with);
   
   BOOST_REQUIRE(ret==0);
   BOOST_REQUIRE_EQUAL_COLLECTIONS(constant_cube.begin(), constant_cube.end(),to_play_with.begin(), to_play_with.end());
