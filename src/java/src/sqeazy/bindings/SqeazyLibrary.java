@@ -380,11 +380,11 @@ public class SqeazyLibrary {
 	}
 	protected native static int SQY_Header_Size(@Ptr long src, @Ptr long length);
 	/**
-	 * Original signature : <code>int SQY_version_triple(int*)</code><br>
+	 * Original signature : <code>int SQY_Version_Triple(int*)</code><br>
 	 * <i>native declaration : src/cpp/inc/sqeazy.h:334</i>
 	 */
-	public static int SQY_version_triple(Pointer<Integer > version) {
-		return SQY_version_triple(Pointer.getPeer(version));
+	public static int SQY_Version_Triple(Pointer<Integer > version) {
+		return SQY_Version_Triple(Pointer.getPeer(version));
 	}
-	protected native static int SQY_version_triple(@Ptr long version);
+	protected native static int SQY_Version_Triple(@Ptr long version);
 }
