@@ -181,7 +181,7 @@ int h5_compress_ushort_dataset(
       error.printError();
       std::cout << __LINE__ << ": caught FileIException("<< _fname << ":" << _dname
 		<<"):\t" << error.getDetailMsg() << "\n";
-      H5::Exception::printErrorStack();
+      
       return 1;
     }
 
@@ -264,7 +264,7 @@ int h5_decompress_ushort_dataset(
     }
 
     DataSpace dataspace = dataset.getSpace();
-    int rank = dataspace.getSimpleExtentNdims();
+    unsigned rank = dataspace.getSimpleExtentNdims();
     if(rank!=dims.size()){
       dims.resize(rank);
       int ndims = dataspace.getSimpleExtentDims( &dims[0], NULL);
@@ -289,7 +289,6 @@ int h5_decompress_ushort_dataset(
       error.printError();
       std::cout << __LINE__ << ": caught FileIException("<< _fname << ":" << _dname
 		<<"):\t" << error.getDetailMsg() << "\n";
-      H5::Exception::printErrorStack();
       return 1;
     }
 
