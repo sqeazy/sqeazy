@@ -329,17 +329,42 @@ SQY_FUNCTION_PREFIX int SQY_LZ4_Decompressed_Length(const char* data, long *leng
 */
 SQY_FUNCTION_PREFIX int SQY_LZ4Decode(const char* src, long srclength, char* dst);
 
+/*
+	SQY_Header_Size - Detect length of header stored in src.
+
+	Search for the sqy header in src and save its length in Byte in lenght
+
+	src 					: LZ4 compressed buffer (externally allocated & filled)
+	length					: length in bytes of header in compressed buffer
+
+	Returns 0 if success, another code if there was an error (error codes provided below)
+
+*/
 SQY_FUNCTION_PREFIX int SQY_Header_Size(const char* src, long* length);
 
-SQY_FUNCTION_PREFIX int SQY_version_triple(int* version);
+/*
+	SQY_Version_Triple - store version.
+
+	Just store the version of sqeazy used. (NB: gives dummy values right now)
+
+	version					: 3 element int array that holds the sqeazy version
+
+	Returns 0 if success, another code if there was an error (error codes provided below)
+
+*/
+SQY_FUNCTION_PREFIX int SQY_Version_Triple(int* version);
 
 ///////////////////////////////////////////////////////////////////////////////////
-// HDF5 interface
+// HDF5 filter definition
 //
 // references:
 // http://www.hdfgroup.org/HDF5/doc/Advanced/DynamicallyLoadedFilters/HDF5DynamicallyLoadedFilters.pdf
 // http://www.hdfgroup.org/HDF5/doc/H5.user/Filters.html
 // http://www.hdfgroup.org/HDF5/faq/compression.html
+
+//
+// TODO: check if these need to be here, hdf5 example does store all of this directly into library
+//
 
 #include "hdf5.h"
 #include "H5PLextern.h"
@@ -368,10 +393,108 @@ static const H5Z_class2_t H5Z_SQY[1] = {{
   1, /* encoder_present flag (set to true) */
   1, /* decoder_present flag (set to true) */
   "HDF5 sqy filter; see https://bitbucket.org/sqeazy/sqeazy",  /* Filter info */
-  NULL, /* The "can apply" callback */
-  NULL, /* The "set local" callback */
+  NULL, /* The "can apply" callback (TODO: was is that?) */
+  NULL, /* The "set local" callback (TODO: was is that?) */
   (H5Z_func_t) H5Z_filter_sqy,  /* The filter function */
 }};
 
+///////////////////////////////////////////////////////////////////////////////////
+// SQY HDF5 I/O functions 
+
+/*
+	SQY_h5_write_UI16 - store unsigned 16-bit int buffer in hdf5 file.
+
+	fname 					: hdf5 file to store data in
+	dname 					: dataset name inside hdf5 file 
+	data					: unsigned 16-bit data to compress and store
+	shape_size				: number of dimensions in data
+	shape					: dimension of data
+	
+	filter					: filter to use
+
+	Returns 0 if success, another code if there was an error
+
+*/
+SQY_FUNCTION_PREFIX int SQY_h5_write_UI16(const char* fname,
+					  const char* dname,
+					  const unsigned short* data,
+					  unsigned shape_size,
+					  const unsigned* shape,
+					  const char* filter);
+
+/*
+	SQY_h5_query_sizeof - query the size of the datatype stored in an hdf5 file (in byte)
+
+	fname 					: hdf5 file to store data in
+	dname 					: dataset name inside hdf5 file 
+	sizeof					: number of bytes the stored data type is wide
+
+	Returns 0 if success, another code if there was an error
+
+*/
+SQY_FUNCTION_PREFIX int SQY_h5_query_sizeof(const char* fname,
+					    const char* dname,
+					    unsigned* sizeof);
+
+/*
+	SQY_h5_query_dtype - query the type of the data stored in an hdf5 file (floating point, signed integer or unsigned integer)
+
+	fname 					: hdf5 file to store data in
+	dname 					: dataset name inside hdf5 file 
+	dtype					: constant that notes if datatype found is floating point, signed integer or unsigned integer
+		dtype = 0			: floating point
+		dtype = 1			: signed integer
+		dtype = 2			: unsigned integer
+
+	Returns 0 if success, another code if there was an error
+
+*/
+SQY_FUNCTION_PREFIX int SQY_h5_query_dtype(const char* fname,
+					   const char* dname,
+					   unsigned* dtype);
+
+/*
+	SQY_h5_query_rank - query the rank of the data stored in an hdf5 file (1D, 2D, 3D, ...)
+
+	fname 					: hdf5 file to store data in
+	dname 					: dataset name inside hdf5 file 
+	dtype					: rank of the stored data
+
+	Returns 0 if success, another code if there was an error
+
+*/
+SQY_FUNCTION_PREFIX int SQY_h5_query_rank(const char* fname,
+					  const char* dname,
+					  unsigned* rank);
+
+/*
+	SQY_h5_query_shape - query the shape of the data stored in an hdf5 file
+
+	fname 					: hdf5 file to store data in
+	dname 					: dataset name inside hdf5 file 
+	shape					: shape of the stored data (in row-wise ordering a la C)
+	rank					: rank of the stored data
+
+	Returns 0 if success, another code if there was an error
+
+*/
+SQY_FUNCTION_PREFIX int SQY_h5_query_shape(const char* fname,
+					   const char* dname,
+					   unsigned* shape,
+					   unsigned rank);
+
+/*
+	SQY_h5_read - load contents of hdf5 file into data
+
+	fname 					: hdf5 file to store data in
+	dname 					: dataset name inside hdf5 file 
+	data					: data buffer (externally allocated)
+
+	Returns 0 if success, another code if there was an error
+
+*/
+SQY_FUNCTION_PREFIX int SQY_h5_read(const char* fname,
+				    const char* dname,
+				    char* data);
 
 #endif
