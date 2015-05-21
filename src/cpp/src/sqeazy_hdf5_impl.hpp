@@ -9,16 +9,6 @@
 #include "sqeazy_header.hpp"
 #include "sqeazy_predef_pipelines.hpp"
 
-size_t H5Z_filter_sqy(unsigned int _flags, //is it encode or decode
-			size_t _cd_nelmts,
-			const unsigned int _cd_values[], 
-			size_t _nbytes,
-			size_t *_buf_size, 
-			void **_buf
-			)
-{
-  return 0;
-}
 
 size_t H5Z_filter_sqy_impl(unsigned int _flags, //is it encode or decode
 			size_t _cd_nelmts,
@@ -29,8 +19,8 @@ size_t H5Z_filter_sqy_impl(unsigned int _flags, //is it encode or decode
 			)
 {
   char *outbuf = NULL;
-  size_t outbuflen;
-  int ret;
+  size_t outbuflen = 0; //in byte
+  int ret = 1;
 
   if (_flags & H5Z_FLAG_REVERSE) {
 
@@ -71,21 +61,24 @@ size_t H5Z_filter_sqy_impl(unsigned int _flags, //is it encode or decode
      ** compression.
      **/
     unsigned long input_nelem = _nbytes/sizeof(unsigned short);
+    unsigned header_size_byte = sqeazy::bswap1_lz4_pipe::header_size(input_nelem);
     outbuflen = sqeazy::bswap1_lz4_pipe::max_bytes_encoded(_nbytes,
-							   sqeazy::bswap1_lz4_pipe::header_size(input_nelem)
+							   header_size_byte
 							   ); 
-
+    
     outbuf = new char[outbuflen];
     unsigned short* input = reinterpret_cast<unsigned short*>(*_buf);
 
     /* Compress data. */
-    ret = sqeazy::bswap1_lz4_pipe::compress(input, outbuf, input_nelem);
+    ret = sqeazy::bswap1_lz4_pipe::compress(input, outbuf, input_nelem,outbuflen);
 
   }
 
   /* Always replace the input buffer with the output buffer. */
-  if(!ret){
-    delete [] _buf;
+  if(!ret)//success!
+    {
+    
+    delete [] *_buf;
     *_buf = outbuf;
     *_buf_size = outbuflen;
 
@@ -97,6 +90,24 @@ size_t H5Z_filter_sqy_impl(unsigned int _flags, //is it encode or decode
   return ret;
   
 }
+
+size_t H5Z_filter_sqy(unsigned int _flags, //is it encode or decode
+			size_t _cd_nelmts,
+			const unsigned int _cd_values[], 
+			size_t _nbytes,
+			size_t *_buf_size, 
+			void **_buf
+			)
+{
+  std::cout << "H5Z_filter_sqy: received "
+	    << "flags: " << _flags << " "
+	    << "cd_values: " << (_cd_nelmts ? _cd_values[0] : -1) << " "
+    	    << "nbytes: " << _nbytes << " "
+    	    << "_buf_size: " << _buf_size[1]<< " "
+	    << "\n";
+  return H5Z_filter_sqy_impl(_flags, _cd_nelmts, _cd_values, _nbytes, _buf_size, _buf);
+}
+
 
 H5PL_type_t   H5PLget_plugin_type() {return H5PL_TYPE_FILTER;}
 const void*   H5PLget_plugin_info() {return H5Z_SQY;}         

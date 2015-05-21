@@ -117,6 +117,7 @@ int h5_compress_arb_dataset(
 			    const bool& _use_filter = false)
 {
   std::vector<hsize_t> dims(_shape.begin(), _shape.end());
+  std::vector<hsize_t> chunk_shape(dims);
   //int     i,j;
   //  const unsigned long n_elements = std::accumulate(dims.begin(), dims.end(),1,std::multiplies<int>());
   
@@ -131,21 +132,19 @@ int h5_compress_arb_dataset(
       H5File file(_fname, H5F_ACC_TRUNC);
 
       // Create the data space for the dataset.
-      DataSpace *dataspace = new DataSpace(_shape.size(), &dims[0]);
+      DataSpace dataspace(_shape.size(), &dims[0]);
 
       // // Modify dataset creation property to enable chunking
-      DSetCreatPropList  *plist = new  DSetCreatPropList;
-      // plist->setChunk(2, chunk_dims);
+      DSetCreatPropList  plist;
+      plist.setChunk(chunk_shape.size(), &chunk_shape[0]);
       
       std::vector<unsigned> cd_values(1,42);
 
       if(_use_filter)
-	plist->setFilter(H5Z_FILTER_SQY,
+	plist.setFilter(H5Z_FILTER_SQY,
 			 H5Z_FLAG_MANDATORY,
 			 cd_values.size(),
-			 &cd_values[0]);// ,
-      // size_t cd_nelmts=0, //how long is cd_values
-      // const unsigned int cd_values[]=NULL);
+			 &cd_values[0]);
 
       ////////////////////////////////////////////////////////////////////////////////////
       // from HDF5DynamicallyLoadedFilters.pdf:
@@ -157,20 +156,20 @@ int h5_compress_arb_dataset(
       //			   //config for dynamic bzip2 filter: cd_values[1] = {6};
 
       // Create the dataset.      
-      DataSet *dataset = new DataSet(file.createDataSet( _dname, 
-							 PredType::STD_U16LE,
-							 *dataspace, 
-							 *plist) );
+      DataSet  dataset(file.createDataSet( _dname, 
+					   PredType::STD_U16LE,
+					   dataspace, 
+					   plist) );
 
       // Write data to dataset.
-      dataset->write(&_data[0],
-		     PredType::NATIVE_USHORT
-		     );
+      dataset.write(&_data[0],
+		    PredType::NATIVE_USHORT
+		    );
 
       // Close objects and file.  Either approach will close the HDF5 item.
-      delete dataspace;
-      delete dataset;
-      delete plist;
+      //    delete dataspace;
+      //      delete dataset;
+      //    delete plist;
       file.close();
 
 
