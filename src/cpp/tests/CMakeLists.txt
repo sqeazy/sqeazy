@@ -92,6 +92,7 @@ add_executable(test_bench_utils_impl test_bench_utils_impl.cpp)
 
 add_executable(test_lz4_encoding test_lz4_encoding.cpp)
 add_executable(test_hdf5_interface test_hdf5_interface.cpp)
+set_target_properties(test_hdf5_interface PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src ")
 
 if(EXISTS ${LZ4_STATIC_LIB})
 #if static libsqeazy exists, it will contain lz4, no need to link against it yet another time
