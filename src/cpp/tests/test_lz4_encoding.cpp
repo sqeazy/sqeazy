@@ -163,7 +163,7 @@ BOOST_AUTO_TEST_CASE( decode_encoded_ramp )
 {
 
   const char* input = reinterpret_cast<char*>(&constant_cube[0]);
-  for(int i = 0; i < constant_cube.size();i++)
+  for(size_t i = 0; i < constant_cube.size();i++)
     constant_cube[i] = char(i % 128);
   
   long expected_size = size_in_byte;
