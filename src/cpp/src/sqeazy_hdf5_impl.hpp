@@ -1,4 +1,7 @@
-#define _SQEAZY_HDF_CPP_
+#ifndef _SQEAZY_HDF5_IMPL_H_
+#define _SQEAZY_HDF5_IMPL_H_
+
+
 
 #include "H5Cpp.h"
 #include "sqeazy.h"
@@ -104,14 +107,19 @@ namespace sqeazy {
 
     loaded_hdf5_plugin(){
       H5Zregister(H5Z_SQY);
+      //std::cout << "registering H5Z_SQY\n";
     }
 
     ~loaded_hdf5_plugin(){
       H5Zunregister(H5Z_FILTER_SQY);
+      //std::cout << "unregistering H5Z_FILTER_SQY\n";
     }
     
   };
 
-  static loaded_hdf5_plugin always_load;
+  
 
 }
+
+
+#endif /* _SQEAZY_HDF5_IMPL_H_ */
