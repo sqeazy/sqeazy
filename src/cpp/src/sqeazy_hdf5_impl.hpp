@@ -1,22 +1,23 @@
 #ifndef _SQEAZY_HDF5_IMPL_H_
 #define _SQEAZY_HDF5_IMPL_H_
 
-
-
 #include "H5Cpp.h"
+
 #include "sqeazy.h"
 #include "sqeazy_impl.hpp"
 #include "sqeazy_header.hpp"
 #include "sqeazy_predef_pipelines.hpp"
 
 
-size_t H5Z_filter_sqy_impl(unsigned int _flags, //is it encode or decode
-			size_t _cd_nelmts,
-			const unsigned int _cd_values[], 
-			size_t _nbytes,
-			size_t *_buf_size, 
-			void **_buf
-			)
+
+
+size_t H5Z_filter_sqy(unsigned int _flags, //is it encode or decode
+		      size_t _cd_nelmts,
+		      const unsigned int _cd_values[], 
+		      size_t _nbytes,
+		      size_t *_buf_size, 
+		      void **_buf
+		      )
 {
   char *outbuf = NULL;
   size_t outbuflen = 0; //in byte
@@ -94,23 +95,6 @@ size_t H5Z_filter_sqy_impl(unsigned int _flags, //is it encode or decode
   
 }
 
-size_t H5Z_filter_sqy(unsigned int _flags, //is it encode or decode
-			size_t _cd_nelmts,
-			const unsigned int _cd_values[], 
-			size_t _nbytes,
-			size_t *_buf_size, 
-			void **_buf
-			)
-{
-
-  // std::cout << "H5Z_filter_sqy: received "
-  // 	    << "flags: " << _flags << " "
-  // 	    << "cd_values: " << (_cd_nelmts ? _cd_values[0] : -1) << " "
-  //   	    << "nbytes: " << _nbytes << " "
-  //   	    << "_buf_size: " << _buf_size[1]<< " "
-  // 	    << "\n";
-  return H5Z_filter_sqy_impl(_flags, _cd_nelmts, _cd_values, _nbytes, _buf_size, _buf);
-}
 
 
 H5PL_type_t   H5PLget_plugin_type() {return H5PL_TYPE_FILTER;}
@@ -132,9 +116,13 @@ namespace sqeazy {
     
   };
 
+
+
   
 
 }
+
+
 
 
 #endif /* _SQEAZY_HDF5_IMPL_H_ */
