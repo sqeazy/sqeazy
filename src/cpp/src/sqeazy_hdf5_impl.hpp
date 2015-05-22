@@ -116,13 +116,7 @@ namespace sqeazy {
     
   };
 
-
-
-  
-
 }
-
-
 
 
 #endif /* _SQEAZY_HDF5_IMPL_H_ */

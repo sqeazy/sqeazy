@@ -1,5 +1,5 @@
-#ifndef _HDF5_UTILS_H_
-#define _HDF5_UTILS_H_
+#ifndef _HDF5_TEST_UTILS_H
+#define _HDF5_TEST_UTILS_H
 
 #include "H5Cpp.h"
 
@@ -322,4 +322,4 @@ int h5_decompress_ushort_dataset(
 
 }
 
-#endif /* _HDF5_UTILS_H_ */
+#endif /* _HDF5_TEST_UTILS_H */

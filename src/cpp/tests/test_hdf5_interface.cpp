@@ -22,6 +22,7 @@ extern "C" {
 
 #include "sqeazy_hdf5_impl.hpp"
 #include "hdf5_utils.hpp"
+#include "hdf5_test_utils.hpp"
 
 // static sqeazy::loaded_hdf5_plugin always_load;
 /*

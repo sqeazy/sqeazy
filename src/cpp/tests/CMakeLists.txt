@@ -94,6 +94,8 @@ add_executable(test_lz4_encoding test_lz4_encoding.cpp)
 add_executable(test_hdf5_interface test_hdf5_interface.cpp)
 set_target_properties(test_hdf5_interface PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src ")
 
+
+
 if(EXISTS ${LZ4_STATIC_LIB})
 #if static libsqeazy exists, it will contain lz4, no need to link against it yet another time
 target_link_libraries(test_lz4_encoding ${PROJECT_NAME}_static ${Boost_LIBRARIES})
@@ -102,6 +104,11 @@ else()
   target_link_libraries(test_lz4_encoding ${PROJECT_NAME} ${Boost_LIBRARIES} ext_lz4)
   target_link_libraries(test_hdf5_interface ${PROJECT_NAME} ${Boost_LIBRARIES} ext_lz4 ext_hdf5)
 endif()
+
+add_executable(test_hdf5_impl test_hdf5_impl.cpp)
+set_target_properties(test_hdf5_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src ")
+target_link_libraries(test_hdf5_impl ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
+
 
 add_executable(test_apply test_apply.cpp)
 target_link_libraries(test_apply ${Boost_LIBRARIES} ext_lz4)
