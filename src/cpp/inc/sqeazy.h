@@ -434,7 +434,7 @@ SQY_FUNCTION_PREFIX int SQY_h5_write_UI16(const char* fname,
 */
 SQY_FUNCTION_PREFIX int SQY_h5_query_sizeof(const char* fname,
 					    const char* dname,
-					    unsigned* sizeof);
+					    unsigned* _sizeof);
 
 /*
 	SQY_h5_query_dtype - query the type of the data stored in an hdf5 file (floating point, signed integer or unsigned integer)
