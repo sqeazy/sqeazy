@@ -107,7 +107,7 @@ endif()
 
 add_executable(test_hdf5_impl test_hdf5_impl.cpp)
 set_target_properties(test_hdf5_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src ")
-target_link_libraries(test_hdf5_impl ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(test_hdf5_impl ${HDF5_LIBRARIES} ${Boost_LIBRARIES} ext_lz4)
 
 
 add_executable(test_apply test_apply.cpp)
