@@ -24,6 +24,9 @@ namespace sqeazy {
   typedef sqeazy::bmpl::vector< sqeazy::lz4_scheme<unsigned short> > lz4_;
   typedef sqeazy::pipeline<lz4_> lz4_pipe;
 
+  //CONVENIENCE
+  typedef sqeazy::bmpl::vector< sqeazy::pass_through<unsigned short> > passthrough;
+  typedef sqeazy::pipeline<passthrough> passthrough_pipe;
 
   ////////////////////////////////////////////////////////////////////////////////
   // 8-bit
@@ -39,8 +42,13 @@ namespace sqeazy {
 				sqeazy::lz4_scheme<unsigned char> > char_bswap1_lz4;
   typedef sqeazy::pipeline<char_bswap1_lz4> char_bswap1_lz4_pipe;
 
-  typedef sqeazy::bmpl::vector< sqeazy::lz4_scheme<unsigned short> > char_lz4_;
+  typedef sqeazy::bmpl::vector< sqeazy::lz4_scheme<unsigned char> > char_lz4_;
   typedef sqeazy::pipeline<lz4_> char_lz4_pipe;
+
+  //CONVENIENCE
+  typedef sqeazy::bmpl::vector< sqeazy::pass_through<unsigned char> > char_passthrough;
+  typedef sqeazy::pipeline<passthrough> char_passthrough_pipe;
+
 
 };
 
