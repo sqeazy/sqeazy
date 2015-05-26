@@ -9,14 +9,19 @@
 
 #include "sqeazy_hdf5_impl.hpp"
 
-bool dataset_in_h5_file(const std::string& _fname, const std::string& _dname = ""){
-  bool value = false;
-
+int stored_sizeof_in_h5_file(const std::string& _fname, const std::string& _dname){
+  int value = -1;
+    
   try{
     H5File file(_fname, H5F_ACC_RDONLY);
-    DataSet *	dataset = new DataSet(file.openDataSet( _dname ));
-
-    delete dataset;
+    DataSet dataset(file.openDataSet( _dname ));
+    H5T_class_t type_class = dataset.getTypeClass();
+    if( type_class == H5T_INTEGER )
+      {
+	IntType rtype = dataset.getIntType();
+	value = rtype.getSize();
+      }
+    
     file.close();
   }
   // catch failure caused by the H5File operations
@@ -41,7 +46,90 @@ bool dataset_in_h5_file(const std::string& _fname, const std::string& _dname = "
     {
       std::cout << __LINE__ << ": caught DataSpaceIException("<< _fname << ":" << _dname
 		<<"):\t" << error.getDetailMsg() << "\n";
-      throw;
+      return value;
+    }
+  
+  return value;
+}
+
+void dataset_shape_in_h5_file(const std::string& _fname, const std::string& _dname, std::vector<int>& _shape){
+  std::vector<hsize_t> temp;
+    
+  try{
+    H5File file(_fname, H5F_ACC_RDONLY);
+    DataSet dataset(file.openDataSet( _dname ));
+    DataSpace dataspace(dataset.getSpace());
+    temp.resize(dataspace.getSimpleExtentNdims());
+
+    dataspace.getSimpleExtentDims(&temp[0]);
+    _shape.resize(temp.size());
+    std::copy(temp.begin(), temp.end(),_shape.begin());
+      
+    file.close();
+  }
+  // catch failure caused by the H5File operations
+  catch(FileIException & error)
+    {
+
+      std::cout << __LINE__ << ": caught FileIException ("<< _fname << ":" << _dname
+		<<"):\t" << error.getDetailMsg() << "\n";
+      return;
+    }
+
+  // catch failure caused by the DataSet operations
+  catch(DataSetIException & error)
+    {
+      std::cout <<  __LINE__ << ": caught DataSetIException("<< _fname << ":" << _dname
+		<<"):\t" << error.getDetailMsg() << "\n";
+      return;
+    }
+
+  // catch failure caused by the DataSpace operations
+  catch(DataSpaceIException error)
+    {
+      std::cout << __LINE__ << ": caught DataSpaceIException("<< _fname << ":" << _dname
+		<<"):\t" << error.getDetailMsg() << "\n";
+      return;
+    }
+  
+  return;
+}
+
+
+bool dataset_in_h5_file(const std::string& _fname, const std::string& _dname = ""){
+  bool value = false;
+
+  try{
+    H5File file(_fname, H5F_ACC_RDONLY);
+    DataSet dataset(file.openDataSet( _dname ));
+
+    value = dataset.getInMemDataSize() > 0;
+    
+    file.close();
+  }
+  // catch failure caused by the H5File operations
+  catch(FileIException & error)
+    {
+
+      std::cout << __LINE__ << ": caught FileIException ("<< _fname << ":" << _dname
+		<<"):\t" << error.getDetailMsg() << "\n";
+      return value;
+    }
+
+  // catch failure caused by the DataSet operations
+  catch(DataSetIException & error)
+    {
+      std::cout <<  __LINE__ << ": caught DataSetIException("<< _fname << ":" << _dname
+		<<"):\t" << error.getDetailMsg() << "\n";
+      return value;
+    }
+
+  // catch failure caused by the DataSpace operations
+  catch(DataSpaceIException error)
+    {
+      std::cout << __LINE__ << ": caught DataSpaceIException("<< _fname << ":" << _dname
+		<<"):\t" << error.getDetailMsg() << "\n";
+      return value;
     }
   
   return value;
@@ -157,7 +245,7 @@ int h5_compress_ushort_dataset(
 
       // Create the dataset.      
       DataSet*  dataset = new DataSet(file.createDataSet( _dname, 
-							  PredType::STD_U16LE,
+							  PredType::NATIVE_USHORT,
 							  dataspace, 
 							  plist) );
 
