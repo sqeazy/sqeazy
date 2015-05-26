@@ -1,10 +1,17 @@
 #ifndef _HDF5_UTILS_H_
 #define _HDF5_UTILS_H_
 
+#include <limits>
+#include "boost/filesystem.hpp"
+
+namespace bfs = boost::filesystem;
+
 #include "H5Cpp.h"
 // #include "sqeazy_impl.hpp"
 // #include "pipeline.hpp"
 #include "sqeazy_predef_pipelines.hpp"
+
+
 
 namespace sqeazy {
 
@@ -177,6 +184,123 @@ namespace sqeazy {
     
     return write_h5(_fname, _dname, _payload, _shape, default_pipe);
   }
+
+  /**
+     \brief extract shape information from H5::DataSpace
+     
+     \param[in] _dsp pointer to H5::DataSpace
+     \param[out] _shape vector of arbitrary type to fill (will return empty if nothing is found)
+     
+     \return 
+     \retval 
+     
+  */
+  template <typename T>
+  void read_h5_shape(const H5::DataSpace& _dsp, std::vector<T>& _shape){
+
+    _shape.clear();
+    std::vector<hsize_t> temp_shape;
+
+    try {
+      temp_shape.resize(_dsp.getSimpleExtentNdims());
+      _dsp.getSimpleExtentDims( &temp_shape[0]);
+    }
+    catch( H5::DataSpaceIException & error ){
+      error.printError();
+      return;
+    }
+
+    _shape.resize(temp_shape.size());
+    std::copy(temp_shape.begin(), temp_shape.end(),_shape.begin());
+
+    
+  }
+
+  template <typename T>
+  bool h5_read_type_matches(const H5::DataSet& _ds){
+
+    bool value = false;
+    int score = 0;
+
+    H5T_class_t type_class = _ds.getTypeClass();
+
+    if(!(type_class == H5T_INTEGER && std::numeric_limits<T>::is_integer))
+      score += 1;
+
+    if(!(_ds.getIntType().getSize() == sizeof(T)))
+      score += 1;
+
+    const H5T_sign_t fsign = _ds.getIntType().getSign();
+    if(!((fsign != 0) == std::numeric_limits<T>::is_signed))
+      score += 1;
+
+    
+    return score == 0;
+  }
+
+  
+  /**
+     \brief function to read nD array of given shape to hdf5 file 
+     
+     \param[in] _fname file path and name to write to
+     \param[in] _dname dataset name inside hdf5 file to store payload under
+     \param[inout] _payload pointer of correct type pointing to nD array in memory
+     \param[inout] _shape std::vector that defines the shape of _payload in its native data type
+     
+     \return 
+     \retval 
+     
+  */
+  template <typename data_type, typename size_type>
+  int read_h5(const std::string& _fname,
+	      const std::string& _dname,
+	      std::vector<data_type>& _payload,
+	      std::vector<size_type>& _shape){
+
+    int value = 1;
+    bfs::path h5file = _fname;
+
+    if(!boost::filesystem::exists(h5file)){
+      std::cerr << "input file " << h5file << " does not exist!\n";
+      return value;
+    }
+
+    try{
+      H5::H5File file(_fname, H5F_ACC_RDONLY);
+      H5::DataSet ds(file.openDataSet( _dname ));
+
+      //check if type found is correct
+      if(h5_read_type_matches<data_type>(ds)){
+	value = 0;
+      }
+
+      H5::DataSpace dsp(ds.getSpace( ));
+      
+      //extract the shape of the dataset
+      read_h5_shape(dsp,_shape);
+      value += _shape.size() ? 0 : 10;
+
+      //resize payload
+      unsigned long nelements = std::accumulate(_shape.begin(), _shape.end(), 1, std::multiplies<size_type>());
+      _payload.clear();
+      _payload.resize(nelements);
+
+      //perform the read
+      H5::DataSpace memspace( dsp );
+      ds.read( &_payload[0], hdf5_dtype<data_type>::instance() , memspace, dsp );
+      
+      file.close();
+    }
+    catch( H5::Exception & e){
+      e.printError();
+      return -1;
+    }
+    
+    
+    return value;
+  }
+
+  
 }
 
 
