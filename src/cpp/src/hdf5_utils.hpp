@@ -238,7 +238,29 @@ namespace sqeazy {
     int store_nd_dataset(const std::string& _dname, const std::vector<T>& _payload, const std::vector<U>& _shape){
 
       int rvalue = 1;
-     
+      std::vector<hsize_t> dims(_shape.begin(), _shape.end());
+      std::vector<hsize_t> chunk_shape(dims);
+      
+      if(!dataspace_)
+	delete dataspace_;
+
+      dataspace_ = new H5::DataSpace(dims.size(), &dims[0]);
+      H5::DSetCreatPropList  plist;
+      plist.setChunk(chunk_shape.size(), &chunk_shape[0]);
+
+      if(!dataset_)
+	delete dataset_;
+
+      dataset_ = new H5::DataSet(file_->createDataSet( _dname, 
+						       hdf5_dtype<T>::instance(),
+						       *dataspace_, 
+						       plist) );
+
+      dataset_->write(&_payload[0],
+		     hdf5_dtype<T>::instance()
+		     );
+
+      rvalue = 0;
       return rvalue;
       
     }

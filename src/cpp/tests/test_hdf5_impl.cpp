@@ -79,6 +79,7 @@ BOOST_AUTO_TEST_CASE( write_dataset ){
 
   int rvalue = testme.store_nd_dataset(dname,retrieved,dims);
   BOOST_REQUIRE(rvalue == 0);
+  BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
 
   if(bfs::exists(test_output_path))
     bfs::remove(test_output_path);
