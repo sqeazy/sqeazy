@@ -114,14 +114,16 @@ namespace sqeazy {
     
     bool		ready_;
 
-    h5_file(const std::string& _fname, unsigned int flag = H5F_ACC_RDONLY):
+   
+    
+    h5_file(const std::string& _fname, unsigned _flag = H5F_ACC_RDONLY):
       path_(_fname),
       file_(0),
       dataspace_(0),
       dataset_(0),
       ready_(false){
 
-      ready_ = open(_fname, flag);
+      ready_ = open(_fname, _flag);
       
       
     }
@@ -230,6 +232,15 @@ namespace sqeazy {
 	rvalue = 0;
       
       return rvalue;
+    }
+
+    template <typename T, typename U>
+    int store_nd_dataset(const std::string& _dname, const std::vector<T>& _payload, const std::vector<U>& _shape){
+
+      int rvalue = 1;
+     
+      return rvalue;
+      
     }
     
   };

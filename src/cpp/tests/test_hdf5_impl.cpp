@@ -22,13 +22,13 @@ struct helpers_fixture {
   const std::string     tfile;
   const std::string	dname;
   const std::string	test_output_name;
-  const bfs::path	fpath;
+  const bfs::path	test_output_path;
 
   helpers_fixture():
     tfile("sample.h5"),
     dname("IntArray"),
     test_output_name("hdf5_helpers.h5"),
-    fpath(test_output_name){}
+    test_output_path(test_output_name){}
   
 };
 
@@ -64,8 +64,26 @@ BOOST_AUTO_TEST_CASE( load_dataset ){
   BOOST_CHECK(dims[0] == 5);
   BOOST_CHECK(dims[1] == 6);
   BOOST_CHECK(retrieved[1] == 1);
-  
+  BOOST_CHECK(retrieved[retrieved.size()-1] == 9);
+  BOOST_CHECK(retrieved[12] == 2);
 }
+
+
+BOOST_AUTO_TEST_CASE( write_dataset ){
+
+  std::vector<int> retrieved(64,42);
+  std::vector<unsigned int> dims(3,4);
+  
+  sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
+  BOOST_CHECK(testme.ready());
+
+  int rvalue = testme.store_nd_dataset(dname,retrieved,dims);
+  BOOST_REQUIRE(rvalue == 0);
+
+  if(bfs::exists(test_output_path))
+    bfs::remove(test_output_path);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 
