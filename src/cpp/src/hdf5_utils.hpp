@@ -34,6 +34,7 @@ namespace sqeazy {
   template <>
   struct hdf5_dtype<unsigned short>{
 
+    typedef H5::IntType stored_type;
     static H5::PredType instance() { return H5::PredType::STD_U16LE; }
     
   };
@@ -41,6 +42,7 @@ namespace sqeazy {
   template <>
   struct hdf5_dtype<short>{
 
+    typedef H5::IntType stored_type;
     static H5::PredType instance() { return H5::PredType::STD_I16LE; }
     
   };
@@ -48,6 +50,7 @@ namespace sqeazy {
   template <>
   struct hdf5_dtype<unsigned char>{
 
+    typedef H5::IntType stored_type;
     static H5::PredType instance() { return H5::PredType::STD_U8LE; }
     
   };
@@ -55,10 +58,50 @@ namespace sqeazy {
   template <>
   struct hdf5_dtype<char>{
 
+    typedef H5::IntType stored_type;
     static H5::PredType instance() { return H5::PredType::STD_I8LE; }
     
   };
 
+  template <>
+  struct hdf5_dtype<int>{
+
+    typedef H5::IntType stored_type;
+    static H5::PredType instance() { return H5::PredType::STD_I32LE; }
+    
+  };
+
+  template <>
+  struct hdf5_dtype<unsigned int>{
+
+    typedef H5::IntType stored_type;
+    static H5::PredType instance() { return H5::PredType::STD_U32LE; }
+    
+  };
+
+
+  
+  template <typename T>
+  bool h5_read_type_matches(const H5::DataSet& _ds){
+
+    bool value = false;
+    int score = 0;
+
+    H5T_class_t type_class = _ds.getTypeClass();
+
+    if(!(_ds.getIntType().getSize() == sizeof(T)))
+      score += 1;
+
+    if(!(type_class == H5T_INTEGER && std::numeric_limits<T>::is_integer))
+      score += 1;
+    
+    const H5T_sign_t fsign = _ds.getIntType().getSign();
+    if(!((fsign != 0) == std::numeric_limits<T>::is_signed))
+      score += 1;
+
+    
+    return score == 0;
+  }
   
   struct h5_file
   {
@@ -94,6 +137,10 @@ namespace sqeazy {
 	error_ = local_error;
 	return false;
       }
+      catch(H5::Exception & local_error){
+	error_ = local_error;
+	return false;
+      }
       
       return true;
     }
@@ -122,13 +169,72 @@ namespace sqeazy {
       catch(H5::DataSetIException & error){
 	return false;
       }
-
+      catch(H5::Exception & error){
+	return false;
+      }
+      
       return true;
     }
 
-    
+    template <typename T, typename U>
+    int load_nd_dataset(const std::string& _dname, std::vector<T>& _payload, std::vector<U>& _shape){
+
+      int rvalue = 1;
+      if(!_payload.empty())
+	_payload.clear();
+
+      if(!_shape.empty())
+	_shape.clear();
+
+      if(ready() && has_dataset(_dname))
+	dataset_ = new H5::DataSet(file_->openDataSet( _dname ));
+
+      if(!dataset_)
+	return 1;
+
+      try{
+	dataspace_ = new H5::DataSpace(dataset_->getSpace());
+      }
+      catch(H5::DataSpaceIException & local_error)
+	{
+	  error_ = local_error;
+	  return 1;
+	}
+      
+      unsigned rank = dataspace_->getSimpleExtentNdims();
+      std::vector<hsize_t> retrieved_dims(rank);
+      int ndims = dataspace_->getSimpleExtentDims( (hsize_t*)&retrieved_dims[0], NULL);
+
+      hsize_t nelements = std::accumulate(retrieved_dims.begin(), retrieved_dims.end(),1.,std::multiplies<hsize_t>());
+
+      //check for type match
+      if(!h5_read_type_matches<T>(*dataset_)){
+	rvalue = 1;
+	return rvalue;
+      }
+	
+      _payload.resize(nelements);
+      try{
+	dataset_->read(&_payload[0], hdf5_dtype<T>::instance() );
+      }
+      catch(H5::Exception & local_error)
+	{
+	  error_ = local_error;
+	  return 1;
+	}
+      
+      _shape.resize(rank);
+      std::copy(retrieved_dims.begin(), retrieved_dims.end(), _shape.begin());
+
+      if(!_shape.empty() && !_payload.empty())
+	rvalue = 0;
+      
+      return rvalue;
+    }
     
   };
+
+  
   /**
      \brief function to write nD array of given shape to hdf5 file using sqeazy pipeline
      
@@ -286,27 +392,7 @@ namespace sqeazy {
     
   }
 
-  template <typename T>
-  bool h5_read_type_matches(const H5::DataSet& _ds){
-
-    bool value = false;
-    int score = 0;
-
-    H5T_class_t type_class = _ds.getTypeClass();
-
-    if(!(type_class == H5T_INTEGER && std::numeric_limits<T>::is_integer))
-      score += 1;
-
-    if(!(_ds.getIntType().getSize() == sizeof(T)))
-      score += 1;
-
-    const H5T_sign_t fsign = _ds.getIntType().getSign();
-    if(!((fsign != 0) == std::numeric_limits<T>::is_signed))
-      score += 1;
-
-    
-    return score == 0;
-  }
+  
 
   
   /**

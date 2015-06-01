@@ -34,6 +34,15 @@ struct helpers_fixture {
 
 BOOST_FIXTURE_TEST_SUITE( hdf5_helpers, helpers_fixture )
 
+// BOOST_AUTO_TEST_CASE( file_not_found ){
+
+//   std::string ipath = "unavailable_";
+//   ipath.append(tfile);
+//   sqeazy::h5_file testme(ipath);
+//   BOOST_CHECK(!testme.ready());
+  
+// }
+  
 BOOST_AUTO_TEST_CASE( query_for_dataset ){
 
   sqeazy::h5_file testme(tfile);
@@ -42,6 +51,21 @@ BOOST_AUTO_TEST_CASE( query_for_dataset ){
   
 }
 
+BOOST_AUTO_TEST_CASE( load_dataset ){
+
+  std::vector<int> retrieved;
+  std::vector<unsigned int> dims;
+  
+  sqeazy::h5_file testme(tfile);
+  BOOST_CHECK(testme.ready());
+
+  int rvalue = testme.load_nd_dataset(dname,retrieved,dims);
+  BOOST_REQUIRE(rvalue == 0);
+  BOOST_CHECK(dims[0] == 5);
+  BOOST_CHECK(dims[1] == 6);
+  BOOST_CHECK(retrieved[1] == 1);
+  
+}
 BOOST_AUTO_TEST_SUITE_END()
 
 
