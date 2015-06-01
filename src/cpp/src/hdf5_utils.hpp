@@ -11,7 +11,7 @@ namespace bfs = boost::filesystem;
 // #include "sqeazy_impl.hpp"
 // #include "pipeline.hpp"
 #include "sqeazy_predef_pipelines.hpp"
-
+#include "sqeazy_h5_filter.hpp"
 
 
 namespace sqeazy {
