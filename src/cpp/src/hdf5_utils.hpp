@@ -2,6 +2,7 @@
 #define _HDF5_UTILS_H_
 
 #include <limits>
+#include <cmath>
 #include "boost/filesystem.hpp"
 
 namespace bfs = boost::filesystem;
@@ -264,6 +265,54 @@ namespace sqeazy {
       return rvalue;
       
     }
+
+    template <typename T, typename U, typename pipe_type>
+    int pipeline_nd_dataset_to_file(const std::string& _dname,
+				    const std::vector<T>& _payload,
+				    const std::vector<U>& _shape,
+				    pipe_type
+				    ){
+
+      int rvalue = 1;
+      std::vector<hsize_t> dims(_shape.begin(), _shape.end());
+      std::vector<hsize_t> chunk_shape(dims);
+      
+      if(!dataspace_)
+	delete dataspace_;
+
+      dataspace_ = new H5::DataSpace(dims.size(), &dims[0]);
+      H5::DSetCreatPropList  plist;
+      plist.setChunk(chunk_shape.size(), &chunk_shape[0]);
+
+      const std::string filter_name = pipe_type::name();
+      
+      std::vector<unsigned> cd_values(std::ceil(filter_name.size()/(sizeof(int)/sizeof(char))),0);
+
+      if(!filter_name.empty()){
+	std::copy(filter_name.begin(), filter_name.end(),(char*)&cd_values[0]);
+      	plist.setFilter(H5Z_FILTER_SQY,
+			H5Z_FLAG_MANDATORY,
+			cd_values.size(),
+			&cd_values[0]);
+      }
+      
+      
+      if(!dataset_)
+	delete dataset_;
+
+      dataset_ = new H5::DataSet(file_->createDataSet( _dname, 
+						       hdf5_dtype<T>::instance(),
+						       *dataspace_, 
+						       plist) );
+
+      dataset_->write(&_payload[0],
+		     hdf5_dtype<T>::instance()
+		     );
+
+      rvalue = 0;
+      return rvalue;
+      
+    }
     
   };
 
@@ -389,7 +438,7 @@ namespace sqeazy {
 	       const data_type* _payload,
 	       const std::vector<size_type>& _shape){
 
-    static const passthrough_pipe default_pipe;
+    static const sqeazy::uint16_passthrough_pipe default_pipe;
     
     return write_h5(_fname, _dname, _payload, _shape, default_pipe);
   }
