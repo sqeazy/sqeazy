@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE( write_dataset ){
     bfs::remove(test_output_path);
 }
 
-BOOST_AUTO_TEST_CASE( write_dataset_with_filter ){
+BOOST_AUTO_TEST_CASE( write_dataset_with_empty_filter ){
 
   std::vector<int> retrieved(64,42);
   std::vector<unsigned int> dims(3,4);
@@ -100,8 +100,39 @@ BOOST_AUTO_TEST_CASE( write_dataset_with_filter ){
   BOOST_REQUIRE(rvalue == 0);
   BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
 
+  
   if(bfs::exists(test_output_path))
     bfs::remove(test_output_path);
+}
+
+BOOST_AUTO_TEST_CASE( write_dataset_with_filter ){
+
+  std::vector<unsigned short> retrieved(64,42);
+  std::vector<unsigned int> dims(3,4);
+
+  bfs::path no_filter_path = "no_filter.h5";
+  sqeazy::h5_file no_filter(no_filter_path.string(), H5F_ACC_TRUNC);
+  int rvalue = no_filter.store_nd_dataset(dname,
+					   retrieved,
+					   dims);
+  BOOST_REQUIRE(rvalue == 0);
+  //does the write occur here? or at destruction of the object
+  
+  sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
+
+  rvalue = testme.pipeline_nd_dataset_to_file(dname,
+					      retrieved,
+					      dims,
+					      sqeazy::bswap1_lz4_pipe());
+  BOOST_REQUIRE(rvalue == 0);
+  BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
+  BOOST_REQUIRE(bfs::file_size(no_filter_path) != bfs::file_size(test_output_path));
+  
+  if(bfs::exists(test_output_path))
+    bfs::remove(test_output_path);
+
+  if(bfs::exists(no_filter_path))
+    bfs::remove(no_filter_path);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
