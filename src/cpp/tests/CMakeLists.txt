@@ -137,6 +137,5 @@ set_target_properties(test_bench_utils_impl PROPERTIES COMPILE_FLAGS "-std=c++11
 
 ENDIF(TIFF_FOUND)
 
-
-
-
+FILE(COPY ${PROJECT_SOURCE_DIR}/tests/hdf5_create_sample.h5 DESTINATION ${PROJECT_BINARY_DIR}/tests/)
+FILE(RENAME ${PROJECT_BINARY_DIR}/tests/hdf5_create_sample.h5 ${PROJECT_BINARY_DIR}/tests/sample.h5)

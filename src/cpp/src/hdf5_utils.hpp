@@ -59,6 +59,76 @@ namespace sqeazy {
     
   };
 
+  
+  struct h5_file
+  {
+    bfs::path		path_;
+    H5::H5File*		file_;
+    H5::DataSpace*	dataspace_;
+    H5::DataSet*	dataset_;
+
+    H5::Exception	error_;
+    
+    bool		ready_;
+
+    h5_file(const std::string& _fname, unsigned int flag = H5F_ACC_RDONLY):
+      path_(_fname),
+      file_(0),
+      dataspace_(0),
+      dataset_(0),
+      ready_(false){
+
+      ready_ = open(_fname, flag);
+      
+      
+    }
+
+
+    bool open(const std::string& _fname, unsigned flag){
+
+      try {
+	file_ = new H5::H5File(_fname, flag);
+      }
+      catch(H5::FileIException & local_error)
+      {
+	error_ = local_error;
+	return false;
+      }
+      
+      return true;
+    }
+    
+    ~h5_file(){
+      if(dataspace_)
+	delete dataspace_;
+
+      if(dataset_)
+	delete dataset_;
+      
+      file_->close();
+      delete file_;
+    }
+
+    bool ready() const {
+      return ready_ && (file_ != 0);
+    }
+
+    bool has_dataset(const std::string& _dname){
+
+      //TODO: is there any way to query the h5file for an object?
+      try {
+	H5::DataSet ds(file_->openDataSet( _dname ));
+      }
+      catch(H5::DataSetIException & error){
+	return false;
+      }
+
+      return true;
+    }
+
+    
+    
+  };
   /**
      \brief function to write nD array of given shape to hdf5 file using sqeazy pipeline
      
