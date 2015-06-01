@@ -5,11 +5,22 @@
 #include "pipeline.hpp"
 #include "external_encoders.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-// 16-bit
 
 namespace sqeazy {
+  ////////////////////////////////////////////////////////////////////////////////
+  // 32-bit
+  //CONVENIENCE
+  typedef sqeazy::bmpl::vector< sqeazy::pass_through<int> > int32_passthrough;
+  typedef sqeazy::pipeline<int32_passthrough> int32_passthrough_pipe;
 
+  typedef sqeazy::bmpl::vector< sqeazy::pass_through<unsigned int> > uint32_passthrough;
+  typedef sqeazy::pipeline<uint32_passthrough> uint32_passthrough_pipe;
+
+  
+  ////////////////////////////////////////////////////////////////////////////////
+  // 16-bit
+  
+  
   //LOSSY
   typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned short>,
 				sqeazy::bitswap_scheme<unsigned short>,
@@ -25,8 +36,8 @@ namespace sqeazy {
   typedef sqeazy::pipeline<lz4_> lz4_pipe;
 
   //CONVENIENCE
-  typedef sqeazy::bmpl::vector< sqeazy::pass_through<unsigned short> > passthrough;
-  typedef sqeazy::pipeline<passthrough> passthrough_pipe;
+  typedef sqeazy::bmpl::vector< sqeazy::pass_through<unsigned short> > uin16_passthrough;
+  typedef sqeazy::pipeline<uin16_passthrough> uint16_passthrough_pipe;
 
   ////////////////////////////////////////////////////////////////////////////////
   // 8-bit
@@ -46,8 +57,8 @@ namespace sqeazy {
   typedef sqeazy::pipeline<lz4_> char_lz4_pipe;
 
   //CONVENIENCE
-  typedef sqeazy::bmpl::vector< sqeazy::pass_through<unsigned char> > char_passthrough;
-  typedef sqeazy::pipeline<passthrough> char_passthrough_pipe;
+  typedef sqeazy::bmpl::vector< sqeazy::pass_through<unsigned char> > uint8_passthrough;
+  typedef sqeazy::pipeline<uint8_passthrough> uint8_passthrough_pipe;
 
 
 };
