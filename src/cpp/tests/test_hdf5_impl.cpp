@@ -44,14 +44,6 @@ BOOST_AUTO_TEST_CASE( static_type_instance_works ){
 
 }
 
-// BOOST_AUTO_TEST_CASE( file_not_found ){
-
-//   std::string ipath = "unavailable_";
-//   ipath.append(tfile);
-//   sqeazy::h5_file testme(ipath);
-//   BOOST_CHECK(!testme.ready());
-  
-// }
   
 BOOST_AUTO_TEST_CASE( query_for_dataset ){
 
@@ -121,21 +113,20 @@ BOOST_AUTO_TEST_CASE( write_dataset_with_filter ){
   std::vector<unsigned int> dims(3,4);
 
   bfs::path no_filter_path = "no_filter.h5";
-  sqeazy::h5_file* no_filter = new sqeazy::h5_file(no_filter_path.string(), H5F_ACC_TRUNC);
-  int rvalue = no_filter->store_nd_dataset(dname,
+  sqeazy::h5_file no_filter(no_filter_path.string(), H5F_ACC_TRUNC);
+  int rvalue = no_filter.store_nd_dataset(dname,
 					   retrieved,
 					   dims);
-  delete no_filter;
+
   BOOST_REQUIRE(rvalue == 0);
   //does the write occur here? or at destruction of the object
   
-  sqeazy::h5_file* testme = new sqeazy::h5_file(test_output_name, H5F_ACC_TRUNC);
+  sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
 
-  rvalue = testme->pipeline_nd_dataset_to_file(dname,
+  rvalue = testme.pipeline_nd_dataset_to_file(dname,
 					       retrieved,
 					       dims,
 					       sqeazy::bswap1_lz4_pipe());
-  delete testme;
   BOOST_REQUIRE(rvalue == 0);
   BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
   BOOST_REQUIRE_GT(bfs::file_size(no_filter_path), bfs::file_size(test_output_path));
@@ -153,13 +144,13 @@ BOOST_AUTO_TEST_CASE( roundtrip_dataset_with_filter ){
   std::vector<unsigned int> dims(3,4);
   
   
-  sqeazy::h5_file* testme = new sqeazy::h5_file(test_output_name, H5F_ACC_TRUNC);
+  sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
 
-  int rvalue = testme->pipeline_nd_dataset_to_file(dname,
-						   to_store,
-						   dims,
-						   sqeazy::bswap1_lz4_pipe());
-  delete testme;
+  int rvalue = testme.pipeline_nd_dataset_to_file(dname,
+						  to_store,
+						  dims,
+						  sqeazy::bswap1_lz4_pipe());
+
   
   BOOST_REQUIRE(rvalue == 0);
   BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
@@ -168,16 +159,44 @@ BOOST_AUTO_TEST_CASE( roundtrip_dataset_with_filter ){
   std::vector<unsigned short> retrieved;
   std::vector<unsigned int> shape;
 
-  testme = new sqeazy::h5_file(test_output_name);
-  testme->load_nd_dataset(dname, retrieved, shape);
-  delete testme;
+  sqeazy::h5_file testme_ro(test_output_name);
+  rvalue = testme_ro.load_nd_dataset(dname, retrieved, shape);
+
   BOOST_REQUIRE_EQUAL(rvalue,0);
   BOOST_REQUIRE_EQUAL(shape.size(), dims.size());
   BOOST_REQUIRE_EQUAL(retrieved.size(), to_store.size());
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(to_store.begin(), to_store.end(), retrieved.begin(), retrieved.end());
   
   if(bfs::exists(test_output_path))
     bfs::remove(test_output_path);
 
+}
+
+BOOST_AUTO_TEST_CASE( loading_to_wrong_type_produces_error ){
+  std::vector<unsigned short> to_store(64,42);
+  std::vector<unsigned int> dims(3,4);
+    
+  sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
+
+  int rvalue = testme.pipeline_nd_dataset_to_file(dname,
+						  to_store,
+						  dims,
+						  sqeazy::bswap1_lz4_pipe());
+  
+  BOOST_REQUIRE(rvalue == 0);
+  BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
+
+  
+  std::vector<unsigned char> retrieved;
+  std::vector<unsigned int> shape;
+
+  sqeazy::h5_file testme_ro(test_output_name);
+  rvalue = testme_ro.load_nd_dataset(dname, retrieved, shape);
+
+  BOOST_REQUIRE_EQUAL(rvalue,1);
+  
+  if(bfs::exists(test_output_path))
+    bfs::remove(test_output_path);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

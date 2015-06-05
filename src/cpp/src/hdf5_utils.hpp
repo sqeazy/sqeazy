@@ -260,7 +260,8 @@ namespace sqeazy {
       dataset_->write(&_payload[0],
 		     hdf5_dtype<T>::instance()
 		     );
-
+      
+      file_->flush(H5F_SCOPE_LOCAL);//this call performs i/o
       rvalue = 0;
       return rvalue;
       
@@ -313,6 +314,8 @@ namespace sqeazy {
 		     hdf5_dtype<T>::instance()
 		     );
 
+      
+      file_->flush(H5F_SCOPE_LOCAL);//this call performs i/o
       rvalue = 0;
       return rvalue;
       
