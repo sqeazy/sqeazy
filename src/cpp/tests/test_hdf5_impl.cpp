@@ -17,6 +17,8 @@ typedef sqeazy::array_fixture<unsigned char> uint8_cube_of_8;
 
 namespace bfs = boost::filesystem;
 
+
+
 struct helpers_fixture {
 
   const std::string     tfile;
@@ -44,14 +46,68 @@ BOOST_AUTO_TEST_CASE( static_type_instance_works ){
 
 }
 
+BOOST_AUTO_TEST_CASE( load_dataset_anew ){
   
+  sqeazy::h5_file testme(tfile);
+  BOOST_CHECK(testme.ready());
+  BOOST_REQUIRE_EQUAL(testme.load_h5_dataset(dname),0);
+  
+}
+
+BOOST_AUTO_TEST_CASE( load_dataset_wrong_name ){
+  
+  sqeazy::h5_file testme(tfile);
+  BOOST_CHECK(testme.ready());
+  BOOST_CHECK(testme.load_h5_dataset(dname + "_foo"));
+  BOOST_CHECK(!testme.dataset_);
+  
+}
+
 BOOST_AUTO_TEST_CASE( query_for_dataset ){
 
   sqeazy::h5_file testme(tfile);
   BOOST_CHECK(testme.ready());
   BOOST_CHECK(testme.has_dataset(dname));
+    
+}
+
+BOOST_AUTO_TEST_CASE( query_for_dataset_sizeof ){
+
+  sqeazy::h5_file testme(tfile);
+  BOOST_CHECK(testme.ready());
+  BOOST_CHECK(testme.type_size_in_byte(dname) == 4);
   
 }
+
+BOOST_AUTO_TEST_CASE( query_for_dataset_is_float ){
+
+  sqeazy::h5_file testme(tfile);
+  BOOST_CHECK(testme.ready());
+  BOOST_CHECK(!testme.is_float(dname));
+  
+}
+
+BOOST_AUTO_TEST_CASE( query_for_dataset_is_int ){
+
+  sqeazy::h5_file testme(tfile);
+  BOOST_CHECK(testme.ready());
+  BOOST_CHECK(testme.is_integer(dname));
+  
+}
+
+BOOST_AUTO_TEST_CASE( query_for_dataset_shape ){
+
+  std::vector<int> shape;
+  
+  sqeazy::h5_file testme(tfile);
+  testme.shape(shape,dname);
+  
+  BOOST_REQUIRE_EQUAL(shape.size(), 2);
+  BOOST_CHECK_EQUAL(shape[0], 5);
+  BOOST_CHECK_EQUAL(shape[1], 6);
+}
+
+
 
 BOOST_AUTO_TEST_CASE( load_dataset ){
 
@@ -61,7 +117,7 @@ BOOST_AUTO_TEST_CASE( load_dataset ){
   sqeazy::h5_file testme(tfile);
   BOOST_CHECK(testme.ready());
 
-  int rvalue = testme.load_nd_dataset(dname,retrieved,dims);
+  int rvalue = testme.read_nd_dataset(dname,retrieved,dims);
   BOOST_REQUIRE(rvalue == 0);
   BOOST_CHECK(dims[0] == 5);
   BOOST_CHECK(dims[1] == 6);
@@ -79,7 +135,7 @@ BOOST_AUTO_TEST_CASE( write_dataset ){
   sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
   BOOST_CHECK(testme.ready());
 
-  int rvalue = testme.store_nd_dataset(dname,retrieved,dims);
+  int rvalue = testme.write_nd_dataset(dname,retrieved,dims);
   BOOST_REQUIRE(rvalue == 0);
   BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
 
@@ -95,10 +151,10 @@ BOOST_AUTO_TEST_CASE( write_dataset_with_empty_filter ){
   sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
   BOOST_CHECK(testme.ready());
 
-  int rvalue = testme.pipeline_nd_dataset_to_file(dname,
-						  retrieved,
-						  dims,
-						  sqeazy::int32_passthrough_pipe());
+  int rvalue = testme.write_nd_dataset(dname,
+				       retrieved,
+				       dims,
+				       sqeazy::int32_passthrough_pipe());
   BOOST_REQUIRE(rvalue == 0);
   BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
 
@@ -114,7 +170,7 @@ BOOST_AUTO_TEST_CASE( write_dataset_with_filter ){
 
   bfs::path no_filter_path = "no_filter.h5";
   sqeazy::h5_file no_filter(no_filter_path.string(), H5F_ACC_TRUNC);
-  int rvalue = no_filter.store_nd_dataset(dname,
+  int rvalue = no_filter.write_nd_dataset(dname,
 					   retrieved,
 					   dims);
 
@@ -123,10 +179,10 @@ BOOST_AUTO_TEST_CASE( write_dataset_with_filter ){
   
   sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
 
-  rvalue = testme.pipeline_nd_dataset_to_file(dname,
-					       retrieved,
-					       dims,
-					       sqeazy::bswap1_lz4_pipe());
+  rvalue = testme.write_nd_dataset(dname,
+				   retrieved,
+				   dims,
+				   sqeazy::bswap1_lz4_pipe());
   BOOST_REQUIRE(rvalue == 0);
   BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
   BOOST_REQUIRE_GT(bfs::file_size(no_filter_path), bfs::file_size(test_output_path));
@@ -146,10 +202,10 @@ BOOST_AUTO_TEST_CASE( roundtrip_dataset_with_filter ){
   
   sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
 
-  int rvalue = testme.pipeline_nd_dataset_to_file(dname,
-						  to_store,
-						  dims,
-						  sqeazy::bswap1_lz4_pipe());
+  int rvalue = testme.write_nd_dataset(dname,
+				       to_store,
+				       dims,
+				       sqeazy::bswap1_lz4_pipe());
 
   
   BOOST_REQUIRE(rvalue == 0);
@@ -160,7 +216,7 @@ BOOST_AUTO_TEST_CASE( roundtrip_dataset_with_filter ){
   std::vector<unsigned int> shape;
 
   sqeazy::h5_file testme_ro(test_output_name);
-  rvalue = testme_ro.load_nd_dataset(dname, retrieved, shape);
+  rvalue = testme_ro.read_nd_dataset(dname, retrieved, shape);
 
   BOOST_REQUIRE_EQUAL(rvalue,0);
   BOOST_REQUIRE_EQUAL(shape.size(), dims.size());
@@ -178,10 +234,10 @@ BOOST_AUTO_TEST_CASE( loading_to_wrong_type_produces_error ){
     
   sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
 
-  int rvalue = testme.pipeline_nd_dataset_to_file(dname,
-						  to_store,
-						  dims,
-						  sqeazy::bswap1_lz4_pipe());
+  int rvalue = testme.write_nd_dataset(dname,
+				       to_store,
+				       dims,
+				       sqeazy::bswap1_lz4_pipe());
   
   BOOST_REQUIRE(rvalue == 0);
   BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
@@ -191,7 +247,7 @@ BOOST_AUTO_TEST_CASE( loading_to_wrong_type_produces_error ){
   std::vector<unsigned int> shape;
 
   sqeazy::h5_file testme_ro(test_output_name);
-  rvalue = testme_ro.load_nd_dataset(dname, retrieved, shape);
+  rvalue = testme_ro.read_nd_dataset(dname, retrieved, shape);
 
   BOOST_REQUIRE_EQUAL(rvalue,1);
   

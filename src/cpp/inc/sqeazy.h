@@ -440,7 +440,7 @@ SQY_FUNCTION_PREFIX int SQY_h5_query_rank(const char* fname,
 	fname 					: hdf5 file to store data in
 	dname 					: dataset name inside hdf5 file 
 	shape					: shape of the stored data (in row-wise ordering a la C)
-	rank					: rank of the stored data
+	rank					: rank of the stored data (single integer)
 
 	Returns 0 if success, another code if there was an error
 
@@ -451,7 +451,7 @@ SQY_FUNCTION_PREFIX int SQY_h5_query_shape(const char* fname,
 					   unsigned rank);
 
 /*
-	SQY_h5_read - load contents of hdf5 file into data
+	SQY_h5_read_UI16 - load contents of hdf5 file into data
 
 	fname 					: hdf5 file to store data in
 	dname 					: dataset name inside hdf5 file 
@@ -460,8 +460,8 @@ SQY_FUNCTION_PREFIX int SQY_h5_query_shape(const char* fname,
 	Returns 0 if success, another code if there was an error
 
 */
-SQY_FUNCTION_PREFIX int SQY_h5_read(const char* fname,
-				    const char* dname,
-				    char* data);
+SQY_FUNCTION_PREFIX int SQY_h5_read_UI16(const char* fname,
+					 const char* dname,
+					 char* data);
 
 #endif

@@ -3,6 +3,8 @@
 
 #include <limits>
 #include <cmath>
+#include <vector>
+#include <set>
 #include "boost/filesystem.hpp"
 
 namespace bfs = boost::filesystem;
@@ -13,7 +15,26 @@ namespace bfs = boost::filesystem;
 #include "sqeazy_predef_pipelines.hpp"
 #include "sqeazy_h5_filter.hpp"
 
+namespace H5{
+  std::string get_ds_name(const H5::DataSet& _ds)
+  {
+    size_t len = H5Iget_name(_ds.getId(),NULL,0);
+    std::string rvalue;rvalue.resize(len);
+    H5Iget_name(_ds.getId(),&rvalue[0],len+1);
+    return rvalue;
+  }
 
+  //TODO: replace by cast operator
+  std::string get_id_name(const hid_t& _hid)
+  {
+    size_t len = H5Iget_name(_hid,NULL,0);
+    std::string rvalue;rvalue.resize(len);
+    H5Iget_name(_hid,&rvalue[0],len+1);
+    return rvalue;
+  }
+}
+
+    
 namespace sqeazy {
 
   /**
@@ -103,6 +124,7 @@ namespace sqeazy {
     
     return score == 0;
   }
+
   
   struct h5_file
   {
@@ -114,7 +136,6 @@ namespace sqeazy {
     H5::Exception	error_;
     
     bool		ready_;
-
    
     
     h5_file(const std::string& _fname, unsigned _flag = H5F_ACC_RDONLY):
@@ -122,7 +143,8 @@ namespace sqeazy {
       file_(0),
       dataspace_(0),
       dataset_(0),
-      ready_(false){
+      ready_(false)
+    {
 
       ready_ = open(_fname, _flag);
       
@@ -136,15 +158,16 @@ namespace sqeazy {
 	file_ = new H5::H5File(_fname, flag);
       }
       catch(H5::FileIException & local_error)
-      {
-	error_ = local_error;
-	return false;
-      }
+	{
+	  error_ = local_error;
+	  return false;
+	}
       catch(H5::Exception & local_error){
 	error_ = local_error;
 	return false;
       }
-      
+
+          
       return true;
     }
     
@@ -163,24 +186,137 @@ namespace sqeazy {
       return ready_ && (file_ != 0);
     }
 
-    bool has_dataset(const std::string& _dname){
+    /**
+       \brief load hdf5 dataset from file file_ into dataset_ 
+       (if dataset_ is the same as _dname, do nothing)
+       
+       \param[in] 
+       
+       \return 
+       \retval 
+       
+    */
+    int load_h5_dataset(const std::string& _dname){
+      int rvalue = 1;
 
-      //TODO: is there any way to query the h5file for an object?
+      //dataset already loaded!
+      if(dataset_ && H5::get_ds_name(*dataset_) == _dname)
+	return 0;
+      
+      //dataset not present in file
+      if(!has_dataset(_dname))
+	return 1;
+
+      //open dataset
+      H5::DataSet* local = 0;
       try {
-	H5::DataSet ds(file_->openDataSet( _dname ));
+	local = new H5::DataSet(file_->openDataSet( _dname ));
       }
       catch(H5::DataSetIException & error){
-	return false;
+	return rvalue;
       }
       catch(H5::Exception & error){
-	return false;
+	return rvalue;
       }
+
+      //clean memory
+      if(dataset_)
+	delete dataset_;
+
+      //load local onto dataset_
+      dataset_ = local;
+      rvalue = 0;
+            
+      return rvalue;
+    }
+    
+    bool has_dataset(const std::string& _dname) const {
+
+      //taken from http://stackoverflow.com/a/18468735
+      htri_t dataset_status = H5Lexists(file_->getId(), _dname.c_str(), H5P_DEFAULT);
+      return (dataset_status>0);
       
-      return true;
     }
 
+    int type_size_in_byte(const std::string& _dname) const{
+
+      int rvalue = 0;
+
+      if(!has_dataset(_dname))
+	return rvalue;
+      
+      H5::DataSet* ds = 0;
+      try {
+	ds = new H5::DataSet(file_->openDataSet( _dname ));
+      }
+      catch(H5::Exception & error){
+	return rvalue;
+      }
+
+      rvalue = ds->getDataType().getSize();
+      delete ds;
+      
+      return rvalue;
+    }
+
+
+    bool is_integer(const std::string& _dname) const {
+
+      bool rvalue = false;
+      if(!has_dataset(_dname))
+	return rvalue;
+ 
+      H5::DataSet* ds = 0;
+      try {
+	ds = new H5::DataSet(file_->openDataSet( _dname ));
+      }
+      catch(H5::Exception & error){
+	return rvalue;
+      }
+
+      H5T_class_t type_class = ds->getTypeClass();
+      rvalue = (type_class == H5T_INTEGER);
+      
+      delete ds;
+      
+      return rvalue;
+    }
+
+    bool is_float(const std::string& _dname) const {
+      
+      bool rvalue = !is_integer(_dname);
+
+      return rvalue;
+    }
+    
+    template <typename T>
+    void shape(std::vector<T>& _shape, const std::string& _dname = "" ) const {
+
+      _shape.clear();
+      
+      if(!has_dataset(_dname))
+	return;
+ 
+      H5::DataSet* ds = 0;
+      try {
+	ds = new H5::DataSet(file_->openDataSet( _dname ));
+      }
+      catch(H5::Exception & error){
+	return;
+      }
+
+      
+      _shape.resize(ds->getSpace().getSimpleExtentNdims());
+
+      std::vector<hsize_t> retrieved_dims(_shape.size());
+      int ndims = ds->getSpace().getSimpleExtentDims( (hsize_t*)&retrieved_dims[0], NULL);
+      std::copy(retrieved_dims.begin(), retrieved_dims.end(), _shape.begin());
+
+      delete ds;
+    }
+      
     template <typename T, typename U>
-    int load_nd_dataset(const std::string& _dname, std::vector<T>& _payload, std::vector<U>& _shape){
+    int read_nd_dataset(const std::string& _dname, std::vector<T>& _payload, std::vector<U>& _shape){
 
       int rvalue = 1;
       if(!_payload.empty())
@@ -189,8 +325,8 @@ namespace sqeazy {
       if(!_shape.empty())
 	_shape.clear();
 
-      if(ready() && has_dataset(_dname))
-	dataset_ = new H5::DataSet(file_->openDataSet( _dname ));
+      if(ready())
+	load_h5_dataset( _dname );
 
       if(!dataset_)
 	return 1;
@@ -236,7 +372,7 @@ namespace sqeazy {
     }
 
     template <typename T, typename U>
-    int store_nd_dataset(const std::string& _dname, const std::vector<T>& _payload, const std::vector<U>& _shape){
+    int write_nd_dataset(const std::string& _dname, const std::vector<T>& _payload, const std::vector<U>& _shape){
 
       int rvalue = 1;
       std::vector<hsize_t> dims(_shape.begin(), _shape.end());
@@ -258,8 +394,8 @@ namespace sqeazy {
 						       plist) );
 
       dataset_->write(&_payload[0],
-		     hdf5_dtype<T>::instance()
-		     );
+		      hdf5_dtype<T>::instance()
+		      );
       
       file_->flush(H5F_SCOPE_LOCAL);//this call performs i/o
       rvalue = 0;
@@ -268,15 +404,15 @@ namespace sqeazy {
     }
 
     template <typename T, typename U, typename pipe_type>
-    int pipeline_nd_dataset_to_file(const std::string& _dname,
-				    const std::vector<T>& _payload,
-				    const std::vector<U>& _shape,
-				    pipe_type
-				    ){
+    int write_nd_dataset(const std::string& _dname,
+			 const std::vector<T>& _payload,
+			 const std::vector<U>& _shape,
+			 pipe_type
+			 ){
 
       static const std::string filter_name = pipe_type::name();
       if(filter_name.empty())
-	return store_nd_dataset(_dname, _payload, _shape);
+	return write_nd_dataset(_dname, _payload, _shape);
 	
       int rvalue = 1;
       std::vector<hsize_t> dims(_shape.begin(), _shape.end());
@@ -295,7 +431,7 @@ namespace sqeazy {
 
       if(!filter_name.empty()){
 	std::copy(filter_name.begin(), filter_name.end(),(char*)&cd_values[0]);
-      	plist.setFilter(H5Z_FILTER_SQY,
+	plist.setFilter(H5Z_FILTER_SQY,
 			H5Z_FLAG_MANDATORY,
 			cd_values.size(),
 			&cd_values[0]);
@@ -311,8 +447,8 @@ namespace sqeazy {
 						       plist) );
 
       dataset_->write(&_payload[0],
-		     hdf5_dtype<T>::instance()
-		     );
+		      hdf5_dtype<T>::instance()
+		      );
 
       
       file_->flush(H5F_SCOPE_LOCAL);//this call performs i/o
@@ -373,9 +509,9 @@ namespace sqeazy {
 	// 			 &cd_values[0]);
 	// Create the dataset.      
 	H5::DataSet*  dataset = new H5::DataSet(file.createDataSet( _dname, 
-								hdf5_dtype<data_type>::instance(),
-								dataspace, 
-								plist) );
+								    hdf5_dtype<data_type>::instance(),
+								    dataspace, 
+								    plist) );
 
 	// Write data to dataset.
 	dataset->write(&_payload[0],
