@@ -207,6 +207,9 @@ BOOST_AUTO_TEST_CASE( roundtrip_no_filter ){
 
   BOOST_REQUIRE_EQUAL(rvalue,0);
 
+  data.to_play_with.clear();
+  data.to_play_with.resize(data.constant_cube.size());
+  
   rvalue = SQY_h5_read_UI16(test_output_name.c_str(),
 			    dname.c_str(),
 			    &data.to_play_with[0]);
@@ -215,6 +218,40 @@ BOOST_AUTO_TEST_CASE( roundtrip_no_filter ){
   BOOST_REQUIRE_EQUAL_COLLECTIONS(data.to_play_with.begin(), data.to_play_with.end(),
 				  data.constant_cube.begin(), data.constant_cube.end());
   bfs::remove(test_output_name);
+}
+
+BOOST_AUTO_TEST_CASE( write_filter ){
+
+  uint16_cube_of_8 data;
+
+  bfs::path no_filter_path = "no_filter.h5";
+  
+  int rvalue = SQY_h5_write_UI16(no_filter_path.string().c_str(),
+				 dname.c_str(),
+				 &data.constant_cube[0],
+				 data.dims.size(),
+				 &data.dims[0],
+				 "");
+
+  BOOST_REQUIRE_EQUAL(rvalue,0);
+  BOOST_REQUIRE(bfs::exists(no_filter_path));
+  BOOST_REQUIRE_GT(bfs::file_size(no_filter_path),0);
+  
+  rvalue = SQY_h5_write_UI16(test_output_name.c_str(),
+			     dname.c_str(),
+			     &data.constant_cube[0],
+			     data.dims.size(),
+			     &data.dims[0],
+			     "foo");
+
+  BOOST_REQUIRE_EQUAL(rvalue,0);
+  BOOST_REQUIRE(bfs::exists(test_output_path));
+  BOOST_REQUIRE_GT(bfs::file_size(test_output_path),0);
+  BOOST_REQUIRE_LT(bfs::file_size(test_output_path),bfs::file_size(no_filter_path));
+
+    
+  bfs::remove(test_output_name);
+  bfs::remove(no_filter_path);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -393,12 +393,14 @@ int SQY_h5_write_UI16(const char* fname,
 				       data,
 				       shape,
 				       shape_size);
-    // else
-    //   rvalue = loaded.write_nd_dataset(dname,
-    // 				       data,
-    // 				       shape,
-    // 				       shape_size,
-    // 				       );
+    else{
+      rvalue = loaded.write_nd_dataset(dname,
+				       filter,
+    				       data,
+    				       shape,
+    				       shape_size
+    				       );
+    }
     
   }
 

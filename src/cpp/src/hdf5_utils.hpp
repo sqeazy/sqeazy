@@ -510,7 +510,63 @@ namespace sqeazy {
       return rvalue;
       
     }
-    
+
+
+    template <typename T, typename U>
+    int write_nd_dataset(const std::string& _dname,
+			 const std::string& _filter_name,
+			 const T* _payload,
+			 U* _shape,
+			 const unsigned _shape_size
+			 ){
+
+
+      if(_filter_name.empty())
+	return write_nd_dataset(_dname, _payload, _shape, _shape_size);
+	
+      int rvalue = 1;
+      std::vector<hsize_t> dims(_shape, _shape + _shape_size);
+      std::vector<hsize_t> chunk_shape(dims);
+      
+      if(!dataspace_)
+	delete dataspace_;
+
+      dataspace_ = new H5::DataSpace(dims.size(), &dims[0]);
+      H5::DSetCreatPropList  plist;
+      plist.setChunk(chunk_shape.size(), &chunk_shape[0]);
+
+      
+      size_t cd_values_size = std::ceil(float(_filter_name.size())/(sizeof(int)/sizeof(char)));
+      std::vector<unsigned> cd_values(cd_values_size,0);
+
+      if(!_filter_name.empty()){
+	std::copy(_filter_name.begin(), _filter_name.end(),(char*)&cd_values[0]);
+	plist.setFilter(H5Z_FILTER_SQY,
+			H5Z_FLAG_MANDATORY,
+			cd_values.size(),
+			&cd_values[0]);
+      }
+      
+      
+      if(!dataset_)
+	delete dataset_;
+
+      dataset_ = new H5::DataSet(file_->createDataSet( _dname, 
+						       hdf5_dtype<T>::instance(),
+						       *dataspace_, 
+						       plist) );
+
+      dataset_->write(_payload,
+		      hdf5_dtype<T>::instance()
+		      );
+
+      
+      file_->flush(H5F_SCOPE_LOCAL);//this call performs i/o
+      rvalue = 0;
+      return rvalue;
+      
+    }
+
   };
 
   
