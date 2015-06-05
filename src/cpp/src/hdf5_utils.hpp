@@ -177,8 +177,10 @@ namespace sqeazy {
 
       if(dataset_)
 	delete dataset_;
+
+      if(file_)
+	file_->close();
       
-      file_->close();
       delete file_;
     }
 
@@ -277,6 +279,33 @@ namespace sqeazy {
       H5T_class_t type_class = ds->getTypeClass();
       rvalue = (type_class == H5T_INTEGER);
       
+      
+    
+      delete ds;
+      
+      return rvalue;
+    }
+
+    bool is_signed(const std::string& _dname) const {
+
+      bool rvalue = false;
+      if(!has_dataset(_dname))
+	return rvalue;
+ 
+      H5::DataSet* ds = 0;
+      try {
+	ds = new H5::DataSet(file_->openDataSet( _dname ));
+      }
+      catch(H5::Exception & error){
+	return rvalue;
+      }
+
+      H5T_class_t type_class = ds->getTypeClass();
+      if(type_class == H5T_INTEGER){
+	const H5T_sign_t fsign = ds->getIntType().getSign();
+	rvalue = (fsign != 0);
+      }
+      
       delete ds;
       
       return rvalue;
@@ -314,13 +343,19 @@ namespace sqeazy {
 
       delete ds;
     }
-      
+
     template <typename T, typename U>
     int read_nd_dataset(const std::string& _dname, std::vector<T>& _payload, std::vector<U>& _shape){
-
-      int rvalue = 1;
       if(!_payload.empty())
 	_payload.clear();
+
+      return read_nd_dataset(_dname, &_payload[0], _shape);
+    }
+    
+    template <typename T, typename U>
+    int read_nd_dataset(const std::string& _dname, T* _payload, std::vector<U>& _shape){
+
+      int rvalue = 1;
 
       if(!_shape.empty())
 	_shape.clear();
@@ -352,7 +387,7 @@ namespace sqeazy {
 	return rvalue;
       }
 	
-      _payload.resize(nelements);
+      //_payload.resize(nelements);
       try{
 	dataset_->read(&_payload[0], hdf5_dtype<T>::instance() );
       }
@@ -365,7 +400,7 @@ namespace sqeazy {
       _shape.resize(rank);
       std::copy(retrieved_dims.begin(), retrieved_dims.end(), _shape.begin());
 
-      if(!_shape.empty() && !_payload.empty())
+      if(!_shape.empty())
 	rvalue = 0;
       
       return rvalue;
@@ -373,9 +408,17 @@ namespace sqeazy {
 
     template <typename T, typename U>
     int write_nd_dataset(const std::string& _dname, const std::vector<T>& _payload, const std::vector<U>& _shape){
+      return write_nd_dataset(_dname, &_payload[0], &_shape[0], _shape.size());
+    }
 
+      template <typename T, typename U>
+    int write_nd_dataset(const std::string& _dname,
+			 const T* _payload,
+			 U* _shape,
+			 const unsigned& _shape_size){
+	
       int rvalue = 1;
-      std::vector<hsize_t> dims(_shape.begin(), _shape.end());
+      std::vector<hsize_t> dims(_shape, _shape + _shape_size);
       std::vector<hsize_t> chunk_shape(dims);
       
       if(!dataspace_)
@@ -393,7 +436,7 @@ namespace sqeazy {
 						       *dataspace_, 
 						       plist) );
 
-      dataset_->write(&_payload[0],
+      dataset_->write(_payload,
 		      hdf5_dtype<T>::instance()
 		      );
       
@@ -410,12 +453,23 @@ namespace sqeazy {
 			 pipe_type
 			 ){
 
+      return write_nd_dataset(_dname, &_payload[0], &_shape[0], _shape.size(), pipe_type());
+    }
+    
+    template <typename T, typename U, typename pipe_type>
+    int write_nd_dataset(const std::string& _dname,
+			 const T* _payload,
+			 U* _shape,
+			 const unsigned _shape_size,
+			 pipe_type
+			 ){
+
       static const std::string filter_name = pipe_type::name();
       if(filter_name.empty())
-	return write_nd_dataset(_dname, _payload, _shape);
+	return write_nd_dataset(_dname, _payload, _shape, _shape_size);
 	
       int rvalue = 1;
-      std::vector<hsize_t> dims(_shape.begin(), _shape.end());
+      std::vector<hsize_t> dims(_shape, _shape + _shape_size);
       std::vector<hsize_t> chunk_shape(dims);
       
       if(!dataspace_)
@@ -446,7 +500,7 @@ namespace sqeazy {
 						       *dataspace_, 
 						       plist) );
 
-      dataset_->write(&_payload[0],
+      dataset_->write(_payload,
 		      hdf5_dtype<T>::instance()
 		      );
 

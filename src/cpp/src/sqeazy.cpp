@@ -287,33 +287,142 @@ int SQY_version_triple(int* version){
 #include "sqeazy_hdf5_impl.hpp"
 #include "hdf5_utils.hpp"
 
+
+
 int SQY_h5_query_sizeof(const char* fname,
 			const char* dname,
 			unsigned* _sizeof){
+
+  int rvalue = 1;
   
+  H5::Exception::dontPrint();  
   sqeazy::h5_file loaded(fname);
   if(!loaded.ready())
-    return 1;
+    return rvalue;
   else{
     std::string dn = dname;
     *_sizeof = loaded.type_size_in_byte(dn);
+    rvalue = (*_sizeof) > 0 ? 0 : 1;
   }
   
-  return 0;
+  return rvalue;
 }
 
 int SQY_h5_query_dtype(const char* fname,
 			const char* dname,
 			unsigned* dtype){
-  
+
+  H5::Exception::dontPrint();
   sqeazy::h5_file loaded(fname);
   if(!loaded.ready())
     return 1;
   else{
     std::string dn = dname;
-    *dtype = loaded.type_size_in_byte(dn);
+    *dtype = 0;
+    if(loaded.is_integer(dn)){
+      *dtype += 1;
+    if(loaded.is_signed(dn))
+      *dtype += 1;
+    }
   }
+
+  return 0;
+}
+
+int SQY_h5_query_ndims(const char* fname,
+		      const char* dname,
+		      unsigned* ndims){
+
+  int rvalue = 1;
+  H5::Exception::dontPrint();
+  sqeazy::h5_file loaded(fname);
+  if(!loaded.ready())
+    return rvalue;
+  else{
+    std::string dn = dname;
+    *ndims = 0;
+    std::vector<int> shape;
+    loaded.shape(shape, dn);
+    rvalue = shape.empty();
+    *ndims = shape.size();
+  }
+
+  return rvalue;
+
+}
+
+int SQY_h5_query_shape(const char* fname,
+		       const char* dname,
+		       unsigned* shape){
+
   
+  int rvalue = 1;
+  H5::Exception::dontPrint();
+  sqeazy::h5_file loaded(fname);
+  if(!loaded.ready())
+    return rvalue;
+  else{
+    std::string dn = dname;
+    *shape = 0;
+    std::vector<int> local;
+    loaded.shape(local, dn);
+    rvalue = local.empty();
+    std::copy(local.begin(), local.end(), shape);
+  }
+
+  return rvalue;
+}
+
+int SQY_h5_write_UI16(const char* fname,
+		      const char* dname,
+		      const unsigned short* data,
+		      unsigned shape_size,
+		      const unsigned* shape,
+		      const char* filter){
+
+  int rvalue = 1;
+  H5::Exception::dontPrint();
+  sqeazy::h5_file loaded(fname, H5F_ACC_TRUNC);
+  if(!loaded.ready())
+    return rvalue;
+  else{
+
+    std::string filter_name = filter;
+    if(filter_name.empty())
+      rvalue = loaded.write_nd_dataset(dname,
+				       data,
+				       shape,
+				       shape_size);
+    // else
+    //   rvalue = loaded.write_nd_dataset(dname,
+    // 				       data,
+    // 				       shape,
+    // 				       shape_size,
+    // 				       );
+    
+  }
+
+  return rvalue;
+}
+
+int SQY_h5_read_UI16(const char* fname,
+		      const char* dname,
+		      unsigned short* data){
+  int rvalue = 1;
+  H5::Exception::dontPrint();
+  sqeazy::h5_file loaded(fname);
+  if(!loaded.ready())
+    return rvalue;
+  if(!loaded.has_dataset(dname))
+    return rvalue;
+  else{
+    std::vector<int> shape;
+    rvalue = loaded.read_nd_dataset(dname,
+				    data,
+				    shape);
+  }
+
+  return rvalue;
 }
 
 #endif

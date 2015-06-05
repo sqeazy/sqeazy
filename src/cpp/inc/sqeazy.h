@@ -402,7 +402,7 @@ SQY_FUNCTION_PREFIX int SQY_h5_query_dtype(const char* fname,
 					   unsigned* dtype);
 
 /*
-	SQY_h5_query_rank - query the rank of the data stored in an hdf5 file (1D, 2D, 3D, ...)
+	SQY_h5_query_ndims - query the rank of the data stored in an hdf5 file (1D, 2D, 3D, ...)
 
 	fname 					: hdf5 file to store data in
 	dname 					: dataset name inside hdf5 file 
@@ -411,7 +411,7 @@ SQY_FUNCTION_PREFIX int SQY_h5_query_dtype(const char* fname,
 	Returns 0 if success, another code if there was an error
 
 */
-SQY_FUNCTION_PREFIX int SQY_h5_query_rank(const char* fname,
+SQY_FUNCTION_PREFIX int SQY_h5_query_ndims(const char* fname,
 					  const char* dname,
 					  unsigned* rank);
 
@@ -420,19 +420,17 @@ SQY_FUNCTION_PREFIX int SQY_h5_query_rank(const char* fname,
 
 	fname 					: hdf5 file to store data in
 	dname 					: dataset name inside hdf5 file 
-	shape					: shape of the stored data (in row-wise ordering a la C)
-	rank					: rank of the stored data (single integer)
+	shape					: shape of the stored data (in row-wise ordering a la C), externally allocated
 
 	Returns 0 if success, another code if there was an error
 
 */
 SQY_FUNCTION_PREFIX int SQY_h5_query_shape(const char* fname,
 					   const char* dname,
-					   unsigned* shape,
-					   unsigned rank);
+					   unsigned* shape);
 
 /*
-	SQY_h5_read_UI16 - load contents of hdf5 file into data
+	SQY_h5_read_UI16 - load contents of hdf5 file into data (if the dataset on disk is found to be compressed by sqeazy, it is uncompressed)
 
 	fname 					: hdf5 file to store data in
 	dname 					: dataset name inside hdf5 file 
@@ -443,9 +441,9 @@ SQY_FUNCTION_PREFIX int SQY_h5_query_shape(const char* fname,
 */
 SQY_FUNCTION_PREFIX int SQY_h5_read_UI16(const char* fname,
 					 const char* dname,
-					 char* data);
+					 unsigned short* data);
 /*
-	SQY_h5_write_UI16 - store unsigned 16-bit int buffer in hdf5 file.
+	SQY_h5_write_UI16 - store unsigned 16-bit int buffer in hdf5 file (no compression is applied).
 
 	fname 					: hdf5 file to store data in
 	dname 					: dataset name inside hdf5 file 
