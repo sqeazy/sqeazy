@@ -463,4 +463,20 @@ SQY_FUNCTION_PREFIX int SQY_h5_write_UI16(const char* fname,
 					  const unsigned* shape,
 					  const char* filter);
 
+/*
+	SQY_h5_write - store compressed data into file.
+
+	fname 					: hdf5 file to store data in
+	dname 					: dataset name inside hdf5 file 
+	data					: compressed data
+	data_size				: size of data in byte
+
+	Returns 0 if success, another code if there was an error
+
+*/
+SQY_FUNCTION_PREFIX int SQY_h5_write(const char* fname,
+				     const char* dname,
+				     const char* data,
+				     unsigned long data_size);
+
 #endif
