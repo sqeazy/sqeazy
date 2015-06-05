@@ -368,33 +368,14 @@ SQY_FUNCTION_PREFIX int SQY_Version_Triple(int* version);
 ///////////////////////////////////////////////////////////////////////////////////
 // SQY HDF5 I/O functions 
 
-/*
-	SQY_h5_write_UI16 - store unsigned 16-bit int buffer in hdf5 file.
-
-	fname 					: hdf5 file to store data in
-	dname 					: dataset name inside hdf5 file 
-	data					: unsigned 16-bit data to compress and store
-	shape_size				: number of dimensions in data
-	shape					: dimension of data
-	
-	filter					: filter to use
-
-	Returns 0 if success, another code if there was an error
-
-*/
-SQY_FUNCTION_PREFIX int SQY_h5_write_UI16(const char* fname,
-					  const char* dname,
-					  const unsigned short* data,
-					  unsigned shape_size,
-					  const unsigned* shape,
-					  const char* filter);
 
 /*
 	SQY_h5_query_sizeof - query the size of the datatype stored in an hdf5 file (in byte)
 
 	fname 					: hdf5 file to store data in
 	dname 					: dataset name inside hdf5 file 
-	sizeof					: number of bytes the stored data type is wide
+	_sizeof					: number of bytes the stored data type is wide 
+						  (filled with 0 if dataset is not found)
 
 	Returns 0 if success, another code if there was an error
 
@@ -463,5 +444,25 @@ SQY_FUNCTION_PREFIX int SQY_h5_query_shape(const char* fname,
 SQY_FUNCTION_PREFIX int SQY_h5_read_UI16(const char* fname,
 					 const char* dname,
 					 char* data);
+/*
+	SQY_h5_write_UI16 - store unsigned 16-bit int buffer in hdf5 file.
+
+	fname 					: hdf5 file to store data in
+	dname 					: dataset name inside hdf5 file 
+	data					: unsigned 16-bit data to compress and store
+	shape_size				: number of dimensions in data
+	shape					: dimension of data
+	
+	filter					: filter to use
+
+	Returns 0 if success, another code if there was an error
+
+*/
+SQY_FUNCTION_PREFIX int SQY_h5_write_UI16(const char* fname,
+					  const char* dname,
+					  const unsigned short* data,
+					  unsigned shape_size,
+					  const unsigned* shape,
+					  const char* filter);
 
 #endif

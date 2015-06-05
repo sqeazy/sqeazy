@@ -355,7 +355,7 @@ int h5_decompress_ushort_dataset(
     unsigned rank = dataspace.getSimpleExtentNdims();
     if(rank!=dims.size()){
       dims.resize(rank);
-      int ndims = dataspace.getSimpleExtentDims( &dims[0], NULL);
+      dataspace.getSimpleExtentDims( &dims[0], NULL);
     }
       
     

@@ -3,9 +3,8 @@
 
 #include "H5Cpp.h"
 
-#include "sqeazy.h"
+//#include "sqeazy.h"
 #include "sqeazy_h5_filter.hpp"
-#include "sqeazy_impl.hpp"
 #include "sqeazy_header.hpp"
 #include "sqeazy_predef_pipelines.hpp"
 

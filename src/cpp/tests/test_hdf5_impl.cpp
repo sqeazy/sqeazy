@@ -11,28 +11,13 @@
 
 #include "hdf5_utils.hpp"
 #include "hdf5_test_utils.hpp"
+#include "hdf5_fixtures.hpp"
 
 typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 typedef sqeazy::array_fixture<unsigned char> uint8_cube_of_8;
 
 namespace bfs = boost::filesystem;
 
-
-
-struct helpers_fixture {
-
-  const std::string     tfile;
-  const std::string	dname;
-  const std::string	test_output_name;
-  const bfs::path	test_output_path;
-
-  helpers_fixture():
-    tfile("sample.h5"),
-    dname("IntArray"),
-    test_output_name("hdf5_helpers.h5"),
-    test_output_path(test_output_name){}
-  
-};
 
 BOOST_FIXTURE_TEST_SUITE( hdf5_utils, helpers_fixture )
 
@@ -335,3 +320,37 @@ BOOST_AUTO_TEST_CASE( write_h5_no_filter ){
 BOOST_AUTO_TEST_SUITE_END()
 
 
+BOOST_FIXTURE_TEST_SUITE( hdf5_filter_available, uint16_cube_of_8 )
+
+BOOST_AUTO_TEST_CASE( filter_available ){
+
+  sqeazy::loaded_hdf5_plugin now;
+  htri_t avail;
+  avail = H5Zfilter_avail(H5Z_FILTER_SQY);
+
+  BOOST_CHECK(avail);
+  
+}
+
+BOOST_AUTO_TEST_CASE( filter_supports_encoding ){
+
+  sqeazy::loaded_hdf5_plugin now;
+  unsigned filter_config = 0;
+  herr_t status = H5Zget_filter_info (H5Z_FILTER_SQY, &filter_config);
+  
+  BOOST_CHECK(filter_config & H5Z_FILTER_CONFIG_ENCODE_ENABLED);
+  
+}
+
+BOOST_AUTO_TEST_CASE( filter_supports_decoding ){
+
+  sqeazy::loaded_hdf5_plugin now;
+  unsigned filter_config = 0;
+  herr_t status = H5Zget_filter_info (H5Z_FILTER_SQY, &filter_config);
+  
+  BOOST_CHECK(filter_config & H5Z_FILTER_CONFIG_DECODE_ENABLED);
+  
+}
+
+
+BOOST_AUTO_TEST_SUITE_END()

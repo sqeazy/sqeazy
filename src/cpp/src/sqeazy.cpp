@@ -285,5 +285,35 @@ int SQY_version_triple(int* version){
 }
 
 #include "sqeazy_hdf5_impl.hpp"
+#include "hdf5_utils.hpp"
+
+int SQY_h5_query_sizeof(const char* fname,
+			const char* dname,
+			unsigned* _sizeof){
+  
+  sqeazy::h5_file loaded(fname);
+  if(!loaded.ready())
+    return 1;
+  else{
+    std::string dn = dname;
+    *_sizeof = loaded.type_size_in_byte(dn);
+  }
+  
+  return 0;
+}
+
+int SQY_h5_query_dtype(const char* fname,
+			const char* dname,
+			unsigned* dtype){
+  
+  sqeazy::h5_file loaded(fname);
+  if(!loaded.ready())
+    return 1;
+  else{
+    std::string dn = dname;
+    *dtype = loaded.type_size_in_byte(dn);
+  }
+  
+}
 
 #endif
