@@ -32,7 +32,17 @@ struct helpers_fixture {
   
 };
 
-BOOST_FIXTURE_TEST_SUITE( hdf5_helpers, helpers_fixture )
+BOOST_FIXTURE_TEST_SUITE( hdf5_utils, helpers_fixture )
+
+BOOST_AUTO_TEST_CASE( static_type_instance_works ){
+
+  BOOST_CHECK(sqeazy::hdf5_dtype<unsigned short>::instance().getSize() == 2);
+  BOOST_CHECK(sqeazy::hdf5_dtype<short>::instance().getSize() == 2);
+
+  BOOST_CHECK(sqeazy::hdf5_dtype<unsigned char>::instance().getSize() == 1);
+  BOOST_CHECK(sqeazy::hdf5_dtype<char>::instance().getSize() == 1);
+
+}
 
 // BOOST_AUTO_TEST_CASE( file_not_found ){
 
@@ -111,22 +121,24 @@ BOOST_AUTO_TEST_CASE( write_dataset_with_filter ){
   std::vector<unsigned int> dims(3,4);
 
   bfs::path no_filter_path = "no_filter.h5";
-  sqeazy::h5_file no_filter(no_filter_path.string(), H5F_ACC_TRUNC);
-  int rvalue = no_filter.store_nd_dataset(dname,
+  sqeazy::h5_file* no_filter = new sqeazy::h5_file(no_filter_path.string(), H5F_ACC_TRUNC);
+  int rvalue = no_filter->store_nd_dataset(dname,
 					   retrieved,
 					   dims);
+  delete no_filter;
   BOOST_REQUIRE(rvalue == 0);
   //does the write occur here? or at destruction of the object
   
-  sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
+  sqeazy::h5_file* testme = new sqeazy::h5_file(test_output_name, H5F_ACC_TRUNC);
 
-  rvalue = testme.pipeline_nd_dataset_to_file(dname,
-					      retrieved,
-					      dims,
-					      sqeazy::bswap1_lz4_pipe());
+  rvalue = testme->pipeline_nd_dataset_to_file(dname,
+					       retrieved,
+					       dims,
+					       sqeazy::bswap1_lz4_pipe());
+  delete testme;
   BOOST_REQUIRE(rvalue == 0);
   BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
-  BOOST_REQUIRE(bfs::file_size(no_filter_path) != bfs::file_size(test_output_path));
+  BOOST_REQUIRE_GT(bfs::file_size(no_filter_path), bfs::file_size(test_output_path));
   
   if(bfs::exists(test_output_path))
     bfs::remove(test_output_path);
@@ -135,21 +147,45 @@ BOOST_AUTO_TEST_CASE( write_dataset_with_filter ){
     bfs::remove(no_filter_path);
 }
 
+BOOST_AUTO_TEST_CASE( roundtrip_dataset_with_filter ){
+
+  std::vector<unsigned short> to_store(64,42);
+  std::vector<unsigned int> dims(3,4);
+  
+  
+  sqeazy::h5_file* testme = new sqeazy::h5_file(test_output_name, H5F_ACC_TRUNC);
+
+  int rvalue = testme->pipeline_nd_dataset_to_file(dname,
+						   to_store,
+						   dims,
+						   sqeazy::bswap1_lz4_pipe());
+  delete testme;
+  
+  BOOST_REQUIRE(rvalue == 0);
+  BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
+
+  
+  std::vector<unsigned short> retrieved;
+  std::vector<unsigned int> shape;
+
+  testme = new sqeazy::h5_file(test_output_name);
+  testme->load_nd_dataset(dname, retrieved, shape);
+  delete testme;
+  BOOST_REQUIRE_EQUAL(rvalue,0);
+  BOOST_REQUIRE_EQUAL(shape.size(), dims.size());
+  BOOST_REQUIRE_EQUAL(retrieved.size(), to_store.size());
+  
+  if(bfs::exists(test_output_path))
+    bfs::remove(test_output_path);
+
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 
   
-BOOST_FIXTURE_TEST_SUITE( hdf5_uint16_suite, uint16_cube_of_8 )
+BOOST_FIXTURE_TEST_SUITE( hdf5_functions_on_uint16, uint16_cube_of_8 )
 
-BOOST_AUTO_TEST_CASE( static_type_instance_works ){
-
-  BOOST_CHECK(sqeazy::hdf5_dtype<unsigned short>::instance().getSize() == 2);
-  BOOST_CHECK(sqeazy::hdf5_dtype<short>::instance().getSize() == 2);
-
-  BOOST_CHECK(sqeazy::hdf5_dtype<unsigned char>::instance().getSize() == 1);
-  BOOST_CHECK(sqeazy::hdf5_dtype<char>::instance().getSize() == 1);
-
-}
 
 BOOST_AUTO_TEST_CASE( write_h5_no_filter ){
 

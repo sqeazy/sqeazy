@@ -273,6 +273,10 @@ namespace sqeazy {
 				    pipe_type
 				    ){
 
+      static const std::string filter_name = pipe_type::name();
+      if(filter_name.empty())
+	return store_nd_dataset(_dname, _payload, _shape);
+	
       int rvalue = 1;
       std::vector<hsize_t> dims(_shape.begin(), _shape.end());
       std::vector<hsize_t> chunk_shape(dims);
@@ -284,7 +288,7 @@ namespace sqeazy {
       H5::DSetCreatPropList  plist;
       plist.setChunk(chunk_shape.size(), &chunk_shape[0]);
 
-      const std::string filter_name = pipe_type::name();
+      
       
       std::vector<unsigned> cd_values(std::ceil(filter_name.size()/(sizeof(int)/sizeof(char))),0);
 
