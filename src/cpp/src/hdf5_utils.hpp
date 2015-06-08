@@ -14,6 +14,7 @@ namespace bfs = boost::filesystem;
 // #include "pipeline.hpp"
 #include "sqeazy_predef_pipelines.hpp"
 #include "sqeazy_h5_filter.hpp"
+#include "sqeazy_hdf5_impl.hpp"
 
 namespace H5{
   std::string get_ds_name(const H5::DataSet& _ds)
@@ -147,7 +148,7 @@ namespace sqeazy {
     {
 
       ready_ = open(_fname, _flag);
-      
+      static sqeazy::loaded_hdf5_plugin now;
       
     }
 
@@ -349,6 +350,16 @@ namespace sqeazy {
       if(!_payload.empty())
 	_payload.clear();
 
+      if(ready())
+	load_h5_dataset( _dname );
+
+      if(!dataset_)
+	return 1;
+
+      shape(_shape,_dname);
+
+      _payload.resize(std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<U>()));
+      
       return read_nd_dataset(_dname, &_payload[0], _shape);
     }
     
@@ -363,9 +374,12 @@ namespace sqeazy {
       if(ready())
 	load_h5_dataset( _dname );
 
+    
       if(!dataset_)
 	return 1;
 
+      H5::DSetCreatPropList	plist(dataset_->getCreatePlist ());
+      
       try{
 	dataspace_ = new H5::DataSpace(dataset_->getSpace());
       }
@@ -386,7 +400,35 @@ namespace sqeazy {
 	rvalue = 1;
 	return rvalue;
       }
+      
+	int		numfilt = plist.getNfilters();
+      H5Z_filter_t 	filter_type;
+      char         	filter_name[1];
+      size_t		filter_name_size = {1};
+      size_t		cd_values_size = {0};
+      unsigned	flags=0;
+      unsigned	filter_info = 0;
+      unsigned	cd_values[1];
 	
+      for(int i = 0;i < numfilt;i++){
+	cd_values_size = 0;
+	filter_info = 0;
+	flags = 0;
+	  
+	filter_type = plist.getFilter(i,
+				      flags,
+				      cd_values_size,
+				      cd_values,
+				      filter_name_size,
+				      filter_name,
+				      filter_info
+				      );
+
+	if(filter_type == H5Z_FILTER_SQY)
+	  break;
+      }
+
+      
       //_payload.resize(nelements);
       try{
 	dataset_->read(&_payload[0], hdf5_dtype<T>::instance() );
@@ -485,6 +527,7 @@ namespace sqeazy {
 
       if(!filter_name.empty()){
 	std::copy(filter_name.begin(), filter_name.end(),(char*)&cd_values[0]);
+	// H5Zregister(H5Z_SQY);
 	plist.setFilter(H5Z_FILTER_SQY,
 			H5Z_FLAG_MANDATORY,
 			cd_values.size(),
@@ -528,10 +571,8 @@ namespace sqeazy {
       std::vector<hsize_t> dims(_shape, _shape + _shape_size);
       std::vector<hsize_t> chunk_shape(dims);
       
-      if(!dataspace_)
-	delete dataspace_;
 
-      dataspace_ = new H5::DataSpace(dims.size(), &dims[0]);
+      H5::DataSpace dsp(dims.size(), &dims[0]);
       H5::DSetCreatPropList  plist;
       plist.setChunk(chunk_shape.size(), &chunk_shape[0]);
 
@@ -541,6 +582,7 @@ namespace sqeazy {
 
       if(!_filter_name.empty()){
 	std::copy(_filter_name.begin(), _filter_name.end(),(char*)&cd_values[0]);
+	// H5Zregister(H5Z_SQY);
 	plist.setFilter(H5Z_FILTER_SQY,
 			H5Z_FLAG_MANDATORY,
 			cd_values.size(),
@@ -551,14 +593,14 @@ namespace sqeazy {
       if(!dataset_)
 	delete dataset_;
 
-      dataset_ = new H5::DataSet(file_->createDataSet( _dname, 
-						       hdf5_dtype<T>::instance(),
-						       *dataspace_, 
-						       plist) );
+      H5::DataSet ds(file_->createDataSet( _dname, 
+					   hdf5_dtype<T>::instance(),
+					   dsp, 
+					   plist) );
 
-      dataset_->write(_payload,
-		      hdf5_dtype<T>::instance()
-		      );
+      ds.write(_payload,
+	       hdf5_dtype<T>::instance()
+	       );
 
       
       file_->flush(H5F_SCOPE_LOCAL);//this call performs i/o
@@ -759,12 +801,42 @@ namespace sqeazy {
     try{
       H5::H5File file(_fname, H5F_ACC_RDONLY);
       H5::DataSet ds(file.openDataSet( _dname ));
-
+      H5::DSetCreatPropList	plist(ds.getCreatePlist ());
+      
       //check if type found is correct
       if(h5_read_type_matches<data_type>(ds)){
 	value = 0;
       }
 
+      // H5Zregister(H5Z_SQY);
+      
+      int		numfilt = plist.getNfilters();
+      H5Z_filter_t 	filter_type;
+      char         	filter_name[1];
+      size_t		filter_name_size = {1};
+      size_t		cd_values_size = {0};
+      unsigned	flags=0;
+      unsigned	filter_info = 0;
+      unsigned	cd_values[1];
+	
+      for(int i = 0;i < numfilt;i++){
+	cd_values_size = 0;
+	filter_info = 0;
+	flags = 0;
+	  
+	filter_type = plist.getFilter(i,
+				      flags,
+				      cd_values_size,
+				      cd_values,
+				      filter_name_size,
+				      filter_name,
+				      filter_info
+				      );
+
+	if(filter_type == H5Z_FILTER_SQY)
+	  break;
+      }
+      
       H5::DataSpace dsp(ds.getSpace( ));
       
       //extract the shape of the dataset
