@@ -28,5 +28,5 @@ add_test(NAME hdf5_interface COMMAND test_hdf5_interface)
 set_tests_properties(hdf5_interface PROPERTIES ENVIRONMENT "HDF5_PLUGIN_PATH=${PROJECT_BINARY_DIR}/src")
 
 add_test(NAME hdf5_impl COMMAND test_hdf5_impl)
-set_tests_properties(hdf5_impl PROPERTIES ENVIRONMENT "HDF5_PLUGIN_PATH=${PROJECT_BINARY_DIR}/src")
+# set_tests_properties(hdf5_impl PROPERTIES ENVIRONMENT "HDF5_PLUGIN_PATH=${PROJECT_BINARY_DIR}/src")
 
