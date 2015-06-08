@@ -51,7 +51,10 @@ BOOST_AUTO_TEST_CASE( change_current )
 BOOST_AUTO_TEST_CASE( compress_callable )
 {
   sqeazy::pipeline_select<> decide(std::make_pair(16,sqeazy::bswap1_lz4_pipe::name()));
+  
   unsigned long num_encoded = 0;
+  to_play_with.resize(decide.max_compressed_size(size_in_byte)/2);
+
   int ret = decide.compress((const char*)&incrementing_cube[0], (char*)&to_play_with[0], dims, num_encoded);
   
   BOOST_CHECK_NE(incrementing_cube[0], to_play_with[0]);  
@@ -63,6 +66,7 @@ BOOST_AUTO_TEST_CASE( compress_callable )
 BOOST_AUTO_TEST_CASE( compress_correct_given_native_pipeline )
 {
   sqeazy::pipeline_select<> decide(std::make_pair(16,sqeazy::bswap1_lz4_pipe::name()));
+  to_play_with.resize(decide.max_compressed_size(size_in_byte)/2);
   unsigned long num_encoded = 0;
   int ret = decide.compress((const char*)&incrementing_cube[0], (char*)&to_play_with[0], dims, num_encoded);
   
@@ -70,6 +74,7 @@ BOOST_AUTO_TEST_CASE( compress_correct_given_native_pipeline )
   BOOST_CHECK_GT(num_encoded, 0);  
 
   unsigned long num_encoded_native = 0;
+  constant_cube.resize(decide.max_compressed_size(size_in_byte)/2);
   int ret_native = sqeazy::bswap1_lz4_pipe::compress(&incrementing_cube[0], (char*)&constant_cube[0], dims, num_encoded_native);
   
   BOOST_CHECK_EQUAL(constant_cube[0], to_play_with[0]);  
@@ -82,6 +87,7 @@ BOOST_AUTO_TEST_CASE( compress_throws )
 {
   sqeazy::pipeline_select<> decide(std::make_pair(16,"anything"));
   unsigned long num_encoded = 0;
+  to_play_with.resize(decide.max_compressed_size(size_in_byte)/2);
   BOOST_CHECK_THROW(decide.compress((const char*)&incrementing_cube[0], (char*)&to_play_with[0], dims, num_encoded),std::runtime_error);
   
   sqeazy::pipeline_select<> decide2(std::make_pair(24,sqeazy::bswap1_lz4_pipe::name()));
@@ -94,6 +100,7 @@ BOOST_AUTO_TEST_CASE( compress_correct_header )
 {
   sqeazy::pipeline_select<> decide(std::make_pair(16,sqeazy::bswap1_lz4_pipe::name()));
   unsigned long num_encoded = 0;
+  to_play_with.resize(decide.max_compressed_size(size_in_byte)/2);
   int ret = decide.compress((const char*)&incrementing_cube[0], (char*)&to_play_with[0], dims, num_encoded);
   
   BOOST_CHECK_EQUAL(ret, 0);  
