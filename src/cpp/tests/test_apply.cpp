@@ -174,9 +174,9 @@ BOOST_AUTO_TEST_CASE( plain_encode_decode_chars )
     typedef sqeazy::bmpl::vector<sqeazy::lz4_scheme<value_type> > test_pipe;
     typedef sqeazy::pipeline<test_pipe> current_pipe;
 
-
+    to_play_with.resize(current_pipe::max_bytes_encoded(to_play_with.size()));
     char* output = reinterpret_cast<char*>(&to_play_with[0]);
-
+    
     unsigned local_size = size;
     unsigned written_bytes=0;
 
@@ -184,15 +184,15 @@ BOOST_AUTO_TEST_CASE( plain_encode_decode_chars )
     int enc_ret = current_pipe::compress(input, output, local_size, written_bytes);
 
 
-    char* temp  = new char[written_bytes];
-    std::copy(output,output + written_bytes, temp);
+    std::vector<char> temp(written_bytes);
+    std::copy(output,output + written_bytes, temp.begin());
 
-    int dec_ret = current_pipe::decompress(temp, &to_play_with[0], written_bytes);
+    to_play_with.resize(size);
+    int dec_ret = current_pipe::decompress(&temp[0], &to_play_with[0], written_bytes);
     BOOST_CHECK_EQUAL(enc_ret,0);
     BOOST_CHECK_EQUAL(dec_ret,0);
 
-    delete [] temp;
-
+    
     BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(), constant_cube.end(),
                                   &to_play_with[0], &to_play_with[0] + size
                                  );

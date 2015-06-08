@@ -246,7 +246,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
 	//insert header
 	std::copy(hdr.header.begin(), hdr.header.end(), output_buffer);
 
-	compressor_type::last_num_encoded_bytes += hdr.size();
+	_num_compressed_bytes += hdr.size();
 
         return value;
 
