@@ -5,21 +5,46 @@
 #include <utility>
 #include <sstream>
 #include <stdexcept>
-#include "bench_common.hpp"
+
+#include "sqeazy_predef_pipelines.hpp"
+//#include "bench_common.hpp"
 
 #include "boost/variant.hpp"
 #include "boost/utility/enable_if.hpp"
 #include <boost/type_traits.hpp>
 
-namespace sqeazy_bench {
+namespace sqeazy {
 
+  struct  give_max_compressed_size : public boost::static_visitor<unsigned long> {
+    
+    unsigned long len_in_byte;
+    unsigned header_in_byte;
+      
+    explicit give_max_compressed_size(unsigned long _in, unsigned _header_size):
+      len_in_byte(_in),
+      header_in_byte(_header_size)
+    {}
+
+    template <typename T>
+    unsigned long operator()(T){
+      return T::max_bytes_encoded(len_in_byte, header_in_byte);
+    }
+      
+    unsigned long operator()(boost::blank){
+      return 0;
+    }
+
+  };
+  
+  typedef boost::variant<boost::blank, char_rmbkg_bswap1_lz4_pipe, char_bswap1_lz4_pipe, rmbkg_bswap1_lz4_pipe, bswap1_lz4_pipe> default_pipes_t;
+
+  template <typename supported_pipes_t = default_pipes_t>
   struct pipeline_select {
 
     typedef std::pair<int, std::string> spec_t;
 
     spec_t current_;
-
-    typedef boost::variant<boost::blank, char_rmbkg_bswap1_lz4_pipe, char_bswap1_lz4_pipe, rmbkg_bswap1_lz4_pipe, bswap1_lz4_pipe> supported_pipes_t;
+    
     supported_pipes_t pipeholder_;
 
     typedef boost::variant< const boost::blank*, 
@@ -83,26 +108,6 @@ namespace sqeazy_bench {
     ///////////////////////////////////////////////////////////////////////////////////////
     //MAX COMPRESSED SIZE
 
-    struct  give_max_compressed_size : public boost::static_visitor<unsigned long> {
-    
-      unsigned long len_in_byte;
-      unsigned header_in_byte;
-      
-      explicit give_max_compressed_size(unsigned long _in, unsigned _header_size):
-	len_in_byte(_in),
-	header_in_byte(_header_size)
-      {}
-
-      template <typename T>
-      unsigned long operator()(T){
-	return T::max_bytes_encoded(len_in_byte, header_in_byte);
-      }
-      
-      unsigned long operator()(boost::blank){
-	return 0;
-      }
-
-    };
 
     unsigned long max_compressed_size(unsigned long _in_byte,  unsigned _header_size = 0){
       

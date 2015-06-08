@@ -69,7 +69,7 @@ void compress_files(const std::vector<std::string>& _files,
   std::fstream			sqyfile;
   std::vector<unsigned>		input_dims;
   sqeazy_bench::tiff_facet	input;
-  sqeazy_bench::pipeline_select	dynamic;
+  sqeazy::pipeline_select<>	dynamic;
   
   unsigned long compressed_length_byte = 0;
   int enc_ret = 0;
@@ -145,7 +145,7 @@ void decompress_files(const std::vector<std::string>& _files,
   std::fstream sqyfile;
   std::string found_pipeline;
   unsigned found_num_bits;
-  sqeazy_bench::pipeline_select dynamic;
+  sqeazy::pipeline_select<> dynamic;
   std::istringstream buf;
   sqeazy_bench::tiff_facet	tiff;
 

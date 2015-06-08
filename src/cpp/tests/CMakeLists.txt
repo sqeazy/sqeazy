@@ -1,7 +1,7 @@
 INCLUDE_DIRECTORIES(.)
 
 #SET(HDF5_USE_STATIC_LIBRARIES TRUE)#only works on Unix
-FIND_PACKAGE(HDF5 QUIET REQUIRED CXX )
+FIND_PACKAGE(HDF5 1.8 QUIET REQUIRED CXX )
 IF(HDF5_FOUND)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIRS})
 ADD_DEFINITIONS(${HDF5_DEFINITIONS})
@@ -122,7 +122,7 @@ set_target_properties(test_tiff_fixture PROPERTIES COMPILE_FLAGS "-std=c++11 -I$
 
 add_executable(test_pipeline_select test_pipeline_select.cpp)
 target_link_libraries(test_pipeline_select ${Boost_LIBRARIES} ext_tiff ext_lz4)
-set_target_properties(test_pipeline_select PROPERTIES COMPILE_FLAGS "-std=c++11 -I${PROJECT_SOURCE_DIR}/bench -I${PROJECT_SOURCE_DIR}/src ")
+set_target_properties(test_pipeline_select PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src ")
 
 
 add_executable(test_huffman_utils_impl test_huffman_utils_impl.cpp)
