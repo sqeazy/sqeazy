@@ -206,6 +206,16 @@ struct pipeline : public bmpl::back<TypeList>::type {
 
     }
 
+  /**
+     \brief compress through pipeline, given that pipeline contains compressor, i.e. data will shrink effectively
+     
+     \param[in] _in buffer containing input data
+     \param[out] _out buffer containing compressed data (must at least of size max_bytes_encoded)
+     
+     \return 
+     \retval 
+     
+  */
     template <typename SizeType, typename ScalarType>
     static typename boost::enable_if_c<sizeof(ScalarType) && compressor_type::is_compressor,int>::type
     compress(const raw_type* _in, 
@@ -219,24 +229,38 @@ struct pipeline : public bmpl::back<TypeList>::type {
 
         typedef loop_encode<TypeList , size> pipe_loop;
 
-	sqeazy::image_header<raw_type> hdr(_size,pipeline::name());
-	char* output_buffer = reinterpret_cast<char*>(_out);
-	std::copy(hdr.header.begin(), hdr.header.end(), output_buffer);
+	//compress
+        int value = pipe_loop::apply(_in, (output_type*)_out, _size);
 	
-	unsigned long hdr_shift = hdr.size()// /sizeof(output_type)
-	  ;
-        output_type* first_output = reinterpret_cast<output_type*>(output_buffer+hdr_shift);
+        _num_compressed_bytes = compressor_type::last_num_encoded_bytes;
 
-        int value = pipe_loop::apply(_in, first_output, _size);
-	
-        _num_compressed_bytes = compressor_type::last_num_encoded_bytes+hdr.size();
+	//produce header
+	sqeazy::image_header<raw_type> hdr(_size,pipeline::name());
+
+	//shift output 
+	char* output_buffer = reinterpret_cast<char*>(_out);
+	unsigned long hdr_shift = hdr.size();
+
+	std::copy(output_buffer,output_buffer+_num_compressed_bytes,output_buffer+hdr_shift);
+
+	//insert header
+	std::copy(hdr.header.begin(), hdr.header.end(), output_buffer);
+
 	compressor_type::last_num_encoded_bytes += hdr.size();
 
         return value;
 
     }
 
-
+  /**
+     \brief compress through pipeline, given that pipeline is not a compressing one, i.e. data will keep it's volume
+     
+     \param[in] 
+     
+     \return 
+     \retval 
+     
+  */
     template <typename SizeType>
     static int compress(const raw_type* _in, 
 	       compressed_type* _out,
