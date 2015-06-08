@@ -35,6 +35,148 @@ namespace sqeazy {
     }
 
   };
+
+  struct  perform_compress : public boost::static_visitor<int> {
+
+    // const char* input_buffer_;
+    char* output_buffer_;
+    std::vector<unsigned>* shape_;
+    unsigned long* bytes_encoded_;
+      
+    explicit perform_compress(// const char* _in,
+			      char* _out,
+			      std::vector<unsigned>* _shape,
+			      unsigned long* _bytes_enc
+			      ):
+      // input_buffer_(_in),
+      output_buffer_(_out),
+      shape_(_shape),
+      bytes_encoded_(_bytes_enc)
+    {}
+
+
+    template <typename T>
+    int operator()(boost::blank, const T*){
+      return -1;
+
+    }
+
+    template <typename T>
+    int operator()(T, const boost::blank*){
+      return -1;
+
+    }
+
+    int operator()(boost::blank, const boost::blank*){
+      return -1;
+
+    }
+
+    template <typename FirstT, typename SecondT>
+    typename boost::enable_if_c<boost::is_same<FirstT,boost::blank>::value == false && 
+				boost::is_same<SecondT,typename FirstT::raw_type>::value == false,int>::type 
+      operator()(FirstT, const SecondT*){
+      return -1;
+
+    }      
+
+
+    template <typename FirstT>
+    typename boost::enable_if_c<boost::is_same<FirstT,boost::blank>::value == false,int>::type operator()(FirstT, const typename FirstT::raw_type* _input){
+      return FirstT::template compress<std::vector<unsigned>, unsigned long>(_input, output_buffer_, *shape_, *bytes_encoded_);
+
+    }      
+  };
+
+  struct  give_decoded_size_byte : public boost::static_visitor<unsigned long long> {
+    
+    const char* buffer_;
+    unsigned long long len_;
+      
+    explicit give_decoded_size_byte(const char* _buf, unsigned long _in):
+      buffer_(_buf),
+      len_(_in){}
+
+    template <typename T>
+    unsigned long long operator()(T){
+      return T::template decoded_size_byte<unsigned long long>(buffer_, len_);
+    }
+      
+    unsigned long long operator()(boost::blank){
+      return 0;
+    }
+
+  };
+  
+  struct  give_decode_dimensions : public boost::static_visitor<std::vector<unsigned> > {
+    
+      const char* buffer_;
+      unsigned long long len_;
+      
+      explicit give_decode_dimensions(const char* _buf, unsigned long _in):
+	buffer_(_buf),
+	len_(_in){}
+
+      template <typename T>
+      std::vector<unsigned> operator()(T){
+	return T::template decode_dimensions<unsigned long long>(buffer_, len_);
+      }
+      
+      std::vector<unsigned> operator()(boost::blank){
+	return std::vector<unsigned>();
+      }
+
+    };
+
+          
+    
+    struct  perform_decompress : public boost::static_visitor<int> {
+
+      // const char* input_buffer_;
+      const char* input_buffer_;
+      unsigned long long* len_input_bytes_;
+      
+      explicit perform_decompress(const char* _in,
+				  unsigned long long* _len_in
+				  ):
+	input_buffer_(_in),
+	len_input_bytes_(_len_in)
+      {}
+
+
+      template <typename T>
+      int operator()(boost::blank, const T*){
+      	return -1;
+
+      }
+
+      template <typename T>
+      int operator()(T, const boost::blank*){
+      	return -1;
+
+      }
+
+      int operator()(boost::blank, const boost::blank*){
+      	return -1;
+
+      }
+
+      template <typename FirstT, typename SecondT>
+      typename boost::enable_if_c<boost::is_same<FirstT,boost::blank>::value == false && 
+				  boost::is_same<SecondT,typename FirstT::raw_type>::value == false,int>::type 
+	operator()(FirstT, SecondT*){
+      	return -1;
+
+      }      
+
+
+      template <typename FirstT>
+      typename boost::enable_if_c<boost::is_same<FirstT,boost::blank>::value == false,int>::type 
+      operator()(FirstT, typename FirstT::raw_type* _out){
+      	return FirstT::template decompress<unsigned long long>(input_buffer_, _out, *len_input_bytes_);
+
+      }      
+    };
   
   typedef boost::variant<boost::blank, char_rmbkg_bswap1_lz4_pipe, char_bswap1_lz4_pipe, rmbkg_bswap1_lz4_pipe, bswap1_lz4_pipe> default_pipes_t;
 
@@ -48,11 +190,11 @@ namespace sqeazy {
     supported_pipes_t pipeholder_;
 
     typedef boost::variant< const boost::blank*, 
-			   const unsigned char*,const unsigned short*> supported_const_types_t;
+			    const unsigned char*,const unsigned short*> supported_const_types_t;
     supported_const_types_t const_typeholder_;
 
     typedef boost::variant<  boost::blank*, 
-			    unsigned char*, unsigned short*> supported_types_t;
+			     unsigned char*, unsigned short*> supported_types_t;
     supported_types_t typeholder_;
 
 
@@ -129,57 +271,7 @@ namespace sqeazy {
 
     
     
-    struct  perform_compress : public boost::static_visitor<int> {
 
-      // const char* input_buffer_;
-      char* output_buffer_;
-      std::vector<unsigned>* shape_;
-      unsigned long* bytes_encoded_;
-      
-      explicit perform_compress(// const char* _in,
-				char* _out,
-				std::vector<unsigned>* _shape,
-				unsigned long* _bytes_enc
-				):
-	// input_buffer_(_in),
-	output_buffer_(_out),
-	shape_(_shape),
-	bytes_encoded_(_bytes_enc)
-      {}
-
-
-      template <typename T>
-      int operator()(boost::blank, const T*){
-      	return -1;
-
-      }
-
-      template <typename T>
-      int operator()(T, const boost::blank*){
-      	return -1;
-
-      }
-
-      int operator()(boost::blank, const boost::blank*){
-      	return -1;
-
-      }
-
-      template <typename FirstT, typename SecondT>
-      typename boost::enable_if_c<boost::is_same<FirstT,boost::blank>::value == false && 
-				  boost::is_same<SecondT,typename FirstT::raw_type>::value == false,int>::type 
-	operator()(FirstT, const SecondT*){
-      	return -1;
-
-      }      
-
-
-      template <typename FirstT>
-      typename boost::enable_if_c<boost::is_same<FirstT,boost::blank>::value == false,int>::type operator()(FirstT, const typename FirstT::raw_type* _input){
-      	return FirstT::template compress<std::vector<unsigned>, unsigned long>(_input, output_buffer_, *shape_, *bytes_encoded_);
-
-      }      
-    };
 
     int compress(const char* _input, char* _output, std::vector<unsigned>& _dims, unsigned long& _num_encoded){
       
@@ -212,25 +304,7 @@ namespace sqeazy {
 
     ///////////////////////////////////////////////////////////////////////////////////////
     //decoded_size_byte 
-    struct  give_decoded_size_byte : public boost::static_visitor<unsigned long long> {
     
-      const char* buffer_;
-      unsigned long long len_;
-      
-      explicit give_decoded_size_byte(const char* _buf, unsigned long _in):
-	buffer_(_buf),
-	len_(_in){}
-
-      template <typename T>
-      unsigned long long operator()(T){
-	return T::template decoded_size_byte<unsigned long long>(buffer_, len_);
-      }
-      
-      unsigned long long operator()(boost::blank){
-	return 0;
-      }
-
-    };
 
     unsigned long long decoded_size_byte(const char* _buf, unsigned long long _in){
       
@@ -250,25 +324,7 @@ namespace sqeazy {
 
     ///////////////////////////////////////////////////////////////////////////////////////
     //decode_dimensions
-    struct  give_decode_dimensions : public boost::static_visitor<std::vector<unsigned> > {
     
-      const char* buffer_;
-      unsigned long long len_;
-      
-      explicit give_decode_dimensions(const char* _buf, unsigned long _in):
-	buffer_(_buf),
-	len_(_in){}
-
-      template <typename T>
-      std::vector<unsigned> operator()(T){
-	return T::template decode_dimensions<unsigned long long>(buffer_, len_);
-      }
-      
-      std::vector<unsigned> operator()(boost::blank){
-	return std::vector<unsigned>();
-      }
-
-    };
 
     std::vector<unsigned> decode_dimensions(const char* _buf, unsigned long long _in){
       
@@ -287,55 +343,7 @@ namespace sqeazy {
     
     ///////////////////////////////////////////////////////////////////////////////////////
     //DECOMPRESS
-        
-    
-    struct  perform_decompress : public boost::static_visitor<int> {
 
-      // const char* input_buffer_;
-      const char* input_buffer_;
-      unsigned long long* len_input_bytes_;
-      
-      explicit perform_decompress(const char* _in,
-				  unsigned long long* _len_in
-				):
-	input_buffer_(_in),
-	len_input_bytes_(_len_in)
-      {}
-
-
-      template <typename T>
-      int operator()(boost::blank, const T*){
-      	return -1;
-
-      }
-
-      template <typename T>
-      int operator()(T, const boost::blank*){
-      	return -1;
-
-      }
-
-      int operator()(boost::blank, const boost::blank*){
-      	return -1;
-
-      }
-
-      template <typename FirstT, typename SecondT>
-      typename boost::enable_if_c<boost::is_same<FirstT,boost::blank>::value == false && 
-				  boost::is_same<SecondT,typename FirstT::raw_type>::value == false,int>::type 
-	operator()(FirstT, SecondT*){
-      	return -1;
-
-      }      
-
-
-      template <typename FirstT>
-      typename boost::enable_if_c<boost::is_same<FirstT,boost::blank>::value == false,int>::type 
-      operator()(FirstT, typename FirstT::raw_type* _out){
-      	return FirstT::template decompress<unsigned long long>(input_buffer_, _out, *len_input_bytes_);
-
-      }      
-    };
 
     int decompress(const char* _input, char* _out, unsigned long long& _len_in){
       
