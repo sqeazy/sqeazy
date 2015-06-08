@@ -87,7 +87,6 @@ BOOST_AUTO_TEST_CASE( compress_throws )
 {
   sqeazy::pipeline_select<> decide(std::make_pair(16,"anything"));
   unsigned long num_encoded = 0;
-  to_play_with.resize(decide.max_compressed_size(size_in_byte)/2);
   BOOST_CHECK_THROW(decide.compress((const char*)&incrementing_cube[0], (char*)&to_play_with[0], dims, num_encoded),std::runtime_error);
   
   sqeazy::pipeline_select<> decide2(std::make_pair(24,sqeazy::bswap1_lz4_pipe::name()));
@@ -184,7 +183,7 @@ BOOST_AUTO_TEST_CASE( decompress_callable )
 
   sqeazy::pipeline_select<> decide(16, sqeazy::bswap1_lz4_pipe::name());
 
-
+  to_play_with.resize(decide.max_compressed_size(size_in_byte)/2);
   char* output_to_decompress = reinterpret_cast<char*>(&to_play_with[0]);
   
   unsigned long long bytes_written = 0;
