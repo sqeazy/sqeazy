@@ -4,7 +4,7 @@
 #include "hdf5.h"
 #include "H5PLextern.h"
 #include "sqeazy_definitions.hpp"
-
+#include "pipeline_select.hpp"
 
 
 
