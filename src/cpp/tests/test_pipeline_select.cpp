@@ -219,3 +219,58 @@ BOOST_AUTO_TEST_CASE( decompress_throws )
 
 
 BOOST_AUTO_TEST_SUITE_END()
+
+
+BOOST_FIXTURE_TEST_SUITE( from_sqy_header , uint16_cube_of_8 )
+
+BOOST_AUTO_TEST_CASE( non_empty_from_valid_header )
+{
+  std::string hdr = sqeazy::image_header<value_type>::pack(dims, sqeazy::bswap1_lz4_pipe::name());
+  sqeazy::pipeline_select<> decide(hdr);
+  
+  
+  BOOST_CHECK_MESSAGE(!decide.empty(), "pipeline not set from header " << hdr);
+
+}
+
+BOOST_AUTO_TEST_CASE( header_intact )
+{
+  std::string hdr = sqeazy::image_header<value_type>::pack(dims, sqeazy::bswap1_lz4_pipe::name());
+  sqeazy::pipeline_select<> decide(hdr);
+  to_play_with.resize(decide.max_compressed_size(size_in_byte)/2);
+  
+  char* output_ = reinterpret_cast<char*>(&to_play_with[0]);
+  
+  unsigned long long bytes_written = 0;
+  sqeazy::bswap1_lz4_pipe::compress(&incrementing_cube[0], output_, dims, bytes_written);
+
+  
+  char* result = std::find(output_,output_+bytes_written,'|');
+  std::string new_hdr(output_,result+1);
+
+  BOOST_CHECK_EQUAL(hdr, new_hdr);
+}
+
+BOOST_AUTO_TEST_CASE( selected_comresses_like_native )
+{
+  std::string hdr = sqeazy::image_header<value_type>::pack(dims, sqeazy::bswap1_lz4_pipe::name());
+  sqeazy::pipeline_select<> decide(hdr);
+  to_play_with.resize(decide.max_compressed_size(size_in_byte)/2);
+  
+  char* output_ = reinterpret_cast<char*>(&to_play_with[0]);
+  
+  unsigned long long bytes_written = 0;
+  sqeazy::bswap1_lz4_pipe::compress(&incrementing_cube[0], output_, dims, bytes_written);
+
+  
+  char* result = std::find(output_,output_+bytes_written,'|');
+  std::string new_hdr(output_,result+1);
+
+  unsigned long long native_bytes_written = 0;
+  constant_cube.resize(decide.max_compressed_size(size_in_byte)/2);
+
+  sqeazy::bswap1_lz4_pipe::compress(&incrementing_cube[0], (char*)&constant_cube[0], dims, native_bytes_written);
+  
+  BOOST_CHECK_EQUAL(native_bytes_written,bytes_written);
+}
+BOOST_AUTO_TEST_SUITE_END()

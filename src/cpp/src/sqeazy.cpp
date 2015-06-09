@@ -418,9 +418,10 @@ int SQY_h5_write(const char* fname,
   if(!loaded.ready())
     return rvalue;
   else{
-
-    //TODO: not implemented yet
-    rvalue = 1;
+    rvalue = loaded.write_nd_dataset(dname,
+				     data,
+				     shape,
+				     shape_size);
     
   }
 

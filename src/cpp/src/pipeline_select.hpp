@@ -7,7 +7,7 @@
 #include <stdexcept>
 
 #include "sqeazy_predef_pipelines.hpp"
-//#include "bench_common.hpp"
+#include "sqeazy_header.hpp"
 
 #include "boost/variant.hpp"
 #include "boost/utility/enable_if.hpp"
@@ -206,6 +206,28 @@ namespace sqeazy {
     {
       reset(current_);
     }
+
+    pipeline_select(const std::string& _hdr):
+      current_(),
+      pipeholder_(),
+      const_typeholder_(),
+      typeholder_()
+    {
+      
+      // std::vector<std::string> contents;
+      // sqeazy::split_string_to_vector<",">(_hdr, contents);
+
+      // int sizeof_found = sqeazy::sizeof_typeinfo(_hdr);
+      // current_ = std::make_pair(sizeof_found, contents[0]);
+
+
+      //TODO: the following is header specific, maybe integrate better with header class?
+	sqeazy::image_header<boost::blank> hdr(_hdr);
+	current_ = std::make_pair(hdr.sizeof_header_type(), hdr.pipeline());
+
+      reset(current_);
+      
+    }    
 
     void reset(const spec_t& _in){
       current_ = _in;
