@@ -457,7 +457,15 @@ namespace sqeazy {
 			 const unsigned& _shape_size){
 	
       int rvalue = 1;
+      
       std::vector<hsize_t> dims(_shape, _shape + _shape_size);
+      unsigned long long nelements = std::accumulate(dims.begin(), dims.end(),1,std::multiplies<hsize_t>());
+      bool data_already_compressed = sqeazy::image_header<U>::valid_header((const char*)_payload, (const char*)_payload + (nelements/sizeof(T)));
+      if(data_already_compressed){
+	std::vector<unsigned> fshape = sqeazy::image_header<U>::unpack_shape((const char*)_payload,nelements/sizeof(T));
+	dims.resize(fshape.size());
+	std::copy(fshape.begin(), fshape.end(),dims.begin());
+      }
       std::vector<hsize_t> chunk_shape(dims);
       
       if(!dataspace_)
@@ -467,6 +475,16 @@ namespace sqeazy {
       H5::DSetCreatPropList  plist;
       plist.setChunk(chunk_shape.size(), &chunk_shape[0]);
 
+      std::vector<unsigned> cd_values;
+      
+      if(data_already_compressed){
+	//oops the data is already compressed by sqy
+	plist.setFilter(H5Z_FILTER_SQY,
+			H5Z_FLAG_MANDATORY,
+			cd_values.size(),
+			&cd_values[0]);
+      }
+      
       if(!dataset_)
 	delete dataset_;
 

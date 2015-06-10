@@ -407,27 +407,27 @@ int SQY_h5_write_UI16(const char* fname,
   return rvalue;
 }
 
-int SQY_h5_write(const char* fname,
-		 const char* dname,
-		 const char* data,
-		 unsigned long data_size){
+// int SQY_h5_write(const char* fname,
+// 		 const char* dname,
+// 		 const char* data,
+// 		 unsigned long data_size){
 
-  int rvalue = 1;
-  H5::Exception::dontPrint();
-  sqeazy::h5_file loaded(fname, H5F_ACC_TRUNC);
-  if(!loaded.ready())
-    return rvalue;
-  else{
-    std::vector<int> shape(1,data_size);
-    rvalue = loaded.write_nd_dataset(dname,
-				     data,
-				     &shape[0],
-				     (unsigned)shape.size());
+//   int rvalue = 1;
+//   H5::Exception::dontPrint();
+//   sqeazy::h5_file loaded(fname, H5F_ACC_TRUNC);
+//   if(!loaded.ready())
+//     return rvalue;
+//   else{
+//     std::vector<int> shape(1,data_size);
+//     rvalue = loaded.write_nd_dataset(dname,
+// 				     data,
+// 				     &shape[0],
+// 				     (unsigned)shape.size());
     
-  }
+//   }
 
-  return rvalue;
-}
+//   return rvalue;
+// }
 
 int SQY_h5_read_UI16(const char* fname,
 		      const char* dname,

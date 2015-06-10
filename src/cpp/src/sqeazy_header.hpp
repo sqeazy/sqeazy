@@ -240,8 +240,21 @@ header = "";
     }
 
     static const bool valid_header(const std::string& _hdr){
-      
+
       return std::count(_hdr.begin(),_hdr.end(), major_delim) == 3;
+
+    }
+
+    template <typename Iter>
+    static const bool valid_header(Iter _begin, Iter _end){
+
+      Iter header_end = std::find(_begin, _end, header_end_delim);
+      
+      if(header_end != _end){
+	std::string hdr = std::string(_begin, header_end + 1);
+	return std::count(hdr.begin(),hdr.end(), major_delim) == 3;}
+      else
+	return false;
 
     }
 
