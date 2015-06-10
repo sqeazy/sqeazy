@@ -23,6 +23,8 @@ using namespace H5;
 //#include "hdf5_test_utils.hpp"
 #include "hdf5_fixtures.hpp"
 
+static const std::string default_filter_name = "bswap1_lz4";
+
 // static sqeazy::loaded_hdf5_plugin always_load;
 /*
   as the loaded_hdf5_plugin class is instantiated as a static object, 
@@ -43,6 +45,7 @@ BOOST_AUTO_TEST_CASE( sizeof_dataset ){
   unsigned size_in_byte = 0;
   int rvalue = SQY_h5_query_sizeof(tfile.c_str(), dname.c_str(), &size_in_byte);
 
+  BOOST_CHECK_EQUAL(rvalue, 0);
   BOOST_CHECK_EQUAL(size_in_byte,4);
   
 }
@@ -75,6 +78,7 @@ BOOST_AUTO_TEST_CASE( dtype_dataset ){
   unsigned dtype = 0;
   int rvalue = SQY_h5_query_dtype(tfile.c_str(), dname.c_str(), &dtype);
 
+  BOOST_CHECK_EQUAL(rvalue, 0);
   BOOST_CHECK_EQUAL(dtype,2);
   
 }
@@ -100,6 +104,7 @@ BOOST_AUTO_TEST_CASE( rank_dataset ){
   unsigned ndims = 0;
   int rvalue = SQY_h5_query_ndims(tfile.c_str(), dname.c_str(), &ndims);
 
+  BOOST_CHECK_EQUAL(rvalue, 0);
   BOOST_CHECK_EQUAL(ndims,2);
   
 }
@@ -242,7 +247,7 @@ BOOST_AUTO_TEST_CASE( write_filter ){
 			     &data.constant_cube[0],
 			     data.dims.size(),
 			     &data.dims[0],
-			     "foo");
+			     default_filter_name.c_str());
 
   BOOST_REQUIRE_EQUAL(rvalue,0);
   BOOST_REQUIRE(bfs::exists(test_output_path));
@@ -259,11 +264,11 @@ BOOST_AUTO_TEST_CASE( roundtrip_filter ){
   uint16_cube_of_8 data;
   
   int rvalue = SQY_h5_write_UI16(test_output_name.c_str(),
-			     dname.c_str(),
-			     &data.constant_cube[0],
-			     data.dims.size(),
-			     &data.dims[0],
-			     "foo");
+				 dname.c_str(),
+				 &data.constant_cube[0],
+				 data.dims.size(),
+				 &data.dims[0],
+				 default_filter_name.c_str());
 
   BOOST_REQUIRE_EQUAL(rvalue,0);
   BOOST_REQUIRE(bfs::exists(test_output_path));
@@ -296,7 +301,7 @@ BOOST_AUTO_TEST_CASE( write_compressed_data ){
 				 &data.constant_cube[0],
 				 data.dims.size(),
 				 &data.dims[0],
-				 "");
+				 "lz4");
 
   BOOST_REQUIRE_EQUAL(rvalue,0);
   BOOST_REQUIRE(bfs::exists(no_filter_path));

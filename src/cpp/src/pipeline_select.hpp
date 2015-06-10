@@ -15,6 +15,38 @@
 
 namespace sqeazy {
 
+  template <typename holder_type>
+  struct set_if_name_matches {
+
+    holder_type* item;
+    std::string ref_name;
+
+    set_if_name_matches(holder_type* _item, const std::string& _rname):
+      item(_item),
+      ref_name(_rname)
+    {}
+
+    set_if_name_matches(set_if_name_matches& _rhs):
+      item(_rhs.item),
+      ref_name(_rhs.ref_name)
+    {}
+
+    void operator()(boost::blank){
+      return;
+    }
+    
+    template <typename T>
+    typename boost::enable_if_c<boost::is_same<T,boost::blank>::value == false,void>::type  operator()(T any) {
+
+      if(!ref_name.empty() && T::name().size() == ref_name.size() && T::name() == ref_name) {
+	*item = T();
+      }
+
+      return;
+    }
+
+  };
+  
   struct  give_max_compressed_size : public boost::static_visitor<unsigned long> {
     
     unsigned long len_in_byte;
@@ -36,6 +68,27 @@ namespace sqeazy {
 
   };
 
+  struct give_sizeof_raw_type : public boost::static_visitor<int> {
+    
+    // unsigned long len_in_byte;
+    // unsigned header_in_byte;
+      
+    // explicit give_max_compressed_size(unsigned long _in, unsigned _header_size):
+    //   len_in_byte(_in),
+    //   header_in_byte(_header_size)
+    // {}
+
+    template <typename T>
+    int operator()(T){
+      return T::sizeof_raw_type();
+    }
+      
+    int operator()(boost::blank){
+      return 0;
+    }
+
+  };
+  
   struct  perform_compress : public boost::static_visitor<int> {
 
     // const char* input_buffer_;
@@ -80,7 +133,7 @@ namespace sqeazy {
 
     }      
 
-
+    //only works for compressors
     template <typename FirstT>
     typename boost::enable_if_c<boost::is_same<FirstT,boost::blank>::value == false,int>::type operator()(FirstT, const typename FirstT::raw_type* _input){
       return FirstT::template compress<std::vector<unsigned>, unsigned long>(_input, output_buffer_, *shape_, *bytes_encoded_);
@@ -178,7 +231,16 @@ namespace sqeazy {
       }      
     };
   
-  typedef boost::variant<boost::blank, char_rmbkg_bswap1_lz4_pipe, char_bswap1_lz4_pipe, rmbkg_bswap1_lz4_pipe, bswap1_lz4_pipe> default_pipes_t;
+  typedef boost::variant<boost::blank,
+			 char_rmbkg_bswap1_lz4_pipe,
+			 char_bswap1_lz4_pipe,
+			 char_lz4_pipe,
+			 uint8_passthrough_pipe,
+			 rmbkg_bswap1_lz4_pipe,
+			 bswap1_lz4_pipe,
+			 lz4_pipe,
+			 uint16_passthrough_pipe
+			 > default_pipes_t;
 
   template <typename supported_pipes_t = default_pipes_t>
   struct pipeline_select {
@@ -232,17 +294,21 @@ namespace sqeazy {
     void reset(const spec_t& _in){
       current_ = _in;
 
-      if(current_.second == char_rmbkg_bswap1_lz4_pipe::name())
-	pipeholder_ = char_rmbkg_bswap1_lz4_pipe();
-      
-      if(current_.second == char_bswap1_lz4_pipe::name())
-	pipeholder_ = char_bswap1_lz4_pipe();
+      pipeholder_ = supported_pipes_t();
+      set_if_name_matches<supported_pipes_t> extractor(&pipeholder_, current_.second);
 
-      if(current_.second == rmbkg_bswap1_lz4_pipe::name())
-	pipeholder_ = rmbkg_bswap1_lz4_pipe();
+      bmpl::for_each<typename supported_pipes_t::types>(extractor);
+      // if(current_.second == char_rmbkg_bswap1_lz4_pipe::name())
+      // 	pipeholder_ = char_rmbkg_bswap1_lz4_pipe();
       
-      if(current_.second == bswap1_lz4_pipe::name())
-	pipeholder_ = bswap1_lz4_pipe();
+      // if(current_.second == char_bswap1_lz4_pipe::name())
+      // 	pipeholder_ = char_bswap1_lz4_pipe();
+
+      // if(current_.second == rmbkg_bswap1_lz4_pipe::name())
+      // 	pipeholder_ = rmbkg_bswap1_lz4_pipe();
+      
+      // if(current_.second == bswap1_lz4_pipe::name())
+      // 	pipeholder_ = bswap1_lz4_pipe();
 
 
     }
@@ -259,6 +325,18 @@ namespace sqeazy {
       
     }
 
+    bool typesize_matches() const {
+
+      give_sizeof_raw_type visitor;
+      int pipe_sizeof_raw_type = boost::apply_visitor(visitor, pipeholder_);
+      
+      if(pipeholder_.which())
+	return pipe_sizeof_raw_type*CHAR_BIT == current_.first;
+      else
+	return false;
+      
+    }
+    
     void set(spec_t _spec = std::make_pair(0,"")){
       reset(_spec);
       
@@ -283,6 +361,15 @@ namespace sqeazy {
 	throw std::runtime_error(msg.str().c_str());
       }
 
+      if(!typesize_matches()){
+	std::ostringstream msg;
+	msg << "[pipeline_select]\t pipeline "<< current_.second
+	    <<" does not match bit depth "<< current_.first
+	    <<" queried in max_compressed_size\n";
+	throw std::runtime_error(msg.str().c_str());
+      }
+
+      
       unsigned long value = boost::apply_visitor(visitor, pipeholder_);
       return value;
       
@@ -302,10 +389,19 @@ namespace sqeazy {
 
       if(!pipeholder_.which()){
 	std::ostringstream msg;
-	msg << "[pipeline_select]\t unknown pipeline "<< current_.second <<" queried in max_compressed_size\n";
+	msg << "[pipeline_select]\t unknown pipeline "<< current_.second <<" queried in compress\n";
 	throw std::runtime_error(msg.str().c_str());
       }
 
+      if(!typesize_matches()){
+	std::ostringstream msg;
+	msg << "[pipeline_select]\t pipeline "<< current_.second
+	    <<" does not match bit depth "<< current_.first
+	    <<" queried in compress\n";
+	throw std::runtime_error(msg.str().c_str());
+      }
+
+      
       if(current_.first == sizeof(unsigned char)*CHAR_BIT)
 	const_typeholder_ = reinterpret_cast<const unsigned char*>(_input);
       
@@ -314,7 +410,7 @@ namespace sqeazy {
 
       if(!const_typeholder_.which()){
 	std::ostringstream msg;
-	msg << "[pipeline_select]\t unknown bits "<< current_.first <<" queried in max_compressed_size\n";
+	msg << "[pipeline_select]\t unknown bits "<< current_.first <<" queried in compress\n";
 	throw std::runtime_error(msg.str().c_str());
       }
 
@@ -334,7 +430,15 @@ namespace sqeazy {
       
       if(!pipeholder_.which()){
 	std::ostringstream msg;
-	msg << "[pipeline_select]\t unknown pipeline "<< current_.second <<" queried in max_compressed_size\n";
+	msg << "[pipeline_select]\t unknown pipeline "<< current_.second <<" queried in decoded_size_byte\n";
+	throw std::runtime_error(msg.str().c_str());
+      }
+
+      if(!typesize_matches()){
+	std::ostringstream msg;
+	msg << "[pipeline_select]\t pipeline "<< current_.second
+	    <<" does not match bit depth "<< current_.first
+	    <<" queried in decoded_size_byte\n";
 	throw std::runtime_error(msg.str().c_str());
       }
       
@@ -354,7 +458,15 @@ namespace sqeazy {
       
       if(!pipeholder_.which()){
 	std::ostringstream msg;
-	msg << "[pipeline_select]\t unknown pipeline "<< current_.second <<" queried in max_compressed_size\n";
+	msg << "[pipeline_select]\t unknown pipeline "<< current_.second <<" queried in decode_dimensions\n";
+	throw std::runtime_error(msg.str().c_str());
+      }
+
+      if(!typesize_matches()){
+	std::ostringstream msg;
+	msg << "[pipeline_select]\t pipeline "<< current_.second
+	    <<" does not match bit depth "<< current_.first
+	    <<" queried in decode_dimensions\n";
 	throw std::runtime_error(msg.str().c_str());
       }
       
@@ -378,6 +490,14 @@ namespace sqeazy {
 	throw std::runtime_error(msg.str().c_str());
       }
 
+      if(!typesize_matches()){
+	std::ostringstream msg;
+	msg << "[pipeline_select]\t pipeline "<< current_.second
+	    <<" does not match bit depth "<< current_.first
+	    <<" queried in decompress\n";
+	throw std::runtime_error(msg.str().c_str());
+      }
+      
       if(current_.first == sizeof(unsigned char)*CHAR_BIT)
 	typeholder_ = reinterpret_cast<unsigned char*>(_out);
       

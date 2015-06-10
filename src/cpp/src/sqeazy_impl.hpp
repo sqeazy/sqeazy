@@ -17,117 +17,121 @@ namespace sqeazy {
 
 template <typename T >
 struct pass_through {
-
-    typedef T raw_type;
-    typedef typename remove_unsigned<T>::type compressed_type;
-
-    typedef typename add_unsigned<typename twice_as_wide<T>::type >::type sum_type;
-    static const bool is_compressor = false;
-
-    /**
-     * @brief producing the name of this scheme and return it as a string
-     *
-     * @return const std::string
-     */
-    static const std::string name() {
-
-        //TODO: add name of Neighborhood
-        std::ostringstream msg;
-        msg << "" ;
-        return msg.str();
-
-    }
+  
+  typedef T raw_type;
+  typedef char compressed_type;
 
 
-    template <typename size_type>
-    /**
-     * @brief encoding the diff scheme, i.e. the output value for input intensity I is equal to the sum 
-     * of the neighborhood divided by the number of pixels traversed in the neighborhood
-     * 
-     * @param _width width of input stack
-     * @param _height height of the input stack
-     * @param _depth depth of the input stack
-     * @param _input input stack of type raw_type
-     * @param _output output stack of type compressed_type but same extent than the input
-     * @return sqeazy::error_code
-     */
-    static const error_code encode(const size_type& _width,
-                                   const size_type& _height,
-                                   const size_type& _depth,
-                                   const raw_type* _input,
-                                   compressed_type* _output)
-    {
+  static const bool is_compressor = false;
 
-        unsigned long length = _width*_height*_depth;
-        std::copy(_input, _input + length, _output);//crossing fingers due to possible type mismatch
-        return SUCCESS;
-    }
+  /**
+   * @brief producing the name of this scheme and return it as a string
+   *
+   * @return const std::string
+   */
+  static const std::string name() {
+
+    //TODO: add name of Neighborhood
+    std::ostringstream msg;
+    msg << "" ;
+    return msg.str();
+
+  }
 
 
-    template <typename size_type>
-    static const error_code encode(const raw_type* _input,
-                                   compressed_type* _output,
-                                   size_type& _dim
-                                  )
-    {
+  template <typename size_type>
+  /**
+   * @brief encoding the diff scheme, i.e. the output value for input intensity I is equal to the sum 
+   * of the neighborhood divided by the number of pixels traversed in the neighborhood
+   * 
+   * @param _width width of input stack
+   * @param _height height of the input stack
+   * @param _depth depth of the input stack
+   * @param _input input stack of type raw_type
+   * @param _output output stack of type compressed_type but same extent than the input
+   * @return sqeazy::error_code
+   */
+  static const error_code encode(const size_type& _width,
+				 const size_type& _height,
+				 const size_type& _depth,
+				 const raw_type* _input,
+				 compressed_type* _output)
+  {
 
-        return encode(_dim, 1, 1, _input, _output);
-    }
-
-    template <typename size_type>
-    static const error_code encode(const raw_type* _input,
-                                   compressed_type* _output,
-                                   std::vector<size_type>& _dims
-                                  )
-    {
-        return encode(_dims.at(0), _dims.at(1), _dims.at(2), _input, _output);
-    }
-
-    template <typename size_type>
-    /**
-     * @brief reconstructing data that was encoded by this diff scheme
-     * 
-     * @return sqeazy::error_code
-     */
-    static const error_code decode(const size_type& _width,
-                                   const size_type& _height,
-                                   const size_type& _depth,
-                                   const compressed_type* _input,
-                                   raw_type* _output)
-    {
-        unsigned long length = _width*_height*_depth;
-        std::copy(_input,_input + length, _output);
-        return SUCCESS;
-    }
+    unsigned long length = _width*_height*_depth;
+    std::copy(_input, _input + length, _output);//crossing fingers due to possible type mismatch
+    return SUCCESS;
+  }
 
 
-    template <typename size_type>
-    static const error_code decode(const compressed_type* _input,
-                                   raw_type* _output,
-                                   std::vector<size_type>& _dims
-                                  ) {
+  template <typename size_type>
+  static const error_code encode(const raw_type* _input,
+				 compressed_type* _output,
+				 size_type& _dim
+				 )
+  {
 
-        return decode(_dims.at(0), _dims.at(1), _dims.at(2), _input, _output);
+    return encode(_dim, 1, 1, _input, _output);
+  }
 
-    }
+  template <typename size_type>
+  static const error_code encode(const raw_type* _input,
+				 compressed_type* _output,
+				 std::vector<size_type>& _dims
+				 )
+  {
+    return encode(_dims.at(0), _dims.at(1), _dims.at(2), _input, _output);
+  }
 
-    template <typename size_type>
-    static const error_code decode(const compressed_type* _input,
-                                   raw_type* _output,
-                                   size_type& _dim
-                                  ) {
+  template <typename size_type>
+  /**
+   * @brief reconstructing data that was encoded by this diff scheme
+   * 
+   * @return sqeazy::error_code
+   */
+  static const error_code decode(const size_type& _width,
+				 const size_type& _height,
+				 const size_type& _depth,
+				 const compressed_type* _input,
+				 raw_type* _output)
+  {
+    unsigned long length = _width*_height*_depth;
+    std::copy(_input,_input + length, _output);
+    return SUCCESS;
+  }
 
-        const size_type one = 1;
-        return decode(_dim, one, one, _input, _output);
 
-    }
+  template <typename size_type>
+  static const error_code decode(const compressed_type* _input,
+				 raw_type* _output,
+				 std::vector<size_type>& _dims
+				 ) {
 
+    return decode(_dims.at(0), _dims.at(1), _dims.at(2), _input, _output);
+
+  }
+
+  template <typename size_type>
+  static const error_code decode(const compressed_type* _input,
+				 raw_type* _output,
+				 size_type& _dim
+				 ) {
+
+    const size_type one = 1;
+    return decode(_dim, one, one, _input, _output);
+
+  }
+  
+  template <typename U>
+  static const unsigned long max_encoded_size(U _src_length_in_bytes){
+    return _src_length_in_bytes;
+  }
 };
 
 
 template <typename T, typename Neighborhood = last_plane_neighborhood<3> >
 struct diff_scheme {
-
+  
     typedef T raw_type;
     typedef typename remove_unsigned<T>::type compressed_type;
 
@@ -290,7 +294,7 @@ struct diff_scheme {
 
 template < typename T, const unsigned num_bits_per_plane = 1  >
 struct bitswap_scheme {
-
+  
     typedef T raw_type;
     typedef T compressed_type;
     typedef unsigned size_type;
@@ -389,7 +393,7 @@ struct bitswap_scheme {
 
 template < typename T, typename S = long >
 struct remove_background {
-
+  
     typedef T raw_type;
     typedef T compressed_type;
     typedef S size_type;

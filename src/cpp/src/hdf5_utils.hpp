@@ -122,8 +122,8 @@ namespace sqeazy {
     if(!((fsign != 0) == std::numeric_limits<T>::is_signed))
       score += 1;
 
-    
-    return score == 0;
+    value = score == 0 ;
+    return value;
   }
 
   
@@ -339,7 +339,7 @@ namespace sqeazy {
       _shape.resize(ds->getSpace().getSimpleExtentNdims());
 
       std::vector<hsize_t> retrieved_dims(_shape.size());
-      int ndims = ds->getSpace().getSimpleExtentDims( (hsize_t*)&retrieved_dims[0], NULL);
+      ds->getSpace().getSimpleExtentDims( (hsize_t*)&retrieved_dims[0], NULL);
       std::copy(retrieved_dims.begin(), retrieved_dims.end(), _shape.begin());
 
       delete ds;
@@ -391,9 +391,7 @@ namespace sqeazy {
       
       unsigned rank = dataspace_->getSimpleExtentNdims();
       std::vector<hsize_t> retrieved_dims(rank);
-      int ndims = dataspace_->getSimpleExtentDims( (hsize_t*)&retrieved_dims[0], NULL);
-
-      hsize_t nelements = std::accumulate(retrieved_dims.begin(), retrieved_dims.end(),1.,std::multiplies<hsize_t>());
+      dataspace_->getSimpleExtentDims( (hsize_t*)&retrieved_dims[0], NULL);
 
       //check for type match
       if(!h5_read_type_matches<T>(*dataset_)){
@@ -429,7 +427,6 @@ namespace sqeazy {
       }
 
       
-      //_payload.resize(nelements);
       try{
 	dataset_->read(&_payload[0], hdf5_dtype<T>::instance() );
       }
@@ -577,12 +574,13 @@ namespace sqeazy {
       H5::DSetCreatPropList  plist;
       plist.setChunk(chunk_shape.size(), &chunk_shape[0]);
 
-      
-      size_t cd_values_size = std::ceil(float(_filter_name.size())/(sizeof(int)/sizeof(char)));
+      sqeazy::image_header<T> hdr(dims, _filter_name);
+      std::string hdr_str = hdr.str();
+      size_t cd_values_size = std::ceil(float(hdr_str.size())/(sizeof(int)/sizeof(char)));
       std::vector<unsigned> cd_values(cd_values_size,0);
 
       if(!_filter_name.empty()){
-	std::copy(_filter_name.begin(), _filter_name.end(),(char*)&cd_values[0]);
+	std::copy(hdr_str.begin(), hdr_str.end(),(char*)&cd_values[0]);
 	// H5Zregister(H5Z_SQY);
 	plist.setFilter(H5Z_FILTER_SQY,
 			H5Z_FLAG_MANDATORY,
@@ -635,7 +633,6 @@ namespace sqeazy {
 
     std::vector<hsize_t> dims(_shape.begin(), _shape.end());
     std::vector<hsize_t> chunk_shape(dims);
-    static const bool _use_filter = pipe_type::name().size() > 0;
     int rvalue = 0;
     
     try

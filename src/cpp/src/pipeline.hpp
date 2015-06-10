@@ -182,6 +182,16 @@ struct loop_decode<TList, -1 > {
 
 };
 
+  template <typename T>
+  struct type_to_name_match {};
+
+  template <> struct type_to_name_match<int> { static const std::string id(){ return "int";}};
+  template <> struct type_to_name_match<short> { static const std::string id(){ return "short";}};
+  template <> struct type_to_name_match<char> { static const std::string id(){ return "char";}};
+  template <> struct type_to_name_match<unsigned int>	{ static const std::string id(){ return "uint";}};
+  template <> struct type_to_name_match<unsigned short> { static const std::string id(){ return "ushort";}};
+  template <> struct type_to_name_match<unsigned char>	{ static const std::string id(){ return "uchar";}};
+
 
 template <typename TypeList>
 struct pipeline : public bmpl::back<TypeList>::type {
@@ -196,13 +206,13 @@ struct pipeline : public bmpl::back<TypeList>::type {
 
     static std::string name() {
 
-      std::string temp;
+      std::string temp = type_to_name_match<raw_type>::id();
       
       get_name extractor(&temp);
       
       bmpl::for_each<TypeList>(extractor);
       
-      return std::string(temp,1);
+      return temp;
 
     }
 
@@ -287,7 +297,20 @@ struct pipeline : public bmpl::back<TypeList>::type {
         return value;
     }
 
+  template <typename SizeType, typename ScalarType>
+    static typename boost::enable_if_c<sizeof(ScalarType) && compressor_type::is_compressor == false,int>::type
+    compress(const raw_type* _in, 
+	     compressed_type* _out,
+             SizeType& _size,
+             ScalarType& _num_compressed_bytes) {
 
+    int value = 1;
+    sqeazy::image_header<raw_type> hdr(_size,pipeline::name());
+    value = compress(_in,_out,_size);
+    _num_compressed_bytes = hdr.payload_size_byte();
+    return value;
+      
+  }
 
     template <typename SizeType>
     static typename boost::enable_if_c<sizeof(SizeType) && compressor_type::is_compressor,int>::type
@@ -420,6 +443,14 @@ struct pipeline : public bmpl::back<TypeList>::type {
 
     }
 
+  static const int sizeof_raw_type(){
+    return sizeof(raw_type);
+  }
+
+  static const int sizeof_compressed_type(){
+    return sizeof(compressed_type);
+  }
+  
 };
 }//sqeazy
 

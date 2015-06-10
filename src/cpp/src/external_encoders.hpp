@@ -27,7 +27,7 @@ struct lz4_scheme {
     static const std::string name() {
 
         return std::string("lz4");
-
+	
     }
 
 
@@ -45,7 +45,7 @@ struct lz4_scheme {
                                    std::vector<SizeType>& _dims,//size of _input
                                    size_type& _bytes_written = last_num_encoded_bytes
                                   ) {
-
+      
         typedef typename sqeazy::twice_as_wide<SizeType>::type local_size_type;
         local_size_type total_length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<SizeType>());
         local_size_type total_length_in_byte = total_length*sizeof(raw_type);
@@ -91,7 +91,7 @@ struct lz4_scheme {
         artificial_dims[0] = _length;
 
         return encode(_input, _output, artificial_dims, _bytes_written);
-
+	
     }
 
     /**
@@ -108,7 +108,7 @@ struct lz4_scheme {
                                    const size_type& _len_in,
                                    const size_type& _len_out
                                   ) {
-
+      
       compressed_type* output = reinterpret_cast<compressed_type*>(_output);
       size_type num_bytes_decoded = LZ4_decompress_safe(_input,output,_len_in, _len_out);
 

@@ -89,7 +89,7 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
 	ret = 1 ;
       }
       else{
-	unsigned long input_nelem = _nbytes/pipe_found.sizeof_type();
+
 	unsigned header_size_byte = hdr.size();
 	outbuflen = pipe_found.max_compressed_size(_nbytes,
 						   header_size_byte
@@ -111,22 +111,6 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
       
       }
     }
-    
-    
-    
-    
-    
-    // unsigned header_size_byte = sqeazy::bswap1_lz4_pipe::header_size(input_nelem);
-    // outbuflen = sqeazy::bswap1_lz4_pipe::max_bytes_encoded(_nbytes,
-    // 							   header_size_byte
-    // 							   ); 
-    
-    // outbuf = new char[outbuflen];
-    // unsigned short* input = reinterpret_cast<unsigned short*>(*_buf);
-
-    // /* Compress data. */
-    // ret = sqeazy::bswap1_lz4_pipe::compress(input, outbuf, input_nelem,outbuflen);
-
   }
 
   /* Always replace the input buffer with the output buffer. */

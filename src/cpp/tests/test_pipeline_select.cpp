@@ -15,6 +15,26 @@ BOOST_AUTO_TEST_CASE( instantiated )
   BOOST_CHECK_EQUAL(decide.empty(),true);  
 }
 
+BOOST_AUTO_TEST_CASE( typesize_matches )
+{
+  sqeazy::pipeline_select<> decide;
+  BOOST_CHECK_EQUAL(decide.typesize_matches(),false);
+
+  decide.set(1,sqeazy::char_rmbkg_bswap1_lz4_pipe::name());
+  BOOST_CHECK_EQUAL(decide.typesize_matches(),false);
+
+  decide.set(8,sqeazy::char_rmbkg_bswap1_lz4_pipe::name());
+  BOOST_CHECK_EQUAL(decide.typesize_matches(),true);
+
+
+  decide.set(1,sqeazy::rmbkg_bswap1_lz4_pipe::name());
+  BOOST_CHECK_EQUAL(decide.typesize_matches(),false);
+
+  decide.set(16,sqeazy::rmbkg_bswap1_lz4_pipe::name());
+  BOOST_CHECK_EQUAL(decide.typesize_matches(),true);
+  
+}
+
 BOOST_AUTO_TEST_CASE( max_compressed_size )
 {
   sqeazy::pipeline_select<> decide(std::make_pair(8,sqeazy::char_rmbkg_bswap1_lz4_pipe::name()));
@@ -37,7 +57,7 @@ BOOST_AUTO_TEST_CASE( change_current )
   sqeazy::pipeline_select<> decide(std::make_pair(8,sqeazy::char_rmbkg_bswap1_lz4_pipe::name()));
   unsigned result_8bit = decide.max_compressed_size(42);
 
-  decide.set(std::make_pair(16,sqeazy::char_rmbkg_bswap1_lz4_pipe::name()));
+  decide.set(std::make_pair(16,sqeazy::rmbkg_bswap1_lz4_pipe::name()));
   unsigned result_16bit = decide.max_compressed_size(42);
 
 
@@ -125,13 +145,6 @@ BOOST_AUTO_TEST_CASE( decoded_size_byte )
   unsigned long long expected_size_byte_all_known = decide.decoded_size_byte(&hdr[0],hdr.size());
   
   BOOST_CHECK_GT(expected_size_byte_all_known, size_); 
-
-  decide.set(1, "empty");
-  
-  unsigned long long expected_size_byte_all_unknown = decide.decoded_size_byte(&hdr[0],hdr.size());
-  
-  BOOST_CHECK_GT(expected_size_byte_all_unknown, size_); 
-  BOOST_CHECK_EQUAL(expected_size_byte_all_unknown, expected_size_byte_all_known); 
   
 }
 
@@ -142,7 +155,11 @@ BOOST_AUTO_TEST_CASE( decoded_size_byte_throws )
   
   
   BOOST_CHECK_THROW(decide.decoded_size_byte(&hdr[0],hdr.size()),std::runtime_error); 
-  
+
+  decide.set(16, "empty");
+
+  BOOST_CHECK_THROW(decide.decoded_size_byte(&hdr[0],hdr.size()),std::runtime_error); 
+
 }
 
 BOOST_AUTO_TEST_CASE( decoded_shape )
@@ -154,18 +171,6 @@ BOOST_AUTO_TEST_CASE( decoded_shape )
 
   BOOST_CHECK_EQUAL_COLLECTIONS(dims.begin(), dims.end(), found_shape.begin(), found_shape.end());  
 
-  decide.set(0,"empty");
-  
-  found_shape = decide.decode_dimensions(&hdr[0],hdr.size());
-
-  BOOST_CHECK_EQUAL_COLLECTIONS(dims.begin(), dims.end(), found_shape.begin(), found_shape.end());  
-
-  //BY INTENTION: mismatching n_bits = 8 with raw_type of bswap1_lz4_pipe (16-bit)
-  decide.set(8,sqeazy::bswap1_lz4_pipe::name());
-  
-  found_shape = decide.decode_dimensions(&hdr[0],hdr.size());
-
-  BOOST_CHECK_EQUAL_COLLECTIONS(dims.begin(), dims.end(), found_shape.begin(), found_shape.end());  
 }
 
 BOOST_AUTO_TEST_CASE( decoded_shape_throws )
@@ -175,7 +180,11 @@ BOOST_AUTO_TEST_CASE( decoded_shape_throws )
   
   BOOST_CHECK_THROW(decide.decode_dimensions(&hdr[0],hdr.size()), std::runtime_error);
 
+  decide.set(16,"empty");
+  BOOST_CHECK_THROW(decide.decode_dimensions(&hdr[0],hdr.size()), std::runtime_error);
 
+  decide.set(1,sqeazy::bswap1_lz4_pipe::name());
+  BOOST_CHECK_THROW(decide.decode_dimensions(&hdr[0],hdr.size()), std::runtime_error);
 }
 
 BOOST_AUTO_TEST_CASE( decompress_callable )
