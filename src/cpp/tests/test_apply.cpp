@@ -307,7 +307,7 @@ BOOST_AUTO_TEST_CASE( encode_decode_bitswap_shorts_dims_input )
     unsigned written_bytes = 0;
     int enc_ret = current_pipe::compress(&constant_cube[0], &output[0], dims,written_bytes);
 
-    BOOST_CHECK_EQUAL(output[0],'b');
+    BOOST_CHECK_EQUAL(output[0],sqeazy::type_to_name_match<unsigned short>::id()[0]);
     
     std::vector<char> temp(output.begin(),output.begin() + written_bytes);
     std::fill(to_play_with.begin(), to_play_with.end(),0);
