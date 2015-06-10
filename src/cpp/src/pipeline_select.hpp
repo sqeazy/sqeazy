@@ -213,22 +213,22 @@ namespace sqeazy {
       const_typeholder_(),
       typeholder_()
     {
-      
-      // std::vector<std::string> contents;
-      // sqeazy::split_string_to_vector<",">(_hdr, contents);
 
-      // int sizeof_found = sqeazy::sizeof_typeinfo(_hdr);
-      // current_ = std::make_pair(sizeof_found, contents[0]);
-
-
-      //TODO: the following is header specific, maybe integrate better with header class?
-	sqeazy::image_header<boost::blank> hdr(_hdr);
-	current_ = std::make_pair(hdr.sizeof_header_type(), hdr.pipeline());
+      sqeazy::image_header<boost::blank> hdr(_hdr);
+      current_ = std::make_pair(hdr.sizeof_header_type()*CHAR_BIT, hdr.pipeline());
 
       reset(current_);
       
     }    
 
+    int sizeof_type() const {
+      return current_.first;
+    }
+
+    std::string pipeline() const {
+      return current_.second;
+    }
+    
     void reset(const spec_t& _in){
       current_ = _in;
 

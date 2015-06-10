@@ -171,6 +171,16 @@ BOOST_AUTO_TEST_CASE( write_dataset_with_filter ){
   BOOST_REQUIRE(rvalue == 0);
   BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
   BOOST_REQUIRE_GT(bfs::file_size(no_filter_path), bfs::file_size(test_output_path));
+
+  std::vector<unsigned short> written(64,0);
+  std::vector<unsigned int> written_shape(3,4);
+  rvalue = testme.read_nd_dataset(dname,
+				  written,
+				  written_shape);
+  BOOST_REQUIRE(rvalue == 0);
+  BOOST_REQUIRE_EQUAL(written_shape.size(),dims.size());
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(written_shape.begin(),written_shape.end(),dims.begin(),dims.end());
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(written.begin(),written.end(),retrieved.begin(),retrieved.end());
   
   if(bfs::exists(test_output_path))
     bfs::remove(test_output_path);

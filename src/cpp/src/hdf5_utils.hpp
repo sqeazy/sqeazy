@@ -522,11 +522,12 @@ namespace sqeazy {
       plist.setChunk(chunk_shape.size(), &chunk_shape[0]);
 
       
+      std::string hdr = sqeazy::image_header<T>::pack(dims,filter_name);
       
-      std::vector<unsigned> cd_values(std::ceil(filter_name.size()/(sizeof(int)/sizeof(char))),0);
-
+      std::vector<unsigned> cd_values(std::ceil(float(hdr.size())/(sizeof(unsigned)/sizeof(char))),0);
+      
       if(!filter_name.empty()){
-	std::copy(filter_name.begin(), filter_name.end(),(char*)&cd_values[0]);
+	std::copy(hdr.begin(), hdr.end(),(char*)&cd_values[0]);
 	// H5Zregister(H5Z_SQY);
 	plist.setFilter(H5Z_FILTER_SQY,
 			H5Z_FLAG_MANDATORY,

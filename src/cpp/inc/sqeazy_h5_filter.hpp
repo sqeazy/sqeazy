@@ -8,7 +8,6 @@
 
 
 
-
 /* declare a hdf5 filter function */
 SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
 					  size_t _cd_nelmts,
@@ -37,16 +36,20 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
     /* Prepare the output buffer. */
 
     char* c_input = reinterpret_cast<char*>(*_buf);
+    unsigned long long c_input_size = *_buf_size;
+    
+    char* fresult = std::find(c_input, c_input + c_input_size, sqeazy::image_header<void>::header_end_delimeter());
 
-    outbuflen = sqeazy::bswap1_lz4_pipe::decoded_size_byte(c_input, _nbytes);
+    std::string hdr(c_input, fresult+1);
+    
+    sqeazy::pipeline_select<> pipe_found(hdr);
+    
+    outbuflen = pipe_found.decoded_size_byte(c_input, _nbytes);
 
     outbuf = new char[outbuflen];
 
     /* Start decompression. */
-
-    unsigned short* output = reinterpret_cast<unsigned short*>(outbuf);
-
-    ret = sqeazy::bswap1_lz4_pipe::decompress(c_input, output, _nbytes);
+    ret = pipe_found.decompress((const char*)c_input, outbuf, c_input_size);
 
     /* End decompression. */
 
@@ -59,17 +62,70 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
      ** data.  This allows us to use the simplified one-shot interface to
      ** compression.
      **/
-    unsigned long input_nelem = _nbytes/sizeof(unsigned short);
-    unsigned header_size_byte = sqeazy::bswap1_lz4_pipe::header_size(input_nelem);
-    outbuflen = sqeazy::bswap1_lz4_pipe::max_bytes_encoded(_nbytes,
-							   header_size_byte
-							   ); 
+    const char* cd_values_bytes = reinterpret_cast<const char*>(_cd_values);
+    unsigned long cd_values_bytes_size = _cd_nelmts*sizeof(unsigned);
+    const char* cd_values_bytes_end = cd_values_bytes+cd_values_bytes_size;
+    int num_delims = std::count( cd_values_bytes, cd_values_bytes_end ,
+				 sqeazy::image_header<void>::major_delimeter());
+    const char* input = reinterpret_cast<char*>(*_buf);
     
-    outbuf = new char[outbuflen];
-    unsigned short* input = reinterpret_cast<unsigned short*>(*_buf);
+    bool compress_data = num_delims > 1;
+    
+    if(!compress_data){
+      //pass
+      outbuflen = *_buf_size;
+      outbuf = new char[outbuflen];
+      
+      std::copy(input,input + outbuflen, outbuf);
+      ret = 0;
+    }
+    else{
+      
+      sqeazy::image_header<void> header(cd_values_bytes, cd_values_bytes_end);//???
+      std::string hdr = header.str();
+      sqeazy::pipeline_select<> pipe_found(hdr);
 
-    /* Compress data. */
-    ret = sqeazy::bswap1_lz4_pipe::compress(input, outbuf, input_nelem,outbuflen);
+      if(pipe_found.empty()){
+	ret = 1 ;
+      }
+      else{
+	unsigned long input_nelem = _nbytes/pipe_found.sizeof_type();
+	unsigned header_size_byte = hdr.size();
+	outbuflen = pipe_found.max_compressed_size(_nbytes,
+						   header_size_byte
+						   );
+	std::vector<char> payload(outbuflen);
+	unsigned long bytes_written = 0;
+	
+
+	std::vector<unsigned int> shape;
+	header.shape(shape);
+	ret = pipe_found.compress(input, &payload[0], shape ,bytes_written);
+
+	if(!ret){
+	  outbuflen = bytes_written;
+	  outbuf = new char[outbuflen];
+	  std::copy(payload.begin(), payload.begin() + bytes_written, outbuf);
+	}
+	  
+      
+      }
+    }
+    
+    
+    
+    
+    
+    // unsigned header_size_byte = sqeazy::bswap1_lz4_pipe::header_size(input_nelem);
+    // outbuflen = sqeazy::bswap1_lz4_pipe::max_bytes_encoded(_nbytes,
+    // 							   header_size_byte
+    // 							   ); 
+    
+    // outbuf = new char[outbuflen];
+    // unsigned short* input = reinterpret_cast<unsigned short*>(*_buf);
+
+    // /* Compress data. */
+    // ret = sqeazy::bswap1_lz4_pipe::compress(input, outbuf, input_nelem,outbuflen);
 
   }
 

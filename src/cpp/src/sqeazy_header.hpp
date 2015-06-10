@@ -133,6 +133,8 @@ header = "";
 
     }
 
+    ~image_header(){}
+    
     unsigned size() const {
 
       return header.size();
@@ -142,8 +144,11 @@ header = "";
       return &dims;
     }
 
+    template <typename U>
+    void shape(std::vector<U>& _dims) const {
+      _dims = dims;
+    }
     
-
     std::string str() const {
 
       return header;
