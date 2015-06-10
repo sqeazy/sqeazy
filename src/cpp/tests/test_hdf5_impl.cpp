@@ -128,25 +128,6 @@ BOOST_AUTO_TEST_CASE( write_dataset ){
     bfs::remove(test_output_path);
 }
 
-BOOST_AUTO_TEST_CASE( write_dataset_with_empty_filter ){
-
-  std::vector<int> retrieved(64,42);
-  std::vector<unsigned int> dims(3,4);
-  
-  sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
-  BOOST_CHECK(testme.ready());
-
-  int rvalue = testme.write_nd_dataset(dname,
-				       retrieved,
-				       dims,
-				       sqeazy::int32_passthrough_pipe());
-  BOOST_REQUIRE(rvalue == 0);
-  BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
-
-  
-  if(bfs::exists(test_output_path))
-    bfs::remove(test_output_path);
-}
 
 BOOST_AUTO_TEST_CASE( write_dataset_with_filter ){
 
