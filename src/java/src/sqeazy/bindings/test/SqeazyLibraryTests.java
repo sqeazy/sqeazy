@@ -81,13 +81,11 @@ public class SqeazyLibraryTests
 	    lSourceShape.set(i, 8);
 	}
 	
-	final String sFileName = "java_test.h5";
-	final String sDataset = "ramp";
+	// final String sFileName = "java_test.h5";
+	// final String sDataset = "ramp";
 
-	final Pointer<Byte> pFileName = Pointer.allocateBytes(sFileName.length());
-	pFileName.setCString(sFileName);
-	final Pointer<Byte> pDataset  = Pointer.allocateBytes(sDataset.length());
-	pDataset.setCString(sDataset);
+	final Pointer<Byte> pFileName = Pointer.pointerToCString("java_test.h5");
+	final Pointer<Byte> pDataset  = Pointer.pointerToCString("ramp");
 		
 	assertEquals(	0,
 			SqeazyLibrary.SQY_h5_write_UI16(pFileName,
@@ -102,7 +100,7 @@ public class SqeazyLibraryTests
 	assertEquals(	0,
 			SqeazyLibrary.SQY_h5_read_UI16(pFileName,
 							pDataset,
-							lSourceShort));
+							lReloadedShort));
 	
 	assertArrayEquals(lSourceShort.getShorts(lBufferLength),
 			  lReloadedShort.getShorts(lBufferLength));
