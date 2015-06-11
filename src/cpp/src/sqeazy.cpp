@@ -387,15 +387,19 @@ int SQY_h5_write_UI16(const char* fname,
     return rvalue;
   else{
 
-    std::string filter_name = filter;
-    if(filter_name.empty())
+    std::string in_filter = filter;
+    
+    if(in_filter.empty())
       rvalue = loaded.write_nd_dataset(dname,
 				       data,
 				       shape,
 				       shape_size);
     else{
+      std::stringstream filter_name_;
+      filter_name_ << sqeazy::type_to_name_match<unsigned short>::id() << "_" << in_filter;
+      std::string filter_name = filter_name_.str();
       rvalue = loaded.write_nd_dataset(dname,
-				       filter,
+				       filter_name.c_str(),
     				       data,
     				       shape,
     				       shape_size

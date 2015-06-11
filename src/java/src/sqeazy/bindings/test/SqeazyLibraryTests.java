@@ -93,7 +93,7 @@ public class SqeazyLibraryTests
 							lSourceShort,
 							3,
 							lSourceShape,
-							Pointer.pointerToCString("ushort_bswap1_lz4")));
+							Pointer.pointerToCString("bswap1_lz4")));
 
 	final Pointer<Short> lReloadedShort = Pointer.allocateShorts(lBufferLength);
 

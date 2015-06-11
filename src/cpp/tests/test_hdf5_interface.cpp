@@ -23,7 +23,7 @@ using namespace H5;
 //#include "hdf5_test_utils.hpp"
 #include "hdf5_fixtures.hpp"
 
-static const std::string default_filter_name = "ushort_bswap1_lz4";
+static const std::string default_filter_name = "bswap1_lz4";
 
 // static sqeazy::loaded_hdf5_plugin always_load;
 /*
