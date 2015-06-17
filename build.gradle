@@ -1,4 +1,4 @@
-plugins { id "com.jfrog.bintray" version "1.0" }
+plugins { id "com.jfrog.bintray" version "1.2" }
 
 import org.apache.tools.ant.taskdefs.condition.Os
 
@@ -14,7 +14,10 @@ def native_static_lib = ""
 def native_shared_lib = ""
 
 
+
+
 task create_build_dir << {
+  println 'create_build_dir'
   new File(native_build_dir).mkdirs()
 }
 
@@ -29,7 +32,7 @@ task cmake(type:Exec) {
   def native_build_type = project.hasProperty("sqy_build_type") ? sqy_build_type : "Release"
   def sqy_x = project.hasProperty("sqy_experimental") ? sqy_experimental : "0"
   def path_to_lz4 = project.hasProperty("lz4_path") ? lz4_path : ""
-    def path_to_hdf5 = project.hasProperty("hdf5_path") ? hdf5_path : ""	
+  def path_to_hdf5 = project.hasProperty("hdf5_path") ? hdf5_path : ""	
   def path_to_boost = project.hasProperty("boost_path") ? lz4_path : ""
 
   def cmake_args = [] as List
@@ -71,8 +74,6 @@ task cmake(type:Exec) {
     args cmake_args
   }
 
-  println commandLine
-  
 }
 
 
