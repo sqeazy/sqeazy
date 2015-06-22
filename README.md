@@ -16,7 +16,7 @@ or use the shipped script ```let_me_build_that_for_you.sh``` (click ```let_me_bu
 If any of the dependencies listed below are not available through your environment, please call gradle like:
 
 ```
-gradle cmake -Phdf5_path=/opt/local/ -Plz4_path=/opt/local/ -Pboost_path=/opt/local/
+gradle build -Phdf5_path=/opt/local/ -Plz4_path=/opt/local/ -Pboost_path=/opt/local/
 ```
 
 where in the above all required libraries by sqeazy are installed under /opt/local. Adapt this path according to your system.
