@@ -301,7 +301,7 @@ BOOST_AUTO_TEST_CASE( write_compressed_data ){
 				 &data.constant_cube[0],
 				 data.dims.size(),
 				 &data.dims[0],
-				 "ushort_lz4");
+				 "lz4");
 
   BOOST_REQUIRE_EQUAL(rvalue,0);
   BOOST_REQUIRE(bfs::exists(no_filter_path));
