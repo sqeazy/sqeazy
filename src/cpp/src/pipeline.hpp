@@ -216,6 +216,8 @@ struct pipeline : public bmpl::back<TypeList>::type {
 
     }
 
+  pipeline(){}
+  
   /**
      \brief compress through pipeline, given that pipeline contains compressor, i.e. data will shrink effectively
      
