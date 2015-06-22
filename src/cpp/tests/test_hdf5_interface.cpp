@@ -290,51 +290,51 @@ BOOST_AUTO_TEST_CASE( roundtrip_filter ){
 
 }
 
-// BOOST_AUTO_TEST_CASE( write_compressed_data ){
+BOOST_AUTO_TEST_CASE( write_compressed_data ){
 
-//   uint16_cube_of_8 data;
+  uint16_cube_of_8 data;
 
-//   bfs::path no_filter_path = "no_filter.h5";
+  bfs::path no_filter_path = "no_filter.h5";
   
-//   int rvalue = SQY_h5_write_UI16(no_filter_path.string().c_str(),
-// 				 dname.c_str(),
-// 				 &data.constant_cube[0],
-// 				 data.dims.size(),
-// 				 &data.dims[0],
-// 				 "ushort_lz4");
+  int rvalue = SQY_h5_write_UI16(no_filter_path.string().c_str(),
+				 dname.c_str(),
+				 &data.constant_cube[0],
+				 data.dims.size(),
+				 &data.dims[0],
+				 "ushort_lz4");
 
-//   BOOST_REQUIRE_EQUAL(rvalue,0);
-//   BOOST_REQUIRE(bfs::exists(no_filter_path));
-//   BOOST_REQUIRE_GT(bfs::file_size(no_filter_path),0);
+  BOOST_REQUIRE_EQUAL(rvalue,0);
+  BOOST_REQUIRE(bfs::exists(no_filter_path));
+  BOOST_REQUIRE_GT(bfs::file_size(no_filter_path),0);
 
-//   std::vector<char> compressed(data.size_in_byte);
-//   long size = compressed.size();
+  std::vector<char> compressed(data.size_in_byte);
+  long size = compressed.size();
   
-//   rvalue = SQY_LZ4Encode((const char*)&data.constant_cube[0],size,&compressed[0],&size);
-
-  
-//   rvalue = SQY_h5_write(test_output_name.c_str(),
-// 			dname.c_str(),
-// 			&compressed[0],
-// 			size);
-  
-
-//   BOOST_REQUIRE_EQUAL(rvalue,0);
-//   BOOST_REQUIRE_GT(bfs::file_size(test_output_path),0);
-//   BOOST_REQUIRE_CLOSE_FRACTION(float(bfs::file_size(test_output_path)),float(bfs::file_size(no_filter_path)),.4);
-
-//   rvalue = SQY_h5_read_UI16(test_output_name.c_str(),
-// 			    dname.c_str(),
-// 			    &data.to_play_with[0]);
-
-//   BOOST_REQUIRE_EQUAL(rvalue,0);
-//   BOOST_REQUIRE_EQUAL_COLLECTIONS(data.to_play_with.begin(), data.to_play_with.end(),
-// 				  data.constant_cube.begin(), data.constant_cube.end());
+  rvalue = SQY_LZ4Encode((const char*)&data.constant_cube[0],size,&compressed[0],&size);
 
   
-//   bfs::remove(test_output_name);
-//   bfs::remove(no_filter_path);
-// }
+  rvalue = SQY_h5_write(test_output_name.c_str(),
+			dname.c_str(),
+			&compressed[0],
+			size);
+  
+
+  BOOST_REQUIRE_EQUAL(rvalue,0);
+  BOOST_REQUIRE_GT(bfs::file_size(test_output_path),0);
+  BOOST_REQUIRE_CLOSE_FRACTION(float(bfs::file_size(test_output_path)),float(bfs::file_size(no_filter_path)),.4);
+
+  rvalue = SQY_h5_read_UI16(test_output_name.c_str(),
+			    dname.c_str(),
+			    &data.to_play_with[0]);
+
+  BOOST_REQUIRE_EQUAL(rvalue,0);
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(data.to_play_with.begin(), data.to_play_with.end(),
+				  data.constant_cube.begin(), data.constant_cube.end());
+
+  
+  bfs::remove(test_output_name);
+  bfs::remove(no_filter_path);
+}
 
 
 BOOST_AUTO_TEST_SUITE_END()
