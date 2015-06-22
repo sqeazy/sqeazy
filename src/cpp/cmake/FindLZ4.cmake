@@ -9,10 +9,11 @@ if(NOT LZ4_ROOT)
 
   find_path(LZ4_INC_PATH lz4.h)
   find_library(LZ4_LIB_PATH NAMES lz4)
-else()    
+  
+else(NOT LZ4_ROOT)    
 
   find_library(LZ4_LIB_PATH NAMES lz4 PATHS ${LZ4_ROOT} ${LZ4_ROOT}/lib NO_DEFAULT_PATH)
-  find_path(LZ4_INC_PATH lz4.h PATHS ${LZ4_ROOT} ${LZ4_ROOT}/lib NO_DEFAULT_PATH)
+  find_path(LZ4_INC_PATH lz4.h PATHS ${LZ4_ROOT} ${LZ4_ROOT}/lib ${LZ4_ROOT}/include ${LZ4_ROOT}/inc NO_DEFAULT_PATH)
 
 endif()
 
