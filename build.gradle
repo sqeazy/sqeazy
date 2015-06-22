@@ -32,7 +32,8 @@ task cmake(type:Exec) {
   def native_build_type = project.hasProperty("sqy_build_type") ? sqy_build_type : "Release"
   def sqy_x = project.hasProperty("sqy_experimental") ? sqy_experimental : "0"
   def path_to_lz4 = project.hasProperty("lz4_path") ? lz4_path : ""
-  def path_to_hdf5 = project.hasProperty("hdf5_path") ? hdf5_path : ""	
+  def path_to_hdf5 = project.hasProperty("hdf5_path") ? hdf5_path : ""
+  def path_to_tiff = project.hasProperty("tiff_path") ? tiff_path : ""	
   def path_to_boost = project.hasProperty("boost_path") ? lz4_path : ""
 
   def cmake_args = [] as List
@@ -43,14 +44,22 @@ task cmake(type:Exec) {
   }
     
   if(path_to_lz4){
+    //TODO: see if path exists
     cmake_args.add("-DLZ4_ROOT=" + path_to_lz4 + " ")
   }
 
   if(path_to_hdf5){
-    cmake_args.add("-DHDF5_ROOT=" + path_to_hdf5 + " ")
+    //TODO: see if path exists
+    cmake_args.add("-DHDF5_DIR=" + path_to_hdf5 + " ")
+  }
+
+  if(path_to_tiff){
+    //TODO: see if path exists
+    cmake_args.add("-DTIFF_ROOT=" + path_to_tiff + " ")
   }
 
   if(path_to_boost){
+    //TODO: see if path exists
     cmake_args.add("-DBOOST_ROOT=" + path_to_boost + " ") 
   }
 
