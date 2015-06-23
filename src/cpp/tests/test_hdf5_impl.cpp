@@ -163,8 +163,8 @@ BOOST_AUTO_TEST_CASE( write_dataset_with_filter ){
   BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
   BOOST_REQUIRE_GT(bfs::file_size(no_filter_path), bfs::file_size(test_output_path));
 
-  std::vector<unsigned short> written(64,0);
-  std::vector<unsigned int> written_shape(3,4);
+  std::vector<unsigned short> written(64,128);
+  std::vector<unsigned int> written_shape;
   rvalue = testme.read_nd_dataset(dname,
 				  written,
 				  written_shape);
@@ -187,12 +187,13 @@ BOOST_AUTO_TEST_CASE( write_compressed_dataset ){
 
   //write in one go
   bfs::path one_go_path = "one_go_write.h5";
-  sqeazy::h5_file one_go(one_go_path.string(), H5F_ACC_TRUNC);
-  int rvalue = one_go.write_nd_dataset(dname,
+  sqeazy::h5_file* one_go = new sqeazy::h5_file(one_go_path.string(), H5F_ACC_TRUNC);
+  int rvalue = one_go->write_nd_dataset(dname,
 				   retrieved,
 				   dims,
 				   sqeazy::bswap1_lz4_pipe());
-
+  delete one_go;
+  one_go = 0;
   BOOST_REQUIRE(rvalue == 0);
 
   //write in 2 steps
@@ -204,9 +205,9 @@ BOOST_AUTO_TEST_CASE( write_compressed_dataset ){
   BOOST_REQUIRE(rvalue == 0);
   BOOST_REQUIRE_GT(compressed_bytes,0);
     
-  sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
+  sqeazy::h5_file* testme = new sqeazy::h5_file(test_output_name, H5F_ACC_TRUNC);
 
-  rvalue = testme.write_compressed_buffer(dname,
+  rvalue = testme->write_compressed_buffer(dname,
 					   &compressed[0],
 					   compressed.size());
   BOOST_REQUIRE(rvalue == 0);
@@ -234,12 +235,14 @@ BOOST_AUTO_TEST_CASE( roundtrip_compressed_dataset ){
 
   //write in one go
   bfs::path one_go_path = "one_go_write.h5";
-  sqeazy::h5_file one_go(one_go_path.string(), H5F_ACC_TRUNC);
-  int rvalue = one_go.write_nd_dataset(dname,
+  sqeazy::h5_file* one_go = new sqeazy::h5_file(one_go_path.string(), H5F_ACC_TRUNC);
+  int rvalue = one_go->write_nd_dataset(dname,
 				   retrieved,
 				   dims,
 				   sqeazy::bswap1_lz4_pipe());
 
+  delete one_go;
+  one_go = 0;
   BOOST_REQUIRE(rvalue == 0);
 
   //write in 2 steps
@@ -254,26 +257,34 @@ BOOST_AUTO_TEST_CASE( roundtrip_compressed_dataset ){
   BOOST_REQUIRE(rvalue == 0);
   BOOST_REQUIRE_GT(compressed_bytes,0);
   
-  sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
+  sqeazy::h5_file* testme = new sqeazy::h5_file(test_output_name, H5F_ACC_TRUNC);
 
-  rvalue = testme.write_compressed_buffer(dname,
+  rvalue = testme->write_compressed_buffer(dname,
 					   &to_write[0],
 					   to_write.size());
+  delete testme;
+  testme = 0;
   BOOST_REQUIRE(rvalue == 0);
 
   //read in written dataset with standard methods
   std::vector<unsigned short> written(64,0);
   std::vector<unsigned int> written_shape;
-  rvalue = testme.read_nd_dataset(dname,
+  testme = new sqeazy::h5_file(test_output_name, H5F_ACC_RDONLY);
+  rvalue = testme->read_nd_dataset(dname,
 				  written,
 				  written_shape);
+  delete testme;
+  testme = 0;
   BOOST_REQUIRE(rvalue == 0);
 
   std::vector<unsigned short> expected(64,0);
   std::vector<unsigned int> expected_shape;
-  rvalue = one_go.read_nd_dataset(dname,
+  one_go = new sqeazy::h5_file(one_go_path.string(), H5F_ACC_RDONLY);
+  rvalue = one_go->read_nd_dataset(dname,
 				  expected,
 				  expected_shape);
+  delete one_go;
+  one_go = 0;
   BOOST_REQUIRE(rvalue == 0);
   
   BOOST_REQUIRE_EQUAL(written_shape.size(),dims.size());
@@ -300,14 +311,14 @@ BOOST_AUTO_TEST_CASE( roundtrip_dataset_with_filter ){
   std::vector<unsigned int> dims(3,4);
   
   sqeazy::loaded_hdf5_plugin now;
-  sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
+  sqeazy::h5_file* testme = new sqeazy::h5_file(test_output_name, H5F_ACC_TRUNC);
 
-  int rvalue = testme.write_nd_dataset(dname,
+  int rvalue = testme->write_nd_dataset(dname,
 				       to_store,
 				       dims,
 				       sqeazy::bswap1_lz4_pipe());
 
-  
+  delete testme;
   BOOST_REQUIRE(rvalue == 0);
   BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
 
@@ -414,7 +425,6 @@ BOOST_AUTO_TEST_CASE( write_h5_no_filter ){
   std::string dname = boost::unit_test::framework::current_test_case().p_name;
 
   int rvalue = sqeazy::write_h5<unsigned char>(test_output_name.string(), dname, &constant_cube[0], dims);
-  bool remove_file = false;
 
 
   BOOST_REQUIRE_EQUAL(rvalue,0);
@@ -451,7 +461,7 @@ BOOST_AUTO_TEST_CASE( filter_supports_encoding ){
 
   sqeazy::loaded_hdf5_plugin now;
   unsigned filter_config = 0;
-  herr_t status = H5Zget_filter_info (H5Z_FILTER_SQY, &filter_config);
+  H5Zget_filter_info (H5Z_FILTER_SQY, &filter_config);
   
   BOOST_CHECK(filter_config & H5Z_FILTER_CONFIG_ENCODE_ENABLED);
   
@@ -461,7 +471,7 @@ BOOST_AUTO_TEST_CASE( filter_supports_decoding ){
 
   sqeazy::loaded_hdf5_plugin now;
   unsigned filter_config = 0;
-  herr_t status = H5Zget_filter_info (H5Z_FILTER_SQY, &filter_config);
+  H5Zget_filter_info (H5Z_FILTER_SQY, &filter_config);
   
   BOOST_CHECK(filter_config & H5Z_FILTER_CONFIG_DECODE_ENABLED);
   

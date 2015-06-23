@@ -36,6 +36,9 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
     /* Prepare the output buffer. */
 
     char* c_input = reinterpret_cast<char*>(*_buf);
+
+    //TODO: dangerous! we rely on hdf5 to tell us how many bytes contain real 
+    //      payload, if the sqeazy header would contain that we'd be fine!
     unsigned long long c_input_size = *_buf_size;
     
     char* fresult = std::find(c_input, c_input + c_input_size, sqeazy::image_header<void>::header_end_delimeter());
@@ -50,7 +53,7 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
 
     /* Start decompression. */
     ret = pipe_found.decompress((const char*)c_input, outbuf, c_input_size);
-
+    
     /* End decompression. */
 
   } else {
@@ -69,10 +72,15 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
 
     int num_delims = std::count( input, input + (2*cd_values_bytes_size) ,
 				 sqeazy::image_header<void>::major_delimeter());
+
+    //TODO: as cd_values is stored by hdf5 into the file, we shouldn't store the header
+    //      one more time inside outbuf, but we can use the header here to determine
+    //      if the incoming buf contains compressed data or not
     bool data_already_compressed = num_delims > 1;
     
     if(data_already_compressed){
-      //pass
+
+      //TODO: remove header from input
       outbuflen = *_buf_size;
       outbuf = new char[outbuflen];
       
@@ -102,6 +110,8 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
 	header.shape(shape);
 	ret = pipe_found.compress(input, &payload[0], shape ,bytes_written);
 
+	//TODO: remove header from input
+
 	if(!ret){
 	  outbuflen = bytes_written;
 	  outbuf = new char[outbuflen];
@@ -123,7 +133,9 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
     value = outbuflen;
 
   }
-  else{//failed
+  else{
+    //failed 
+    //by hdf5 convention, return 0
     delete [] outbuf;
     value = 0;
   }

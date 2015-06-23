@@ -583,7 +583,7 @@ namespace sqeazy {
       int rvalue = 1;
       
       std::vector<hsize_t> dims(_shape, _shape + _shape_size);
-      unsigned long long nelements = std::accumulate(dims.begin(), dims.end(),1,std::multiplies<hsize_t>());
+      // unsigned long long nelements = std::accumulate(dims.begin(), dims.end(),1,std::multiplies<hsize_t>());
       // bool data_already_compressed = sqeazy::image_header<U>::valid_header((const char*)_payload, (const char*)_payload + (nelements/sizeof(T)));
       // if(data_already_compressed){
       // 	std::vector<unsigned> fshape = sqeazy::image_header<U>::unpack_shape((const char*)_payload,nelements/sizeof(T));
