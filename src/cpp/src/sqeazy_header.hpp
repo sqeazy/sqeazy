@@ -319,6 +319,25 @@ header = "";
       int value = std::count(in_buffer.begin(),in_buffer.end(), minor_delim) + 1;
       return value;
     }
+
+    static const std::string unpack_type(const char* _buffer, const unsigned& _size) {
+
+      const char* header_end_ptr = std::find(_buffer, _buffer + _size, header_end_delim);
+      //let's omit the header_end_ptr to make splitting easier
+      std::string in_buffer(_buffer, header_end_ptr);
+
+      if(!valid_header(in_buffer)){
+	std::ostringstream msg;
+	msg << "[image_header::unpack_shape]\t received header ("<< in_buffer <<") does not comply expected format\n";
+	throw std::runtime_error(msg.str().c_str());
+      }
+
+      std::vector<std::string> fields;
+      split_string_to_vector<major_delim>(in_buffer, fields);
+      
+      std::string value = fields[1];
+      return value;
+    }
   };
 
 };

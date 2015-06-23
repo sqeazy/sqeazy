@@ -1,6 +1,8 @@
 #define BOOST_TEST_MODULE TEST_LZ4_ENCODING_IMPL
 #include "boost/test/unit_test.hpp"
 #include <numeric>
+#include <typeinfo>
+
 #include <vector>
 #include <iostream>
 #include <sstream>
@@ -71,6 +73,22 @@ BOOST_AUTO_TEST_CASE( encode_header_correct_typeid )
   BOOST_CHECK_EQUAL(header.substr(comma_2+1,1),"3");
     
 }
+
+ BOOST_AUTO_TEST_CASE( encode_header_correct_type_id )
+{
+  
+  std::string header = sqeazy::image_header<value_type>::pack(dims);
+  std::string type_id = sqeazy::image_header<value_type>::unpack_type(header.c_str(),header.size());
+  std::string expected = typeid(value_type).name();
+  BOOST_CHECK_EQUAL(type_id,expected);
+
+  header = sqeazy::image_header<int>::pack(dims);
+  type_id = sqeazy::image_header<int>::unpack_type(header.c_str(),header.size());
+  expected = typeid(int).name();
+  BOOST_CHECK_EQUAL(type_id,expected);
+
+}
+
 
 BOOST_AUTO_TEST_CASE( encode_header_correct_values_of_dims )
 {

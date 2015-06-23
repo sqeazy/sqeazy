@@ -2,10 +2,15 @@
 #define _HDF5_UTILS_H_
 
 #include <limits>
+#include <string>
+#include <sstream>
+#include <map>
 #include <cmath>
 #include <vector>
 #include <set>
+#include <typeinfo>
 #include "boost/filesystem.hpp"
+#include "boost/static_assert.hpp"
 
 namespace bfs = boost::filesystem;
 
@@ -38,6 +43,9 @@ namespace H5{
     
 namespace sqeazy {
 
+  
+
+  
   /**
      \brief compile-time utility to handle datatype instantiation at runtime
      
@@ -48,14 +56,15 @@ namespace sqeazy {
      
   */
   template <typename T>
-  struct hdf5_dtype{
+  struct hdf5_compiletime_dtype{
     
     // will throw an error at compilation as no default value is defined
+    
     
   };
 
   template <>
-  struct hdf5_dtype<unsigned short>{
+  struct hdf5_compiletime_dtype<unsigned short>{
 
     typedef H5::IntType stored_type;
     static H5::PredType instance() { return H5::PredType::STD_U16LE; }
@@ -63,7 +72,7 @@ namespace sqeazy {
   };
 
   template <>
-  struct hdf5_dtype<short>{
+  struct hdf5_compiletime_dtype<short>{
 
     typedef H5::IntType stored_type;
     static H5::PredType instance() { return H5::PredType::STD_I16LE; }
@@ -71,7 +80,7 @@ namespace sqeazy {
   };
 
   template <>
-  struct hdf5_dtype<unsigned char>{
+  struct hdf5_compiletime_dtype<unsigned char>{
 
     typedef H5::IntType stored_type;
     static H5::PredType instance() { return H5::PredType::STD_U8LE; }
@@ -79,7 +88,7 @@ namespace sqeazy {
   };
   
   template <>
-  struct hdf5_dtype<char>{
+  struct hdf5_compiletime_dtype<char>{
 
     typedef H5::IntType stored_type;
     static H5::PredType instance() { return H5::PredType::STD_I8LE; }
@@ -87,7 +96,7 @@ namespace sqeazy {
   };
 
   template <>
-  struct hdf5_dtype<int>{
+  struct hdf5_compiletime_dtype<int>{
 
     typedef H5::IntType stored_type;
     static H5::PredType instance() { return H5::PredType::STD_I32LE; }
@@ -95,7 +104,7 @@ namespace sqeazy {
   };
 
   template <>
-  struct hdf5_dtype<unsigned int>{
+  struct hdf5_compiletime_dtype<unsigned int>{
 
     typedef H5::IntType stored_type;
     static H5::PredType instance() { return H5::PredType::STD_U32LE; }
@@ -103,6 +112,47 @@ namespace sqeazy {
   };
 
 
+  struct hdf5_runtime_dtype{
+
+    typedef H5::PredType (*f_type)();
+    typedef std::map<std::string,f_type> map_t;
+    static map_t type_map;
+    
+    hdf5_runtime_dtype(){
+    }
+
+    static map_t fill(){
+      map_t value;
+
+      value[typeid(short).name()] = &hdf5_compiletime_dtype<short>::instance;
+      value[typeid(unsigned short).name()] = &hdf5_compiletime_dtype<unsigned short>::instance;
+      value[typeid(char).name()] = &hdf5_compiletime_dtype<char>::instance;
+      value[typeid(unsigned char).name()] = &hdf5_compiletime_dtype<unsigned char>::instance;
+      value[typeid(int).name()] = &hdf5_compiletime_dtype<int>::instance;
+      value[typeid(unsigned int).name()] = &hdf5_compiletime_dtype<unsigned int>::instance;
+
+      return value;
+    }
+    
+    static H5::PredType instance(const std::string& _id) {
+
+      if(type_map.empty())
+	fill();
+      
+      typename map_t::const_iterator found = type_map.find(_id);
+      if(found!=type_map.end())
+	return found->second();
+      else{
+	std::stringstream msg;
+	msg << "[hdf5_runtime_dtype, "<< __FILE__":"<< __LINE__<<"]\t"
+	    << "received unknown type id " << _id << "\n";
+	throw std::runtime_error(msg.str());
+      }
+    }
+    
+  };
+
+  hdf5_runtime_dtype::map_t hdf5_runtime_dtype::type_map = hdf5_runtime_dtype::fill();
   
   template <typename T>
   bool h5_read_type_matches(const H5::DataSet& _ds){
@@ -428,7 +478,7 @@ namespace sqeazy {
 
       
       try{
-	dataset_->read(&_payload[0], hdf5_dtype<T>::instance() );
+	dataset_->read(&_payload[0], hdf5_compiletime_dtype<T>::instance() );
       }
       catch(H5::Exception & local_error)
 	{
@@ -450,22 +500,25 @@ namespace sqeazy {
       return write_nd_dataset(_dname, &_payload[0], &_shape[0], _shape.size());
     }
 
-      template <typename T, typename U>
-    int write_nd_dataset(const std::string& _dname,
-			 const T* _payload,
-			 U* _shape,
-			 const unsigned& _shape_size){
+
+      template <typename U>
+    int write_compressed_buffer(const std::string& _dname,
+		     const char* _payload,
+		     const U& _payload_size){
 	
       int rvalue = 1;
+      std::vector<hsize_t> dims;
       
-      std::vector<hsize_t> dims(_shape, _shape + _shape_size);
-      unsigned long long nelements = std::accumulate(dims.begin(), dims.end(),1,std::multiplies<hsize_t>());
-      bool data_already_compressed = sqeazy::image_header<U>::valid_header((const char*)_payload, (const char*)_payload + (nelements/sizeof(T)));
+      bool data_already_compressed = sqeazy::image_header<U>::valid_header(_payload, _payload + _payload_size);
       if(data_already_compressed){
-	std::vector<unsigned> fshape = sqeazy::image_header<U>::unpack_shape((const char*)_payload,nelements/sizeof(T));
+	std::vector<unsigned> fshape = sqeazy::image_header<U>::unpack_shape((const char*)_payload,_payload_size);
 	dims.resize(fshape.size());
 	std::copy(fshape.begin(), fshape.end(),dims.begin());
       }
+      else {
+	return rvalue;
+      }
+      
       std::vector<hsize_t> chunk_shape(dims);
       
       if(!dataspace_)
@@ -475,10 +528,16 @@ namespace sqeazy {
       H5::DSetCreatPropList  plist;
       plist.setChunk(chunk_shape.size(), &chunk_shape[0]);
 
-      std::vector<unsigned> cd_values;
+
+      //extract cd_values from _payload
+      char cmp = sqeazy::image_header<U>::header_end_delimeter();
+      std::string hdr(_payload,std::find(_payload,_payload + _payload_size, cmp)+1);
+      
+      std::vector<unsigned> cd_values(std::ceil(float(hdr.size())/(sizeof(unsigned)/sizeof(char))),0);
       
       if(data_already_compressed){
-	//oops the data is already compressed by sqy
+	std::copy(hdr.begin(), hdr.end(),(char*)&cd_values[0]);
+
 	plist.setFilter(H5Z_FILTER_SQY,
 			H5Z_FLAG_MANDATORY,
 			cd_values.size(),
@@ -488,14 +547,72 @@ namespace sqeazy {
       if(!dataset_)
 	delete dataset_;
 
+      std::string type_id = sqeazy::image_header<U>::unpack_type((const char*)_payload,_payload_size);
+      H5::PredType type_to_store = hdf5_runtime_dtype::instance(type_id);
+      
       dataset_ = new H5::DataSet(file_->createDataSet( _dname, 
-						       hdf5_dtype<T>::instance(),
+						       type_to_store,
 						       *dataspace_, 
 						       plist) );
+      
+      dataset_->write(_payload,
+		      type_to_store
+		      );
+      
+      file_->flush(H5F_SCOPE_LOCAL);//this call performs i/o
+      rvalue = 0;
+      return rvalue;
+      
+    }
+
+    /**
+       \brief write nd dataset uncompressed to file
+       
+       \param[in] 
+       
+       \return 
+       \retval 
+       
+    */
+    template <typename T, typename U>
+    int write_nd_dataset(const std::string& _dname,
+    			 const T* _payload,
+    			 U* _shape,
+    			 const unsigned& _shape_size){
+	
+      int rvalue = 1;
+      
+      std::vector<hsize_t> dims(_shape, _shape + _shape_size);
+      unsigned long long nelements = std::accumulate(dims.begin(), dims.end(),1,std::multiplies<hsize_t>());
+      // bool data_already_compressed = sqeazy::image_header<U>::valid_header((const char*)_payload, (const char*)_payload + (nelements/sizeof(T)));
+      // if(data_already_compressed){
+      // 	std::vector<unsigned> fshape = sqeazy::image_header<U>::unpack_shape((const char*)_payload,nelements/sizeof(T));
+      // 	dims.resize(fshape.size());
+      // 	std::copy(fshape.begin(), fshape.end(),dims.begin());
+      // }
+      std::vector<hsize_t> chunk_shape(dims);
+      
+      if(!dataspace_)
+    	delete dataspace_;
+
+      dataspace_ = new H5::DataSpace(dims.size(), &dims[0]);
+      H5::DSetCreatPropList  plist;
+      plist.setChunk(chunk_shape.size(), &chunk_shape[0]);
+
+      std::vector<unsigned> cd_values;
+      
+      
+      if(!dataset_)
+    	delete dataset_;
+
+      dataset_ = new H5::DataSet(file_->createDataSet( _dname, 
+    						       hdf5_compiletime_dtype<T>::instance(),
+    						       *dataspace_, 
+    						       plist) );
 
       dataset_->write(_payload,
-		      hdf5_dtype<T>::instance()
-		      );
+    		      hdf5_compiletime_dtype<T>::instance()
+    		      );
       
       file_->flush(H5F_SCOPE_LOCAL);//this call performs i/o
       rvalue = 0;
@@ -512,7 +629,16 @@ namespace sqeazy {
 
       return write_nd_dataset(_dname, &_payload[0], &_shape[0], _shape.size(), pipe_type());
     }
-    
+
+    /**
+   \brief write given data set through sqy pipeline given by pipeline type
+   
+   \param[in] 
+   
+   \return 
+   \retval 
+   
+*/
     template <typename T, typename U, typename pipe_type>
     int write_nd_dataset(const std::string& _dname,
 			 const T* _payload,
@@ -543,7 +669,7 @@ namespace sqeazy {
       
       if(!filter_name.empty()){
 	std::copy(hdr.begin(), hdr.end(),(char*)&cd_values[0]);
-	// H5Zregister(H5Z_SQY);
+
 	plist.setFilter(H5Z_FILTER_SQY,
 			H5Z_FLAG_MANDATORY,
 			cd_values.size(),
@@ -555,12 +681,12 @@ namespace sqeazy {
 	delete dataset_;
 
       dataset_ = new H5::DataSet(file_->createDataSet( _dname, 
-						       hdf5_dtype<T>::instance(),
+						       hdf5_compiletime_dtype<T>::instance(),
 						       *dataspace_, 
 						       plist) );
 
       dataset_->write(_payload,
-		      hdf5_dtype<T>::instance()
+		      hdf5_compiletime_dtype<T>::instance()
 		      );
 
       
@@ -570,7 +696,15 @@ namespace sqeazy {
       
     }
 
-
+/**
+   \brief write given data set through sqy pipeline given by _filter_name string
+   
+   \param[in] 
+   
+   \return 
+   \retval 
+   
+*/
     template <typename T, typename U>
     int write_nd_dataset(const std::string& _dname,
 			 const std::string& _filter_name,
@@ -611,12 +745,12 @@ namespace sqeazy {
 	delete dataset_;
 
       H5::DataSet ds(file_->createDataSet( _dname, 
-					   hdf5_dtype<T>::instance(),
+					   hdf5_compiletime_dtype<T>::instance(),
 					   dsp, 
 					   plist) );
 
       ds.write(_payload,
-	       hdf5_dtype<T>::instance()
+	       hdf5_compiletime_dtype<T>::instance()
 	       );
 
       
@@ -677,13 +811,13 @@ namespace sqeazy {
 	// 			 &cd_values[0]);
 	// Create the dataset.      
 	H5::DataSet*  dataset = new H5::DataSet(file.createDataSet( _dname, 
-								    hdf5_dtype<data_type>::instance(),
+								    hdf5_compiletime_dtype<data_type>::instance(),
 								    dataspace, 
 								    plist) );
 
 	// Write data to dataset.
 	dataset->write(&_payload[0],
-		       hdf5_dtype<data_type>::instance()
+		       hdf5_compiletime_dtype<data_type>::instance()
 		       );
 
 	// Close objects and file.  Either approach will close the HDF5 item.
@@ -866,7 +1000,7 @@ namespace sqeazy {
 
       //perform the read
       H5::DataSpace memspace( dsp );
-      ds.read( &_payload[0], hdf5_dtype<data_type>::instance() , memspace, dsp );
+      ds.read( &_payload[0], hdf5_compiletime_dtype<data_type>::instance() , memspace, dsp );
       
       file.close();
     }

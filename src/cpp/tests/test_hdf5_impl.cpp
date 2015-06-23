@@ -23,11 +23,21 @@ BOOST_FIXTURE_TEST_SUITE( hdf5_utils, helpers_fixture )
 
 BOOST_AUTO_TEST_CASE( static_type_instance_works ){
 
-  BOOST_CHECK(sqeazy::hdf5_dtype<unsigned short>::instance().getSize() == 2);
-  BOOST_CHECK(sqeazy::hdf5_dtype<short>::instance().getSize() == 2);
+  BOOST_CHECK(sqeazy::hdf5_compiletime_dtype<unsigned short>::instance().getSize() == 2);
+  BOOST_CHECK(sqeazy::hdf5_compiletime_dtype<short>::instance().getSize() == 2);
 
-  BOOST_CHECK(sqeazy::hdf5_dtype<unsigned char>::instance().getSize() == 1);
-  BOOST_CHECK(sqeazy::hdf5_dtype<char>::instance().getSize() == 1);
+  BOOST_CHECK(sqeazy::hdf5_compiletime_dtype<unsigned char>::instance().getSize() == 1);
+  BOOST_CHECK(sqeazy::hdf5_compiletime_dtype<char>::instance().getSize() == 1);
+
+}
+
+BOOST_AUTO_TEST_CASE( runtime_type_instance_works ){
+
+  BOOST_CHECK_NO_THROW(sqeazy::hdf5_runtime_dtype::instance(typeid(short).name()));
+  BOOST_CHECK_NO_THROW(sqeazy::hdf5_runtime_dtype::instance(typeid(unsigned short).name()));
+
+  BOOST_CHECK(sqeazy::hdf5_runtime_dtype::instance(typeid(short).name()).getSize() == 2);
+  BOOST_CHECK(sqeazy::hdf5_runtime_dtype::instance(typeid(unsigned short).name()).getSize() == 2);
 
 }
 
@@ -170,12 +180,126 @@ BOOST_AUTO_TEST_CASE( write_dataset_with_filter ){
     bfs::remove(no_filter_path);
 }
 
+BOOST_AUTO_TEST_CASE( write_compressed_dataset ){
+
+  std::vector<unsigned short> retrieved(64,42);
+  std::vector<unsigned int> dims(3,4);
+
+  //write in one go
+  bfs::path one_go_path = "one_go_write.h5";
+  sqeazy::h5_file one_go(one_go_path.string(), H5F_ACC_TRUNC);
+  int rvalue = one_go.write_nd_dataset(dname,
+				   retrieved,
+				   dims,
+				   sqeazy::bswap1_lz4_pipe());
+
+  BOOST_REQUIRE(rvalue == 0);
+
+  //write in 2 steps
+  //1. compress
+  std::vector<char> compressed(sqeazy::bswap1_lz4_pipe::max_bytes_encoded(retrieved.size()*sizeof(unsigned short)));
+  unsigned long compressed_bytes = 0;
+  rvalue = sqeazy::bswap1_lz4_pipe::compress(&retrieved[0], &compressed[0], dims, compressed_bytes);
+  compressed.resize(compressed_bytes);
+  BOOST_REQUIRE(rvalue == 0);
+  BOOST_REQUIRE_GT(compressed_bytes,0);
+    
+  sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
+
+  rvalue = testme.write_compressed_buffer(dname,
+					   &compressed[0],
+					   compressed.size());
+  BOOST_REQUIRE(rvalue == 0);
+  BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
+  BOOST_REQUIRE_CLOSE_FRACTION(float(bfs::file_size(one_go_path)), float(bfs::file_size(test_output_path)),0.1);
+
+  if(bfs::exists(test_output_path))
+    bfs::remove(test_output_path);
+
+  if(bfs::exists(one_go_path))
+    bfs::remove(one_go_path);
+
+}
+
+BOOST_AUTO_TEST_CASE( roundtrip_compressed_dataset ){
+
+  
+  
+  std::vector<unsigned short> retrieved(64,42);
+  std::vector<unsigned short> to_store(64,0);
+  for(unsigned i = 0;i<to_store.size();++i)
+    to_store[i] = i;
+
+  std::vector<unsigned int> dims(3,4);
+
+  //write in one go
+  bfs::path one_go_path = "one_go_write.h5";
+  sqeazy::h5_file one_go(one_go_path.string(), H5F_ACC_TRUNC);
+  int rvalue = one_go.write_nd_dataset(dname,
+				   retrieved,
+				   dims,
+				   sqeazy::bswap1_lz4_pipe());
+
+  BOOST_REQUIRE(rvalue == 0);
+
+  //write in 2 steps
+  //1. compress
+  std::vector<char> compressed(sqeazy::bswap1_lz4_pipe::max_bytes_encoded(retrieved.size()*sizeof(unsigned short)));
+  unsigned long compressed_bytes = 0;
+  rvalue = sqeazy::bswap1_lz4_pipe::compress(&retrieved[0], &compressed[0], dims, compressed_bytes);
+  compressed.resize(compressed_bytes);
+
+  std::vector<char> to_write(compressed.begin(),compressed.begin() + compressed_bytes);
+  
+  BOOST_REQUIRE(rvalue == 0);
+  BOOST_REQUIRE_GT(compressed_bytes,0);
+  
+  sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
+
+  rvalue = testme.write_compressed_buffer(dname,
+					   &to_write[0],
+					   to_write.size());
+  BOOST_REQUIRE(rvalue == 0);
+
+  //read in written dataset with standard methods
+  std::vector<unsigned short> written(64,0);
+  std::vector<unsigned int> written_shape;
+  rvalue = testme.read_nd_dataset(dname,
+				  written,
+				  written_shape);
+  BOOST_REQUIRE(rvalue == 0);
+
+  std::vector<unsigned short> expected(64,0);
+  std::vector<unsigned int> expected_shape;
+  rvalue = one_go.read_nd_dataset(dname,
+				  expected,
+				  expected_shape);
+  BOOST_REQUIRE(rvalue == 0);
+  
+  BOOST_REQUIRE_EQUAL(written_shape.size(),dims.size());
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(written_shape.begin(),written_shape.end(),dims.begin(),dims.end());
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(written_shape.begin(),written_shape.end(),expected_shape.begin(),expected_shape.end());
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(retrieved.begin(),retrieved.end(),expected.begin(),expected.end());
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(written.begin(),written.end(),expected.begin(),expected.end());
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(written.begin(),written.end(),retrieved.begin(),retrieved.end());
+  
+  if(bfs::exists(test_output_path))
+    bfs::remove(test_output_path);
+
+  if(bfs::exists(one_go_path))
+    bfs::remove(one_go_path);
+
+}
+
 BOOST_AUTO_TEST_CASE( roundtrip_dataset_with_filter ){
 
-  std::vector<unsigned short> to_store(64,42);
+  std::vector<unsigned short> to_store(64,0);
+  for(unsigned i = 0;i<to_store.size();++i)
+    to_store[i] = i;
+  
   std::vector<unsigned int> dims(3,4);
   
-  
+  sqeazy::loaded_hdf5_plugin now;
   sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
 
   int rvalue = testme.write_nd_dataset(dname,

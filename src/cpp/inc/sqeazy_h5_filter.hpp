@@ -65,13 +65,13 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
     const char* cd_values_bytes = reinterpret_cast<const char*>(_cd_values);
     unsigned long cd_values_bytes_size = _cd_nelmts*sizeof(unsigned);
     const char* cd_values_bytes_end = cd_values_bytes+cd_values_bytes_size;
-    int num_delims = std::count( cd_values_bytes, cd_values_bytes_end ,
-				 sqeazy::image_header<void>::major_delimeter());
     const char* input = reinterpret_cast<char*>(*_buf);
+
+    int num_delims = std::count( input, input + (2*cd_values_bytes_size) ,
+				 sqeazy::image_header<void>::major_delimeter());
+    bool data_already_compressed = num_delims > 1;
     
-    bool compress_data = num_delims > 1;
-    
-    if(!compress_data){
+    if(data_already_compressed){
       //pass
       outbuflen = *_buf_size;
       outbuf = new char[outbuflen];

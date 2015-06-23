@@ -422,11 +422,10 @@ int SQY_h5_write(const char* fname,
   if(!loaded.ready())
     return rvalue;
   else{
-    std::vector<int> shape(1,data_size);
-    rvalue = loaded.write_nd_dataset(dname,
-				     data,
-				     &shape[0],
-				     (unsigned)shape.size());
+
+    rvalue = loaded.write_compressed_buffer(dname,
+					    data,
+					    data_size);
     
   }
 
