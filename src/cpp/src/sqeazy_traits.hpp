@@ -3,6 +3,7 @@
 
 #include <numeric>
 #include "boost/utility/enable_if.hpp"
+#include "boost/type_traits.hpp"
 
 namespace sqeazy {
 
@@ -32,23 +33,24 @@ namespace sqeazy {
   template	<> struct twice_as_wide<float>	       { typedef double		type; };
 
   
-
-  template <typename T>
+  
   struct collapse {
 
     typedef unsigned long return_type;
     
+    template <typename T>
+    static typename boost::enable_if_c<!(boost::is_integral<T>::value),return_type>::type sum(T& _in){
 
-    static const return_type sum(T& _in){
-
-      if(sizeof(T::const_iterator))
-	return std::accumulate(_in.begin(),_in.end(),return_type(1),std::multiplies<return_type>());
-      else
-	return _in;
-      
+      return std::accumulate(_in.begin(),_in.end(),return_type(1),std::multiplies<return_type>());
+            
     }
 
-    
+    template <typename T>
+    static typename boost::enable_if_c<(boost::is_integral<T>::value),return_type>::type sum(T& _in){
+
+      return _in;
+            
+    }
   };
   
   

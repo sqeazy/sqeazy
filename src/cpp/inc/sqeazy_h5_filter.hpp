@@ -33,17 +33,18 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
      **/
 
 
-    /* Prepare the output buffer. */
-
+    /* extract header from cd_values */
+    const char* cd_values_bytes = reinterpret_cast<const char*>(_cd_values);
+    unsigned long cd_values_bytes_size = _cd_nelmts*sizeof(unsigned);
+    const char* cd_values_bytes_end = cd_values_bytes+cd_values_bytes_size;
+    sqeazy::image_header cd_val_hdr(cd_values_bytes, cd_values_bytes_end);
+    
+    /* extract the header from the payload */
     char* c_input = reinterpret_cast<char*>(*_buf);
-
-    //TODO: dangerous! we rely on hdf5 to tell us how many bytes contain real 
-    //      payload, if the sqeazy header would contain that we'd be fine!
     unsigned long long c_input_size = *_buf_size;
-
-    /* extract the header */
     sqeazy::image_header hdr(c_input,  c_input + c_input_size);
-    if(hdr.empty()){
+
+    if(hdr.empty() || hdr!=cd_val_hdr){
       ret = 100;
     }
     else{
@@ -73,27 +74,35 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
     const char* input = reinterpret_cast<char*>(*_buf);
 
     sqeazy::image_header hdr(input,  input + (2*cd_values_bytes_size));
+    sqeazy::image_header cd_val_hdr(cd_values_bytes, cd_values_bytes_end);
     
     if(!hdr.empty()){
 
-      outbuflen = *_buf_size;
+      //data is already compressed
+
+      //headers mismatch
+      if(hdr!=cd_val_hdr){
+	ret = 1;
+      }
+
+      outbuflen = (*_buf_size);
       outbuf = new char[outbuflen];
-      
       std::copy(input,input + outbuflen, outbuf);
-      ret = 0;
+      
     }
     else{
+
+      //data must be compressed
       
-      sqeazy::image_header<void> header(cd_values_bytes, cd_values_bytes_end);//???
-      std::string hdr = header.str();
-      sqeazy::pipeline_select<> pipe_found(hdr);
+      sqeazy::image_header header(cd_values_bytes, cd_values_bytes_end);
+      sqeazy::pipeline_select<> pipe_found(header.pipeline());
 
       if(pipe_found.empty()){
 	ret = 1 ;
       }
       else{
 
-	unsigned header_size_byte = hdr.size();
+	unsigned header_size_byte = header.size();
 	outbuflen = pipe_found.max_compressed_size(_nbytes,
 						   header_size_byte
 						   );
@@ -101,16 +110,15 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
 	unsigned long bytes_written = 0;
 	
 
-	std::vector<unsigned int> shape;
-	header.shape(shape);
+	std::vector<unsigned int> shape(header.shape()->begin(), header.shape()->end());
 	ret = pipe_found.compress(input, &payload[0], shape ,bytes_written);
+	payload.resize(bytes_written);
 
-	//TODO: remove header from input
 
 	if(!ret){
 	  outbuflen = bytes_written;
 	  outbuf = new char[outbuflen];
-	  std::copy(payload.begin(), payload.begin() + bytes_written, outbuf);
+	  std::copy(payload.begin(), payload.end(), outbuf);
 	}
 	  
       

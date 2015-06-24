@@ -270,7 +270,7 @@ namespace sqeazy {
     template <typename iter_type>
     static const image_header unpack(iter_type _begin, iter_type _end) {
 
-      const char* header_end_ptr = std::find(_begin,_end, header_end_delim);
+      iter_type header_end_ptr = std::find(_begin,_end, image_header::header_end_delimeter());
 
       //let's omit the header_end_ptr to make splitting easier
       std::string hdr(_begin, header_end_ptr);
@@ -422,6 +422,13 @@ header_ = "";
 
     }
 
+    unsigned long compressed_size_byte() const {
+
+      return this->compressed_size_byte_;
+
+    }
+
+    
     std::string raw_type() const {
       return raw_type_name_;
     }

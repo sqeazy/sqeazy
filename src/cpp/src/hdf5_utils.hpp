@@ -529,7 +529,7 @@ namespace sqeazy {
 
       std::vector<unsigned> cd_values(std::ceil(float(hdr.size())/(sizeof(unsigned)/sizeof(char))),0);
       
-      if(data_already_compressed){
+      if(!hdr.empty()){
 	std::copy(hdr.begin(), hdr.end(),(char*)&cd_values[0]);
 
 	plist.setFilter(H5Z_FILTER_SQY,

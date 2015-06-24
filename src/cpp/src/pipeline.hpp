@@ -291,7 +291,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
 
     typedef loop_encode<TypeList , size> pipe_loop;
 
-    unsigned long in_size_in_bytes = sizeof(raw_type)*sqeazy::collapse<SizeType>::sum(_size);
+    unsigned long in_size_in_bytes = sizeof(raw_type)*sqeazy::collapse::sum<SizeType>(_size);
     sqeazy::image_header hdr(raw_type(),
 			     _size,
 			     pipeline::name(),
@@ -330,7 +330,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
 
     value = compress(_in,_out,_size);
 
-    unsigned long in_size_in_bytes = sizeof(raw_type)*sqeazy::collapse<SizeType>::sum(_size);
+    unsigned long in_size_in_bytes = sizeof(raw_type)*sqeazy::collapse::sum<SizeType>(_size);
     sqeazy::image_header hdr(raw_type(),_size,pipeline::name(),in_size_in_bytes);
     
     _num_compressed_bytes = hdr.raw_size_byte_as<raw_type>();
@@ -382,7 +382,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
     }
 
     if(found_num_dims>1) {
-      std::vector<unsigned> found_dims = *hdr.shape();
+      std::vector<unsigned> found_dims(hdr.shape()->begin(),hdr.shape()->end());
       ret_value = pipe_loop::apply(first_in, first_out, found_dims);
     }
 
