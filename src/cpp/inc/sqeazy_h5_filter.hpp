@@ -37,21 +37,23 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
 
     char* c_input = reinterpret_cast<char*>(*_buf);
     unsigned long long c_input_size = *_buf_size;
-    
-    char* fresult = std::find(c_input, c_input + c_input_size, sqeazy::image_header<void>::header_end_delimeter());
 
-    std::string hdr(c_input, fresult+1);
-    
-    sqeazy::pipeline_select<> pipe_found(hdr);
-    
+    /* extract the header */
+    sqeazy::image_header hdr(c_input,  c_input + c_input_size);
+    if(hdr.empty()){
+      ret = 100;
+    }
+    else{
+    /* setup pipeline */
+    sqeazy::pipeline_select<> pipe_found(hdr.pipeline());
+
+    /* setup output data */
     outbuflen = pipe_found.decoded_size_byte(c_input, _nbytes);
-
     outbuf = new char[outbuflen];
 
     /* Start decompression. */
     ret = pipe_found.decompress((const char*)c_input, outbuf, c_input_size);
-
-    /* End decompression. */
+    }
 
   } else {
 
@@ -67,12 +69,11 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
     const char* cd_values_bytes_end = cd_values_bytes+cd_values_bytes_size;
     const char* input = reinterpret_cast<char*>(*_buf);
 
-    int num_delims = std::count( input, input + (2*cd_values_bytes_size) ,
-				 sqeazy::image_header<void>::major_delimeter());
-    bool data_already_compressed = num_delims > 1;
+
+    sqeazy::image_header hdr(input,  input + (2*cd_values_bytes_size));
     
-    if(data_already_compressed){
-      //pass
+    if(!hdr.empty()){
+
       outbuflen = *_buf_size;
       outbuf = new char[outbuflen];
       

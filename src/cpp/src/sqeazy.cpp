@@ -240,7 +240,7 @@ int SQY_LZ4_Max_Compressed_Length(long* length){
   
   std::vector<unsigned> shape(1);
   shape[0] = *length;
-  sqeazy::image_header<char> hdr(shape, lz4_pipe::name());
+  sqeazy::image_header hdr(char(),shape, lz4_pipe::name());
   
   long value = lz4_pipe::max_bytes_encoded(*length, hdr.size());//compression size + one long to encode size of
   *length = value;
@@ -250,9 +250,9 @@ int SQY_LZ4_Max_Compressed_Length(long* length){
 
 int SQY_LZ4_Decompressed_Length(const char* data, long *length){
   
-  sqeazy::image_header<sqeazy::unknown> hdr(data, data + *length);
-  if(sqeazy::image_header<sqeazy::unknown>::valid_header(hdr.header))
-    *length = hdr.payload_size_byte();
+  sqeazy::image_header hdr(data, data + *length);
+  if(!hdr.empty())
+    *length = hdr.raw_size_byte();
   else
     *length = 0;
   return 0;
@@ -270,7 +270,7 @@ int SQY_LZ4Decode(const char* src, long srclength, char* dst){
 
 int SQY_Header_Size(const char* src, long *srclength){
 
-  sqeazy::image_header<sqeazy::unknown> hdr(src, src + *srclength);
+  sqeazy::image_header hdr(src, src + *srclength);
   *srclength = hdr.size();
   
   return 0;

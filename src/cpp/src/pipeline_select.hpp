@@ -276,7 +276,7 @@ namespace sqeazy {
       typeholder_()
     {
 
-      sqeazy::image_header<boost::blank> hdr(_hdr);
+      sqeazy::image_header hdr(_hdr);
       current_ = std::make_pair(hdr.sizeof_header_type()*CHAR_BIT, hdr.pipeline());
 
       reset(current_);

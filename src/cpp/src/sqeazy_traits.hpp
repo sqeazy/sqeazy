@@ -1,6 +1,9 @@
 #ifndef _SQEAZY_TRAITS_H_
 #define _SQEAZY_TRAITS_H_
 
+#include <numeric>
+#include "boost/utility/enable_if.hpp"
+
 namespace sqeazy {
 
   template <typename T> struct remove_unsigned { typedef T type; };
@@ -29,17 +32,26 @@ namespace sqeazy {
   template	<> struct twice_as_wide<float>	       { typedef double		type; };
 
   
-  template <bool Assert, typename T>
-  struct enable_if {
-
-    typedef T type;
-
-  };
 
   template <typename T>
-  struct enable_if<false,T> {
+  struct collapse {
 
+    typedef unsigned long return_type;
+    
+
+    static const return_type sum(T& _in){
+
+      if(sizeof(T::const_iterator))
+	return std::accumulate(_in.begin(),_in.end(),return_type(1),std::multiplies<return_type>());
+      else
+	return _in;
+      
+    }
+
+    
   };
+  
+  
 } // sqeazy
 
 #endif /* _SQEAZY_TRAITS_H_ */

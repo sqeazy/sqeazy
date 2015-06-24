@@ -45,7 +45,7 @@ namespace sqeazy {
   }
  
   template <typename T>
-  static typename enable_if<std::numeric_limits<T>::is_signed,T>::type xor_if_signed(const T& _in){
+  static typename boost::enable_if_c<std::numeric_limits<T>::is_signed,T>::type xor_if_signed(const T& _in){
     //signed version
     static const T mask = ~(T(1 << ((sizeof(T)*CHAR_BIT) - 1)));
     if ( _in & ~mask )
@@ -55,7 +55,7 @@ namespace sqeazy {
   }
 
   template <typename T>
-  static typename enable_if<!std::numeric_limits<T>::is_signed,T>::type xor_if_signed(const T& _in){
+  static typename boost::enable_if_c<!std::numeric_limits<T>::is_signed,T>::type xor_if_signed(const T& _in){
     //unsigned version
     return _in;
   }

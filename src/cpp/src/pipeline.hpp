@@ -10,13 +10,15 @@
 #include "boost/mpl/size.hpp"
 #include "boost/mpl/at.hpp"
 #include "boost/mpl/reverse.hpp"
-#include "boost/utility/enable_if.hpp"
+
 
 #include "sqeazy_header.hpp"
 #include "sqeazy_common.hpp"
+#include "sqeazy_traits.hpp"
 
 namespace sqeazy {
 
+  
   template <typename T, bool flag>
   struct max_bytes_encoded_detail {
     unsigned long operator()(unsigned long _data_in_bytes, 
@@ -196,25 +198,25 @@ struct loop_decode<TList, -1 > {
 template <typename TypeList>
 struct pipeline : public bmpl::back<TypeList>::type {
 
-    typedef typename bmpl::back<TypeList>::type compressor_type;
-    typedef typename bmpl::at<TypeList, bmpl::int_<0> >::type first_step;
+  typedef typename bmpl::back<TypeList>::type compressor_type;
+  typedef typename bmpl::at<TypeList, bmpl::int_<0> >::type first_step;
 
-    typedef typename first_step::raw_type raw_type;
-    typedef typename compressor_type::compressed_type compressed_type;
+  typedef typename first_step::raw_type raw_type;
+  typedef typename compressor_type::compressed_type compressed_type;
 
-    static const int type_list_size = bmpl::size<TypeList>::value;
+  static const int type_list_size = bmpl::size<TypeList>::value;
 
-    static std::string name() {
+  static std::string name() {
 
-      std::string temp = type_to_name_match<raw_type>::id();
+    std::string temp = type_to_name_match<raw_type>::id();
       
-      get_name extractor(&temp);
+    get_name extractor(&temp);
       
-      bmpl::for_each<TypeList>(extractor);
+    bmpl::for_each<TypeList>(extractor);
       
-      return temp;
+    return temp;
 
-    }
+  }
 
   pipeline(){}
   
@@ -228,44 +230,88 @@ struct pipeline : public bmpl::back<TypeList>::type {
      \retval 
      
   */
-    template <typename SizeType, typename ScalarType>
-    static typename boost::enable_if_c<sizeof(ScalarType) && compressor_type::is_compressor,int>::type
-    compress(const raw_type* _in, 
-	     compressed_type* _out,
-             SizeType& _size,
-             ScalarType& _num_compressed_bytes) {
+  template <typename SizeType, typename ScalarType>
+  static typename boost::enable_if_c<sizeof(ScalarType) && compressor_type::is_compressor,int>::type
+									   compress(const raw_type* _in, 
+										    compressed_type* _out,
+										    SizeType& _size,
+										    ScalarType& _num_compressed_bytes) {
 
-        typedef typename first_step::compressed_type output_type;
+    typedef typename first_step::compressed_type output_type;
 
-        static const int size = type_list_size - 1;
+    static const int size = type_list_size - 1;
 
-        typedef loop_encode<TypeList , size> pipe_loop;
+    typedef loop_encode<TypeList , size> pipe_loop;
 
-	//compress
-        int value = pipe_loop::apply(_in, (output_type*)_out, _size);
+    //compress
+    int value = pipe_loop::apply(_in, (output_type*)_out, _size);
 	
-        _num_compressed_bytes = compressor_type::last_num_encoded_bytes;
+    _num_compressed_bytes = compressor_type::last_num_encoded_bytes;
 
-	//produce header
-	sqeazy::image_header<raw_type> hdr(_size,pipeline::name());
+    //produce header
+    sqeazy::image_header hdr(raw_type(),
+			     _size,
+			     pipeline::name(),
+			     _num_compressed_bytes);
+	
+    //shift output 
+    char* output_buffer = reinterpret_cast<char*>(_out);
+    unsigned long hdr_shift = hdr.size();
 
-	//shift output 
-	char* output_buffer = reinterpret_cast<char*>(_out);
-	unsigned long hdr_shift = hdr.size();
+    std::copy(output_buffer,output_buffer+_num_compressed_bytes,output_buffer+hdr_shift);
 
-	std::copy(output_buffer,output_buffer+_num_compressed_bytes,output_buffer+hdr_shift);
+    //insert header
+    std::copy(hdr.begin(), hdr.end(), output_buffer);
 
-	//insert header
-	std::copy(hdr.header.begin(), hdr.header.end(), output_buffer);
+    _num_compressed_bytes += hdr.size();
 
-	_num_compressed_bytes += hdr.size();
+    return value;
 
-        return value;
-
-    }
+  }
 
   /**
      \brief compress through pipeline, given that pipeline is not a compressing one, i.e. data will keep it's volume
+     
+     \param[in] _in input buffer of size given by _size
+     \param[in] _out output buffer of size equal to the input plus header
+     \param[in] _size shape of in the input buffer
+	  
+     \return 
+     \retval 
+     
+  */
+  template <typename SizeType>
+  static int compress(const raw_type* _in, 
+		      compressed_type* _out,
+		      SizeType& _size) {
+
+    typedef typename first_step::compressed_type output_type;
+
+    static const int size = type_list_size - 1;
+
+    typedef loop_encode<TypeList , size> pipe_loop;
+
+    unsigned long in_size_in_bytes = sizeof(raw_type)*sqeazy::collapse<SizeType>::sum(_size);
+    sqeazy::image_header hdr(raw_type(),
+			     _size,
+			     pipeline::name(),
+			     in_size_in_bytes);
+	
+    char* output_buffer = reinterpret_cast<char*>(_out);
+    std::copy(hdr.begin(), hdr.end(), output_buffer);
+
+    unsigned long hdr_shift_bytes = hdr.size();
+
+    output_type* first_output = reinterpret_cast<output_type*>(output_buffer+hdr_shift_bytes);
+
+    int value = pipe_loop::apply(_in, first_output, _size);
+
+	
+    return value;
+  }
+
+  /**
+     \brief compression on a pipeline that is NOT a compressor
      
      \param[in] 
      
@@ -273,140 +319,118 @@ struct pipeline : public bmpl::back<TypeList>::type {
      \retval 
      
   */
-    template <typename SizeType>
-    static int compress(const raw_type* _in, 
-	       compressed_type* _out,
-	       SizeType& _size) {
-
-        typedef typename first_step::compressed_type output_type;
-
-        static const int size = type_list_size - 1;
-
-        typedef loop_encode<TypeList , size> pipe_loop;
-
-	sqeazy::image_header<raw_type> hdr(_size,pipeline::name());
-	char* output_buffer = reinterpret_cast<char*>(_out);
-	std::copy(hdr.header.begin(), hdr.header.end(), output_buffer);
-
-	unsigned long hdr_shift_bytes = hdr.size()// /sizeof(output_type)
-	  ;
-
-        output_type* first_output = reinterpret_cast<output_type*>(output_buffer+hdr_shift_bytes);
-
-        int value = pipe_loop::apply(_in, first_output, _size);
-
-	
-        return value;
-    }
-
   template <typename SizeType, typename ScalarType>
-    static typename boost::enable_if_c<sizeof(ScalarType) && compressor_type::is_compressor == false,int>::type
-    compress(const raw_type* _in, 
-	     compressed_type* _out,
-             SizeType& _size,
-             ScalarType& _num_compressed_bytes) {
+  static typename boost::enable_if_c<sizeof(ScalarType) && compressor_type::is_compressor == false,int>::type
+									   compress(const raw_type* _in, 
+										    compressed_type* _out,
+										    SizeType& _size,
+										    ScalarType& _num_compressed_bytes) {
 
     int value = 1;
-    sqeazy::image_header<raw_type> hdr(_size,pipeline::name());
+
     value = compress(_in,_out,_size);
-    _num_compressed_bytes = hdr.payload_size_byte();
+
+    unsigned long in_size_in_bytes = sizeof(raw_type)*sqeazy::collapse<SizeType>::sum(_size);
+    sqeazy::image_header hdr(raw_type(),_size,pipeline::name(),in_size_in_bytes);
+    
+    _num_compressed_bytes = hdr.raw_size_byte_as<raw_type>();
     return value;
       
   }
 
-    template <typename SizeType>
-    static typename boost::enable_if_c<sizeof(SizeType) && compressor_type::is_compressor,int>::type
-    decompress(const compressed_type* _in, raw_type* _out, SizeType& _size) {
+  template <typename SizeType>
+  static typename boost::enable_if_c<sizeof(SizeType) && compressor_type::is_compressor,int>::type
+									 decompress(const compressed_type* _in, raw_type* _out, SizeType& _size) {
 
-        typedef typename bmpl::reverse<TypeList>::type pipe_list;
-        static const int size = type_list_size - 1 - 1;
-        typedef loop_decode<pipe_list , size> pipe_loop;
-        typedef typename pipe_loop::raw_type first_step_output_type;
-        typedef typename pipe_loop::compressed_type first_step_input_type;
+    typedef typename bmpl::reverse<TypeList>::type pipe_list;
+    static const int size = type_list_size - 1 - 1;
+    typedef loop_decode<pipe_list , size> pipe_loop;
+    typedef typename pipe_loop::raw_type first_step_output_type;
+    typedef typename pipe_loop::compressed_type first_step_input_type;
 
-	sqeazy::image_header<raw_type> hdr(_in, _in + _size);
+    sqeazy::image_header hdr(_in, _in + _size);
 
-	//assumption: raw_type == first_step_input_type
-        unsigned long temp_size_byte = hdr.payload_size_byte();
-        std::vector<raw_type> temp(temp_size_byte/sizeof(raw_type));
+    //assumption: raw_type == first_step_input_type
+    unsigned long temp_size_byte = hdr.raw_size_byte_as<raw_type>();
+    std::vector<raw_type> temp(temp_size_byte/sizeof(raw_type));
 
-	unsigned long hdr_shift = hdr.size()/sizeof(compressed_type);
-	const compressed_type* input_begin = _in + hdr_shift;
+    unsigned long hdr_shift = hdr.size()/sizeof(compressed_type);
+    const compressed_type* input_begin = _in + hdr_shift;
 	
-	unsigned long input_size = _size - (hdr.size()/sizeof(compressed_type));
-        int dec_result = compressor_type::decode(input_begin, &temp[0], input_size , temp_size_byte);
-        dec_result *= 10*(type_list_size - 1);
+    unsigned long input_size = _size - (hdr.size()/sizeof(compressed_type));
+    int dec_result = compressor_type::decode(input_begin, &temp[0], input_size , temp_size_byte);
+    dec_result *= 10*(type_list_size - 1);
 
 
-        if(size<0)
-            std::copy(temp.begin(),temp.end(),reinterpret_cast<raw_type*>(_out));
+    if(size<0)
+      std::copy(temp.begin(),temp.end(),reinterpret_cast<raw_type*>(_out));
 
-        unsigned found_num_dims = hdr.shape()->size();
+    unsigned found_num_dims = hdr.shape()->size();
 
-        int ret_value = 0;
+    int ret_value = 0;
 
-	first_step_output_type* first_out= reinterpret_cast<first_step_output_type*>(_out);
-	first_step_input_type* first_in = reinterpret_cast<first_step_input_type*>(&temp[0]);
+    first_step_output_type* first_out= reinterpret_cast<first_step_output_type*>(_out);
+    first_step_input_type* first_in = reinterpret_cast<first_step_input_type*>(&temp[0]);
 
-	if(found_num_dims==1) {
-	  unsigned first_in_n_el = temp_size_byte;
-	  if(!boost::is_same<first_step_input_type,void>::value)
-	    first_in_n_el/=sizeof(first_step_input_type);
+    if(found_num_dims==1) {
+      unsigned first_in_n_el = temp_size_byte;
+      if(!boost::is_same<first_step_input_type,void>::value)
+	first_in_n_el/=sizeof(first_step_input_type);
 
-	  ret_value = pipe_loop::apply(first_in, first_out, first_in_n_el);
-
-	}
-
-	if(found_num_dims>1) {
-	  std::vector<unsigned> found_dims = *hdr.shape();
-	  ret_value = pipe_loop::apply(first_in, first_out, found_dims);
-	}
-
-        return ret_value+dec_result;
-    }
-
-    template <typename SizeType>
-    static typename boost::enable_if_c<sizeof(SizeType) && compressor_type::is_compressor!=true,int>::type
-    decompress(const compressed_type* _in, raw_type* _out, SizeType& _size) {
-
-
-        typedef typename bmpl::reverse<TypeList>::type pipe_list;
-        static const int size = type_list_size - 1 ;
-        typedef loop_decode<pipe_list , size> pipe_loop;
-        typedef typename pipe_loop::raw_type first_step_output_type;
-
-        first_step_output_type* first_output = reinterpret_cast<first_step_output_type*>(_out);
-        int value = pipe_loop::apply(_in, first_output, _size);
-
-        return value;
+      ret_value = pipe_loop::apply(first_in, first_out, first_in_n_el);
 
     }
+
+    if(found_num_dims>1) {
+      std::vector<unsigned> found_dims = *hdr.shape();
+      ret_value = pipe_loop::apply(first_in, first_out, found_dims);
+    }
+
+    return ret_value+dec_result;
+  }
+
+  template <typename SizeType>
+  static typename boost::enable_if_c<sizeof(SizeType) && compressor_type::is_compressor!=true,int>::type
+									 decompress(const compressed_type* _in, raw_type* _out, SizeType& _size) {
+
+
+    typedef typename bmpl::reverse<TypeList>::type pipe_list;
+    static const int size = type_list_size - 1 ;
+    typedef loop_decode<pipe_list , size> pipe_loop;
+    typedef typename pipe_loop::raw_type first_step_output_type;
+
+    first_step_output_type* first_output = reinterpret_cast<first_step_output_type*>(_out);
+    int value = pipe_loop::apply(_in, first_output, _size);
+
+    return value;
+
+  }
 
   
-    template <typename U>
-    static const unsigned long header_size(const std::vector<U>& _in) {
+  template <typename U>
+  static const unsigned long header_size(const std::vector<U>& _in) {
 
-      image_header<raw_type> value(_in, pipeline::name());
+    image_header value(raw_type(),_in, pipeline::name());
 	
-      return value.size();
+    return value.size();
 
-    }
+  }
   
 
-    static const unsigned long header_size(unsigned long _in) {
+  static const unsigned long header_size(unsigned long _in) {
 
       
-      image_header<raw_type> value(_in, pipeline::name());
+    image_header value(raw_type(), _in, pipeline::name());
 	
-      return value.size();
+    return value.size();
 
-    }
+  }
 
   static const // typename boost::enable_if_c<compressor_type::is_compressor==true,
-				     unsigned long// >::type
-    max_bytes_encoded(unsigned long _data_in_bytes, 
-		      unsigned _len_header_bytes = 0
-		      ) {
+  unsigned long// >::type
+  max_bytes_encoded(unsigned long _data_in_bytes, 
+		    unsigned _len_header_bytes = 0
+		    ) {
 
     max_bytes_encoded_detail<compressor_type, compressor_type::is_compressor> detail;
 
@@ -421,29 +445,27 @@ struct pipeline : public bmpl::back<TypeList>::type {
   template <typename U>
   static const unsigned long decoded_size_byte(const compressed_type* _buf, const U& _size) {
     
-    image_header<raw_type> found_header(_buf, _buf + _size);
-    return found_header.payload_size_byte();
+    image_header found_header(_buf, _buf + _size);
+    return found_header.raw_size_byte_as<raw_type>();
     
   }
 
-    template <typename U>
-    static const std::vector<unsigned> decode_dimensions(const compressed_type* _buf, const U& _size) {
+  template <typename U>
+  static const std::vector<unsigned> decode_dimensions(const compressed_type* _buf, const U& _size) {
 
-      image_header<raw_type> found_header(_buf, _buf + _size);
+    image_header found_header(_buf, _buf + _size);
+    return *(found_header.shape());
 
-      return *(found_header.shape());
-
-    }
+  }
 
 
-    template <typename U>
-    static const int decoded_num_dims(const compressed_type* _buf, const U& _size) {
+  template <typename U>
+  static const int decoded_num_dims(const compressed_type* _buf, const U& _size) {
 
-      image_header<raw_type> found_header(_buf, _buf + _size);
-      
-      return found_header.shape()->size();
+    image_header found_header(_buf, _buf + _size);
+    return found_header.shape()->size();
 
-    }
+  }
 
   static const int sizeof_raw_type(){
     return sizeof(raw_type);

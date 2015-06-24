@@ -508,12 +508,11 @@ namespace sqeazy {
 	
       int rvalue = 1;
       std::vector<hsize_t> dims;
+
+      sqeazy::image_header hdr(_payload, _payload + _payload_size);
       
-      bool data_already_compressed = sqeazy::image_header<U>::valid_header(_payload, _payload + _payload_size);
-      if(data_already_compressed){
-	std::vector<unsigned> fshape = sqeazy::image_header<U>::unpack_shape((const char*)_payload,_payload_size);
-	dims.resize(fshape.size());
-	std::copy(fshape.begin(), fshape.end(),dims.begin());
+      if(!hdr.empty()){
+	std::copy(hdr.shape()->begin(), hdr.shape()->end(),dims.begin());
       }
       else {
 	return rvalue;
@@ -528,11 +527,6 @@ namespace sqeazy {
       H5::DSetCreatPropList  plist;
       plist.setChunk(chunk_shape.size(), &chunk_shape[0]);
 
-
-      //extract cd_values from _payload
-      char cmp = sqeazy::image_header<U>::header_end_delimeter();
-      std::string hdr(_payload,std::find(_payload,_payload + _payload_size, cmp)+1);
-      
       std::vector<unsigned> cd_values(std::ceil(float(hdr.size())/(sizeof(unsigned)/sizeof(char))),0);
       
       if(data_already_compressed){
@@ -547,8 +541,7 @@ namespace sqeazy {
       if(!dataset_)
 	delete dataset_;
 
-      std::string type_id = sqeazy::image_header<U>::unpack_type((const char*)_payload,_payload_size);
-      H5::PredType type_to_store = hdf5_runtime_dtype::instance(type_id);
+      H5::PredType type_to_store = hdf5_runtime_dtype::instance(hdr.raw_type());
       
       dataset_ = new H5::DataSet(file_->createDataSet( _dname, 
 						       type_to_store,
@@ -584,12 +577,7 @@ namespace sqeazy {
       
       std::vector<hsize_t> dims(_shape, _shape + _shape_size);
       unsigned long long nelements = std::accumulate(dims.begin(), dims.end(),1,std::multiplies<hsize_t>());
-      // bool data_already_compressed = sqeazy::image_header<U>::valid_header((const char*)_payload, (const char*)_payload + (nelements/sizeof(T)));
-      // if(data_already_compressed){
-      // 	std::vector<unsigned> fshape = sqeazy::image_header<U>::unpack_shape((const char*)_payload,nelements/sizeof(T));
-      // 	dims.resize(fshape.size());
-      // 	std::copy(fshape.begin(), fshape.end(),dims.begin());
-      // }
+
       std::vector<hsize_t> chunk_shape(dims);
       
       if(!dataspace_)
@@ -663,7 +651,7 @@ namespace sqeazy {
       plist.setChunk(chunk_shape.size(), &chunk_shape[0]);
 
       
-      std::string hdr = sqeazy::image_header<T>::pack(dims,filter_name);
+      sqeazy::image_header hdr(T(),dims,filter_name);
       
       std::vector<unsigned> cd_values(std::ceil(float(hdr.size())/(sizeof(unsigned)/sizeof(char))),0);
       
@@ -726,7 +714,7 @@ namespace sqeazy {
       H5::DSetCreatPropList  plist;
       plist.setChunk(chunk_shape.size(), &chunk_shape[0]);
 
-      sqeazy::image_header<T> hdr(dims, _filter_name);
+      sqeazy::image_header hdr(T(),dims, _filter_name);
       std::string hdr_str = hdr.str();
       size_t cd_values_size = std::ceil(float(hdr_str.size())/(sizeof(int)/sizeof(char)));
       std::vector<unsigned> cd_values(cd_values_size,0);

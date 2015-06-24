@@ -1,6 +1,7 @@
 #ifndef _SQEAZY_HEADER_H_
 #define _SQEAZY_HEADER_H_
 
+#include <cctype>
 #include <algorithm>
 #include <vector>
 #include <iostream>
@@ -10,7 +11,13 @@
 #include <stdexcept>
 #include <typeinfo>
 
+#include <boost/property_tree/ptree.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/property_tree/json_parser.hpp>
+
 #include "sqeazy_common.hpp"
+
+namespace bpt = boost::property_tree;
 
 namespace sqeazy {
 
@@ -55,27 +62,190 @@ namespace sqeazy {
       return 0;
   }
 
-  template <typename T,char major_delim = ',', char minor_delim='x', char header_end_delim = '|'>
+  
   struct image_header {
 
-    static const char major_delimeter() { return major_delim; }
-    static const char minor_delimeter() { return minor_delim; }
+    static const char header_end_delim = '|';
     static const char header_end_delimeter() { return header_end_delim; }
     
-    typedef T value_type;
+    // typedef T value_type;
 
-    std::string header;
-    std::vector<unsigned> dims;
+    std::string header_;
+    
+    std::vector<unsigned long> raw_shape_;
     std::string pipeline_;
+    std::string raw_type_name_;
+    unsigned long compressed_size_byte_;
 
-    template <typename S>
-    image_header(const std::vector<S>& _dims, const std::string& _pipe_name = "no_pipeline"):
-      header(""),
-      dims(_dims.begin(), _dims.end()),
-      pipeline_(_pipe_name)
+    /**
+       \brief swap
+       
+       \param[in] _lhs reference to left-hand side
+       \param[in] _rhs reference to right-hand side
+       
+       \return 
+       \retval 
+       
+    */
+    friend void swap(image_header& _lhs, image_header& _rhs) // nothrow
     {
+      std::swap(_lhs.header_, _rhs.header_);
+      std::swap(_lhs.raw_shape_, _rhs.raw_shape_);
+      std::swap(_lhs.pipeline_, _rhs.pipeline_);
+      std::swap(_lhs.raw_type_name_, _rhs.raw_type_name_);
+      std::swap(_lhs.compressed_size_byte_, _rhs.compressed_size_byte_); 
+    }
+
+    /**
+       \brief default constructor
+       
+       \param[in] 
+       
+       \return 
+       \retval 
+       
+    */
+    image_header():
+      header_(""),
+      raw_shape_(0),
+      pipeline_(""),
+      raw_type_name_(typeid(void).name()),
+      compressed_size_byte_(0)
+    {
+
+    }
+
+    /**
+       \brief copy constructor
+       
+       \param[in] 
+       
+       \return 
+       \retval 
+       
+    */
+      image_header(const image_header& _rhs):
+	header_			(_rhs.header_                  ),
+	raw_shape_		(_rhs.raw_shape_              ),
+	pipeline_		(_rhs.pipeline_               ),
+	raw_type_name_		(_rhs.raw_type_name_          ),
+	compressed_size_byte_	(_rhs.compressed_size_byte_   )
+    {
+    }
+
+    /**
+       \brief copy-assignment
+       
+       \param[in] 
+       
+       \return 
+       \retval 
+       
+    */
+    image_header& operator=(image_header _rhs){
+
+      swap(*this, _rhs);
+
+      return *this;
+    }
+	
+    /**
+       \brief pack takes the parameters of a to-compress/compressed nD data set and packs them into a JSON compatible string
+
+       \param[in]  raw_type data type of the nD data set to compress       
+       \param[in] _dims shape of the nD data set to compress
+       \param[in] _pipename sqy pipeline used
+       \param[in] _payload_bytes size of the sqy compressed buffer in Byte
+
+
+       \return std::string that contains the JSON packed header (stripped of any whitespaces)
+       \retval 
+       
+    */
+    template <typename raw_type,typename size_type>
+    static const std::string pack(const std::vector<size_type>& _dims,
+				  const std::string& _pipe_name = "empty_pipe",
+				  const unsigned long& _payload_bytes = 0
+				  ) {
+
+      // Create an empty property tree object.
+      bpt::ptree tree;
+      std::stringstream json_stream("");
+
+      // Put the simple values into the tree. The integer is automatically
+      // converted to a string. Note that the "debug" node is automatically
+      // created if it doesn't exist.
+      tree.put("pipename", _pipe_name);
+      tree.put("raw.type", typeid(raw_type).name());
+      tree.put("raw.rank",_dims.size());
+	       
+      for(unsigned i = 0;i<_dims.size();++i)
+	tree.add("raw.shape.dim", _dims[i]);
+
+      tree.put("encoded.bytes", _payload_bytes);
+
+      // Add all the modules. Unlike put, which overwrites existing nodes, add
+      // adds a new node at the lowest level, so the "modules" node will have
+      // multiple "module" children.
+
+      // Write property tree to XML file
+      bpt::write_json(json_stream, tree);
+      std::string stripped = json_stream.str();
+      stripped.erase(remove_if(stripped.begin(), stripped.end(), isspace),stripped.end());
+      return stripped;
+    }
+
+    
+    
+    template <typename value_type,
+	      typename size_type
+	      >
+    image_header(value_type,
+		 const std::vector<size_type>& _dims,
+		 const std::string& _pipe_name = "no_pipeline",
+		 const unsigned long& _payload_bytes = 0):
+      header_(""),
+      raw_shape_(_dims.begin(), _dims.end()),
+      pipeline_(_pipe_name),
+      raw_type_name_(typeid(value_type).name()),
+      compressed_size_byte_(_payload_bytes)
+    {
+
+      if(!_payload_bytes){
+	compressed_size_byte_ = std::accumulate(raw_shape_.begin(), raw_shape_.end(),sizeof(value_type),std::multiplies<unsigned long>());
+      }
+      
       try{
-	header = pack(dims,_pipe_name);
+	header_ = pack<value_type>(raw_shape_,
+				  pipeline_,
+				  compressed_size_byte_);
+      }
+      catch(...){
+	std::cerr << "["<< __FILE__ <<":" << __LINE__ <<"]\t unable to pack pipe!\n";
+	header_ = "";
+      }
+    }
+
+    template <typename value_type>
+    image_header(value_type,
+		 unsigned long _raw_in_byte,
+		 const std::string& _pipe_name = "no_pipeline",
+		 const unsigned long& _payload_bytes = 0):
+      header_(""),
+      raw_shape_(1, _raw_in_byte),
+      pipeline_(_pipe_name),
+      raw_type_name_(typeid(value_type).name()),
+      compressed_size_byte_(_payload_bytes)
+    {
+
+      if(!_payload_bytes){
+	compressed_size_byte_ = std::accumulate(raw_shape_.begin(), raw_shape_.end(),sizeof(value_type),std::multiplies<unsigned long>());
+      }
+      
+      try{
+	header_ = pack<value_type>(raw_shape_,
+				  pipeline_,
+				  compressed_size_byte_);
       }
       catch(...){
 	std::cerr << "["<< __FILE__ <<":" << __LINE__ <<"]\t unable to pack pipe!\n";
@@ -83,165 +253,226 @@ namespace sqeazy {
     }
 
 
-    image_header(unsigned long _size_in_byte, const std::string& _pipe_name = "no_pipeline"):
-      header(""),
-      dims(1),
-      pipeline_(_pipe_name)
-    {
-      dims[0] = _size_in_byte;
-      try{
-	header = pack(dims,_pipe_name);
-      }
-      catch(...){
-	std::cerr << "["<< __FILE__ <<":" << __LINE__ <<"]\t unable to pack pipe!\n";
-      }
+    
+    static const image_header unpack(const std::string& _buffer) {
+
+      return unpack(_buffer.begin(), _buffer.end());
     }
 
+    
+    static const image_header unpack(const char* _buffer,
+				      unsigned long _buffer_size) {
 
+      return unpack(_buffer, _buffer + _buffer_size);
+    }
+
+    
+    template <typename iter_type>
+    static const image_header unpack(iter_type _begin, iter_type _end) {
+
+      const char* header_end_ptr = std::find(_begin,_end, header_end_delim);
+
+      //let's omit the header_end_ptr to make splitting easier
+      std::string hdr(_begin, header_end_ptr);
+      
+      if(!valid_header(hdr)){
+	std::ostringstream msg;
+	msg << "[image_header::unpack]\t received header ("<< hdr <<") does not comply expected format\n";
+	throw std::runtime_error(msg.str().c_str());
+      }
+      
+      image_header value;
+      std::stringstream incoming(hdr);
+
+      bpt::ptree tree;
+      try{
+	bpt::read_json(incoming, tree);
+      }
+      catch (std::exception &e){
+	std::stringstream msg;
+	msg << "[image_header::unpack]\t received header ("<< hdr <<") cannot create property tree from JSON\nreason: "
+	    <<  e.what() << "\n";
+	return image_header(value);
+      }
+
+      
+      
+      value.pipeline_ = tree.get("pipename", "");
+      value.raw_type_name_ = tree.get("raw.type", typeid(void).name());
+      unsigned rank = tree.get("raw.rank", (unsigned)0);
+      value.raw_shape_.resize(rank);
+
+      bpt::ptree::const_iterator tbegin = tree.get_child("raw.shape").begin();
+      bpt::ptree::const_iterator tend = tree.get_child("raw.shape").end();
+
+      for(;tbegin!=tend;++tbegin)
+	value.raw_shape_.push_back(boost::lexical_cast<unsigned long>(tbegin->second.data()));
+
+      
+      value.compressed_size_byte_ = tree.get("encoded.bytes", (unsigned long)0);
+      
+      
+      return image_header(value);//unnamed return-type optimisation
+    }
+
+    
+    /**
+       \brief constructor that creates the header as much as possible from a string (the header will remain at size 0 if any error occurs)
+       
+       \param[in] _str that contains the header
+       
+       \return 
+       \retval 
+       
+    */
     image_header(const std::string& _str):
-      header(),
-      dims(),
-      pipeline_() {
+      header_(""),
+      raw_shape_(0),
+      pipeline_(""),
+      raw_type_name_(typeid(void).name()),
+      compressed_size_byte_(0){
 
       std::string::const_iterator header_end = std::find(_str.begin(), _str.end(), header_end_delim);
-      header = std::string(_str.begin(), header_end + 1);
+      header_ = std::string(_str.begin(), header_end + 1);
 
+      image_header rhs;
       try{
-	unpack(header,dims, pipeline_);
+	 rhs = unpack(header_);
       }
       catch(...){
 	std::cerr << "["<< __FILE__ <<":" << __LINE__ <<"]\t unable to unpack header (" << _str <<")!\n";
-header = "";
-}
+header_ = "";
+      }
+
+      swap(*this,rhs);
+      
     }
 
     template <typename Iter>
     image_header(Iter _begin, Iter _end):
-      header(),
-      dims(),
-      pipeline_() {
+      header_(""),
+      raw_shape_(0),
+      pipeline_(""),
+      raw_type_name_(typeid(void).name()),
+      compressed_size_byte_(0){
 
       Iter header_end = std::find(_begin, _end, header_end_delim);
-      header = std::string(_begin, header_end + 1);
-      
+      header_ = std::string(_begin, header_end + 1);
+
+      image_header rhs;
+
       try{
-	unpack(header,dims, pipeline_);
+	rhs = unpack(header_);
       }
       catch(...){
-	std::cerr << "["<< __FILE__ <<":" << __LINE__ <<"]\t unable to unpack header (" << header <<")!\n";
+	std::cerr << "["<< __FILE__ <<":" << __LINE__ <<"]\t unable to unpack header (" << header_ <<")!\n";
       }
-
+      
+      swap(*this,rhs);
+      
     }
 
     ~image_header(){}
+
+
     
     unsigned size() const {
 
-      return header.size();
+      return header_.size();
     }
 
-     std::vector<unsigned> const * shape() const {
-      return &dims;
+     std::vector<unsigned long> const * shape() const {
+      return &raw_shape_;
     }
 
     template <typename U>
     void shape(std::vector<U>& _dims) const {
-      _dims = dims;
+      _dims = raw_shape_;
     }
     
     std::string str() const {
 
-      return header;
+      return header_;
 
     }
 
+    bool empty() const {
+      return header_.empty();
+    }
+    
+    std::string::iterator begin(){
+      return header_.begin();
+    }
+
+    std::string::const_iterator begin() const {
+      return header_.begin();
+    }
+
+    std::string::iterator end(){
+      return header_.end();
+    }
+
+    std::string::const_iterator end() const {
+      return header_.end();
+    }
+    
     std::string pipeline() const {
 
       return this->pipeline_;
 
     }
 
+    std::string raw_type() const {
+      return raw_type_name_;
+    }
+    
+    unsigned long raw_size() const {
 
-    unsigned long payload_size() const {
-
-      unsigned long value = std::accumulate(dims.begin(), dims.end(), 1, std::multiplies<unsigned>());
+      unsigned long value = std::accumulate(raw_shape_.begin(), raw_shape_.end(), 1, std::multiplies<unsigned long>());
       return value;
     }
 
-    unsigned long payload_size_byte() const {
+    unsigned long raw_size_byte() const {
 
-      unsigned long size_of_type = sizeof(T);
-      if(!header.empty()) {
+      unsigned long size_of_type = sizeof_typeinfo(raw_type_name_);
+      if(!header_.empty()) {
 	unsigned found_size_byte = sizeof_header_type();
 	if(found_size_byte && found_size_byte!=size_of_type)
-	  return found_size_byte*payload_size();
+	  return found_size_byte*raw_size();
       }
-      return payload_size()*size_of_type;
+      return raw_size()*size_of_type;
     }
 
+    template <typename T>
+    unsigned long raw_size_byte_as() const {
+
+      unsigned long size_of_type = sizeof(T);
+      if(!header_.empty()) {
+	unsigned found_size_byte = sizeof_header_type();
+	if(found_size_byte && found_size_byte!=size_of_type)
+	  return found_size_byte*raw_size();
+      }
+      return raw_size()*size_of_type;
+    }
+    
     unsigned sizeof_header_type() const {
       unsigned value = 0;
-      if(header.empty())
+      if(header_.empty())
 	return value;
       
-      std::string type_literal = header.substr(header.find(major_delim)+1,1);
-      value = sizeof_typeinfo(type_literal);
+      value = sizeof_typeinfo(raw_type_name_);
       return value;
     }
 
-    // template <typename vtype>
-    // static const std::string pack(const std::vector<vtype>& _dims) {
 
-    //   std::stringstream header("");
-      
-    //   header << typeid(T).name() << major_delim
-    // 	     << _dims.size() << major_delim;
-    //   for(unsigned i = 0; i<_dims.size(); ++i) {
-    // 	if(i!=(_dims.size()-1))
-    // 	  header << _dims[i] << minor_delim;
-    // 	else
-    // 	  header << _dims[i];
-    //   }
-      
-    //   header << header_end_delim;
-    //   return header.str();
-    // }
-
-
-    template <typename vtype>
-    static const std::string pack(const std::vector<vtype>& _dims, const std::string& _pipe_name = "empty_pipe") {
-
-      std::stringstream header("");
-      header << _pipe_name << major_delim ;
-      header << typeid(T).name() << major_delim
-    	     << _dims.size() << major_delim;
-
-      if(_dims.size()>1){
-      for(unsigned i = 0; i<_dims.size(); ++i) {
-    	if(i!=(_dims.size()-1))
-    	  header << _dims[i] << minor_delim;
-    	else
-    	  header << _dims[i];
-      }
-      } else {
-	header << _dims[0] ;
-      }
-      
-      int final_size_in_byte = header.str().size() + 1;
-      if(final_size_in_byte % sizeof(T) != 0){
-	int n_spaces_to_fill = final_size_in_byte % sizeof(T);
-	for(int i = 0;i<n_spaces_to_fill;++i)
-	  header << " ";
-      }
-	
-      header << header_end_delim;
-
-      return header.str();
-    }
 
     static const bool valid_header(const std::string& _hdr){
 
-      return std::count(_hdr.begin(),_hdr.end(), major_delim) == 3;
+      bool value = std::count(_hdr.begin(),_hdr.end(), '}');
+      value = value && std::count(_hdr.begin(),_hdr.end(), '}') ==  std::count(_hdr.begin(),_hdr.end(), '{');
+      value = value && std::count(_hdr.begin(),_hdr.end(), ':')>1;
+      
+      return value;
 
     }
 
@@ -252,55 +483,23 @@ header = "";
       
       if(header_end != _end){
 	std::string hdr = std::string(_begin, header_end + 1);
-	return std::count(hdr.begin(),hdr.end(), major_delim) == 3;}
+	return valid_header(hdr);
+      }
       else
 	return false;
 
     }
 
-    static const void unpack(const std::string& _buffer, std::vector<unsigned>& _shape, std::string& _pipe_name ) {
 
-      return unpack(&_buffer[0], _buffer.size(), _shape, _pipe_name);
-    }
-
-    static const void unpack(const char* _buffer, const unsigned& _size, std::vector<unsigned>& _shape, std::string& _pipe_name) {
-
-      const char* header_end_ptr = std::find(_buffer, _buffer + _size, header_end_delim);
-
-      //let's omit the header_end_ptr to make splitting easier
-      std::string header(_buffer, header_end_ptr);
-      
-      if(!valid_header(header)){
-	std::ostringstream msg;
-	msg << "[image_header::unpack]\t received header ("<< header <<") does not comply expected format\n";
-	throw std::runtime_error(msg.str().c_str());
-      }
-      
-      std::vector<std::string> fields;
-      split_string_to_vector<major_delim>(header, fields);
-      _pipe_name = fields.front();
-      split_string_to_vector<minor_delim>(fields.back(), _shape);
-
-    }
-
-    static const std::vector<unsigned> unpack_shape(const char* _buffer, const unsigned& _size) {
+    static const std::vector<unsigned long> unpack_shape(const char* _buffer, const unsigned& _size) {
 
       const char* header_end_ptr = std::find(_buffer, _buffer + _size, header_end_delim);
       //let's omit the header_end_ptr to make splitting easier
-      std::string header(_buffer, header_end_ptr);
+      std::string hdr(_buffer, header_end_ptr);
       
-      if(!valid_header(header)){
-	std::ostringstream msg;
-	msg << "[image_header::unpack_shape]\t received header ("<< header <<") does not comply expected format\n";
-	throw std::runtime_error(msg.str().c_str());
-      }
-
-      std::vector<std::string> fields;
-      split_string_to_vector<major_delim>(header, fields);
+      image_header unpacked = unpack(hdr);
+      return unpacked.raw_shape_;
       
-      std::vector<unsigned> value;
-      split_string_to_vector<minor_delim>(fields.back(), value);
-      return value;
     }
 
 
@@ -316,8 +515,8 @@ header = "";
 	throw std::runtime_error(msg.str().c_str());
       }
 
-      int value = std::count(in_buffer.begin(),in_buffer.end(), minor_delim) + 1;
-      return value;
+      image_header unpacked = unpack(in_buffer);
+      return unpacked.raw_shape_.size();
     }
 
     static const std::string unpack_type(const char* _buffer, const unsigned& _size) {
@@ -332,14 +531,28 @@ header = "";
 	throw std::runtime_error(msg.str().c_str());
       }
 
-      std::vector<std::string> fields;
-      split_string_to_vector<major_delim>(in_buffer, fields);
-      
-      std::string value = fields[1];
+      image_header unpacked = unpack(in_buffer);
+      return unpacked.raw_type_name_;
+    }
+
+    friend inline bool operator==(const image_header& _left, const image_header& _right)
+    {
+      bool value = true;
+      value = value && _left.header_ ==  _right.header_;
+      value = value && _left.raw_shape_ ==  _right.raw_shape_;
+      value = value && _left.pipeline_ ==  _right.pipeline_;
+      value = value && _left.raw_type_name_ ==  _right.raw_type_name_;
+      value = value && _left.compressed_size_byte_ ==  _right.compressed_size_byte_; 
       return value;
     }
+    
+    friend inline bool operator!=(const image_header& lhs, const image_header& rhs){return !(lhs == rhs);}
   };
 
+
+    
+    
 };
 
+  
 #endif /* _SQEAZY_HEADER_H_ */
