@@ -62,10 +62,10 @@ namespace sqeazy {
       return 0;
   }
 
-  
+
   struct image_header {
 
-    static const char header_end_delim = '|';
+    static char header_end_delim;
     static const char header_end_delimeter() { return header_end_delim; }
     
     // typedef T value_type;
@@ -557,7 +557,7 @@ header_ = "";
   };
 
 
-    
+  char image_header::header_end_delim = '|';
     
 };
 
