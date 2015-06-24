@@ -576,8 +576,6 @@ namespace sqeazy {
       int rvalue = 1;
       
       std::vector<hsize_t> dims(_shape, _shape + _shape_size);
-      unsigned long long nelements = std::accumulate(dims.begin(), dims.end(),1,std::multiplies<hsize_t>());
-
       std::vector<hsize_t> chunk_shape(dims);
       
       if(!dataspace_)

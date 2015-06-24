@@ -36,6 +36,9 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
     /* Prepare the output buffer. */
 
     char* c_input = reinterpret_cast<char*>(*_buf);
+
+    //TODO: dangerous! we rely on hdf5 to tell us how many bytes contain real 
+    //      payload, if the sqeazy header would contain that we'd be fine!
     unsigned long long c_input_size = *_buf_size;
 
     /* extract the header */
@@ -44,15 +47,15 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
       ret = 100;
     }
     else{
-    /* setup pipeline */
-    sqeazy::pipeline_select<> pipe_found(hdr.pipeline());
+      /* setup pipeline */
+      sqeazy::pipeline_select<> pipe_found(hdr.pipeline());
 
-    /* setup output data */
-    outbuflen = pipe_found.decoded_size_byte(c_input, _nbytes);
-    outbuf = new char[outbuflen];
+      /* setup output data */
+      outbuflen = pipe_found.decoded_size_byte(c_input, _nbytes);
+      outbuf = new char[outbuflen];
 
-    /* Start decompression. */
-    ret = pipe_found.decompress((const char*)c_input, outbuf, c_input_size);
+      /* Start decompression. */
+      ret = pipe_found.decompress((const char*)c_input, outbuf, c_input_size);
     }
 
   } else {
@@ -68,7 +71,6 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
     unsigned long cd_values_bytes_size = _cd_nelmts*sizeof(unsigned);
     const char* cd_values_bytes_end = cd_values_bytes+cd_values_bytes_size;
     const char* input = reinterpret_cast<char*>(*_buf);
-
 
     sqeazy::image_header hdr(input,  input + (2*cd_values_bytes_size));
     
@@ -103,6 +105,8 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
 	header.shape(shape);
 	ret = pipe_found.compress(input, &payload[0], shape ,bytes_written);
 
+	//TODO: remove header from input
+
 	if(!ret){
 	  outbuflen = bytes_written;
 	  outbuf = new char[outbuflen];
@@ -124,7 +128,9 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
     value = outbuflen;
 
   }
-  else{//failed
+  else{
+    //failed 
+    //by hdf5 convention, return 0
     delete [] outbuf;
     value = 0;
   }
