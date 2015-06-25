@@ -233,13 +233,14 @@ BOOST_AUTO_TEST_CASE( write_compressed_dataset ){
 BOOST_AUTO_TEST_CASE( roundtrip_compressed_dataset ){
 
   
-  
-  std::vector<unsigned short> retrieved(64,42);
-  std::vector<unsigned short> to_store(64,0);
-  for(unsigned i = 0;i<to_store.size();++i)
-    to_store[i] = i;
+  std::vector<unsigned int> dims(3,8);
+  dims[0] -= 1;
+  dims[2] += 1;
 
-  std::vector<unsigned int> dims(3,4);
+  std::vector<unsigned short> retrieved(504,0);
+  for(unsigned i = 0;i<retrieved.size();++i)
+    retrieved[i] = i;
+
 
   //write in one go
   bfs::path one_go_path = "one_go_write.h5";
@@ -280,7 +281,7 @@ BOOST_AUTO_TEST_CASE( roundtrip_compressed_dataset ){
   BOOST_REQUIRE(rvalue == 0);
 
   //read in written dataset with standard methods
-  std::vector<unsigned short> written(64,0);
+  std::vector<unsigned short> written;
   std::vector<unsigned int> written_shape;
   testme = new sqeazy::h5_file(test_output_name, H5F_ACC_RDONLY);
   rvalue = testme->read_nd_dataset(dname,
@@ -290,7 +291,7 @@ BOOST_AUTO_TEST_CASE( roundtrip_compressed_dataset ){
   testme = 0;
   BOOST_REQUIRE(rvalue == 0);
 
-  std::vector<unsigned short> expected(64,0);
+  std::vector<unsigned short> expected;
   std::vector<unsigned int> expected_shape;
   one_go = new sqeazy::h5_file(one_go_path.string(), H5F_ACC_RDONLY);
   rvalue = one_go->read_nd_dataset(dname,

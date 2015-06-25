@@ -47,15 +47,16 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
     unsigned long long c_input_size = *_buf_size;
     sqeazy::image_header hdr(c_input,  c_input + c_input_size);
 
-    if(hdr.empty() || hdr!=cd_val_hdr){
+    if(hdr.empty()){
       ret = 100;
     }
     else{
+      c_input_size = hdr.size() + hdr.compressed_size_byte();
       /* setup pipeline */
-      sqeazy::pipeline_select<> pipe_found(hdr.pipeline());
+      sqeazy::pipeline_select<> pipe_found(hdr);
 
       /* setup output data */
-      outbuflen = pipe_found.decoded_size_byte(c_input, _nbytes);
+      outbuflen = pipe_found.decoded_size_byte(c_input, _nbytes);//TODO: maybe computed from the header
       outbuf = new char[outbuflen];
 
       /* Start decompression. */
