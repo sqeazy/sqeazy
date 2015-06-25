@@ -244,7 +244,10 @@ BOOST_AUTO_TEST_CASE( non_empty_from_valid_header )
 
 BOOST_AUTO_TEST_CASE( header_intact )
 {
-  std::string hdr = sqeazy::image_header::pack<value_type>(dims, sqeazy::bswap1_lz4_pipe::name());
+  std::string hdr = sqeazy::image_header::pack<value_type>(dims, 
+							   sqeazy::bswap1_lz4_pipe::name(),
+							   82//this is prior knowledge and only works for a 8x8x8 incrementing_cube
+							   );
   sqeazy::pipeline_select<> decide(hdr);
   to_play_with.resize(decide.max_compressed_size(size_in_byte)/2);
   
