@@ -301,11 +301,13 @@ struct pipeline : public bmpl::back<TypeList>::type {
 	
     char* output_buffer = reinterpret_cast<char*>(_out);
     
-    std::copy(hdr.begin(), hdr.end(), output_buffer);
+    
 
-    unsigned long hdr_shift_bytes = hdr.size();
+    unsigned left_over = sizeof(compressed_type) - (hdr.size() % sizeof(compressed_type));
+    unsigned long hdr_shift = hdr.size() + left_over;
 
-    output_type* first_output = reinterpret_cast<output_type*>(output_buffer+hdr_shift_bytes);
+    std::copy(hdr.begin(), hdr.end(), output_buffer + left_over);
+    output_type* first_output = reinterpret_cast<output_type*>(output_buffer+hdr_shift);
 
     int value = pipe_loop::apply(_in, first_output, _size);
 

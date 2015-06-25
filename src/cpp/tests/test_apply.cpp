@@ -103,7 +103,7 @@ BOOST_AUTO_TEST_CASE (with_pipeline_apply) {
 
     unsigned hdr_size_bytes = current_pipe::header_size(test_in.size());
     long expected_size_bytes = current_pipe::max_bytes_encoded(test_in.size()*sizeof(int), hdr_size_bytes);
-    test_out.resize(expected_size_bytes/sizeof(int));
+    test_out.resize(std::ceil(expected_size_bytes/float(sizeof(int))));
     std::fill(test_out.begin(), test_out.end(),0);
 
     std::string pipe_name = current_pipe::name();
@@ -119,8 +119,8 @@ BOOST_AUTO_TEST_CASE (with_pipeline_apply) {
     BOOST_CHECK_EQUAL(in_size,test_in.size());
     std::vector<int> expected(test_in.size(),4);
 
-
-    BOOST_CHECK_EQUAL_COLLECTIONS(test_out.begin() + (hdr_size_bytes/sizeof(int)),test_out.end(),
+    unsigned shift = std::ceil(float(hdr_size_bytes)/sizeof(int));
+    BOOST_CHECK_EQUAL_COLLECTIONS(test_out.begin() + shift,test_out.end(),
                                   expected.begin(),expected.end()
                                  );
 
@@ -304,8 +304,6 @@ BOOST_AUTO_TEST_CASE( encode_decode_bitswap_shorts_dims_input )
     //COMPRESS
     unsigned written_bytes = 0;
     int enc_ret = current_pipe::compress(&constant_cube[0], &output[0], dims,written_bytes);
-
-    BOOST_CHECK_EQUAL(output[0],sqeazy::type_to_name_match<unsigned short>::id()[0]);
     
     std::vector<char> temp(output.begin(),output.begin() + written_bytes);
     std::fill(to_play_with.begin(), to_play_with.end(),0);
