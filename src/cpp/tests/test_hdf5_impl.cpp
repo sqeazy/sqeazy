@@ -182,8 +182,10 @@ BOOST_AUTO_TEST_CASE( write_dataset_with_filter ){
 
 BOOST_AUTO_TEST_CASE( write_compressed_dataset ){
 
-  std::vector<unsigned short> retrieved(64,42);
-  std::vector<unsigned int> dims(3,4);
+  std::vector<unsigned short> retrieved(504,42);
+  std::vector<unsigned int> dims(3,8);
+  dims[0] -= 1;
+  dims[2] += 1;
 
   //write in one go
   bfs::path one_go_path = "one_go_write.h5";
@@ -198,10 +200,16 @@ BOOST_AUTO_TEST_CASE( write_compressed_dataset ){
 
   //write in 2 steps
   //1. compress
-  std::vector<char> compressed(sqeazy::bswap1_lz4_pipe::max_bytes_encoded(retrieved.size()*sizeof(unsigned short)));
+  sqeazy::image_header hdr(sqeazy::bswap1_lz4_pipe::raw_type(),
+			   dims,
+			   sqeazy::bswap1_lz4_pipe::name());
+  unsigned long max_size_compressed = sqeazy::bswap1_lz4_pipe::max_bytes_encoded(retrieved.size()*sizeof(unsigned short),
+										 hdr.size());
+  std::vector<char> compressed(max_size_compressed);
   unsigned long compressed_bytes = 0;
   rvalue = sqeazy::bswap1_lz4_pipe::compress(&retrieved[0], &compressed[0], dims, compressed_bytes);
   compressed.resize(compressed_bytes);
+
   BOOST_REQUIRE(rvalue == 0);
   BOOST_REQUIRE_GT(compressed_bytes,0);
     
@@ -247,7 +255,12 @@ BOOST_AUTO_TEST_CASE( roundtrip_compressed_dataset ){
 
   //write in 2 steps
   //1. compress
-  std::vector<char> compressed(sqeazy::bswap1_lz4_pipe::max_bytes_encoded(retrieved.size()*sizeof(unsigned short)));
+  sqeazy::image_header hdr(sqeazy::bswap1_lz4_pipe::raw_type(),
+			   dims,
+			   sqeazy::bswap1_lz4_pipe::name());
+  unsigned long max_size_compressed = sqeazy::bswap1_lz4_pipe::max_bytes_encoded(retrieved.size()*sizeof(unsigned short),
+										 hdr.size());
+  std::vector<char> compressed(max_size_compressed);
   unsigned long compressed_bytes = 0;
   rvalue = sqeazy::bswap1_lz4_pipe::compress(&retrieved[0], &compressed[0], dims, compressed_bytes);
   compressed.resize(compressed_bytes);

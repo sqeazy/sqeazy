@@ -507,11 +507,13 @@ namespace sqeazy {
 		     const U& _payload_size){
 	
       int rvalue = 1;
-      std::vector<hsize_t> dims;
+
 
       sqeazy::image_header hdr(_payload, _payload + _payload_size);
-      
+      std::vector<hsize_t> dims;      
+
       if(!hdr.empty()){
+	dims.resize(hdr.shape()->size());
 	std::copy(hdr.shape()->begin(), hdr.shape()->end(),dims.begin());
       }
       else {

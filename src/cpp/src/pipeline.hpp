@@ -260,7 +260,9 @@ struct pipeline : public bmpl::back<TypeList>::type {
     char* output_buffer = reinterpret_cast<char*>(_out);
     unsigned long hdr_shift = hdr.size();
 
-    std::copy(output_buffer,output_buffer+_num_compressed_bytes,output_buffer+hdr_shift);
+    std::copy(output_buffer,
+	      output_buffer+_num_compressed_bytes,
+	      output_buffer+hdr_shift);
 
     //insert header
     std::copy(hdr.begin(), hdr.end(), output_buffer);
@@ -448,7 +450,9 @@ struct pipeline : public bmpl::back<TypeList>::type {
 
     max_bytes_encoded_detail<compressor_type, compressor_type::is_compressor> detail;
 
-    return detail(_data_in_bytes, _len_header_bytes);
+    return detail(_data_in_bytes, 
+		  2*_len_header_bytes//to safe-guard invalid writes due to header inserts
+		  );
     
   }
 

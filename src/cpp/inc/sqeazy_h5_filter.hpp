@@ -71,21 +71,22 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
      ** data.  This allows us to use the simplified one-shot interface to
      ** compression.
      **/
+    unsigned long c_input_shift = (2*cd_values_bytes_size > _nbytes) ? _nbytes : 2*cd_values_bytes_size;
     
-    if(sqeazy::image_header::contained(c_input,  c_input + (2*cd_values_bytes_size))){
+    if(sqeazy::image_header::contained(c_input,  c_input + c_input_shift)){
 
       //data is already compressed
-      sqeazy::image_header hdr(c_input,  c_input + (2*cd_values_bytes_size));
+      sqeazy::image_header hdr(c_input,  c_input + c_input_shift);
 
       //headers mismatch
       if(hdr!=cd_val_hdr){
 	ret = 1;
       }
 
-      outbuflen = (*_buf_size);
+      outbuflen = hdr.size() + hdr.compressed_size_byte();
       outbuf = new char[outbuflen];
       std::copy(c_input,c_input + outbuflen, outbuf);
-      
+      ret = 0;
     }
     else{
 
@@ -109,13 +110,13 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
 
 	std::vector<unsigned int> shape(header.shape()->begin(), header.shape()->end());
 	ret = pipe_found.compress(c_input, &payload[0], shape ,bytes_written);
-	payload.resize(bytes_written);
+	//payload.resize(bytes_written);
 
 
 	if(!ret){
 	  outbuflen = bytes_written;
 	  outbuf = new char[outbuflen];
-	  std::copy(payload.begin(), payload.end(), outbuf);
+	  std::copy(payload.begin(), payload.begin()+outbuflen, outbuf);
 	}
 	  
       
