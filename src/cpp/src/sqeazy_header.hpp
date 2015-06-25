@@ -492,6 +492,7 @@ header_ = "";
     }
 
 
+    
 
 
     template <typename Iter>
@@ -511,6 +512,15 @@ header_ = "";
 
     static const bool valid_header(const std::string& _hdr){
       return valid_header(_hdr.begin(), _hdr.end());
+    }
+
+
+    template <typename iter_type>
+    static const bool contained(iter_type _begin, iter_type _end){
+      iter_type header_end_ptr = std::find(_begin,_end, image_header::header_end_delimeter());
+
+      return valid_header(_begin, header_end_ptr);
+
     }
     
     static const std::vector<unsigned long> unpack_shape(const char* _buffer, const unsigned& _size) {

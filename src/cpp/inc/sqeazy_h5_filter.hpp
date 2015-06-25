@@ -20,6 +20,17 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
   int ret = 1;
   size_t value = 0;
 
+
+
+  /* extract header from cd_values */
+  const char* cd_values_bytes = reinterpret_cast<const char*>(_cd_values);
+  unsigned long cd_values_bytes_size = _cd_nelmts*sizeof(unsigned);
+  const char* cd_values_bytes_end = cd_values_bytes+cd_values_bytes_size;
+  sqeazy::image_header cd_val_hdr(cd_values_bytes, cd_values_bytes_end);
+  
+  const char* c_input = reinterpret_cast<char*>(*_buf);
+
+
   if (_flags & H5Z_FLAG_REVERSE) {
 
     /** Decompress data.
@@ -31,16 +42,8 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
      ** and decompression continues.  This avoids repeatedly trying to
      ** decompress the whole block, which could be really inefficient.
      **/
-
-
-    /* extract header from cd_values */
-    const char* cd_values_bytes = reinterpret_cast<const char*>(_cd_values);
-    unsigned long cd_values_bytes_size = _cd_nelmts*sizeof(unsigned);
-    const char* cd_values_bytes_end = cd_values_bytes+cd_values_bytes_size;
-    sqeazy::image_header cd_val_hdr(cd_values_bytes, cd_values_bytes_end);
     
     /* extract the header from the payload */
-    char* c_input = reinterpret_cast<char*>(*_buf);
     unsigned long long c_input_size = *_buf_size;
     sqeazy::image_header hdr(c_input,  c_input + c_input_size);
 
@@ -68,17 +71,11 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
      ** data.  This allows us to use the simplified one-shot interface to
      ** compression.
      **/
-    const char* cd_values_bytes = reinterpret_cast<const char*>(_cd_values);
-    unsigned long cd_values_bytes_size = _cd_nelmts*sizeof(unsigned);
-    const char* cd_values_bytes_end = cd_values_bytes+cd_values_bytes_size;
-    const char* input = reinterpret_cast<char*>(*_buf);
-
-    sqeazy::image_header hdr(input,  input + (2*cd_values_bytes_size));
-    sqeazy::image_header cd_val_hdr(cd_values_bytes, cd_values_bytes_end);
     
-    if(!hdr.empty()){
+    if(sqeazy::image_header::contained(c_input,  c_input + (2*cd_values_bytes_size))){
 
       //data is already compressed
+      sqeazy::image_header hdr(c_input,  c_input + (2*cd_values_bytes_size));
 
       //headers mismatch
       if(hdr!=cd_val_hdr){
@@ -87,7 +84,7 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
 
       outbuflen = (*_buf_size);
       outbuf = new char[outbuflen];
-      std::copy(input,input + outbuflen, outbuf);
+      std::copy(c_input,c_input + outbuflen, outbuf);
       
     }
     else{
@@ -95,7 +92,7 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
       //data must be compressed
       
       sqeazy::image_header header(cd_values_bytes, cd_values_bytes_end);
-      sqeazy::pipeline_select<> pipe_found(header.pipeline());
+      sqeazy::pipeline_select<> pipe_found(header);
 
       if(pipe_found.empty()){
 	ret = 1 ;
@@ -111,7 +108,7 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
 	
 
 	std::vector<unsigned int> shape(header.shape()->begin(), header.shape()->end());
-	ret = pipe_found.compress(input, &payload[0], shape ,bytes_written);
+	ret = pipe_found.compress(c_input, &payload[0], shape ,bytes_written);
 	payload.resize(bytes_written);
 
 
