@@ -161,7 +161,7 @@ namespace sqeazy {
 
   };
   
-  struct  give_decode_dimensions : public boost::static_visitor<std::vector<unsigned> > {
+  struct  give_decode_dimensions : public boost::static_visitor<std::vector<unsigned long> > {
     
       const char* buffer_;
       unsigned long long len_;
@@ -171,12 +171,12 @@ namespace sqeazy {
 	len_(_in){}
 
       template <typename T>
-      std::vector<unsigned> operator()(T){
-	return T::template decode_dimensions<unsigned long long>(buffer_, len_);
+      std::vector<unsigned long> operator()(T){
+	return T::template decode_dimensions<unsigned long>(buffer_, len_);
       }
       
-      std::vector<unsigned> operator()(boost::blank){
-	return std::vector<unsigned>();
+      std::vector<unsigned long> operator()(boost::blank){
+	return std::vector<unsigned long>();
       }
 
     };
@@ -452,7 +452,7 @@ namespace sqeazy {
     //decode_dimensions
     
 
-    std::vector<unsigned> decode_dimensions(const char* _buf, unsigned long long _in){
+    std::vector<unsigned long> decode_dimensions(const char* _buf, unsigned long long _in){
       
       give_decode_dimensions visitor(_buf, _in);
       
@@ -470,7 +470,7 @@ namespace sqeazy {
 	throw std::runtime_error(msg.str().c_str());
       }
       
-      std::vector<unsigned> value = boost::apply_visitor(visitor, pipeholder_);
+      std::vector<unsigned long> value = boost::apply_visitor(visitor, pipeholder_);
       
       return value;
     }

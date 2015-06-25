@@ -23,7 +23,8 @@ namespace sqeazy {
   struct max_bytes_encoded_detail {
     unsigned long operator()(unsigned long _data_in_bytes, 
   			     unsigned _len_header_bytes){
-      return _data_in_bytes+_len_header_bytes;
+      return _data_in_bytes+_len_header_bytes
+      ;
     }
   };
 
@@ -32,7 +33,8 @@ namespace sqeazy {
     unsigned long operator()(unsigned long _data_in_bytes, 
   			     unsigned _len_header_bytes){
       unsigned long compressor_bound = T::max_encoded_size(_data_in_bytes);
-    return compressor_bound+_len_header_bytes;
+      return compressor_bound+_len_header_bytes
+      ;
     }
   };
 
@@ -298,6 +300,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
 			     in_size_in_bytes);
 	
     char* output_buffer = reinterpret_cast<char*>(_out);
+    
     std::copy(hdr.begin(), hdr.end(), output_buffer);
 
     unsigned long hdr_shift_bytes = hdr.size();
@@ -426,11 +429,20 @@ struct pipeline : public bmpl::back<TypeList>::type {
 
   }
 
-  static const // typename boost::enable_if_c<compressor_type::is_compressor==true,
-  unsigned long// >::type
-  max_bytes_encoded(unsigned long _data_in_bytes, 
-		    unsigned _len_header_bytes = 0
-		    ) {
+  /**
+     \brief give the size of the entire encoded chunk of data in byte
+     that includes header, separator and payload
+     
+     \param[in] _data_in_byte size of raw input data
+     \param[in] _len_header_bytes size of header
+
+     \return 
+     \retval 
+     
+  */
+  static const unsigned long max_bytes_encoded(unsigned long _data_in_bytes, 
+					       unsigned _len_header_bytes = 0
+					       ) {
 
     max_bytes_encoded_detail<compressor_type, compressor_type::is_compressor> detail;
 
@@ -451,10 +463,11 @@ struct pipeline : public bmpl::back<TypeList>::type {
   }
 
   template <typename U>
-  static const std::vector<unsigned> decode_dimensions(const compressed_type* _buf, const U& _size) {
+  static const std::vector<unsigned long> decode_dimensions(const compressed_type* _buf, const U& _size) {
 
     image_header found_header(_buf, _buf + _size);
-    return *(found_header.shape());
+    std::vector<unsigned long> result(found_header.shape()->begin(),found_header.shape()->end());
+    return result;
 
   }
 

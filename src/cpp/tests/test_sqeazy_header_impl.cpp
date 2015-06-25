@@ -18,26 +18,6 @@ namespace bpt = boost::property_tree;
 
 typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 
-template <char delimiter, typename T>
-void split_string_to_vector(const std::string& _buffer, std::vector<T>& _v){
-  
-  int num_del = std::count(_buffer.begin(), _buffer.end(), delimiter);
-  if(_v.size() != num_del + 1)
-  _v.resize(num_del+1);
-    
-  size_t begin = 0;
-  size_t end = _buffer.find(delimiter);
-  
-  std::string token;
-  
-  for(int id = 0;id<_v.size();++id){
-    std::istringstream converter(_buffer.substr(begin,end - begin));
-    converter >> _v[id];
-    begin = end +1;
-    end = _buffer.find(delimiter,begin);
-  }
-
-}
 
 BOOST_FIXTURE_TEST_SUITE( header_suite, uint16_cube_of_8 )
  
@@ -50,7 +30,7 @@ BOOST_AUTO_TEST_CASE( simple_pack )
   std::string header = sqeazy::image_header::pack<value_type>(dims);
     
   BOOST_CHECK_NE(header.size(),0);
-  
+  BOOST_CHECK_EQUAL(header[header.size()-1],sqeazy::image_header::header_end_delimeter());
     
 }
 
@@ -97,8 +77,10 @@ BOOST_AUTO_TEST_CASE( header_copies_and_assigns )
 
 BOOST_AUTO_TEST_CASE( encode_header_correct_typeid )
 {
-    
-  std::stringstream header_stream(sqeazy::image_header::pack<value_type>(dims));
+
+  std::string hdr = sqeazy::image_header::pack<value_type>(dims);
+  std::stringstream header_stream(hdr.substr(0,hdr.size()-1));
+  
   bpt::ptree tree;
 
   BOOST_CHECK_NO_THROW(bpt::read_json(header_stream, tree));
@@ -108,7 +90,9 @@ BOOST_AUTO_TEST_CASE( encode_header_correct_typeid )
 
  BOOST_AUTO_TEST_CASE( encode_header_correct_num_dims )
 {
-  std::stringstream header_stream(sqeazy::image_header::pack<value_type>(dims));
+  std::string hdr = sqeazy::image_header::pack<value_type>(dims);
+  std::stringstream header_stream(hdr.substr(0,hdr.size()-1));
+  
   bpt::ptree tree;
 
   BOOST_CHECK_NO_THROW(bpt::read_json(header_stream, tree));

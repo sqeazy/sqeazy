@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE( compress_correct_header )
   BOOST_CHECK_EQUAL(ret, 0);  
   BOOST_CHECK_GT(num_encoded, 0);  
   const char* output = (char*)&to_play_with[0];
-  sqeazy::image_header<value_type> local(output, output + num_encoded);
+  sqeazy::image_header local(output, output + num_encoded);
 
   BOOST_CHECK_EQUAL(sqeazy::bswap1_lz4_pipe::name(), local.pipeline());  
 }
@@ -138,7 +138,7 @@ BOOST_FIXTURE_TEST_SUITE( decompess_pipeline_select , uint16_cube_of_8 )
 
 BOOST_AUTO_TEST_CASE( decoded_size_byte )
 {
-  std::string hdr = sqeazy::image_header<value_type>::pack(dims, sqeazy::bswap1_lz4_pipe::name());
+  std::string hdr = sqeazy::image_header::pack<value_type>(dims, sqeazy::bswap1_lz4_pipe::name());
   sqeazy::pipeline_select<> decide(16, sqeazy::bswap1_lz4_pipe::name());
   
   unsigned long long size_ = size;
@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE( decoded_size_byte )
 
 BOOST_AUTO_TEST_CASE( decoded_size_byte_throws )
 {
-  std::string hdr = sqeazy::image_header<value_type>::pack(dims, sqeazy::bswap1_lz4_pipe::name());
+  std::string hdr = sqeazy::image_header::pack<value_type>(dims, sqeazy::bswap1_lz4_pipe::name());
   sqeazy::pipeline_select<> decide(24, "");
   
   
@@ -164,10 +164,10 @@ BOOST_AUTO_TEST_CASE( decoded_size_byte_throws )
 
 BOOST_AUTO_TEST_CASE( decoded_shape )
 {
-  std::string hdr = sqeazy::image_header<value_type>::pack(dims, sqeazy::bswap1_lz4_pipe::name());
+  std::string hdr = sqeazy::image_header::pack<value_type>(dims, sqeazy::bswap1_lz4_pipe::name());
   sqeazy::pipeline_select<> decide(16, sqeazy::bswap1_lz4_pipe::name());
   
-  std::vector<unsigned> found_shape = decide.decode_dimensions(&hdr[0],hdr.size());
+  std::vector<unsigned long> found_shape = decide.decode_dimensions(&hdr[0],hdr.size());
 
   BOOST_CHECK_EQUAL_COLLECTIONS(dims.begin(), dims.end(), found_shape.begin(), found_shape.end());  
 
@@ -175,7 +175,7 @@ BOOST_AUTO_TEST_CASE( decoded_shape )
 
 BOOST_AUTO_TEST_CASE( decoded_shape_throws )
 {
-  std::string hdr = sqeazy::image_header<value_type>::pack(dims, sqeazy::bswap1_lz4_pipe::name());
+  std::string hdr = sqeazy::image_header::pack<value_type>(dims, sqeazy::bswap1_lz4_pipe::name());
   sqeazy::pipeline_select<> decide(16, " ");
   
   BOOST_CHECK_THROW(decide.decode_dimensions(&hdr[0],hdr.size()), std::runtime_error);
@@ -234,7 +234,7 @@ BOOST_FIXTURE_TEST_SUITE( from_sqy_header , uint16_cube_of_8 )
 
 BOOST_AUTO_TEST_CASE( non_empty_from_valid_header )
 {
-  std::string hdr = sqeazy::image_header<value_type>::pack(dims, sqeazy::bswap1_lz4_pipe::name());
+  std::string hdr = sqeazy::image_header::pack<value_type>(dims, sqeazy::bswap1_lz4_pipe::name());
   sqeazy::pipeline_select<> decide(hdr);
   
   
@@ -244,7 +244,7 @@ BOOST_AUTO_TEST_CASE( non_empty_from_valid_header )
 
 BOOST_AUTO_TEST_CASE( header_intact )
 {
-  std::string hdr = sqeazy::image_header<value_type>::pack(dims, sqeazy::bswap1_lz4_pipe::name());
+  std::string hdr = sqeazy::image_header::pack<value_type>(dims, sqeazy::bswap1_lz4_pipe::name());
   sqeazy::pipeline_select<> decide(hdr);
   to_play_with.resize(decide.max_compressed_size(size_in_byte)/2);
   
@@ -262,7 +262,7 @@ BOOST_AUTO_TEST_CASE( header_intact )
 
 BOOST_AUTO_TEST_CASE( selected_comresses_like_native )
 {
-  std::string hdr = sqeazy::image_header<value_type>::pack(dims, sqeazy::bswap1_lz4_pipe::name());
+  std::string hdr = sqeazy::image_header::pack<value_type>(dims, sqeazy::bswap1_lz4_pipe::name());
   sqeazy::pipeline_select<> decide(hdr);
   to_play_with.resize(decide.max_compressed_size(size_in_byte)/2);
   

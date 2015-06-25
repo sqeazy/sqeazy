@@ -120,8 +120,6 @@ BOOST_AUTO_TEST_CASE (with_pipeline_apply) {
     std::vector<int> expected(test_in.size(),4);
 
 
-
-
     BOOST_CHECK_EQUAL_COLLECTIONS(test_out.begin() + (hdr_size_bytes/sizeof(int)),test_out.end(),
                                   expected.begin(),expected.end()
                                  );

@@ -21,6 +21,18 @@ namespace bpt = boost::property_tree;
 
 namespace sqeazy {
 
+  bool ends_with(const std::string& _data, const std::string& _match){
+
+    bool value = false;
+    if(_match.size()>_data.size() || _data.empty() || _match.empty())
+      value = false;
+    else{
+      std::string last_data = _data.substr(_data.size()-_match.size());
+      value = last_data == _match;
+    }
+
+    return value;
+  }
 
   template <char delimiter, typename T>
   void split_string_to_vector(const std::string& _buffer, std::vector<T>& _v) {
@@ -67,6 +79,7 @@ namespace sqeazy {
 
     static char header_end_delim;
     static const char header_end_delimeter() { return header_end_delim; }
+
     
     // typedef T value_type;
 
@@ -191,7 +204,10 @@ namespace sqeazy {
       // Write property tree to XML file
       bpt::write_json(json_stream, tree);
       std::string stripped = json_stream.str();
+
       stripped.erase(remove_if(stripped.begin(), stripped.end(), isspace),stripped.end());
+      stripped += image_header::header_end_delim;
+      
       return std::string(stripped);
     }
 
@@ -272,7 +288,7 @@ namespace sqeazy {
 
       iter_type header_end_ptr = std::find(_begin,_end, image_header::header_end_delimeter());
 
-      //let's omit the header_end_ptr to make splitting easier
+      //let's omit the header_end_delim for the JSON to be parsable
       std::string hdr(_begin, header_end_ptr);
       
       if(!valid_header(hdr)){
@@ -313,6 +329,8 @@ namespace sqeazy {
       
       value.compressed_size_byte_ = tree.get("encoded.bytes", (unsigned long)0);
       value.header_ = hdr;
+      if(!ends_with(value.header_,&header_end_delim))
+	value.header_ += header_end_delim;
       
       return image_header(value);//unnamed return-type optimisation
     }
@@ -334,12 +352,11 @@ namespace sqeazy {
       raw_type_name_(typeid(void).name()),
       compressed_size_byte_(0){
 
-      std::string::const_iterator header_end = std::find(_str.begin(), _str.end(), header_end_delim);
+      
       image_header rhs;
-      
-      
+            
       try{
-	rhs = unpack(_str.begin(), header_end);
+	rhs = unpack(_str.begin(), _str.end());
       }
       catch(...){
 	std::cerr << "["<< __FILE__ <<":" << __LINE__ <<"]\t unable to unpack header (" << _str <<")!\n";
@@ -358,12 +375,12 @@ header_ = "";
       raw_type_name_(typeid(void).name()),
       compressed_size_byte_(0){
 
-      Iter header_end = std::find(_begin, _end, header_end_delim);
+
       image_header rhs;
       
       
       try{
-	rhs = unpack(_begin,header_end);
+	rhs = unpack(_begin,_end);
       }
       catch(...){
 	std::cerr << "["<< __FILE__ <<":" << __LINE__ <<"]\t unable to unpack header (" << header_ <<")!\n";
@@ -476,38 +493,29 @@ header_ = "";
 
 
 
-    static const bool valid_header(const std::string& _hdr){
-
-      bool value = std::count(_hdr.begin(),_hdr.end(), '}');
-      value = value && std::count(_hdr.begin(),_hdr.end(), '}') ==  std::count(_hdr.begin(),_hdr.end(), '{');
-      value = value && std::count(_hdr.begin(),_hdr.end(), ':')>1;
-      
-      return value;
-
-    }
 
     template <typename Iter>
     static const bool valid_header(Iter _begin, Iter _end){
 
-      Iter header_end = std::find(_begin, _end, header_end_delim);
+      bool value = std::count(_begin,_end, '}');
+      value = value && std::count(_begin,_end, '}') ==  std::count(_begin,_end, '{');
+      value = value && std::count(_begin,_end, ':')>1;
+      std::string data(_begin,_end);
+      static std::string delim = &header_end_delim;
+      value = value && (ends_with(data,"}}") || ends_with(data,delim));
+      return value;
       
-      if(header_end != _end){
-	std::string hdr = std::string(_begin, header_end + 1);
-	return valid_header(hdr);
-      }
-      else
-	return false;
 
     }
 
 
+    static const bool valid_header(const std::string& _hdr){
+      return valid_header(_hdr.begin(), _hdr.end());
+    }
+    
     static const std::vector<unsigned long> unpack_shape(const char* _buffer, const unsigned& _size) {
-
-      const char* header_end_ptr = std::find(_buffer, _buffer + _size, header_end_delim);
-      //let's omit the header_end_ptr to make splitting easier
-      std::string hdr(_buffer, header_end_ptr);
       
-      image_header unpacked = unpack(hdr);
+      image_header unpacked = unpack(_buffer,_buffer + _size);
       return unpacked.raw_shape_;
       
     }
@@ -515,33 +523,33 @@ header_ = "";
 
     static const int unpack_num_dims(const char* _buffer, const unsigned& _size) {
 
-      const char* header_end_ptr = std::find(_buffer, _buffer + _size, header_end_delim);
-      //let's omit the header_end_ptr to make splitting easier
-      std::string in_buffer(_buffer, header_end_ptr);
+      // const char* header_end_ptr = std::find(_buffer, _buffer + _size, header_end_delim);
+      // //let's omit the header_end_ptr to make splitting easier
+      // std::string in_buffer(_buffer, header_end_ptr+1);
 
-      if(!valid_header(in_buffer)){
-	std::ostringstream msg;
-	msg << "[image_header::unpack_shape]\t received header ("<< in_buffer <<") does not comply expected format\n";
-	throw std::runtime_error(msg.str().c_str());
-      }
+      // if(!valid_header(in_buffer)){
+      // 	std::ostringstream msg;
+      // 	msg << "[image_header::unpack_shape]\t received header ("<< in_buffer <<") does not comply expected format\n";
+      // 	throw std::runtime_error(msg.str().c_str());
+      // }
 
-      image_header unpacked = unpack(in_buffer);
+      image_header unpacked = unpack(_buffer, _buffer+_size);
       return unpacked.raw_shape_.size();
     }
 
     static const std::string unpack_type(const char* _buffer, const unsigned& _size) {
 
-      const char* header_end_ptr = std::find(_buffer, _buffer + _size, header_end_delim);
-      //let's omit the header_end_ptr to make splitting easier
-      std::string in_buffer(_buffer, header_end_ptr);
+      // const char* header_end_ptr = std::find(_buffer, _buffer + _size, header_end_delim);
 
-      if(!valid_header(in_buffer)){
-	std::ostringstream msg;
-	msg << "[image_header::unpack_shape]\t received header ("<< in_buffer <<") does not comply expected format\n";
-	throw std::runtime_error(msg.str().c_str());
-      }
+      // std::string in_buffer(_buffer, header_end_ptr+1);
 
-      image_header unpacked = unpack(in_buffer);
+      // if(!valid_header(in_buffer)){
+      // 	std::ostringstream msg;
+      // 	msg << "[image_header::unpack_shape]\t received header ("<< in_buffer <<") does not comply expected format\n";
+      // 	throw std::runtime_error(msg.str().c_str());
+      // }
+
+      image_header unpacked = unpack(_buffer, _buffer+_size);
       return unpacked.raw_type_name_;
     }
 
