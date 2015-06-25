@@ -3,6 +3,9 @@
 #include <numeric>
 #include <typeinfo>
 
+#include <boost/property_tree/ptree.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 #include <vector>
 #include <iostream>
@@ -10,6 +13,8 @@
 #include "array_fixtures.hpp"
 #include <bitset>
 #include "../src/sqeazy_header.hpp"
+
+namespace bpt = boost::property_tree;
 
 typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 
@@ -34,11 +39,11 @@ void split_string_to_vector(const std::string& _buffer, std::vector<T>& _v){
 
 }
 
-BOOST_FIXTURE_TEST_SUITE( lz4_out_of_place, uint16_cube_of_8 )
+BOOST_FIXTURE_TEST_SUITE( header_suite, uint16_cube_of_8 )
  
 using namespace sqeazy;
 
-BOOST_AUTO_TEST_CASE( encode_header )
+BOOST_AUTO_TEST_CASE( simple_pack )
 {
   
   
@@ -49,7 +54,7 @@ BOOST_AUTO_TEST_CASE( encode_header )
     
 }
 
-BOOST_AUTO_TEST_CASE( header_contructs_and_equal )
+BOOST_AUTO_TEST_CASE( header_contructs_and_assigns )
 {
   sqeazy::image_header lhs(uint16_t(),
 			   dims,
@@ -90,137 +95,97 @@ BOOST_AUTO_TEST_CASE( header_copies_and_assigns )
   BOOST_CHECK(lhs==assinged);
 }
 
-// BOOST_AUTO_TEST_CASE( encode_header_correct_typeid )
-// {
-  
-  
-//   std::string header = sqeazy::image_header<value_type>::pack(dims);
+BOOST_AUTO_TEST_CASE( encode_header_correct_typeid )
+{
     
-//   size_t comma_1 = header.find_first_of(",");
-//   size_t comma_2 = header.find_first_of(",",comma_1+1);
-  
-//   BOOST_CHECK_MESSAGE(comma_2-comma_1-1 == 1, "first 2 commas not found in right distance" << header);
-//   BOOST_CHECK_EQUAL(header.substr(comma_1+1,1),typeid(value_type).name());
-  
-// }
+  std::stringstream header_stream(sqeazy::image_header::pack<value_type>(dims));
+  bpt::ptree tree;
 
-//  BOOST_AUTO_TEST_CASE( encode_header_correct_num_dims )
-// {
+  BOOST_CHECK_NO_THROW(bpt::read_json(header_stream, tree));
+  BOOST_CHECK_EQUAL(tree.get<std::string>("raw.type"),typeid(value_type).name());
   
-//   std::string header = sqeazy::image_header<value_type>::pack(dims);
- 
-//   size_t comma_1 = header.find_first_of(",");
-//   size_t comma_2 = header.find_first_of(",",comma_1+1);
+}
 
-//   BOOST_CHECK_EQUAL(header.substr(comma_2+1,1),"3");
+ BOOST_AUTO_TEST_CASE( encode_header_correct_num_dims )
+{
+  std::stringstream header_stream(sqeazy::image_header::pack<value_type>(dims));
+  bpt::ptree tree;
+
+  BOOST_CHECK_NO_THROW(bpt::read_json(header_stream, tree));
+  
+  BOOST_CHECK_EQUAL(tree.get<unsigned>("raw.rank"),3);
     
-// }
+}
 
-//  BOOST_AUTO_TEST_CASE( encode_header_correct_type_id )
-// {
+ BOOST_AUTO_TEST_CASE( encode_header_correct_type_id )
+{
   
-//   std::string header = sqeazy::image_header<value_type>::pack(dims);
-//   std::string type_id = sqeazy::image_header<value_type>::unpack_type(header.c_str(),header.size());
-//   std::string expected = typeid(value_type).name();
-//   BOOST_CHECK_EQUAL(type_id,expected);
+  std::string header = sqeazy::image_header::pack<value_type>(dims);
+  std::string type_id = sqeazy::image_header::unpack_type(header.c_str(),header.size());
+  std::string expected = typeid(value_type).name();
+  BOOST_CHECK_EQUAL(type_id,expected);
 
-//   header = sqeazy::image_header<int>::pack(dims);
-//   type_id = sqeazy::image_header<int>::unpack_type(header.c_str(),header.size());
-//   expected = typeid(int).name();
-//   BOOST_CHECK_EQUAL(type_id,expected);
+  header = sqeazy::image_header::pack<int>(dims);
+  type_id = sqeazy::image_header::unpack_type(header.c_str(),header.size());
+  expected = typeid(int).name();
+  BOOST_CHECK_EQUAL(type_id,expected);
 
-// }
+}
 
 
-// BOOST_AUTO_TEST_CASE( encode_header_correct_values_of_dims )
-// {
-//   std::string header = sqeazy::image_header<value_type>::pack(dims);
+BOOST_AUTO_TEST_CASE( encode_header_correct_values_of_dims )
+{
+
+  sqeazy::image_header header(value_type(),dims);
+
+  BOOST_CHECK_EQUAL_COLLECTIONS(dims.begin(), dims.end(), header.shape()->begin(), header.shape()->end());
+}
+
+BOOST_AUTO_TEST_CASE( encode_header_correct_values_of_dims_corner_cases )
+{
   
-//   size_t comma_last = header.find_last_of(",");
-//   std::string dim_field = header.substr(comma_last+1,header.size()-comma_last-1);
+  sqeazy::image_header hdr(value_type(),dims);
 
-//   int num_x = std::count(dim_field.begin(), dim_field.end(), 'x');
-//   BOOST_CHECK_EQUAL(num_x,2);
+  std::string hstr = hdr.str();
+  std::vector<unsigned long> extracted_dims_2(sqeazy::image_header::unpack_shape(hstr.c_str(), hstr.size()));
+  BOOST_CHECK_EQUAL_COLLECTIONS(dims.begin(), dims.end(), extracted_dims_2.begin(), extracted_dims_2.end());
   
-//   std::vector<int> extracted_dims(num_x+1);
-//   split_string_to_vector<'x'>(dim_field, extracted_dims);
-//   BOOST_CHECK_EQUAL(extracted_dims.size(),3);
-//   BOOST_CHECK_EQUAL_COLLECTIONS(dims.begin(), dims.end(), extracted_dims.begin(), extracted_dims.end());
-   
-//   std::vector<unsigned> extracted_dims_2 = sqeazy::image_header<value_type>::unpack_shape(header.c_str(), header.size());
-//   BOOST_CHECK_EQUAL_COLLECTIONS(dims.begin(), dims.end(), extracted_dims_2.begin(), extracted_dims_2.end());
-// }
+  std::string header_plus_separator = hdr.str();
+  header_plus_separator += "|";
+  std::vector<unsigned long> extracted_dims_3 = sqeazy::image_header::unpack_shape(header_plus_separator.c_str(), header_plus_separator.size());
+  BOOST_CHECK_EQUAL_COLLECTIONS(dims.begin(), dims.end(), extracted_dims_3.begin(), extracted_dims_3.end());
 
-// BOOST_AUTO_TEST_CASE( encode_header_correct_values_of_dims_corner_cases )
-// {
-//   std::string header = sqeazy::image_header<value_type>::pack(dims);
-  
-//   std::vector<unsigned> extracted_dims_2 = sqeazy::image_header<value_type>::unpack_shape(header.c_str(), header.size());
-//   BOOST_CHECK_EQUAL_COLLECTIONS(dims.begin(), dims.end(), extracted_dims_2.begin(), extracted_dims_2.end());
-  
-//   std::string header_plus_separator = header;
-//   header_plus_separator += "|";
-//   std::vector<unsigned> extracted_dims_3 = sqeazy::image_header<value_type>::unpack_shape(header_plus_separator.c_str(), header_plus_separator.size());
-//   BOOST_CHECK_EQUAL_COLLECTIONS(dims.begin(), dims.end(), extracted_dims_3.begin(), extracted_dims_3.end());
-// }
+  std::vector<unsigned> ramp_shape(dims);
+  ramp_shape.front() -= 1;
+  ramp_shape.back() += 1;
+  sqeazy::image_header ramp_hdr(value_type(),ramp_shape);
+  BOOST_CHECK_EQUAL_COLLECTIONS(ramp_shape.begin(), ramp_shape.end(), ramp_hdr.shape()->begin(), ramp_hdr.shape()->end());
+}
 
-// BOOST_AUTO_TEST_CASE( encode_header_correct_sizeof )
-// {
-//   std::string given = sqeazy::image_header<value_type>::pack(dims);
-//   sqeazy::image_header<sqeazy::unknown> instance_void(given);
+BOOST_AUTO_TEST_CASE( pack_and_reload )
+{
+  sqeazy::image_header expected(value_type(),dims,"no_pipeline",1024);
+  std::string given = sqeazy::image_header::pack<value_type>(dims,"no_pipeline",1024);
   
-//   BOOST_CHECK_EQUAL(instance_void.sizeof_header_type(),2);
-//   BOOST_CHECK_EQUAL(instance_void.raw_size_byte()/instance_void.raw_size(),sizeof(value_type));
+  BOOST_CHECK(expected.str() == given);
+  BOOST_CHECK_EQUAL_COLLECTIONS(given.begin(), given.end(), expected.begin(), expected.end());
+  
+  sqeazy::image_header reloaded(given.begin(), given.end());
+
+  BOOST_CHECK(expected == reloaded);
+  BOOST_CHECK_EQUAL(expected.str(), reloaded.str());
     
-// }
+}
 
-// BOOST_AUTO_TEST_CASE( encode_custom_header )
-// {
-//   std::string given = "no_pipeline,s,1,32|bla";
-//   sqeazy::image_header<value_type> instance(given);
-
-//   BOOST_CHECK_EQUAL(sqeazy::image_header<value_type>::valid_header(given),true);
-//   BOOST_CHECK_EQUAL(instance.raw_size(),32);
-//   BOOST_CHECK_EQUAL(instance.raw_size_byte(),32*sizeof(value_type));
-//   BOOST_CHECK_EQUAL(instance.dims.size(),1);
-//   BOOST_CHECK_EQUAL(instance.size(),given.size()-3);
+BOOST_AUTO_TEST_CASE( type_name )
+{
+  sqeazy::image_header expected(value_type(),dims,"no_pipeline",1024);
+  std::string hdr = expected.str();
+  std::string rec = sqeazy::image_header::unpack_type(&hdr[0],hdr.size());
+  std::string exp = typeid(value_type).name();
   
-//   std::string given2 = "no_pipeline,s,1,32";
-    
-//   sqeazy::image_header<value_type> instance2(given2);
-
-//   BOOST_CHECK_EQUAL(sqeazy::image_header<value_type>::valid_header(given2),true);
-//   BOOST_CHECK_EQUAL(instance2.raw_size(),32);
-//   BOOST_CHECK_EQUAL(instance2.raw_size_byte(),32*sizeof(value_type));
-//   BOOST_CHECK_EQUAL(instance2.dims.size(),1);
-//   BOOST_CHECK_EQUAL(instance2.size(),given2.size()+1);
+  BOOST_CHECK(!rec.empty());
   
-
-//   sqeazy::image_header<sqeazy::unknown> instance_void(given2);
-
-//   BOOST_CHECK_EQUAL(instance_void.raw_size(),32);
-//   BOOST_CHECK_EQUAL(instance_void.raw_size_byte(),32*sizeof(value_type));
-//   BOOST_CHECK_EQUAL(instance_void.dims.size(),1);
-//   BOOST_CHECK_EQUAL(instance_void.size(),given2.size()+1);
-  
-// }
-
-// BOOST_AUTO_TEST_CASE( decode_pipeline_from_custom_header )
-// {
-//   std::string given = "no_pipeline,s,1,32|bla";
-//   sqeazy::image_header<value_type> instance(given);
-  
-//   BOOST_CHECK_EQUAL(instance.pipeline(),"no_pipeline");
-
-// }
-
-// BOOST_AUTO_TEST_CASE( decode_pipeline_from_void_header )
-// {
-//   std::string given = "no_pipeline,s,1,32|bla";
-//   sqeazy::image_header<void> instance(given);
-  
-//   BOOST_CHECK_EQUAL(instance.pipeline(),"no_pipeline");
-
-// }
-
+  BOOST_CHECK_EQUAL(rec,exp);
+}
 BOOST_AUTO_TEST_SUITE_END()

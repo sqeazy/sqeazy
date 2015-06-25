@@ -164,7 +164,7 @@ namespace sqeazy {
     */
     template <typename raw_type,typename size_type>
     static const std::string pack(const std::vector<size_type>& _dims,
-				  const std::string& _pipe_name = "empty_pipe",
+				  const std::string& _pipe_name = "no_pipeline",
 				  const unsigned long& _payload_bytes = 0
 				  ) {
 
@@ -192,7 +192,7 @@ namespace sqeazy {
       bpt::write_json(json_stream, tree);
       std::string stripped = json_stream.str();
       stripped.erase(remove_if(stripped.begin(), stripped.end(), isspace),stripped.end());
-      return stripped;
+      return std::string(stripped);
     }
 
     
@@ -277,12 +277,13 @@ namespace sqeazy {
       
       if(!valid_header(hdr)){
 	std::ostringstream msg;
-	msg << "[image_header::unpack]\t received header ("<< hdr <<") does not comply expected format\n";
+	msg << "[image_header::unpack]\t received header: \n\t"<< hdr <<"\n does not comply expected format\n";
 	throw std::runtime_error(msg.str().c_str());
       }
       
       image_header value;
-      std::stringstream incoming(hdr);
+      std::stringstream incoming;
+      incoming << hdr;
 
       bpt::ptree tree;
       try{
@@ -290,8 +291,8 @@ namespace sqeazy {
       }
       catch (std::exception &e){
 	std::stringstream msg;
-	msg << "[image_header::unpack]\t received header ("<< hdr <<") cannot create property tree from JSON\nreason: "
-	    <<  e.what() << "\n";
+	std::cerr << "[image_header::unpack]\t received header: \n\t>>"<< hdr << "<<\n"
+		  << "cannot create property tree from JSON\nreason: " <<  e.what() << "\n";
 	return image_header(value);
       }
 
@@ -299,8 +300,9 @@ namespace sqeazy {
       
       value.pipeline_ = tree.get("pipename", "");
       value.raw_type_name_ = tree.get("raw.type", typeid(void).name());
-      unsigned rank = tree.get("raw.rank", (unsigned)0);
-      value.raw_shape_.resize(rank);
+      
+      unsigned rank = tree.get("raw.rank", (unsigned)0);//TODO: could be replaced by (tend - tbegin)
+      value.raw_shape_.reserve(rank);
 
       bpt::ptree::const_iterator tbegin = tree.get_child("raw.shape").begin();
       bpt::ptree::const_iterator tend = tree.get_child("raw.shape").end();
@@ -310,7 +312,7 @@ namespace sqeazy {
 
       
       value.compressed_size_byte_ = tree.get("encoded.bytes", (unsigned long)0);
-      
+      value.header_ = hdr;
       
       return image_header(value);//unnamed return-type optimisation
     }
@@ -333,11 +335,11 @@ namespace sqeazy {
       compressed_size_byte_(0){
 
       std::string::const_iterator header_end = std::find(_str.begin(), _str.end(), header_end_delim);
-      header_ = std::string(_str.begin(), header_end + 1);
-
       image_header rhs;
+      
+      
       try{
-	 rhs = unpack(header_);
+	rhs = unpack(_str.begin(), header_end);
       }
       catch(...){
 	std::cerr << "["<< __FILE__ <<":" << __LINE__ <<"]\t unable to unpack header (" << _str <<")!\n";
@@ -357,12 +359,11 @@ header_ = "";
       compressed_size_byte_(0){
 
       Iter header_end = std::find(_begin, _end, header_end_delim);
-      header_ = std::string(_begin, header_end + 1);
-
       image_header rhs;
-
+      
+      
       try{
-	rhs = unpack(header_);
+	rhs = unpack(_begin,header_end);
       }
       catch(...){
 	std::cerr << "["<< __FILE__ <<":" << __LINE__ <<"]\t unable to unpack header (" << header_ <<")!\n";
@@ -396,6 +397,8 @@ header_ = "";
 
     }
 
+    
+    
     bool empty() const {
       return header_.empty();
     }
