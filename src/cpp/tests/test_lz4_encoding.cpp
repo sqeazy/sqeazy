@@ -27,12 +27,12 @@ BOOST_AUTO_TEST_CASE( encode_success )
   
 
   int retcode = SQY_LZ4_Max_Compressed_Length(&expected_size);
-  char* compressed = new char[expected_size];
+  std::vector<char> compressed(expected_size);
 
   long output_length = uint16_cube_of_8::size;
   retcode += SQY_LZ4Encode(input,
 			      uint16_cube_of_8::size_in_byte,
-			      compressed,
+			      &compressed[0],
 			      &output_length
 			      );
   
@@ -41,20 +41,21 @@ BOOST_AUTO_TEST_CASE( encode_success )
   BOOST_CHECK_LT(output_length,expected_size);
 
   long hdr_size = output_length;
-  SQY_Header_Size(compressed, &hdr_size);
+  SQY_Header_Size(&compressed[0], &hdr_size);
 
   int size_as_byte = uint16_cube_of_8::size_in_byte;
-  char* lz4_compressed = new char[expected_size];
-  int written = LZ4_compress(input, lz4_compressed, size_as_byte);
+  std::vector<char> lz4_compressed(expected_size);
   
-  char* payload = compressed + hdr_size;
+  
+  int written = LZ4_compress(input, &lz4_compressed[0], size_as_byte);
+  
+  char* payload = &compressed[0] + hdr_size;
   
   BOOST_CHECK_EQUAL(output_length - hdr_size, written);
   BOOST_CHECK_EQUAL_COLLECTIONS(payload, payload + (output_length - hdr_size),
-				lz4_compressed, lz4_compressed + written);
+				&lz4_compressed[0], &lz4_compressed[0] + written);
 
-  delete [] compressed;
-  delete [] lz4_compressed;
+
 }
 
 BOOST_AUTO_TEST_CASE( encode_length )
@@ -130,8 +131,6 @@ BOOST_AUTO_TEST_CASE( decode_encoded )
   long hdr_size = output_length;
   SQY_Header_Size(compressed,&hdr_size);
   BOOST_CHECK_GT(hdr_size,0);
-  BOOST_CHECK_LT(hdr_size,30);
-
  
   
   char* uncompressed = new char[uncompressed_max_size];
@@ -191,9 +190,6 @@ BOOST_AUTO_TEST_CASE( decode_encoded_ramp )
   long hdr_size = output_length;
   SQY_Header_Size(&compressed[0],&hdr_size);
   BOOST_CHECK_GT(hdr_size,0);
-  BOOST_CHECK_LT(hdr_size,30);
-
- 
   
   std::vector<char> uncompressed(uncompressed_max_size,0);
 
