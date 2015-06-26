@@ -112,11 +112,13 @@ BOOST_AUTO_TEST_CASE (with_pipeline_apply) {
     BOOST_CHECK_NE(pipe_name.find("square"),std::string::npos);
     BOOST_CHECK_NE(pipe_name.find("add_one"),std::string::npos);
 
-    unsigned long in_size = test_in.size();
+    unsigned long encoded_bytes = test_in.size()*sizeof(int);
+    size_t in_size = test_in.size();
+    current_pipe::compress((const int*)&test_in[0], &test_out[0],in_size,encoded_bytes);
 
-    current_pipe::compress((const int*)&test_in[0], &test_out[0],in_size);
-
-    BOOST_CHECK_EQUAL(in_size,test_in.size());
+    BOOST_CHECK_EQUAL(encoded_bytes,test_in.size()*sizeof(int) + hdr_size_bytes);
+    test_out.resize(encoded_bytes/sizeof(int));
+    
     std::vector<int> expected(test_in.size(),4);
 
     unsigned shift = std::ceil(float(hdr_size_bytes)/sizeof(int));
