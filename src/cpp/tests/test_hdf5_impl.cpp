@@ -263,32 +263,34 @@ BOOST_AUTO_TEST_CASE( roundtrip_compressed_dataset ){
   BOOST_REQUIRE(rvalue == 0);
 
   //read in written dataset with standard methods
-  std::vector<unsigned short> written;
-  std::vector<unsigned int> written_shape;
+  std::vector<unsigned short> written_compressed;
+  std::vector<unsigned int> written_compressed_shape;
   testme = new sqeazy::h5_file(test_output_name, H5F_ACC_RDONLY);
   rvalue = testme->read_nd_dataset(dname,
-				  written,
-				  written_shape);
+				  written_compressed,
+				  written_compressed_shape);
   delete testme;
   testme = 0;
   BOOST_REQUIRE(rvalue == 0);
-
-  std::vector<unsigned short> expected;
-  std::vector<unsigned int> expected_shape;
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(written_compressed_shape.begin(),written_compressed_shape.end(),dims.begin(),dims.end());
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(written_compressed.begin(),written_compressed.end(),retrieved.begin(),retrieved.end());
+    
+  std::vector<unsigned short> encoded_on_write;
+  std::vector<unsigned int> encoded_on_write_shape;
   one_go = new sqeazy::h5_file(one_go_path.string(), H5F_ACC_RDONLY);
   rvalue = one_go->read_nd_dataset(dname,
-				  expected,
-				  expected_shape);
+				  encoded_on_write,
+				  encoded_on_write_shape);
   delete one_go;
   one_go = 0;
   BOOST_REQUIRE(rvalue == 0);
   
-  BOOST_REQUIRE_EQUAL(written_shape.size(),dims.size());
-  BOOST_REQUIRE_EQUAL_COLLECTIONS(written_shape.begin(),written_shape.end(),dims.begin(),dims.end());
-  BOOST_REQUIRE_EQUAL_COLLECTIONS(written_shape.begin(),written_shape.end(),expected_shape.begin(),expected_shape.end());
-  BOOST_REQUIRE_EQUAL_COLLECTIONS(retrieved.begin(),retrieved.end(),expected.begin(),expected.end());
-  BOOST_REQUIRE_EQUAL_COLLECTIONS(written.begin(),written.end(),expected.begin(),expected.end());
-  BOOST_REQUIRE_EQUAL_COLLECTIONS(written.begin(),written.end(),retrieved.begin(),retrieved.end());
+  BOOST_REQUIRE_EQUAL(written_compressed_shape.size(),dims.size());
+
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(written_compressed_shape.begin(),written_compressed_shape.end(),encoded_on_write_shape.begin(),encoded_on_write_shape.end());
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(retrieved.begin(),retrieved.end(),encoded_on_write.begin(),encoded_on_write.end());
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(written_compressed.begin(),written_compressed.end(),encoded_on_write.begin(),encoded_on_write.end());
+
   
   if(bfs::exists(test_output_path))
     bfs::remove(test_output_path);
@@ -313,16 +315,16 @@ BOOST_AUTO_TEST_CASE( roundtrip_dataset_with_filter ){
   BOOST_REQUIRE(rvalue == 0);
   BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
 
-  
+  std::vector<unsigned short> read;
   std::vector<unsigned int> shape;
 
   sqeazy::h5_file testme_ro(test_output_name);
-  rvalue = testme_ro.read_nd_dataset(dname, retrieved, shape);
+  rvalue = testme_ro.read_nd_dataset(dname, read, shape);
 
   BOOST_REQUIRE_EQUAL(rvalue,0);
   BOOST_REQUIRE_EQUAL(shape.size(), dims.size());
-  BOOST_REQUIRE_EQUAL(retrieved.size(), retrieved.size());
-  BOOST_REQUIRE_EQUAL_COLLECTIONS(retrieved.begin(), retrieved.end(), retrieved.begin(), retrieved.end());
+  BOOST_REQUIRE_EQUAL(read.size(), retrieved.size());
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(read.begin(), read.end(), retrieved.begin(), retrieved.end());
   
   if(bfs::exists(test_output_path))
     bfs::remove(test_output_path);
