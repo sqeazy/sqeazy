@@ -106,27 +106,24 @@ BOOST_AUTO_TEST_CASE( query_for_dataset_shape ){
 
 BOOST_AUTO_TEST_CASE( load_dataset ){
 
-  std::vector<int> retrieved;
-  std::vector<unsigned int> dims;
+  std::vector<int> from_disk(30,0);
   
   sqeazy::h5_file testme(tfile);
   BOOST_CHECK(testme.ready());
 
-  int rvalue = testme.read_nd_dataset(dname,retrieved,dims);
+  int rvalue = testme.read_nd_dataset(dname,from_disk,dims);
   BOOST_REQUIRE(rvalue == 0);
   BOOST_CHECK(dims[0] == 5);
   BOOST_CHECK(dims[1] == 6);
-  BOOST_CHECK(retrieved[1] == 1);
-  BOOST_CHECK(retrieved[retrieved.size()-1] == 9);
-  BOOST_CHECK(retrieved[12] == 2);
+  BOOST_CHECK(from_disk[1] == 1);
+  BOOST_CHECK(from_disk[from_disk.size()-1] == 9);
+  BOOST_CHECK(from_disk[12] == 2);
 }
 
 
 BOOST_AUTO_TEST_CASE( write_dataset ){
 
-  std::vector<int> retrieved(64,42);
-  std::vector<unsigned int> dims(3,4);
-  
+    
   sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
   BOOST_CHECK(testme.ready());
 
@@ -141,8 +138,6 @@ BOOST_AUTO_TEST_CASE( write_dataset ){
 
 BOOST_AUTO_TEST_CASE( write_dataset_with_filter ){
 
-  std::vector<unsigned short> retrieved(64,42);
-  std::vector<unsigned int> dims(3,4);
 
   bfs::path no_filter_path = "no_filter.h5";
   sqeazy::h5_file no_filter(no_filter_path.string(), H5F_ACC_TRUNC);
@@ -181,11 +176,6 @@ BOOST_AUTO_TEST_CASE( write_dataset_with_filter ){
 }
 
 BOOST_AUTO_TEST_CASE( write_compressed_dataset ){
-
-  std::vector<unsigned short> retrieved(504,42);
-  std::vector<unsigned int> dims(3,8);
-  dims[0] -= 1;
-  dims[2] += 1;
 
   //write in one go
   bfs::path one_go_path = "one_go_write.h5";
@@ -233,14 +223,6 @@ BOOST_AUTO_TEST_CASE( write_compressed_dataset ){
 BOOST_AUTO_TEST_CASE( roundtrip_compressed_dataset ){
 
   
-  std::vector<unsigned int> dims(3,8);
-  dims[0] -= 1;
-  dims[2] += 1;
-
-  std::vector<unsigned short> retrieved(504,0);
-  for(unsigned i = 0;i<retrieved.size();++i)
-    retrieved[i] = i;
-
 
   //write in one go
   bfs::path one_go_path = "one_go_write.h5";
@@ -318,17 +300,12 @@ BOOST_AUTO_TEST_CASE( roundtrip_compressed_dataset ){
 
 BOOST_AUTO_TEST_CASE( roundtrip_dataset_with_filter ){
 
-  std::vector<unsigned short> to_store(64,0);
-  for(unsigned i = 0;i<to_store.size();++i)
-    to_store[i] = i;
-  
-  std::vector<unsigned int> dims(3,4);
-  
+    
   sqeazy::loaded_hdf5_plugin now;
   sqeazy::h5_file* testme = new sqeazy::h5_file(test_output_name, H5F_ACC_TRUNC);
 
   int rvalue = testme->write_nd_dataset(dname,
-				       to_store,
+				       retrieved,
 				       dims,
 				       sqeazy::bswap1_lz4_pipe());
 
@@ -337,7 +314,6 @@ BOOST_AUTO_TEST_CASE( roundtrip_dataset_with_filter ){
   BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
 
   
-  std::vector<unsigned short> retrieved;
   std::vector<unsigned int> shape;
 
   sqeazy::h5_file testme_ro(test_output_name);
@@ -345,8 +321,8 @@ BOOST_AUTO_TEST_CASE( roundtrip_dataset_with_filter ){
 
   BOOST_REQUIRE_EQUAL(rvalue,0);
   BOOST_REQUIRE_EQUAL(shape.size(), dims.size());
-  BOOST_REQUIRE_EQUAL(retrieved.size(), to_store.size());
-  BOOST_REQUIRE_EQUAL_COLLECTIONS(to_store.begin(), to_store.end(), retrieved.begin(), retrieved.end());
+  BOOST_REQUIRE_EQUAL(retrieved.size(), retrieved.size());
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(retrieved.begin(), retrieved.end(), retrieved.begin(), retrieved.end());
   
   if(bfs::exists(test_output_path))
     bfs::remove(test_output_path);
@@ -354,8 +330,8 @@ BOOST_AUTO_TEST_CASE( roundtrip_dataset_with_filter ){
 }
 
 BOOST_AUTO_TEST_CASE( loading_to_wrong_type_produces_error ){
+
   std::vector<unsigned short> to_store(64,42);
-  std::vector<unsigned int> dims(3,4);
     
   sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
 
