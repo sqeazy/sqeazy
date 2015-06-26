@@ -2,8 +2,10 @@
 #include "sqeazy.h"
 #include "sqeazy_impl.hpp"
 #include "sqeazy_header.hpp"
-
-
+#include "pipeline_select.hpp"
+#include "sqeazy_hdf5_impl.hpp"
+#include "hdf5_utils.hpp"
+#include "pipeline.hpp"
 
 /*
 *	Sqeazy - Fast and flexible volume compression library
@@ -223,7 +225,8 @@ int SQY_RmBackground_Estimated_UI16(int width, int height, int depth, char* src,
 
 #ifndef LZ4_VERSION_MAJOR
 #include "external_encoders.hpp"
-#include "pipeline.hpp"
+#endif
+
 typedef sqeazy::bmpl::vector< sqeazy::lz4_scheme<char> > lz4_;
 typedef sqeazy::pipeline<lz4_> lz4_pipe;
 
@@ -268,6 +271,7 @@ int SQY_LZ4Decode(const char* src, long srclength, char* dst){
   return retcode;
 }
 
+
 int SQY_Header_Size(const char* src, long *srclength){
 
   sqeazy::image_header hdr(src, src + *srclength);
@@ -284,9 +288,46 @@ int SQY_Version_Triple(int* version){
   return 0;
 }
 
-#include "sqeazy_hdf5_impl.hpp"
-#include "hdf5_utils.hpp"
 
+
+int SQY_PipelineEncode_UI16(const char* src,
+			    long* shape,
+			    unsigned shape_size ,
+			    char* dst,
+			    long* dstlength,
+			    const char* pipeline){
+
+  int value =1;
+  std::vector<unsigned> shape_(shape, shape+shape_size);
+  std::string pipeline_ = pipeline;
+
+  std::stringstream filter_name_;
+  std::string type_name = sqeazy::type_to_name_match<unsigned short>::id();
+  if(pipeline_.find(type_name)==std::string::npos)
+    filter_name_ << type_name << "_";
+  filter_name_ << pipeline_;
+  std::string filter_name = filter_name_.str();
+
+  
+  sqeazy::image_header hdr(uint16_t(),
+			   shape_,
+			   filter_name);
+
+  sqeazy::pipeline_select<> selected(16,filter_name);
+  if(selected.empty())
+    return value;
+
+  unsigned long num_bytes_written = 0;
+  value = selected.compress(src,dst,shape_,num_bytes_written);
+  *dstlength = num_bytes_written;
+  return value;
+}
+
+//NOT IMPLEMENTED YET
+int SQY_Pipeline_Max_Compressed_Length(long* length){return 1;}
+int SQY_Pipeline_Max_Compressed_Length_3D(long* shape, unsigned shape_size, long* length){return 1;}
+int SQY_Pipeline_Decompressed_Length(const char* data, long *length){return 1;}
+int SQY_PipelineDecode(const char* src, long srclength, char* dst){return 1;}
 
 
 int SQY_h5_query_sizeof(const char* fname,
@@ -452,4 +493,4 @@ int SQY_h5_read_UI16(const char* fname,
   return rvalue;
 }
 
-#endif
+

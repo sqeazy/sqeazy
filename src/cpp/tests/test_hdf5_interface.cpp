@@ -307,10 +307,17 @@ BOOST_AUTO_TEST_CASE( write_compressed_data ){
   BOOST_REQUIRE(bfs::exists(no_filter_path));
   BOOST_REQUIRE_GT(bfs::file_size(no_filter_path),0);
 
-  std::vector<char> compressed(data.size_in_byte);
-  long size = compressed.size();
-  
-  rvalue = SQY_LZ4Encode((const char*)&data.constant_cube[0],size,&compressed[0],&size);
+  long size = data.size_in_byte;
+  SQY_LZ4_Max_Compressed_Length(&size);
+  std::vector<char> compressed(size);
+
+  std::vector<long> ldims(data.dims.begin(), data.dims.end());
+  rvalue = SQY_PipelineEncode_UI16((const char*)&data.constant_cube[0],
+				   &ldims[0],
+				   ldims.size(),
+				   &compressed[0],
+				   &size,
+				   "lz4");
 
   
   rvalue = SQY_h5_write(test_output_name.c_str(),

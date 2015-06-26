@@ -351,6 +351,94 @@ SQY_FUNCTION_PREFIX int SQY_Header_Size(const char* src, long* length);
 SQY_FUNCTION_PREFIX int SQY_Version_Triple(int* version);
 
 ///////////////////////////////////////////////////////////////////////////////////
+// SQY pipelines
+
+/*
+	SQY_PipelineEncode - Compress using Pipeline.
+
+	Compresses the source buffer into the destination buffer using Pipeline.
+	The destination buffer should be a bit larger than the source buffer
+	in case the compressed buffer requires more space. 
+	ATTENTION: The output buffer contains a sqy only header!
+
+
+	src 					: contiguous array of voxels (externally allocated)
+	shape     				: shape of the nD construct given as src (in units of unsigned int 16-bit)
+	shape_size     				: number of items in shape
+	dst 					: Pipeline compressed buffer (already allocated)
+	dstlength 				: length in bytes of externally allocated destination buffer (needs to give the length of dst in Bytes),
+							  modified by function call to reflect the effective 
+							  compressed buffer length after the call.
+							  
+	Returns 0 if success, another code if there was an error (error codes provided below)
+
+			error 1 -  destination buffer is not large enough
+
+*/
+SQY_FUNCTION_PREFIX int SQY_PipelineEncode_UI16(const char* src, long* shape, unsigned shape_size , char* dst, long* dstlength, const char* pipeline);
+
+
+
+/*
+	SQY_Pipeline_Max_Compressed_Length - Calculates the maximum size of the output buffer from Pipeline compression
+
+	ATTENTION: The output buffer contains a sqy only header!
+
+	length 					: (in) length in bytes of decompressed buffer
+						  (out) maximum length in bytes of compressed buffer
+
+	Returns 0 if success, another code if there was an error (error codes provided below)
+*/
+SQY_FUNCTION_PREFIX int SQY_Pipeline_Max_Compressed_Length(long* length);
+
+/*
+	SQY_Pipeline_Max_Compressed_Length - Calculates the maximum size of the output buffer from Pipeline compression
+
+	ATTENTION: The output buffer contains a sqy only header!
+
+	shape					: (in) shape of the incoming nD dataset
+	shape_size				: (in) number of items in shape
+	length 					: (out) maximum length in bytes of compressed buffer
+
+	Returns 0 if success, another code if there was an error (error codes provided below)
+*/
+SQY_FUNCTION_PREFIX int SQY_Pipeline_Max_Compressed_Length_3D(long* shape, unsigned shape_size, long* length);
+
+/*
+	SQY_Pipeline_Decompressed_Length - Extracts the size of the decompressed buffer from the first 8 Byte of data
+
+	ATTENTION: The output buffer contains a sqy only header! This function extracts it.
+
+	data					: buffer to contain the compressed data as output by SQY_PipelineEncode
+	length					: (in) length in bytes of incoming data buffer
+						  (out) extracted length in bytes of decompressed buffer to be output by SQY_PipelineDecode called on data
+
+	Returns 0 if success, another code if there was an error (error codes provided below)
+*/
+
+SQY_FUNCTION_PREFIX int SQY_Pipeline_Decompressed_Length(const char* data, long *length);
+
+/*
+	SQY_PipelineDecode - Decompress using Pipeline.
+
+	Decompresses the source buffer into the destination buffer using Pipeline.
+	The destination buffer should be allocated externally. The first 8 bytes of 
+	the source buffer are not part of the Pipeline compressed buffer but indicate the
+	length of the original uncompressed buffer.
+	The necessary buffer length can be obtained by calling SQY_PipelineLength. 
+
+	src 					: Pipeline compressed buffer (externally allocated)
+	srclength 				: length in bytes of compressed buffer
+	dst 					: contiguous array of voxels 
+							  (externally allocated, length from SQY_PipelineLength)
+
+	Returns 0 if success, another code if there was an error (error codes provided below)
+
+*/
+SQY_FUNCTION_PREFIX int SQY_PipelineDecode(const char* src, long srclength, char* dst);
+
+
+///////////////////////////////////////////////////////////////////////////////////
 // HDF5 filter definition
 //
 // references:
