@@ -23,7 +23,7 @@ struct helpers_fixture {
     dname("IntArray"),
     test_output_name("hdf5_helpers.h5"),
     test_output_path(test_output_name),
-    retrieved(504,42),
+    retrieved(),
     dims(3,8)
   {
 
@@ -42,9 +42,12 @@ struct helpers_fixture {
 
     tfile = test_sample.string();
 
-    dims[0] -= 1;
+    dims[0] -= 2;
     dims[2] += 1;
 
+    unsigned size = std::accumulate(dims.begin(), dims.end(),1,std::multiplies<unsigned>());
+    retrieved.resize(size);
+    
     for(unsigned i = 0;i<retrieved.size();++i)
       retrieved[i] = i;
 

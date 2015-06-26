@@ -300,6 +300,55 @@ BOOST_AUTO_TEST_CASE( roundtrip_compressed_dataset ){
 
 }
 
+BOOST_AUTO_TEST_CASE( roundtrip_bswap1_lz4_as_reference ){
+
+  int rvalue = 0;
+  sqeazy::image_header hdr(sqeazy::bswap1_lz4_pipe::raw_type(),
+			   dims,
+			   sqeazy::bswap1_lz4_pipe::name());
+  unsigned long max_size_compressed = sqeazy::bswap1_lz4_pipe::max_bytes_encoded(retrieved.size()*sizeof(unsigned short),
+										 hdr.size());
+  std::vector<char> compressed(max_size_compressed);
+  unsigned long compressed_bytes = 0;
+  rvalue = sqeazy::bswap1_lz4_pipe::compress(&retrieved[0], &compressed[0], dims, compressed_bytes);
+
+  std::vector<char> to_decompress(compressed.begin(), compressed.begin() + compressed_bytes);
+  // compressed.resize(compressed_bytes);
+  
+  BOOST_REQUIRE_EQUAL(rvalue,0);
+
+  std::vector<unsigned short> decompressed(retrieved.size());
+  rvalue = sqeazy::bswap1_lz4_pipe::decompress(&to_decompress[0], &decompressed[0], compressed_bytes);
+  BOOST_REQUIRE_EQUAL(rvalue,0);
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(retrieved.begin(),retrieved.end(),decompressed.begin(),decompressed.end());
+
+}
+
+BOOST_AUTO_TEST_CASE( roundtrip_lz4_as_reference ){
+
+  int rvalue = 0;
+  sqeazy::image_header hdr(sqeazy::lz4_pipe::raw_type(),
+			   dims,
+			   sqeazy::lz4_pipe::name());
+  unsigned long max_size_compressed = sqeazy::lz4_pipe::max_bytes_encoded(retrieved.size()*sizeof(unsigned short),
+										 hdr.size());
+  std::vector<char> compressed(max_size_compressed);
+  unsigned long compressed_bytes = 0;
+  rvalue = sqeazy::lz4_pipe::compress(&retrieved[0], &compressed[0], dims, compressed_bytes);
+
+  std::vector<char> to_decompress(compressed.begin(), compressed.begin() + compressed_bytes);
+  // compressed.resize(compressed_bytes);
+  
+  BOOST_REQUIRE_EQUAL(rvalue,0);
+
+  std::vector<unsigned short> decompressed(retrieved.size());
+  rvalue = sqeazy::lz4_pipe::decompress(&to_decompress[0], &decompressed[0], compressed_bytes);
+  BOOST_REQUIRE_EQUAL(rvalue,0);
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(retrieved.begin(),retrieved.end(),decompressed.begin(),decompressed.end());
+
+}
+
+
 BOOST_AUTO_TEST_CASE( roundtrip_dataset_with_filter ){
 
     
