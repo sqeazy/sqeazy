@@ -529,7 +529,7 @@ namespace sqeazy {
       H5::DSetCreatPropList  plist;
       plist.setChunk(chunk_shape.size(), &chunk_shape[0]);
 
-      std::vector<unsigned> cd_values(std::ceil(float(hdr.size())/(sizeof(unsigned)/sizeof(char))),0);
+      std::vector<unsigned> cd_values(std::ceil(float(hdr.size())/(sizeof(unsigned))),0);
       
       if(!hdr.empty()){
 	std::copy(hdr.begin(), hdr.end(),(char*)&cd_values[0]);
@@ -549,8 +549,10 @@ namespace sqeazy {
 						       type_to_store,
 						       *dataspace_, 
 						       plist) );
-      
-      dataset_->write(_payload,
+      unsigned long raw_size_byte = std::accumulate(dims.begin(),dims.end(),type_to_store.getSize(),std::multiplies<hsize_t>() );
+      std::vector<char> temp(raw_size_byte);
+      std::copy(_payload,_payload + _payload_size,temp.begin());
+      dataset_->write(&temp[0],
 		      type_to_store
 		      );
       
