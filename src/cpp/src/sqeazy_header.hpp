@@ -163,7 +163,7 @@ namespace sqeazy {
     }
 	
     /**
-       \brief pack takes the parameters of a to-compress/compressed nD data set and packs them into a JSON compatible string
+       \brief pack takes the parameters of a to-compress/compressed nD data set and packs them into a JSON compatible string, the output string needs to be aligned to raw_type
 
        \param[in]  raw_type data type of the nD data set to compress       
        \param[in] _dims shape of the nD data set to compress
@@ -207,7 +207,14 @@ namespace sqeazy {
 
       stripped.erase(remove_if(stripped.begin(), stripped.end(), isspace),stripped.end());
       stripped += image_header::header_end_delim;
-      
+
+      if(stripped.size() % sizeof(raw_type) != 0){
+	std::stringstream intermediate("");
+	intermediate << std::setw(sizeof(raw_type) - (stripped.size() % sizeof(raw_type))) << " ";
+	intermediate << stripped;
+	stripped = intermediate.str();
+      }
+	
       return std::string(stripped);
     }
 

@@ -88,6 +88,32 @@ BOOST_AUTO_TEST_CASE( encode_header_correct_typeid )
   
 }
 
+BOOST_AUTO_TEST_CASE( header_size_aligned_to_type )
+{
+
+  sqeazy::image_header int_uneven(int(),
+				  dims,
+				  "no_pipelin",//wrong name to make header string no multiple of 4
+				  1024);
+  BOOST_CHECK(int_uneven.size() % sizeof(int) == 0);
+  sqeazy::image_header int_uneven_reread(int_uneven.str());
+  BOOST_CHECK(int_uneven_reread == int_uneven);
+				  
+  sqeazy::image_header short_uneven(short(),
+				    dims,
+				    "no_pipelin",//wrong name to make header string no multiple of 2
+				    1024);
+  BOOST_CHECK(short_uneven.size() % sizeof(short) == 0);
+  sqeazy::image_header short_uneven_reread(short_uneven.str());
+  BOOST_CHECK(short_uneven_reread == short_uneven);
+
+  sqeazy::image_header char_uneven(char(),dims,"no_pipeline",1024);
+  BOOST_CHECK(char_uneven.size() % sizeof(char) == 0);
+  sqeazy::image_header char_uneven_reread(char_uneven.str());
+  BOOST_CHECK(char_uneven_reread == char_uneven);
+
+}
+
  BOOST_AUTO_TEST_CASE( encode_header_correct_num_dims )
 {
   std::string hdr = sqeazy::image_header::pack<value_type>(dims);
