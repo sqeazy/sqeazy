@@ -45,7 +45,8 @@ BOOST_AUTO_TEST_CASE( load_dataset_anew ){
   
   sqeazy::h5_file testme(tfile);
   BOOST_CHECK(testme.ready());
-  BOOST_REQUIRE_EQUAL(testme.load_h5_dataset(dname),0);
+  H5::DataSet tds = testme.load_h5_dataset(dname);
+  BOOST_REQUIRE_NE(tds.getStorageSize(),0);
   
 }
 
@@ -53,8 +54,12 @@ BOOST_AUTO_TEST_CASE( load_dataset_wrong_name ){
   
   sqeazy::h5_file testme(tfile);
   BOOST_CHECK(testme.ready());
-  BOOST_CHECK(testme.load_h5_dataset(dname + "_foo"));
-  BOOST_CHECK(!testme.dataset_);
+
+  std::stringstream newname("");
+  newname << dname << "_foo";
+  
+  H5::DataSet tds = testme.load_h5_dataset(newname.str());
+  BOOST_CHECK_EQUAL(tds.getId(),0);
   
 }
 
