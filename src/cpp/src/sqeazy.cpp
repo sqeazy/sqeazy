@@ -566,4 +566,27 @@ int SQY_h5_read_UI16(const char* fname,
   return rvalue;
 }
 
+int SQY_h5_link(const char* pSrcFileName,
+		const char* pSrcLinkPath,
+		const char* pSrcLinkName,
+		const char* pTargetFile,
+		const char* pTargetDatasetPath,
+		const char* pTargetDatasetName	){
+  int rvalue = 1;
+  H5::Exception::dontPrint();
+  
+  sqeazy::h5_file src(pSrcFileName, H5F_ACC_TRUNC);
+  std::stringstream src_path;
+  src_path << pSrcLinkPath << "/" << pSrcLinkName;
+
+  sqeazy::h5_file dest(pTargetFile);
+  std::stringstream dest_path;
+  dest_path << pTargetDatasetPath << "/" << pTargetDatasetName;
+
+  if(dest.has_dataset(dest_path.str()))
+    rvalue = src.setup_link(src_path,dest,dest_path);
+  
+  return rvalue;
+}
+
 

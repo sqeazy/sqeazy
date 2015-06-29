@@ -565,19 +565,22 @@ SQY_FUNCTION_PREFIX int SQY_h5_write(const char* fname,
 				     unsigned long data_size);
 
 /*
-	SQY_h5_link - store compressed data into file.
+	SQY_h5_link - establish hdf5 link between src.h5:/path/to/object/by_name and dest.h5:/path/to/object/by_name
 	
-	fname 					: hdf5 file to store data in
-	dname 					: dataset name inside hdf5 file 
-	data					: compressed data
-	data_size				: size of data in byte
+	pSrcFileName				: path to file the link is stored in
+	pSrcLinkPath				: path/group inside pSrcFileName 
+	pSrcLinkName				: name of link inside pSrcFileName 
+
+	pDestFileName				: path to file the dataset the link points to
+	pDestDatasetPath			: path/group inside pDestFileName where dataset is located 
+	pDestDatasetName			: name of dataset inside pDestFileName
 
 	Returns 0 if success, another code if there was an error
 
 */
-SQY_FUNCTION_PREFIX int SQY_h5_link(	const char* pFileName,
-					const char* pLinkPath,
-					const char* pLinkName,
+SQY_FUNCTION_PREFIX int SQY_h5_link(	const char* pSrcFileName,
+					const char* pSrcLinkPath,
+					const char* pSrcLinkName,
 					const char* pTargetFile,
 					const char* pTargetDatasetPath,
 					const char* pTargetDatasetName	

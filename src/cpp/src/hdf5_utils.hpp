@@ -279,6 +279,44 @@ namespace sqeazy {
       
     }
 
+    int setup_link(const std::string& _linkpath,
+		   const h5_file& _dest_file,
+		   const std::string& _dest_h5_path){
+
+      int value = 1;
+      
+      bfs::path dest_fs_path = _dest_file.path_;
+      if(!bfs::exist(dest_fs_path))
+	return value;
+
+      if(!_dest_file.has_dataset(_dest_h5_path) || !_dest_file.ready())
+	return value;
+      
+      H5::Group* srcGrp = 0;
+
+      if(_linkpath.count("/")){
+	std::string src_grp = _linkpath.substr(_linkpath.rfind("/"));
+	srcGrp = new H5::Group(file_->createGroup(src_grp));
+      }
+
+      herr_t result = H5Lcreate_external( dest_fs_path.string().c_str(),
+					  _dest_h5_path.c_str(),
+					  hid_t link_loc_id,//File or group identifier where the new link is to be created
+					  _linkpath,
+					  hid_t lcpl_id,//Link creation property list identifier
+					  hid_t lapl_id//Link access property list identifier
+					  );
+      
+      //TODO: HANDLE result?
+      
+      if(srcGrp){
+	srcGrp->close();
+	delete srcGrp;
+      }
+
+      file_->flush(H5F_SCOPE_LOCAL);//this call performs i/o
+    }
+
     int type_size_in_byte(const std::string& _dname) const{
 
       int rvalue = 0;

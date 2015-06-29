@@ -6,7 +6,6 @@
 #include <string>
 
 #include "boost/filesystem.hpp"
-#include "array_fixtures.hpp"
 
 extern "C" {
 #include "sqeazy.h"
@@ -22,6 +21,8 @@ using namespace H5;
 
 //#include "hdf5_test_utils.hpp"
 #include "hdf5_fixtures.hpp"
+#include "array_fixtures.hpp"
+
 
 static const std::string default_filter_name = "bswap1_lz4";
 
@@ -344,5 +345,17 @@ BOOST_AUTO_TEST_CASE( write_compressed_data ){
   bfs::remove(no_filter_path);
 }
 
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE( index_files, indexed_helpers )
+
+BOOST_AUTO_TEST_CASE( links_exist ){
+
+  
+  BOOST_REQUIRE(bfs::exists(test_output_path));
+  bfs::remove(test_output_path);
+  bfs::remove(index_path);
+}
 
 BOOST_AUTO_TEST_SUITE_END()

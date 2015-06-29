@@ -7,11 +7,11 @@ namespace bfs = boost::filesystem;
 
 struct helpers_fixture {
 
-  const std::string     tfile_basename;
+  std::string     tfile_basename;
   std::string		tfile;
-  const std::string	dname;
-  const std::string	test_output_name;
-  const bfs::path	test_output_path;
+  std::string	dname;
+  std::string	test_output_name;
+  bfs::path	test_output_path;
 
   std::vector<unsigned short> retrieved;
   std::vector<unsigned int> dims;
@@ -52,6 +52,26 @@ struct helpers_fixture {
       retrieved[i] = i;
 
   }
+
+  void set_test_path(const std::string& _path){
+    test_output_path = bfs::path(_path);
+    test_output_name = test_output_path.string();
+  }
+};
+
+struct indexed_helpers : public helpers_fixture {
+
+
+  const bfs::path	index_path;
+  
+  indexed_helpers():
+    helpers_fixture(),
+    index_path("index.h5")
+    
+  {
+    set_test_path("intermediate/timepoint_n.h5");
+  }
+
   
 };
 
