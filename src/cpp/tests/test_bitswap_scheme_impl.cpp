@@ -10,6 +10,9 @@
 #include "../src/sqeazy_impl.hpp"
 
 typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
+typedef sqeazy::bitswap_scheme<unsigned short> bswap1_scheme;
+typedef sqeazy::bitswap_scheme<unsigned short,2> bswap2_scheme;
+typedef sqeazy::bitswap_scheme<unsigned short,4> bswap4_scheme;
 
 BOOST_FIXTURE_TEST_SUITE( shift_signed_bits, uint16_cube_of_8 )
 
@@ -155,6 +158,36 @@ sqeazy::rotate_left<1>(xor_if_signed(test_signed[i]));
   }
 
 }
+
+
+BOOST_AUTO_TEST_CASE( roundtrip_ramp )
+{
+  using namespace sqeazy;
+
+  std::vector<unsigned> shape(3);
+  shape[0] = 7;
+  shape[1] = 9;
+  shape[2] = 11;
+
+  const unsigned long flat_size = std::accumulate(shape.begin(), shape.end(),1,std::multiplies<unsigned>());
+  std::vector<unsigned short> expected(flat_size);
+  for(unsigned i = 0;i<flat_size;++i)
+    expected[i] = static_cast<unsigned short>(i);
+
+  std::vector<unsigned short> compressed(expected);
+  
+  int res = bswap1_scheme::encode(&expected[0], &compressed[0],flat_size);
+
+  BOOST_CHECK(!res);
+
+  std::vector<unsigned short> decoded(flat_size,0);
+
+  res = bswap1_scheme::decode(&compressed[0], &decoded[0] ,flat_size);
+
+  BOOST_CHECK(!res);
+  BOOST_CHECK_EQUAL_COLLECTIONS(decoded.begin(), decoded.end(), expected.begin(), expected.end());
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 struct xor_expected_results {
@@ -272,9 +305,6 @@ BOOST_AUTO_TEST_CASE( apply_xor )
 
 BOOST_AUTO_TEST_SUITE_END()
 
-typedef sqeazy::bitswap_scheme<unsigned short> bswap1_scheme;
-typedef sqeazy::bitswap_scheme<unsigned short,2> bswap2_scheme;
-typedef sqeazy::bitswap_scheme<unsigned short,4> bswap4_scheme;
 
 struct incrementing_array
 {

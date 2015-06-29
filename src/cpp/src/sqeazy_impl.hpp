@@ -297,7 +297,6 @@ struct bitswap_scheme {
   
     typedef T raw_type;
     typedef T compressed_type;
-    typedef unsigned size_type;
     static const bool is_compressor = false;
 
     static const unsigned raw_type_num_bits = sizeof(T)*CHAR_BIT;
@@ -348,17 +347,23 @@ struct bitswap_scheme {
      * @param _length as a scalar
      * @return sqeazy::error_code
      */
+  template <typename size_type>
     static const error_code encode(const raw_type* _input,
                                    raw_type* _output,
                                    const size_type& _length)
     {
+
+      size_type max_size = _length - (_length % num_planes);
+      if(max_size < _length)
+	std::copy(_input+max_size,_input+_length,_output+max_size);
+      
       if(sqeazy::platform::use_vectorisation::value && num_bits_per_plane==1){
 #ifdef _SQY_VERBOSE_
 	  std::cout << "[bitplane encode]\tusing see method\n";
 #endif
 	return sqeazy::detail::sse_bitplane_reorder_encode<num_bits_per_plane>(_input, 
 									       _output, 
-									       _length);
+									       max_size);
       }
       else{
 #ifdef _SQY_VERBOSE_
@@ -366,11 +371,11 @@ struct bitswap_scheme {
 #endif	
 	  return sqeazy::detail::scalar_bitplane_reorder_encode<num_bits_per_plane>(_input, 
 										    _output, 
-										    									    _length);
+										    max_size);
       }
     }
 
-    template <typename S>
+  template <typename S>
     static const error_code decode(const raw_type* _input,
                                    raw_type* _output,
                                    const std::vector<S>& _length)
@@ -379,12 +384,15 @@ struct bitswap_scheme {
         return decode(_input, _output, total_length);
     }
 
+  template <typename size_type>
     static const error_code decode(const raw_type* _input,
                                    raw_type* _output,
                                    const size_type& _length)
     {
-
-      return sqeazy::detail::scalar_bitplane_reorder_decode<num_bits_per_plane>(_input, _output, _length);
+      size_type max_size = _length - (_length % num_planes);
+      if(max_size < _length)
+	std::copy(_input+max_size,_input+_length,_output+max_size);
+      return sqeazy::detail::scalar_bitplane_reorder_decode<num_bits_per_plane>(_input, _output, max_size);
     }
 
 
