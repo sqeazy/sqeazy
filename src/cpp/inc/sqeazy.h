@@ -361,7 +361,7 @@ SQY_FUNCTION_PREFIX int SQY_Version_Triple(int* version);
 	in case the compressed buffer requires more space. 
 	ATTENTION: The output buffer contains a sqy only header!
 
-
+	pipeline				: pipeline name
 	src 					: contiguous array of voxels (externally allocated)
 	shape     				: shape of the nD construct given as src (in units of unsigned int 16-bit)
 	shape_size     				: number of items in shape
@@ -375,41 +375,37 @@ SQY_FUNCTION_PREFIX int SQY_Version_Triple(int* version);
 			error 1 -  destination buffer is not large enough
 
 */
-SQY_FUNCTION_PREFIX int SQY_PipelineEncode_UI16(const char* src, long* shape, unsigned shape_size , char* dst, long* dstlength, const char* pipeline);
+SQY_FUNCTION_PREFIX int SQY_PipelineEncode_UI16(const char* pipeline,const char* src, long* shape, unsigned shape_size , char* dst, long* dstlength);
 
 
 
 /*
 	SQY_Pipeline_Max_Compressed_Length - Calculates the maximum size of the output buffer from Pipeline compression
 
-	ATTENTION: The output buffer contains a sqy only header!
-
+	pipeline				: pipeline name
 	length 					: (in) length in bytes of decompressed buffer
 						  (out) maximum length in bytes of compressed buffer
 
 	Returns 0 if success, another code if there was an error (error codes provided below)
 */
-SQY_FUNCTION_PREFIX int SQY_Pipeline_Max_Compressed_Length(long* length);
+SQY_FUNCTION_PREFIX int SQY_Pipeline_Max_Compressed_Length_UI16(const char* pipeline,long* length);
 
 /*
 	SQY_Pipeline_Max_Compressed_Length - Calculates the maximum size of the output buffer from Pipeline compression
 
-	ATTENTION: The output buffer contains a sqy only header!
-
+	pipeline				: pipeline name
 	shape					: (in) shape of the incoming nD dataset
 	shape_size				: (in) number of items in shape
 	length 					: (out) maximum length in bytes of compressed buffer
 
 	Returns 0 if success, another code if there was an error (error codes provided below)
 */
-SQY_FUNCTION_PREFIX int SQY_Pipeline_Max_Compressed_Length_3D(long* shape, unsigned shape_size, long* length);
+SQY_FUNCTION_PREFIX int SQY_Pipeline_Max_Compressed_Length_3D_UI16(const char* pipeline,long* shape, unsigned shape_size, long* length);
 
 /*
 	SQY_Pipeline_Decompressed_Length - Extracts the size of the decompressed buffer from the first 8 Byte of data
 
-	ATTENTION: The output buffer contains a sqy only header! This function extracts it.
-
-	data					: buffer to contain the compressed data as output by SQY_PipelineEncode
+	data					: buffer that contains the compressed data as output by SQY_PipelineEncode
 	length					: (in) length in bytes of incoming data buffer
 						  (out) extracted length in bytes of decompressed buffer to be output by SQY_PipelineDecode called on data
 
@@ -419,7 +415,7 @@ SQY_FUNCTION_PREFIX int SQY_Pipeline_Max_Compressed_Length_3D(long* shape, unsig
 SQY_FUNCTION_PREFIX int SQY_Pipeline_Decompressed_Length(const char* data, long *length);
 
 /*
-	SQY_PipelineDecode - Decompress using Pipeline.
+	SQY_PipelineDecode_UI16 - Decompress using Pipeline.
 
 	Decompresses the source buffer into the destination buffer using Pipeline.
 	The destination buffer should be allocated externally. The first 8 bytes of 
@@ -427,15 +423,16 @@ SQY_FUNCTION_PREFIX int SQY_Pipeline_Decompressed_Length(const char* data, long 
 	length of the original uncompressed buffer.
 	The necessary buffer length can be obtained by calling SQY_PipelineLength. 
 
+	pipeline				: pipeline name
 	src 					: Pipeline compressed buffer (externally allocated)
 	srclength 				: length in bytes of compressed buffer
 	dst 					: contiguous array of voxels 
-							  (externally allocated, length from SQY_PipelineLength)
+							  (externally allocated, length from SQY_Pipeline_Decompressed_Length)
 
 	Returns 0 if success, another code if there was an error (error codes provided below)
 
 */
-SQY_FUNCTION_PREFIX int SQY_PipelineDecode(const char* src, long srclength, char* dst);
+SQY_FUNCTION_PREFIX int SQY_PipelineDecode_UI16(const char* src, long srclength, char* dst);
 
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -566,5 +563,24 @@ SQY_FUNCTION_PREFIX int SQY_h5_write(const char* fname,
 				     const char* dname,
 				     const char* data,
 				     unsigned long data_size);
+
+/*
+	SQY_h5_link - store compressed data into file.
+	
+	fname 					: hdf5 file to store data in
+	dname 					: dataset name inside hdf5 file 
+	data					: compressed data
+	data_size				: size of data in byte
+
+	Returns 0 if success, another code if there was an error
+
+*/
+SQY_FUNCTION_PREFIX int SQY_h5_link(	const char* pFileName,
+					const char* pLinkPath,
+					const char* pLinkName,
+					const char* pTargetFile,
+					const char* pTargetDatasetPath,
+					const char* pTargetDatasetName	
+					);
 
 #endif

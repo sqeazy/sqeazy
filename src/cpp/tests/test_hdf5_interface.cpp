@@ -312,12 +312,13 @@ BOOST_AUTO_TEST_CASE( write_compressed_data ){
   std::vector<char> compressed(size);
 
   std::vector<long> ldims(data.dims.begin(), data.dims.end());
-  rvalue = SQY_PipelineEncode_UI16((const char*)&data.constant_cube[0],
+  rvalue = SQY_PipelineEncode_UI16("lz4",
+				   (const char*)&data.constant_cube[0],
 				   &ldims[0],
 				   ldims.size(),
 				   &compressed[0],
-				   &size,
-				   "lz4");
+				   &size
+				   );
 
   
   rvalue = SQY_h5_write(test_output_name.c_str(),

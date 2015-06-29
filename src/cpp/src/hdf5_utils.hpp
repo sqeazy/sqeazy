@@ -253,7 +253,7 @@ namespace sqeazy {
       if(!this->has_dataset(_dname)){
 	
 	std::cerr << "[sqeazy::h5_file, "<< __FILE__":"<< __LINE__<<"]\t"
-		  << "requested dataset " << _dname << " not found in "<< path_.string() <"\n";
+		  << "requested dataset " << _dname << " not found in "<< path_.string() << "\n";
 	return value;
       }
 

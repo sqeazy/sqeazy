@@ -227,7 +227,8 @@ struct pipeline : public bmpl::back<TypeList>::type {
      
      \param[in] _in buffer containing input data
      \param[out] _out buffer containing compressed data (must at least of size max_bytes_encoded)
-     
+     \param[in] _size vector or integral describing shape of _in in units of raw_type
+     \param[out] _num_compressed_bytes number of bytes that were written to _out
      \return 
      \retval 
      

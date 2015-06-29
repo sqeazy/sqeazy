@@ -288,25 +288,37 @@ int SQY_Version_Triple(int* version){
   return 0;
 }
 
+template <typename T>
+inline static std::string prepend_type_id(const std::string& _in){
 
+  static std::string type_name = sqeazy::type_to_name_match<unsigned short>::id();
+  std::string pipeline = _in;
+  std::stringstream filter_name_;
+  if(pipeline.find(type_name)==std::string::npos)
+    filter_name_ << type_name << "_";
+  filter_name_ << pipeline;
 
-int SQY_PipelineEncode_UI16(const char* src,
+  return filter_name_.str();
+}
+
+template <typename T>
+inline static std::string prepend_type_id(const char* _in){
+
+  std::string pipeline = _in;
+  return prepend_type_id<T>(pipeline);
+}
+
+int SQY_PipelineEncode_UI16(const char* pipeline,
+			    const char* src,
 			    long* shape,
 			    unsigned shape_size ,
 			    char* dst,
-			    long* dstlength,
-			    const char* pipeline){
+			    long* dstlength){
 
   int value =1;
   std::vector<unsigned> shape_(shape, shape+shape_size);
-  std::string pipeline_ = pipeline;
-
-  std::stringstream filter_name_;
-  std::string type_name = sqeazy::type_to_name_match<unsigned short>::id();
-  if(pipeline_.find(type_name)==std::string::npos)
-    filter_name_ << type_name << "_";
-  filter_name_ << pipeline_;
-  std::string filter_name = filter_name_.str();
+  
+  std::string filter_name = prepend_type_id<uint16_t>(pipeline);
 
   
   sqeazy::image_header hdr(uint16_t(),
@@ -324,10 +336,71 @@ int SQY_PipelineEncode_UI16(const char* src,
 }
 
 //NOT IMPLEMENTED YET
-int SQY_Pipeline_Max_Compressed_Length(long* length){return 1;}
-int SQY_Pipeline_Max_Compressed_Length_3D(long* shape, unsigned shape_size, long* length){return 1;}
-int SQY_Pipeline_Decompressed_Length(const char* data, long *length){return 1;}
-int SQY_PipelineDecode(const char* src, long srclength, char* dst){return 1;}
+int SQY_Pipeline_Max_Compressed_Length_UI16(const char* pipeline,long* length){
+  int value =1;
+  std::string filter_name = prepend_type_id<uint16_t>(pipeline);
+  sqeazy::pipeline_select<> selected(16,filter_name);
+  if(selected.empty())
+    return value;
+
+  std::vector<unsigned long> assumed_shape(1,*length);
+  sqeazy::image_header hdr(uint16_t(),
+			   assumed_shape,
+			   filter_name);
+  
+  *length = selected.max_compressed_size(*length,hdr.size());
+  return 0;
+
+}
+
+int SQY_Pipeline_Max_Compressed_Length_3D_UI16(const char* pipeline,long* shape, unsigned shape_size, long* length){
+
+  int value =1;
+  std::string filter_name = prepend_type_id<uint16_t>(pipeline);
+  sqeazy::pipeline_select<> selected(16,filter_name);
+  if(selected.empty())
+    return value;
+
+  std::vector<unsigned long> lshape(shape,shape+shape_size);
+  sqeazy::image_header hdr(uint16_t(),
+			   lshape,
+			   filter_name);
+  
+  *length = selected.max_compressed_size(*length,hdr.size());
+  return 0;
+
+
+}
+
+int SQY_Pipeline_Decompressed_Length(const char* data, long *length){
+  
+  int value =1;
+
+  sqeazy::image_header hdr(data,data+(*length));
+  sqeazy::pipeline_select<> selected(hdr);
+  if(selected.empty())
+    return value;
+
+  *length = selected.decoded_size_byte(data,*length);
+  return 0;
+}
+
+int SQY_PipelineDecode_UI16(const char* src, long srclength, char* dst){
+  int value =1;
+ 
+  sqeazy::image_header hdr(src,src+srclength);
+  if(hdr.empty())
+    return value;
+  
+  sqeazy::pipeline_select<> selected(hdr);
+  if(selected.empty())
+    return value;
+
+  unsigned long long size = srclength;
+  value = selected.decompress(src,dst,size);
+
+  return value;
+}
 
 
 int SQY_h5_query_sizeof(const char* fname,

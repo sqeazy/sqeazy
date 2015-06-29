@@ -21,7 +21,7 @@ namespace bpt = boost::property_tree;
 
 namespace sqeazy {
 
-  bool ends_with(const std::string& _data, const std::string& _match){
+  static inline bool ends_with(const std::string& _data, const std::string& _match){
 
     bool value = false;
     if(_match.size()>_data.size() || _data.empty() || _match.empty())
@@ -35,7 +35,7 @@ namespace sqeazy {
   }
 
   template <char delimiter, typename T>
-  void split_string_to_vector(const std::string& _buffer, std::vector<T>& _v) {
+  static inline void split_string_to_vector(const std::string& _buffer, std::vector<T>& _v) {
 
     int num_del = std::count(_buffer.begin(), _buffer.end(), delimiter);
     if(_v.size() != size_t(num_del + 1))
