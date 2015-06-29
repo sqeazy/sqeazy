@@ -176,13 +176,13 @@ void decompress_files(const std::vector<std::string>& _files,
 
     const char* file_ptr = &file_data[0];
     const char* end_header_ptr =  std::find(file_ptr, file_ptr + found_size_byte, 
-					    sqeazy::image_header<sqeazy::unknown>::header_end_delimeter());
+					    sqeazy::image_header::header_end_delimeter());
 
-    sqeazy::image_header<sqeazy::unknown> sqy_header(file_ptr,
-						     end_header_ptr+1
-						     );
-
-    tiff.shape_ = *(sqy_header.shape());
+    sqeazy::image_header sqy_header(file_ptr,
+				    end_header_ptr+1
+				    );
+    tiff.shape_.resize(sqy_header.shape()->size());
+    std::copy(sqy_header.shape()->begin(), sqy_header.shape()->end(),tiff.shape_.begin());
     found_pipeline = sqy_header.pipeline();
     found_num_bits = sqy_header.sizeof_header_type()*CHAR_BIT;
     dynamic.set(found_num_bits, found_pipeline);
