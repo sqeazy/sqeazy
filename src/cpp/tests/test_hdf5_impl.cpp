@@ -41,6 +41,33 @@ BOOST_AUTO_TEST_CASE( runtime_type_instance_works ){
 
 }
 
+BOOST_AUTO_TEST_CASE( extract_group ){
+  
+  std::string path = "/my_group/dataset_name";
+  std::string grp = sqeazy::extract_group_path(path);
+
+  BOOST_REQUIRE(!grp.empty());
+  BOOST_CHECK(grp[0] == '/');
+  BOOST_CHECK(grp.find("my_group")!=std::string::npos);
+  BOOST_CHECK_EQUAL(grp,"/my_group");
+  BOOST_CHECK_NE(grp[grp.size()-1],'/');
+
+  grp = sqeazy::extract_group_path("dataset_name");
+  BOOST_REQUIRE(!grp.empty());
+  BOOST_CHECK(grp[0] == '/');
+  BOOST_CHECK_EQUAL(grp.size(),1);
+
+  path = path.substr(1);
+  grp = sqeazy::extract_group_path(path);
+
+  BOOST_REQUIRE(!grp.empty());
+  BOOST_CHECK(grp[0] == '/');
+  BOOST_CHECK(grp.find("my_group")!=std::string::npos);
+  BOOST_CHECK_EQUAL(grp,"/my_group");
+  BOOST_CHECK_NE(grp[grp.size()-1],'/');
+}
+
+
 BOOST_AUTO_TEST_CASE( load_dataset_anew ){
   
   sqeazy::h5_file testme(tfile);
@@ -67,7 +94,7 @@ BOOST_AUTO_TEST_CASE( query_for_dataset ){
 
   sqeazy::h5_file testme(tfile);
   BOOST_CHECK(testme.ready());
-  BOOST_CHECK(testme.has_dataset(dname));
+  BOOST_CHECK(testme.has_h5_item(dname));
     
 }
 
@@ -129,7 +156,7 @@ BOOST_AUTO_TEST_CASE( load_dataset ){
 BOOST_AUTO_TEST_CASE( write_dataset ){
 
     
-  sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
+  sqeazy::h5_file testme(test_output_name, H5F_ACC_RDWR);
   BOOST_CHECK(testme.ready());
 
   int rvalue = testme.write_nd_dataset(dname,retrieved,dims);
