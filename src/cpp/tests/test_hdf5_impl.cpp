@@ -156,7 +156,7 @@ BOOST_AUTO_TEST_CASE( load_dataset ){
 BOOST_AUTO_TEST_CASE( write_dataset ){
 
     
-  sqeazy::h5_file testme(test_output_name, H5F_ACC_RDWR);
+  sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
   BOOST_CHECK(testme.ready());
 
   int rvalue = testme.write_nd_dataset(dname,retrieved,dims);
@@ -177,7 +177,7 @@ BOOST_AUTO_TEST_CASE( write_dataset_to_group ){
   dname_with_group += dname;
   int rvalue = testme.write_nd_dataset(dname_with_group,retrieved,dims);
   BOOST_REQUIRE(rvalue == 0);
-  BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
+  BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname_with_group));
 
   if(bfs::exists(test_output_path))
     bfs::remove(test_output_path);

@@ -588,7 +588,8 @@ namespace sqeazy {
       H5::PredType type_to_store = hdf5_runtime_dtype::instance(hdr.raw_type());
 
       std::string grp_path = extract_group_path(_dname);
-      H5::Group grp(has_h5_item(grp_path) ? file_->openGroup(grp_path) : file_->createGroup(grp_path));
+      bool open_group = has_h5_item(grp_path) || (grp_path[0] == '/' && grp_path.size() == 1);
+      H5::Group grp(open_group ? file_->openGroup(grp_path) : file_->createGroup(grp_path));
 
       H5::DataSet dataset_(grp.createDataSet( _dname, 
 						 type_to_store,
@@ -634,8 +635,9 @@ namespace sqeazy {
 
       std::vector<unsigned> cd_values;
       
-      std::string grp_path = extract_group_path(_dname);
-      H5::Group grp(has_h5_item(grp_path) ? file_->openGroup(grp_path) : file_->createGroup(grp_path));
+      std::string grp_path = extract_group_path(_dname);      
+      bool open_group = has_h5_item(grp_path) || (grp_path[0] == '/' && grp_path.size() == 1);
+      H5::Group grp(open_group ? file_->openGroup(grp_path) : file_->createGroup(grp_path));
       
       H5::DataSet dataset_(grp.createDataSet( _dname, 
 					      hdf5_compiletime_dtype<T>::instance(),
@@ -706,9 +708,11 @@ namespace sqeazy {
 			cd_values.size(),
 			&cd_values[0]);
       }
-      
-      std::string grp_path = extract_group_path(_dname);
-      H5::Group grp(has_h5_item(grp_path) ? file_->openGroup(grp_path) : file_->createGroup(grp_path));
+
+      std::string grp_path = extract_group_path(_dname);      
+      bool open_group = has_h5_item(grp_path) || (grp_path[0] == '/' && grp_path.size() == 1);
+      H5::Group grp(open_group ? file_->openGroup(grp_path) : file_->createGroup(grp_path));
+
   
       H5::DataSet dataset_(grp.createDataSet( _dname, 
 					      hdf5_compiletime_dtype<T>::instance(),
@@ -771,8 +775,10 @@ namespace sqeazy {
 			&cd_values[0]);
       }
       
-      std::string grp_path = extract_group_path(_dname);
-      H5::Group grp(has_h5_item(grp_path) ? file_->openGroup(grp_path) : file_->createGroup(grp_path));
+      std::string grp_path = extract_group_path(_dname);      
+      bool open_group = has_h5_item(grp_path) || (grp_path[0] == '/' && grp_path.size() == 1);
+      H5::Group grp(open_group ? file_->openGroup(grp_path) : file_->createGroup(grp_path));
+  
       H5::DataSet ds(grp.createDataSet( _dname, 
 					hdf5_compiletime_dtype<T>::instance(),
 					dsp, 
