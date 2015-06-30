@@ -3,7 +3,12 @@
 
 #include <iostream>
 #include "boost/filesystem.hpp"
+#include "array_fixtures.hpp"
+
 namespace bfs = boost::filesystem;
+
+typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
+
 
 struct helpers_fixture {
 
@@ -61,18 +66,47 @@ struct helpers_fixture {
 
 struct indexed_helpers : public helpers_fixture {
 
-
-  const bfs::path	index_path;
+  uint16_cube_of_8	data;
+  const bfs::path		index_file_path;
+  const bfs::path		level_path;
+  std::vector<bfs::path>		dataset_paths;
+  std::vector<std::string>	dataset_names;
   
   indexed_helpers():
     helpers_fixture(),
-    index_path("index.h5")
-    
+    index_file_path("index.h5"),
+    level_path("intermediate/"),
+    data(),
+    dataset_paths(2),
+    dataset_names(2)
   {
-    set_test_path("intermediate/timepoint_n.h5");
+
+    if(!bfs::exists(level_path))
+      bfs::create_directory(level_path);
+
+    for(unsigned i = 0;i<dataset_paths.size();++i){
+
+
+      std::stringstream fname;
+      fname << "timepoint_" << i << ".h5";
+
+      dataset_paths[i] = level_path;
+      dataset_paths[i] /= fname.str();
+
+      std::stringstream temp_dname;
+      temp_dname << "/spim" << "/" << dname;
+      dataset_names[i] = temp_dname.str();
+    }
+
   }
 
-  
+  void clean_up(){
+    bfs::remove(index_file_path);
+    bfs::remove_all(level_path);
+    for(unsigned i = 0;i<dataset_paths.size();++i){
+      bfs::remove(dataset_paths[i]);
+    }
+  }
 };
 
 #endif /* _HDF5_FIXTURES_H_ */

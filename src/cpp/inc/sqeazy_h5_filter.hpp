@@ -1,5 +1,5 @@
-#ifndef _SQEAZY_H5_FILTER_H_
-#define _SQEAZY_H5_FILTER_H_
+#ifndef _SQEAZY_H5_FILTER_HPP_
+#define _SQEAZY_H5_FILTER_HPP_
 
 #include "hdf5.h"
 #include "H5PLextern.h"

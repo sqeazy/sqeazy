@@ -286,33 +286,35 @@ namespace sqeazy {
       int value = 1;
       
       bfs::path dest_fs_path = _dest_file.path_;
-      if(!bfs::exist(dest_fs_path))
+      if(!bfs::exists(dest_fs_path))
 	return value;
 
-      if(!_dest_file.has_dataset(_dest_h5_path) || !_dest_file.ready())
+      if(!_dest_file.ready() || !_dest_file.has_dataset(_dest_h5_path) )
 	return value;
       
-      H5::Group* srcGrp = 0;
+      // H5::Group* srcGrp = 0;
 
-      if(_linkpath.count("/")){
-	std::string src_grp = _linkpath.substr(_linkpath.rfind("/"));
-	srcGrp = new H5::Group(file_->createGroup(src_grp));
-      }
+      // if(_linkpath.count("/")){
+      // 	std::string src_grp = _linkpath.substr(0,_linkpath.rfind("/"));
+      // 	srcGrp = new H5::Group(file_->createGroup(src_grp));//TODO: what if group already exists?
+      // } else {
+      // 	srcGrp = new H5::Group(file_->openGroup("/"));
+      // }
 
-      herr_t result = H5Lcreate_external( dest_fs_path.string().c_str(),
+      H5Lcreate_external( dest_fs_path.string().c_str(),
 					  _dest_h5_path.c_str(),
-					  hid_t link_loc_id,//File or group identifier where the new link is to be created
-					  _linkpath,
-					  hid_t lcpl_id,//Link creation property list identifier
-					  hid_t lapl_id//Link access property list identifier
+					  file_->getId(),//File or group identifier where the new link is to be created
+					  _linkpath.c_str(),
+					  H5P_DEFAULT, //hid_t lcpl_id: Link creation property list identifier
+					  H5P_DEFAULT//hid_t lapl_id: Link access property list identifier
 					  );
       
       //TODO: HANDLE result?
       
-      if(srcGrp){
-	srcGrp->close();
-	delete srcGrp;
-      }
+      // if(srcGrp){
+      // 	srcGrp->close();
+      // 	delete srcGrp;
+      // }
 
       file_->flush(H5F_SCOPE_LOCAL);//this call performs i/o
     }

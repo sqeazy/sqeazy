@@ -7,7 +7,6 @@
     using namespace H5;
 #endif
 
-#include "sqeazy_hdf5_impl.hpp"
 
 int stored_sizeof_in_h5_file(const std::string& _fname, const std::string& _dname){
   int value = -1;
@@ -198,10 +197,10 @@ bool sqy_used_in_h5_file(const std::string& _fname, const std::string& _dname = 
 
 template <typename U>
 int h5_compress_ushort_dataset(
-			    const H5std_string& _fname,
-			    const H5std_string& _dname,
-			    const std::vector<unsigned short> _data,
-			    const std::vector<U> _shape,
+			    const std::string& _fname,
+			    const std::string& _dname,
+			    const std::vector<unsigned short>& _data,
+			    const std::vector<U>& _shape,
 			    const bool& _use_filter = false)
 {
   std::vector<hsize_t> dims(_shape.begin(), _shape.end());
@@ -209,6 +208,12 @@ int h5_compress_ushort_dataset(
   //int     i,j;
   //  const unsigned long n_elements = std::accumulate(dims.begin(), dims.end(),1,std::multiplies<int>());
   
+  std::string grp = "/";
+  std::string dataname = _dname;
+  if(_dname[0] == '/' && std::count(_dname.begin(), _dname.end(),'/')>1){
+    grp = _dname.substr(0,_dname.rfind("/"));
+    dataname = _dname.substr(_dname.rfind("/"));
+  }
 
   // Try block to detect exceptions raised by any of the calls inside it
   try

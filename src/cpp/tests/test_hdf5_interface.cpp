@@ -19,9 +19,9 @@ extern "C" {
 using namespace H5;
 #endif
 
-//#include "hdf5_test_utils.hpp"
+
 #include "hdf5_fixtures.hpp"
-#include "array_fixtures.hpp"
+
 
 
 static const std::string default_filter_name = "bswap1_lz4";
@@ -35,7 +35,6 @@ static const std::string default_filter_name = "bswap1_lz4";
   or being called. 
 */
 
-typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 
 
 
@@ -350,12 +349,58 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_FIXTURE_TEST_SUITE( index_files, indexed_helpers )
 
-BOOST_AUTO_TEST_CASE( links_exist ){
+BOOST_AUTO_TEST_CASE( fixture_correct ){
 
+  int rvalue = SQY_h5_write_UI16(dataset_paths[0].string().c_str(),
+				 dataset_names[0].c_str(),
+				 &data.constant_cube[0],
+				 data.dims.size(),
+				 &data.dims[0],
+				 default_filter_name.c_str());
+  BOOST_CHECK_MESSAGE(rvalue == 0, "failed to write " << dataset_paths[0].string() <<":"<<dataset_names[0]);
+
+  rvalue = SQY_h5_write_UI16(dataset_paths[1].string().c_str(),
+			     dataset_names[1].c_str(),
+			     &data.incrementing_cube[0],
+			     data.dims.size(),
+			     &data.dims[0],
+			     default_filter_name.c_str());
+  BOOST_CHECK_MESSAGE(rvalue == 0, "failed to write " << dataset_paths[1].string() <<":"<<dataset_names[1]);
+
+
+  BOOST_REQUIRE(!bfs::exists(index_file_path));
+  for(unsigned i = 0;i<dataset_paths.size();++i)
+    BOOST_REQUIRE(bfs::exists(dataset_paths[i]));
   
-  BOOST_REQUIRE(bfs::exists(test_output_path));
-  bfs::remove(test_output_path);
-  bfs::remove(index_path);
+  clean_up();
 }
 
+BOOST_AUTO_TEST_CASE( index_file_exists ){
+
+  int rvalue = SQY_h5_write_UI16(dataset_paths[0].string().c_str(),
+				 dataset_names[0].c_str(),
+				 &data.constant_cube[0],
+				 data.dims.size(),
+				 &data.dims[0],
+				 default_filter_name.c_str());
+  BOOST_CHECK_MESSAGE(rvalue == 0, "failed to write " << dataset_paths[0].string() <<":"<<dataset_names[0]);
+
+  std::string link_tail = dataset_names[0].substr(dataset_names[0].rfind("/"));
+  std::string link_head = dataset_names[0].substr(0,dataset_names[0].rfind("/"));
+
+  std::string dest_tail = link_tail;
+  std::string dest_head = link_head;
+
+  SQY_h5_link(index_file_path.string().c_str(),
+	      link_head.c_str(),
+	      link_tail.c_str(),
+	      dataset_paths[0].string().c_str(),
+	      dest_head.c_str(),
+	      dest_tail.c_str()
+	      );
+
+  BOOST_REQUIRE(bfs::exists(index_file_path));
+  
+  clean_up();
+}
 BOOST_AUTO_TEST_SUITE_END()

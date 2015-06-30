@@ -584,7 +584,7 @@ int SQY_h5_link(const char* pSrcFileName,
   dest_path << pTargetDatasetPath << "/" << pTargetDatasetName;
 
   if(dest.has_dataset(dest_path.str()))
-    rvalue = src.setup_link(src_path,dest,dest_path);
+    rvalue = src.setup_link(src_path.str(),dest,dest_path.str());
   
   return rvalue;
 }
