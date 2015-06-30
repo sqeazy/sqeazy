@@ -496,7 +496,10 @@ int SQY_h5_write_UI16(const char* fname,
 
   int rvalue = 1;
   H5::Exception::dontPrint();
-  sqeazy::h5_file loaded(fname, H5F_ACC_TRUNC);
+  
+  bfs::path src_p = fname;
+  sqeazy::h5_file loaded(fname, bfs::exists(src_p) ? H5F_ACC_RDWR : H5F_ACC_TRUNC);
+
   if(!loaded.ready())
     return rvalue;
   else{
@@ -532,7 +535,10 @@ int SQY_h5_write(const char* fname,
 
   int rvalue = 1;
   H5::Exception::dontPrint();
-  sqeazy::h5_file loaded(fname, H5F_ACC_TRUNC);
+
+  bfs::path src_p = fname;
+  sqeazy::h5_file loaded(fname, bfs::exists(src_p) ? H5F_ACC_RDWR : H5F_ACC_TRUNC);
+
   if(!loaded.ready())
     return rvalue;
   else{
@@ -554,7 +560,7 @@ int SQY_h5_read_UI16(const char* fname,
   sqeazy::h5_file loaded(fname);
   if(!loaded.ready())
     return rvalue;
-  if(!loaded.has_dataset(dname))
+  if(!loaded.has_h5_item(dname))
     return rvalue;
   else{
     std::vector<int> shape;
@@ -573,19 +579,22 @@ int SQY_h5_link(const char* pSrcFileName,
 		const char* pTargetDatasetPath,
 		const char* pTargetDatasetName	){
   int rvalue = 1;
-  H5::Exception::dontPrint();
+  //  H5::Exception::dontPrint();
   
-  sqeazy::h5_file src(pSrcFileName, H5F_ACC_TRUNC);
-  std::stringstream src_path;
+  bfs::path src_p = pSrcFileName;
+  sqeazy::h5_file src(pSrcFileName, bfs::exists(src_p) ? H5F_ACC_RDWR : H5F_ACC_TRUNC);
+  std::stringstream src_path("");
   src_path << pSrcLinkPath << "/" << pSrcLinkName;
 
   sqeazy::h5_file dest(pTargetFile);
-  std::stringstream dest_path;
+  std::stringstream dest_path("");
   dest_path << pTargetDatasetPath << "/" << pTargetDatasetName;
 
-  if(dest.has_dataset(dest_path.str()))
+  if(dest.has_h5_item(dest_path.str()))
     rvalue = src.setup_link(src_path.str(),dest,dest_path.str());
-  
+  else
+    rvalue = 1;
+
   return rvalue;
 }
 

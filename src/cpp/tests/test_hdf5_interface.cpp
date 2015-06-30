@@ -369,9 +369,12 @@ BOOST_AUTO_TEST_CASE( fixture_correct ){
 
 
   BOOST_REQUIRE(!bfs::exists(index_file_path));
-  for(unsigned i = 0;i<dataset_paths.size();++i)
+  for(unsigned i = 0;i<dataset_paths.size();++i){
     BOOST_REQUIRE(bfs::exists(dataset_paths[i]));
+    BOOST_REQUIRE(bfs::file_size(dataset_paths[i])>1000);
+  }
   
+
   clean_up();
 }
 
@@ -401,6 +404,42 @@ BOOST_AUTO_TEST_CASE( index_file_exists ){
 
   BOOST_REQUIRE(bfs::exists(index_file_path));
   
+  clean_up();
+}
+
+BOOST_AUTO_TEST_CASE( roundtrip_through_index_file ){
+
+  int rvalue = SQY_h5_write_UI16(dataset_paths[0].string().c_str(),
+				 dataset_names[0].c_str(),
+				 &data.constant_cube[0],
+				 data.dims.size(),
+				 &data.dims[0],
+				 default_filter_name.c_str());
+  
+
+  BOOST_CHECK_MESSAGE(rvalue == 0, "failed to write " << dataset_paths[0].string() <<":"<<dataset_names[0]);
+
+  std::string link_tail = dataset_names[0].substr(dataset_names[0].rfind("/"));
+  std::string link_head = dataset_names[0].substr(0,dataset_names[0].rfind("/"));
+
+  std::string dest_tail = link_tail;
+  std::string dest_head = link_head;
+
+  rvalue = SQY_h5_link(index_file_path.string().c_str(),
+	      link_head.c_str(),
+	      link_tail.c_str(),
+	      dataset_paths[0].string().c_str(),
+	      dest_head.c_str(),
+	      dest_tail.c_str()
+	      );
+
+  BOOST_REQUIRE(bfs::exists(index_file_path));
+  BOOST_CHECK_MESSAGE(rvalue == 0, "failed to create link from " << index_file_path.string() <<":"<< link_head << link_tail << " to " << dataset_paths[0].string() << ":" << dest_head << dest_tail);
+  rvalue = SQY_h5_read_UI16(index_file_path.string().c_str(),
+			     dataset_names[0].c_str(),
+			     &data.to_play_with[0]);
+  
+  BOOST_REQUIRE_MESSAGE(rvalue == 0, "failed to read " << index_file_path.string() <<":"<<dataset_names[0]);
   clean_up();
 }
 BOOST_AUTO_TEST_SUITE_END()

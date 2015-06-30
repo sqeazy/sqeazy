@@ -74,15 +74,18 @@ struct indexed_helpers : public helpers_fixture {
   
   indexed_helpers():
     helpers_fixture(),
-    index_file_path("index.h5"),
-    level_path("intermediate/"),
     data(),
+    index_file_path("index.h5"),
+    level_path("intermediate"),
     dataset_paths(2),
     dataset_names(2)
   {
 
     if(!bfs::exists(level_path))
       bfs::create_directory(level_path);
+
+    if(bfs::exists(index_file_path))
+      bfs::remove(index_file_path);
 
     for(unsigned i = 0;i<dataset_paths.size();++i){
 
@@ -98,6 +101,7 @@ struct indexed_helpers : public helpers_fixture {
       dataset_names[i] = temp_dname.str();
     }
 
+    
   }
 
   void clean_up(){
