@@ -6,6 +6,8 @@
 #include <string>
 #include <stdexcept>
 
+#include <cstdlib>
+
 #include "boost/filesystem.hpp"
 #include "array_fixtures.hpp"
 
@@ -67,6 +69,25 @@ BOOST_AUTO_TEST_CASE( extract_group ){
   BOOST_CHECK_NE(grp[grp.size()-1],'/');
 }
 
+
+BOOST_AUTO_TEST_CASE( open_close ){
+  
+  sqeazy::h5_file testme(tfile);
+  BOOST_CHECK(testme.ready());
+  H5::DataSet tds = testme.load_h5_dataset(dname);
+  BOOST_REQUIRE_NE(tds.getStorageSize(),0);
+
+  testme.close();
+  BOOST_CHECK(testme.has_h5_item(dname)==false);
+
+  testme.open(tfile);
+  
+  sqeazy::h5_file testme_ro = testme;
+  BOOST_CHECK(testme_ro.ready());
+  H5::DataSet tds_ro = testme_ro.load_h5_dataset(dname);
+  BOOST_REQUIRE_NE(tds_ro.getStorageSize(),0);
+
+}
 
 BOOST_AUTO_TEST_CASE( load_dataset_anew ){
   
@@ -183,7 +204,117 @@ BOOST_AUTO_TEST_CASE( write_dataset_to_group ){
     bfs::remove(test_output_path);
 }
 
+BOOST_AUTO_TEST_CASE( write_multiple_datasets ){
 
+  sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
+  BOOST_CHECK(testme.ready());
+
+  std::string dname2 = "AnyOther";
+
+  int rvalue = testme.write_nd_dataset(dname2,retrieved,dims);
+
+  std::vector<uint16_t> shuffled(retrieved);
+  std::srand(shuffled.size());
+  
+  for(unsigned i = 0;i<shuffled.size();++i){
+    unsigned ri = float(std::rand())*shuffled.size()/RAND_MAX;
+    shuffled[ri] = retrieved[i];
+  }
+    
+  rvalue = testme.write_nd_dataset(dname,shuffled,dims);
+  
+  BOOST_REQUIRE(rvalue == 0);
+  BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname2));
+  BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
+
+  if(bfs::exists(test_output_path))
+    bfs::remove(test_output_path);
+}
+
+BOOST_AUTO_TEST_CASE( write_multiple_datasets_to_groups ){
+
+  sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
+  BOOST_CHECK(testme.ready());
+
+  std::string dname2 = "/level2/AnyOther";
+  std::string dname1 = "/level1/";dname1+=dname;
+
+  int rvalue = testme.write_nd_dataset(dname2,retrieved,dims);
+
+  std::vector<uint16_t> shuffled(retrieved);
+  std::srand(shuffled.size());
+  
+  for(unsigned i = 0;i<shuffled.size();++i){
+    unsigned ri = float(std::rand())*shuffled.size()/RAND_MAX;
+    shuffled[ri] = retrieved[i];
+  }
+    
+  rvalue = testme.write_nd_dataset(dname1,shuffled,dims);
+  
+  BOOST_REQUIRE(rvalue == 0);
+  BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname2));
+  BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname1));
+
+  if(bfs::exists(test_output_path))
+    bfs::remove(test_output_path);
+}
+
+BOOST_AUTO_TEST_CASE( roundtrip_multiple_datasets_in_groups ){
+
+  sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
+  BOOST_CHECK(testme.ready());
+
+  std::string dname2 = "/level2/AnyOther";
+  std::string dname1 = "/level1/";dname1+=dname;
+
+  int rvalue = testme.write_nd_dataset(dname2,retrieved,dims);
+
+  std::vector<uint16_t> shuffled(retrieved);
+  std::srand(shuffled.size());
+  
+  for(unsigned i = 0;i<shuffled.size();++i){
+    unsigned ri = float(std::rand())*shuffled.size()/RAND_MAX;
+    shuffled[ri] = retrieved[i];
+  }
+    
+  rvalue = testme.write_nd_dataset(dname1,shuffled,dims);
+  
+  BOOST_REQUIRE(rvalue == 0);
+  BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname2));
+  BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname1));
+
+  testme.close();
+  
+  std::vector<uint16_t> reloaded_shuffled(shuffled.size(),0);  
+  std::vector<uint16_t> reloaded_retrieved(retrieved.size(),0);  
+  std::vector<uint32_t> reloaded_dims;
+
+  testme = sqeazy::h5_file(test_output_name);
+  
+  rvalue = testme.read_nd_dataset(dname1,reloaded_retrieved,reloaded_dims);
+  
+  BOOST_REQUIRE(rvalue == 0);
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(reloaded_dims.begin(), reloaded_dims.end(),
+				  dims.begin(), dims.end()
+				  );
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(reloaded_retrieved.begin(), reloaded_retrieved.end(),
+				  retrieved.begin(), retrieved.end()
+				  );
+
+  std::fill(reloaded_dims.begin(), reloaded_dims.end(),0);
+  
+  rvalue = testme.read_nd_dataset(dname2,reloaded_shuffled,reloaded_dims);
+  BOOST_REQUIRE(rvalue == 0);
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(reloaded_dims.begin(), reloaded_dims.end(),
+				  dims.begin(), dims.end()
+				  );
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(reloaded_shuffled.begin(), reloaded_shuffled.end(),
+				  shuffled.begin(), shuffled.end()
+				  );
+  
+  if(bfs::exists(test_output_path))
+    bfs::remove(test_output_path);
+}
 
 BOOST_AUTO_TEST_CASE( write_dataset_with_filter ){
 

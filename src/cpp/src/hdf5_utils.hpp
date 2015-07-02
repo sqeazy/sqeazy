@@ -195,6 +195,7 @@ namespace sqeazy {
   {
     bfs::path		path_;
     H5::H5File*		file_;
+    unsigned		flag_;
     // H5::DataSpace*	dataspace_;
     // H5::DataSet*	dataset_;
 
@@ -202,51 +203,109 @@ namespace sqeazy {
     
     bool		ready_;
    
+    /**
+       \brief swap
+       
+       \param[in] _lhs reference to left-hand side
+       \param[in] _rhs reference to right-hand side
+       
+       \return 
+       \retval 
+       
+    */
+    friend void swap(h5_file& _lhs, h5_file& _rhs) // nothrow
+    {
+      std::swap(_lhs.path_, _rhs.path_);
+      std::swap(_lhs.ready_, _rhs.ready_);
+      std::swap(_lhs.error_, _rhs.error_);
+      std::swap(_lhs.flag_, _rhs.flag_);
+      
+      std::swap(_lhs.file_, _rhs.file_);
+
+    }
+
+    h5_file():
+      path_(""),
+      file_(0),
+      flag_(0),
+      ready_(false)
+    {
+      static sqeazy::loaded_hdf5_plugin now;
+    }
     
     h5_file(const std::string& _fname, unsigned _flag = H5F_ACC_RDONLY):
       path_(_fname),
       file_(0),
-      // dataspace_(0),
-      // dataset_(0),
+      flag_(_flag),
       ready_(false)
     {
 
-      ready_ = open(_fname, _flag);
+      open(_fname, _flag);
       static sqeazy::loaded_hdf5_plugin now;
       
     }
 
+    h5_file(const h5_file& _rhs):
+      path_(_rhs.path_),
+      file_(0),
+      flag_(_rhs.flag_),
+      ready_(_rhs.ready_)
+    {
+      open(path_.string(), flag_);
+      static sqeazy::loaded_hdf5_plugin now;
+    }
 
-    bool open(const std::string& _fname, unsigned flag){
+    h5_file& operator=(h5_file _rhs){
 
+      swap(*this, _rhs);
+
+      return *this;
+      
+    }
+    
+    bool open(const std::string& _fname, unsigned flag = H5F_ACC_RDONLY){
+      
+      if(ready())
+	close();
+
+      
       try {
 	file_ = new H5::H5File(_fname, flag);
       }
       catch(H5::FileIException & local_error)
 	{
 	  error_ = local_error;
-	  return false;
+	  ready_= false;
 	}
       catch(H5::Exception & local_error){
 	error_ = local_error;
-	return false;
+	ready_= false;
       }
 
-          
-      return true;
+      path_ = _fname;
+      flag_ = flag;
+      
+      ready_= true;
     }
+
+    void close(){
+      if(file_){
+	file_->flush(H5F_SCOPE_LOCAL);
+	file_->close();
+	delete file_;
+      }
+
+      
+      file_ = 0;
+      ready_ = false;
+      path_ = "";
+    }
+
     
     ~h5_file(){
-      // if(dataspace_)
-      // 	delete dataspace_;
 
-      // if(dataset_)
-      // 	delete dataset_;
-
-      if(file_)
-	file_->close();
+      close();
       
-      delete file_;
     }
 
     bool ready() const {
@@ -290,10 +349,14 @@ namespace sqeazy {
     
     bool has_h5_item(const std::string& _dname) const {
 
-      //taken from http://stackoverflow.com/a/18468735
-      htri_t dataset_status = H5Lexists(file_->getId(), _dname.c_str(), H5P_DEFAULT);
-      return (dataset_status>0);
-      
+      if(ready()){
+	//taken from http://stackoverflow.com/a/18468735
+	htri_t dataset_status = H5Lexists(file_->getId(), _dname.c_str(), H5P_DEFAULT);
+	return (dataset_status>0);
+      }
+      else{
+	return false;
+      }
     }
 
     int setup_link(const std::string& _linkpath,
@@ -327,7 +390,6 @@ namespace sqeazy {
       H5Gclose(group_id); 
       //TODO: HANDLE result?
 
-      //      file_->flush(H5F_SCOPE_LOCAL);//this call performs i/o
       return 0;
     }
 
@@ -491,7 +553,7 @@ namespace sqeazy {
 	return rvalue;
       }
       
-	int		numfilt = plist.getNfilters();
+      int		numfilt = plist.getNfilters();
       H5Z_filter_t 	filter_type;
       char         	filter_name[1];
       size_t		filter_name_size = {1};
@@ -543,10 +605,10 @@ namespace sqeazy {
     }
 
 
-      template <typename U>
+    template <typename U>
     int write_compressed_buffer(const std::string& _dname,
-		     const char* _payload,
-		     const U& _payload_size){
+				const char* _payload,
+				const U& _payload_size){
 	
       int rvalue = 1;
 
@@ -587,9 +649,9 @@ namespace sqeazy {
       H5::Group grp(open_group ? file_->openGroup(grp_path) : file_->createGroup(grp_path));
 
       H5::DataSet dataset_(grp.createDataSet( _dname, 
-						 type_to_store,
-						 dataspace_, 
-						 plist) );
+					      type_to_store,
+					      dataspace_, 
+					      plist) );
       unsigned long raw_size_byte = std::accumulate(dims.begin(),dims.end(),type_to_store.getSize(),std::multiplies<hsize_t>() );
       std::vector<char> temp(raw_size_byte);
       std::copy(_payload,_payload + _payload_size,temp.begin());
@@ -662,14 +724,14 @@ namespace sqeazy {
     }
 
     /**
-   \brief write given data set through sqy pipeline given by pipeline type
+       \brief write given data set through sqy pipeline given by pipeline type
    
-   \param[in] 
+       \param[in] 
    
-   \return 
-   \retval 
+       \return 
+       \retval 
    
-*/
+    */
     template <typename T, typename U, typename pipe_type>
     int write_nd_dataset(const std::string& _dname,
 			 const T* _payload,
@@ -726,15 +788,15 @@ namespace sqeazy {
       
     }
 
-/**
-   \brief write given data set through sqy pipeline given by _filter_name string
+    /**
+       \brief write given data set through sqy pipeline given by _filter_name string
    
-   \param[in] 
+       \param[in] 
    
-   \return 
-   \retval 
+       \return 
+       \retval 
    
-*/
+    */
     template <typename T, typename U>
     int write_nd_dataset(const std::string& _dname,
 			 const std::string& _filter_name,
@@ -1043,7 +1105,6 @@ namespace sqeazy {
     return value;
   }
 
-  
 }
 
 
