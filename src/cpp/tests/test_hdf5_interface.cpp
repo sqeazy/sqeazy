@@ -388,7 +388,7 @@ BOOST_AUTO_TEST_CASE( index_file_exists ){
 				 default_filter_name.c_str());
   BOOST_CHECK_MESSAGE(rvalue == 0, "failed to write " << dataset_paths[0].string() <<":"<<dataset_names[0]);
 
-  std::string link_tail = dataset_names[0].substr(dataset_names[0].rfind("/"));
+  std::string link_tail = dataset_names[0].substr(dataset_names[0].rfind("/")+1);
   std::string link_head = dataset_names[0].substr(0,dataset_names[0].rfind("/"));
 
   std::string dest_tail = link_tail;
@@ -419,7 +419,7 @@ BOOST_AUTO_TEST_CASE( roundtrip_through_index_file ){
 
   BOOST_CHECK_MESSAGE(rvalue == 0, "failed to write " << dataset_paths[0].string() <<":"<<dataset_names[0]);
 
-  std::string link_tail = dataset_names[0].substr(dataset_names[0].rfind("/"));
+  std::string link_tail = dataset_names[0].substr(dataset_names[0].rfind("/")+1);
   std::string link_head = dataset_names[0].substr(0,dataset_names[0].rfind("/"));
 
   std::string dest_tail = link_tail;

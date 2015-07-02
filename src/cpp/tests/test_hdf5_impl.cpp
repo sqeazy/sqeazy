@@ -267,7 +267,7 @@ BOOST_AUTO_TEST_CASE( roundtrip_multiple_datasets_in_groups ){
   std::string dname2 = "/level2/AnyOther";
   std::string dname1 = "/level1/";dname1+=dname;
 
-  int rvalue = testme.write_nd_dataset(dname2,retrieved,dims);
+  int rvalue = testme.write_nd_dataset(dname1,retrieved,dims);
 
   std::vector<uint16_t> shuffled(retrieved);
   std::srand(shuffled.size());
@@ -277,7 +277,7 @@ BOOST_AUTO_TEST_CASE( roundtrip_multiple_datasets_in_groups ){
     shuffled[ri] = retrieved[i];
   }
     
-  rvalue = testme.write_nd_dataset(dname1,shuffled,dims);
+  rvalue = testme.write_nd_dataset(dname2,shuffled,dims);
   
   BOOST_REQUIRE(rvalue == 0);
   BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname2));
@@ -699,4 +699,74 @@ BOOST_AUTO_TEST_CASE( filter_supports_decoding ){
 }
 
 
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE( index_files, indexed_helpers )
+
+BOOST_AUTO_TEST_CASE( create_all_from_scratch ){
+
+  sqeazy::h5_file index(index_file_path.string(),H5F_ACC_TRUNC);
+  
+  sqeazy::h5_file dest(dataset_paths[0].string(),H5F_ACC_TRUNC);
+  int rvalue = dest.write_nd_dataset(dataset_names[0],retrieved,dims);
+
+  BOOST_REQUIRE(rvalue == 0);
+  BOOST_REQUIRE(dest.has_h5_item(dataset_names[0]));
+
+  dest.close();
+
+  std::string link_tail = dataset_names[0].substr(dataset_names[0].rfind("/")+1);
+  std::string link_head = dataset_names[0].substr(0,dataset_names[0].rfind("/"));
+
+  std::string dest_tail = link_tail;
+  std::string dest_head = link_head;
+
+  dest.open(dataset_paths[0].string());
+  BOOST_REQUIRE(dest.has_h5_item(dataset_names[0]));
+
+    
+  index.setup_link(dataset_names[0],dest,dataset_names[0]);
+
+  BOOST_REQUIRE(index.has_h5_item(dataset_names[0]));  
+  
+  clean_up();
+}
+
+BOOST_AUTO_TEST_CASE( roundtrip_through_index_from_scratch ){
+
+  sqeazy::h5_file index(index_file_path.string(),H5F_ACC_TRUNC);
+  
+  sqeazy::h5_file dest(dataset_paths[0].string(),H5F_ACC_TRUNC);
+  int rvalue = dest.write_nd_dataset(dataset_names[0],retrieved,dims);
+
+  BOOST_REQUIRE(rvalue == 0);
+  BOOST_REQUIRE(dest.has_h5_item(dataset_names[0]));
+
+  dest.close();
+
+  std::string link_tail = dataset_names[0].substr(dataset_names[0].rfind("/")+1);
+  std::string link_head = dataset_names[0].substr(0,dataset_names[0].rfind("/"));
+
+  std::string dest_tail = link_tail;
+  std::string dest_head = link_head;
+
+  dest.open(dataset_paths[0].string());
+  BOOST_REQUIRE(dest.has_h5_item(dataset_names[0]));
+
+    
+  rvalue = index.setup_link(dataset_names[0],dest,dataset_names[0]);
+  BOOST_REQUIRE(rvalue == 0);
+
+  std::vector<uint16_t> reloaded_retrieved(retrieved.size(),0) ;
+  std::vector<uint32_t> reloaded_dims(dims.size(),0) ;
+
+  rvalue = index.read_nd_dataset(dataset_names[0],reloaded_retrieved,reloaded_dims);
+  BOOST_REQUIRE(rvalue == 0);
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(dims.begin(), dims.end(),
+				  reloaded_dims.begin(), reloaded_dims.end());
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(retrieved.begin(), retrieved.end(),
+				  reloaded_retrieved.begin(), reloaded_retrieved.end());
+  
+  clean_up();
+}
 BOOST_AUTO_TEST_SUITE_END()

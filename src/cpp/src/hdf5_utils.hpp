@@ -286,6 +286,8 @@ namespace sqeazy {
       flag_ = flag;
       
       ready_= true;
+      
+      return ready_;
     }
 
     void close(){
@@ -373,21 +375,35 @@ namespace sqeazy {
 	return value;
       
       
-      bfs::path dest_head = dest_fs_path.parent_path();
+      std::string link_h5_head = extract_group_path(_linkpath);
+      std::string link_h5_tail = _linkpath.substr(_linkpath.rfind("/")+1);
+
+      bool open_group = has_h5_item(link_h5_head) || (link_h5_head[0] == '/' && link_h5_head.size() == 1);
+      H5::Group grp(open_group ? file_->openGroup(link_h5_head) : file_->createGroup(link_h5_head));
+      
       bfs::path dest_tail = dest_fs_path.filename();
 
       H5Lcreate_external( dest_tail.string().c_str(),
 			  _dest_h5_path.c_str(),
-			  file_->getId(),//File or group identifier where the new link is to be created
-			  _linkpath.c_str(),
+			  // file_->getId(),//File or group identifier where the new link is to be created
+			  grp.getId(),//File or group identifier where the new link is to be created
+			  link_h5_tail.c_str(),
 			  H5P_DEFAULT, //hid_t lcpl_id: Link creation property list identifier
 			  H5P_DEFAULT//hid_t lapl_id: Link access property list identifier
 			  );
-      
+
+      bfs::path dest_head = dest_fs_path.parent_path();
       hid_t gapl_id = H5Pcreate(H5P_GROUP_ACCESS);                                                
-      H5Pset_elink_prefix(gapl_id, dest_head.string().c_str());
-      hid_t group_id = H5Gopen2(file_->getId(), _linkpath.c_str(), gapl_id);
-      H5Gclose(group_id); 
+
+      std::string dest_head_str = dest_head.string();
+      if(dest_head_str[dest_head_str.size()-1]!=bfs::path::preferred_separator)
+	dest_head_str += bfs::path::preferred_separator;
+      
+      H5Pset_elink_prefix(gapl_id, dest_head_str.c_str());
+      
+      //      hid_t group_id = H5Gopen2(grp.getId(), _linkpath.c_str(), gapl_id);
+      H5Pclose(gapl_id);
+      grp.close();
       //TODO: HANDLE result?
 
       return 0;
