@@ -712,7 +712,8 @@ BOOST_AUTO_TEST_CASE( create_all_from_scratch ){
 
   BOOST_REQUIRE(rvalue == 0);
   BOOST_REQUIRE(dest.has_h5_item(dataset_names[0]));
-
+  BOOST_REQUIRE_GT(bfs::file_size(dataset_paths[0]),retrieved.size()*sizeof(uint16_t));
+  
   dest.close();
 
   std::string link_tail = dataset_names[0].substr(dataset_names[0].rfind("/")+1);
@@ -741,7 +742,8 @@ BOOST_AUTO_TEST_CASE( roundtrip_through_index_from_scratch ){
 
   BOOST_REQUIRE(rvalue == 0);
   BOOST_REQUIRE(dest.has_h5_item(dataset_names[0]));
-
+  BOOST_REQUIRE_GT(bfs::file_size(dataset_paths[0]),retrieved.size()*sizeof(uint16_t));
+  
   dest.close();
 
   std::string link_tail = dataset_names[0].substr(dataset_names[0].rfind("/")+1);
