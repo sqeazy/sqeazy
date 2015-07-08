@@ -730,7 +730,7 @@ BOOST_AUTO_TEST_CASE( create_all_from_scratch ){
 
   BOOST_REQUIRE(index.has_h5_item(dataset_names[0]));  
   
-  clean_up();
+  //clean_up();
 }
 
 BOOST_AUTO_TEST_CASE( roundtrip_through_index_from_scratch ){
@@ -771,4 +771,63 @@ BOOST_AUTO_TEST_CASE( roundtrip_through_index_from_scratch ){
   
   clean_up();
 }
+BOOST_AUTO_TEST_SUITE_END()
+
+
+
+BOOST_FIXTURE_TEST_SUITE( make_relative_suite, indexed_helpers )
+
+BOOST_AUTO_TEST_CASE( simple_top_down ){
+
+  sqeazy::h5_file dummy(dataset_paths[0].string(),H5F_ACC_TRUNC);
+  const bfs::path top = index_file_path;
+  const bfs::path down = dataset_paths[0];
+
+  bfs::path relative = sqeazy::make_relative(top,down);
+  BOOST_CHECK_MESSAGE(bfs::exists(relative), "relative ("<< relative.string() <<") does not exist!\n");
+  BOOST_REQUIRE(relative == dataset_paths[0]);
+  clean_up();
+}
+
+BOOST_AUTO_TEST_CASE( simple_down_top ){
+
+
+  sqeazy::h5_file idx(index_file_path.string(),H5F_ACC_TRUNC);
+  const bfs::path top = bfs::absolute(index_file_path);
+  const bfs::path down = bfs::absolute(dataset_paths[0]);
+    
+  bfs::path relative = down.parent_path();
+  relative /= sqeazy::make_relative(down,top);
+
+  BOOST_CHECK_MESSAGE(bfs::exists(relative), "relative ("<< relative.string() <<") does not exist!\n");
+  bfs::path  expected = "..";
+  expected /= index_file_path.filename();
+  relative = sqeazy::make_relative(down,top);
+  BOOST_REQUIRE(relative == expected);
+  clean_up();
+}
+
+BOOST_AUTO_TEST_CASE( simple_top_down_absolute ){
+  sqeazy::h5_file dummy(dataset_paths[0].string(),H5F_ACC_TRUNC);
+  const bfs::path top = bfs::absolute(index_file_path);
+  const bfs::path down = bfs::absolute(dataset_paths[0]);
+
+  bfs::path relative = sqeazy::make_relative(top,down);
+  BOOST_CHECK_MESSAGE(bfs::exists(relative), "relative ("<< relative.string() <<") does not exist!\n");
+  BOOST_REQUIRE(relative == dataset_paths[0]);
+  clean_up();
+}
+
+BOOST_AUTO_TEST_CASE( simple_top_down_with_dir ){
+  sqeazy::h5_file dummy(dataset_paths[0].string(),H5F_ACC_TRUNC);
+  
+  const bfs::path top = ".";
+  const bfs::path down = bfs::absolute(dataset_paths[0]);
+
+  bfs::path relative = sqeazy::make_relative(top,down);
+  BOOST_CHECK_MESSAGE(bfs::exists(relative), "relative ("<< relative.string() <<") does not exist!\n");
+  BOOST_REQUIRE(relative == dataset_paths[0]);
+  clean_up();
+}
+
 BOOST_AUTO_TEST_SUITE_END()

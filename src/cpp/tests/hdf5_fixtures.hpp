@@ -96,6 +96,9 @@ struct indexed_helpers : public helpers_fixture {
       dataset_paths[i] = level_path;
       dataset_paths[i] /= fname.str();
 
+      if(bfs::exists(dataset_paths[i]))
+	bfs::remove(dataset_paths[i]);
+
       std::stringstream temp_dname;
       temp_dname << "/spim" << "/" << dname;
       dataset_names[i] = temp_dname.str();

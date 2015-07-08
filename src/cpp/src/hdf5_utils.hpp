@@ -15,8 +15,10 @@
 namespace bfs = boost::filesystem;
 
 #include "H5Cpp.h"
-// #include "sqeazy_impl.hpp"
-// #include "pipeline.hpp"
+extern "C" {
+#include "hdf5_hl.h"
+}
+
 #include "sqeazy_predef_pipelines.hpp"
 #include "sqeazy_h5_filter.hpp"
 #include "sqeazy_hdf5_impl.hpp"
@@ -43,7 +45,58 @@ namespace H5{
     
 namespace sqeazy {
 
+  /**
+     \brief function that calculates the relative path of to with regards to the location of from
+     example: 
+	from = "/tmp/base.log"
+	to   = "/tmp/more/first.log"
+	returnvalue = "more/first.log"
+
+     \param[in] from path to file or directory
+     \param[out] from path to file or directory
+     
+     \return path
+     \retval 
+     
+  */
+  static bfs::path make_relative(const bfs::path& from,
+				 const bfs::path& to)
+  {
+    // Start at the root path and while they are the same then do nothing then when they first
+    // diverge take the remainder of the two path and replace the entire from path with ".."
+    // segments.
+    bfs::path abs_from = bfs::absolute(from);
+    if(!bfs::is_directory(abs_from) || abs_from.filename() == ".")
+      abs_from = abs_from.parent_path();
   
+    bfs::path::const_iterator fromIter = abs_from.begin();
+    bfs::path::const_iterator fromEnd = abs_from.end();
+    bfs::path abs_to = bfs::absolute(to);  
+    bfs::path::const_iterator toIter = abs_to.begin();
+    bfs::path::const_iterator toEnd = abs_to.end();
+
+    // Loop through both and stop where paths mismatch
+    while (fromIter != fromEnd && toIter != toEnd && (*toIter) == (*fromIter))
+      {
+	++toIter;
+	++fromIter;
+      }
+
+    bfs::path finalPath;
+    while (fromIter != fromEnd)
+      {
+	finalPath /= "..";
+	++fromIter;
+      }
+
+    while (toIter != toEnd)
+      {
+	finalPath /= *toIter;
+	++toIter;
+      }
+
+    return finalPath;
+  }
 
   static std::string extract_group_path(const std::string& _name){
 
@@ -382,6 +435,7 @@ namespace sqeazy {
       H5::Group grp(open_group ? file_->openGroup(link_h5_head) : file_->createGroup(link_h5_head));
       
       bfs::path dest_tail = dest_fs_path.filename();
+      
 
       H5Lcreate_external( dest_tail.string().c_str(),
 			  _dest_h5_path.c_str(),
@@ -392,17 +446,21 @@ namespace sqeazy {
 			  H5P_DEFAULT//hid_t lapl_id: Link access property list identifier
 			  );
 
-      bfs::path dest_head = dest_fs_path.parent_path();
-      hid_t gapl_id = H5Pcreate(H5P_GROUP_ACCESS);                                                
+      std::string link_h5_prefix_objname = link_h5_tail;
+      link_h5_prefix_objname += "_prefix";
 
-      std::string dest_head_str = dest_head.string();
-      if(dest_head_str[dest_head_str.size()-1]!=bfs::path::preferred_separator)
-	dest_head_str += bfs::path::preferred_separator;
+      bfs::path dest_rel_path = make_relative(path_,_dest_file.path_);
+      std::string dest_prefix = dest_rel_path.string();
       
-      H5Pset_elink_prefix(gapl_id, dest_head_str.c_str());
-      
-      //      hid_t group_id = H5Gopen2(grp.getId(), _linkpath.c_str(), gapl_id);
-      H5Pclose(gapl_id);
+      herr_t res =  H5LTmake_dataset_string ( grp.getId(), &link_h5_prefix_objname[0], &dest_prefix[0] );
+      if(res<0)
+	std::cout << "failed to create " << path_.string() << ":" << link_h5_prefix_objname << "\n";
+
+      long size_in_byte = dest_prefix.size();
+      res = H5LTset_attribute_long ( grp.getId(), &link_h5_prefix_objname[0], "size_byte", &size_in_byte, 1);
+      if(res<0)
+	std::cout << "failed to create " << path_.string() << ":" << link_h5_prefix_objname << ":size_byte\n";
+
       grp.close();
       //TODO: HANDLE result?
 
