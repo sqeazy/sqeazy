@@ -107,7 +107,7 @@ BOOST_AUTO_TEST_CASE( load_dataset_wrong_name ){
   newname << dname << "_foo";
   
   H5::DataSet tds = testme.load_h5_dataset(newname.str());
-  BOOST_CHECK_EQUAL(tds.getId(),0);
+  BOOST_CHECK_LT(tds.getId(),0);
   
 }
 
@@ -756,7 +756,7 @@ BOOST_AUTO_TEST_CASE( load_dataset_through_index ){
   
   BOOST_REQUIRE_NO_THROW(index.load_h5_dataset(dataset_names[0]));
   H5::DataSet tds = index.load_h5_dataset("/dangling_link");
-  BOOST_CHECK_EQUAL(tds.getId(), 0);
+  BOOST_CHECK_LT(tds.getId(), 0);
   
   tds = index.load_h5_dataset(dataset_names[0]);
   BOOST_REQUIRE_NE(tds.getStorageSize(),0);
