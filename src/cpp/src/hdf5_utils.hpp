@@ -15,10 +15,6 @@
 namespace bfs = boost::filesystem;
 
 #include "H5Cpp.h"
-extern "C" {
-#include "hdf5_hl.h"
-}
-
 #include "sqeazy_predef_pipelines.hpp"
 #include "sqeazy_h5_filter.hpp"
 #include "sqeazy_hdf5_impl.hpp"
@@ -390,35 +386,7 @@ namespace sqeazy {
 
 
       try {
-	// if(!is_external_link(_dname))
-	  value = H5::DataSet(this->file_->openDataSet( _dname ));
-	// else{
-
-	//   //TODO: BADLY refactor this!!
-	//   std::string prefix_path = _dname;
-	//   prefix_path += "_prefix";
-	  
-	//   long size_in_byte = 0;
-	//   herr_t res = H5LTget_attribute_long ( file_->getId(), prefix_path.c_str(), "size_byte", &size_in_byte);
-    
-	//   if(res<0)
-	//     throw H5::DataSetIException("sqeazy::h5_file::load_h5_dataset","trying to load through link, but prefix:size_byte attribute cannot be loaded");
-	  
-	//   std::string prefix;
-	//   prefix.resize(size_in_byte);
-	//   res = H5LTread_dataset_string ( file_->getId(), prefix_path.c_str(), &prefix[0]);
-	//   if(res<0)
-	//     throw H5::DataSetIException("sqeazy::h5_file::load_h5_dataset","trying to load prefix failed");
-    
-	//   hid_t gapl_id = H5Pcreate(H5P_GROUP_ACCESS);
-	//   H5Pset_elink_prefix(gapl_id, &prefix[0]);
-
-	//   hid_t dataset_id = H5Dopen2(file_->getId(), _dname.c_str(), gapl_id);
-	    
-	//   value = H5::DataSet(dataset_id);
-
-	//   H5Pclose(gapl_id);
-	// }
+	value = H5::DataSet(this->file_->openDataSet( _dname ));
       }
       catch(H5::DataSetIException & error){
 	return value;
@@ -474,23 +442,7 @@ namespace sqeazy {
 			  H5P_DEFAULT//hid_t lapl_id: Link access property list identifier
 			  );
 
-      // std::string link_h5_prefix_objname = link_h5_tail;
-      // link_h5_prefix_objname += "_prefix";
-
-      // bfs::path dest_rel_path = make_relative(path_,_dest_file.path_);
-      // std::string dest_prefix = dest_rel_path.string();
-      
-      // herr_t res =  H5LTmake_dataset_string ( grp.getId(), &link_h5_prefix_objname[0], &dest_prefix[0] );
-      // if(res<0)
-      // 	std::cout << "failed to create " << path_.string() << ":" << link_h5_prefix_objname << "\n";
-
-      // long size_in_byte = dest_prefix.size();
-      // res = H5LTset_attribute_long ( grp.getId(), &link_h5_prefix_objname[0], "size_byte", &size_in_byte, 1);
-      // if(res<0)
-      // 	std::cout << "failed to create " << path_.string() << ":" << link_h5_prefix_objname << ":size_byte\n";
-
       grp.close();
-      //TODO: HANDLE result?
 
       return 0;
     }
@@ -579,7 +531,7 @@ namespace sqeazy {
 
       H5L_info_t linfo;
       herr_t res = H5Lget_info( file_->getId(), _dname.c_str(), &linfo, H5P_DEFAULT);
-      rvalue = (linfo.type == H5L_TYPE_EXTERNAL);
+      rvalue = !(res < 0) && (linfo.type == H5L_TYPE_EXTERNAL);
       
       return rvalue;
     }
