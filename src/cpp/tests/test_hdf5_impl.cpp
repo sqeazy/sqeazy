@@ -703,6 +703,8 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_FIXTURE_TEST_SUITE( index_files, indexed_helpers )
 
+
+
 BOOST_AUTO_TEST_CASE( create_all_from_scratch ){
 
   sqeazy::h5_file index(index_file_path.string(),H5F_ACC_TRUNC);
@@ -712,6 +714,7 @@ BOOST_AUTO_TEST_CASE( create_all_from_scratch ){
 
   BOOST_REQUIRE(rvalue == 0);
   BOOST_REQUIRE(dest.has_h5_item(dataset_names[0]));
+  BOOST_REQUIRE(!dest.is_external_link(dataset_names[0]));
   BOOST_REQUIRE_GT(bfs::file_size(dataset_paths[0]),retrieved.size()*sizeof(uint16_t));
   
   dest.close();
@@ -729,8 +732,40 @@ BOOST_AUTO_TEST_CASE( create_all_from_scratch ){
   index.setup_link(dataset_names[0],dest,dataset_names[0]);
 
   BOOST_REQUIRE(index.has_h5_item(dataset_names[0]));  
+  BOOST_REQUIRE(index.is_external_link(dataset_names[0]));
+  clean_up();
+}
+
+BOOST_AUTO_TEST_CASE( load_dataset_through_index ){
   
-  //clean_up();
+  sqeazy::h5_file index(index_file_path.string(),H5F_ACC_TRUNC);
+  sqeazy::h5_file dest(dataset_paths[0].string(),H5F_ACC_TRUNC);
+  int rvalue = dest.write_nd_dataset(dataset_names[0],retrieved,dims);
+  
+  
+  BOOST_REQUIRE(rvalue == 0);
+  dest.close();
+  
+  dest.open(dataset_paths[0].string());
+  index.setup_link(dataset_names[0],dest,dataset_names[0]);
+  index.setup_link("/dangling_link",dest,"/does_not_exist");
+
+  index.close();
+
+  index = sqeazy::h5_file(index_file_path.string(),H5F_ACC_RDONLY);
+  
+  BOOST_REQUIRE_NO_THROW(index.load_h5_dataset(dataset_names[0]));
+  H5::DataSet tds = index.load_h5_dataset("/dangling_link");
+  BOOST_CHECK_EQUAL(tds.getId(), 0);
+  
+  tds = index.load_h5_dataset(dataset_names[0]);
+  BOOST_REQUIRE_NE(tds.getStorageSize(),0);
+
+  std::vector<unsigned> dims_from_link;
+  index.shape(dims_from_link,dataset_names[0]);
+
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(dims.begin(), dims.end(),dims_from_link.begin(), dims_from_link.end());
+  clean_up();
 }
 
 BOOST_AUTO_TEST_CASE( roundtrip_through_index_from_scratch ){
@@ -757,7 +792,11 @@ BOOST_AUTO_TEST_CASE( roundtrip_through_index_from_scratch ){
 
     
   rvalue = index.setup_link(dataset_names[0],dest,dataset_names[0]);
+  index.close();
+
+  index.open(index_file_path.string());
   BOOST_REQUIRE(rvalue == 0);
+
 
   std::vector<uint16_t> reloaded_retrieved(retrieved.size(),0) ;
   std::vector<uint32_t> reloaded_dims(dims.size(),0) ;
