@@ -4,16 +4,25 @@
 #  LZ4_LIBRARY_DIRS, directory containing lz4 libraries
 #  LZ4_STATIC_LIB, path to liblz4.a
 #  LZ4_FOUND, whether lz4 has been found
+set(_LZ4_ROOT $ENV{LZ4_ROOT})
 
-if(NOT LZ4_ROOT)
+if(IS_DIRECTORY ${LZ4_ROOT})
 
+  MESSAGE("[FindLZ4] SEARCHING ${LZ4_ROOT}")
+  IF(WIN32)
+	find_library(LZ4_LIB_PATH NAMES lz4 liblz4 liblz4.dll.a HINTS ${LZ4_ROOT} ${LZ4_ROOT}/lib NO_DEFAULT_PATH)
+  ELSE()
+	find_library(LZ4_LIB_PATH NAMES lz4 liblz4 HINTS ${LZ4_ROOT} ${LZ4_ROOT}/lib NO_DEFAULT_PATH)
+  ENDIF()
+  find_path(LZ4_INC_PATH lz4.h HINTS ${LZ4_ROOT} "${LZ4_ROOT}/lib ${LZ4_ROOT}/include ${LZ4_ROOT}/inc" NO_DEFAULT_PATH)
+  MESSAGE("[FindLZ4] ${LZ4_LIB_PATH} ${LZ4_LIB_PATH}")
+  
+else()    
+
+  MESSAGE(WARNING "[FindLZ4] LZ4_ROOT not given $ENV{LZ4_ROOT} ${LZ4_ROOT} ${LZ4_DIR}")
   find_path(LZ4_INC_PATH lz4.h)
   find_library(LZ4_LIB_PATH NAMES lz4)
-  
-else(NOT LZ4_ROOT)    
-
-  find_library(LZ4_LIB_PATH NAMES lz4 PATHS ${LZ4_ROOT} ${LZ4_ROOT}/lib NO_DEFAULT_PATH)
-  find_path(LZ4_INC_PATH lz4.h PATHS ${LZ4_ROOT} ${LZ4_ROOT}/lib ${LZ4_ROOT}/include ${LZ4_ROOT}/inc NO_DEFAULT_PATH)
+	
 
 endif()
 
@@ -33,29 +42,36 @@ endif ()
 
 if (LZ4_FOUND)
 	if(UNIX)
-  if (EXISTS ${LZ4_LIBRARY_DIRS}/liblz4.a)
-    set(LZ4_STATIC_LIB ${LZ4_LIBRARY_DIRS}/liblz4.a)
-  endif()
+		if (EXISTS ${LZ4_LIBRARY_DIRS}/liblz4.a)
+			set(LZ4_STATIC_LIB ${LZ4_LIBRARY_DIRS}/liblz4.a)
+		endif()
   
-  if (APPLE)
-if (EXISTS ${LZ4_LIBRARY_DIRS}/liblz4.dylib)	       		       
-    set(LZ4_SHARED_LIB ${LZ4_LIBRARY_DIRS}/liblz4.dylib)
-  endif()
-  else(APPLE)
-  if (EXISTS ${LZ4_LIBRARY_DIRS}/liblz4.so)	       		       
-    set(LZ4_SHARED_LIB ${LZ4_LIBRARY_DIRS}/liblz4.so)
-  endif()
-  endif(APPLE)
+		if (APPLE)
+			if (EXISTS ${LZ4_LIBRARY_DIRS}/liblz4.dylib)	       		       
+				set(LZ4_SHARED_LIB ${LZ4_LIBRARY_DIRS}/liblz4.dylib)
+			endif()
+		else(APPLE)
+			if (EXISTS ${LZ4_LIBRARY_DIRS}/liblz4.so)	       		       
+				set(LZ4_SHARED_LIB ${LZ4_LIBRARY_DIRS}/liblz4.so)
+			endif()
+		endif(APPLE)
   
 	ELSE(UNIX)
-	IF(WIN32)
-	if (EXISTS ${LZ4_LIBRARY_DIRS}/lib/liblz4_static.lib)
-    set(LZ4_STATIC_LIB ${LZ4_LIBRARY_DIRS}/lib/liblz4_static.lib)
-  endif()
-  if (EXISTS ${LZ4_LIBRARY_DIRS}/lib/liblz4.dll)
-    set(LZ4_SHARED_LIB ${LZ4_LIBRARY_DIRS}/lib/liblz4.dll)
-  endif()
-	ENDIF(WIN32)
+		IF(WIN32)
+			if (EXISTS ${LZ4_LIBRARY_DIRS}/lib/liblz4_static.lib)
+				set(LZ4_STATIC_LIB ${LZ4_LIBRARY_DIRS}/lib/liblz4_static.lib)
+			endif()
+			if (EXISTS ${LZ4_LIBRARY_DIRS}/lib/liblz4.a)
+				set(LZ4_STATIC_LIB ${LZ4_LIBRARY_DIRS}/lib/liblz4.a)
+			endif()
+			if (EXISTS ${LZ4_LIBRARY_DIRS}/lib/liblz4.dll)
+				set(LZ4_SHARED_LIB ${LZ4_LIBRARY_DIRS}/lib/liblz4.dll)
+			endif()
+			#honoring msys2
+			if (EXISTS ${LZ4_LIBRARY_DIRS}/bin/liblz4.dll)
+				set(LZ4_SHARED_LIB ${LZ4_LIBRARY_DIRS}/bin/liblz4.dll)
+			endif()
+		ENDIF(WIN32)
 	ENDIF(UNIX)
   if (NOT LZ4_FIND_QUIETLY)
     message(STATUS "Found LZ4 library: ${LZ4_LIBRARY_DIRS} ${LZ4_INCLUDE_DIRS} \n(static lib: ${LZ4_STATIC_LIB}), dyn lib: ${LZ4_SHARED_LIB}")

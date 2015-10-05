@@ -3,13 +3,19 @@ INCLUDE_DIRECTORIES(.)
 
 #SET(HDF5_USE_STATIC_LIBRARIES TRUE)#only works on Unix and requires static lib to be compiled with -fPIC
 FIND_PACKAGE(HDF5 1.8 QUIET REQUIRED CXX)
+
 IF(HDF5_FOUND)
   INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIRS})
   ADD_DEFINITIONS(${HDF5_DEFINITIONS})
   LINK_DIRECTORIES(${HDF5_LIBRARY_DIRS}) 
 ENDIF()
 
-#needed for MPL include path
+
+IF(WIN32)
+SET(Boost_USE_STATIC_LIBS ON)
+SET(Boost_USE_MULTITHREADED ON)
+ENDIF()
+
 FIND_PACKAGE (Boost 1.42 QUIET COMPONENTS filesystem system REQUIRED)
 IF(Boost_FOUND)
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
@@ -42,7 +48,6 @@ if(EXISTS ${LZ4_STATIC_LIB})
 
   #just here to reset ${Boost_LIBRARIES}
   #REMINDER: it would be nice to use Boost_USE_STATIC_LIBS for the shared lib as well (requires an fPIC enabled installed boost)
-  set(Boost_USE_STATIC_LIBS ON)
   FIND_PACKAGE (Boost 1.42 QUIET COMPONENTS system REQUIRED)
   
   target_link_libraries(${PROJECT_NAME}_static ext_lz4_static ${HDF5_LIBRARIES} ${Boost_LIBRARIES}) 
