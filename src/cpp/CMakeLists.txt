@@ -170,8 +170,13 @@ MESSAGE(WARNING ">> unable to build benchmark suite due to missing C++11 support
 ENDIF()
 
 # test
+IF(WIN32)
+SET(Boost_USE_STATIC_LIBS ON)
+SET(Boost_USE_MULTITHREADED ON)
+ENDIF()
 FIND_PACKAGE (Boost 1.42 COMPONENTS system filesystem unit_test_framework thread REQUIRED)
 IF(Boost_FOUND)
+MESSAGE(STATUS "Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES}")
 ADD_SUBDIRECTORY(tests)
 enable_testing()
 include("CTestLists.txt")
