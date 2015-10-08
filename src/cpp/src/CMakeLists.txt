@@ -56,7 +56,7 @@ if(EXISTS ${LZ4_STATIC_LIB})
   ENDIF(UNIX)
   SET(SQY_SRC_TARGETS ${SQY_SRC_TARGETS} ${PROJECT_NAME}_static)
 else()
-  message(WARNING "static lz4 library not found, static libsqeazy cannot be built")
+  message(WARNING "static lz4 library (${LZ4_STATIC_LIB}) not found, static libsqeazy cannot be built")
 endif()
 
 
