@@ -85,6 +85,7 @@ $ cd X:\path\to\repo
 $ mkdir build
 $ cd build
 $ cmake.exe  -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX=$HOME/temp_sqy -DBOOST_ROOT=/c/msys64/mingw64 -DLZ4_ROOT=/c/msys64/mingw64 -DTIFF_INCLUDE_DIR=/c/msys64/mingw64/include -DTIFF_LIBRARY=/c/msys64/mingw64/lib/libtiff.a -DHDF5_DIR=/home/steinbac/software/hdf5/1.8.15/cmake  -DHDF5_INCLUDE_DIR=/home/steinbac/software/hdf5/1.8.15/include ..
+$ cmake.exe -DCMAKE_INSTALL_PREFIX=C:\Users\steinbac\temp_sqy -DBOOST_ROOT=C:\boost_1_58_0\msvc-12-x86_64 -DLZ4_ROOT=C:\msys64\home\steinbac\software\lz4\r131-msvs -DTIFF_INCLUDE_DIR=C:\msys64\home\steinbac\software\tiff\3.8.2-1-bin\include -DTIFF_LIBRARY=C:\msys64\home\steinbac\software\tiff\3.8.2-1-bin\lib\libtiff.dll -DHDF5_DIR=C:\msys64\home\steinbac\software\hdf5\1.8.15\lib\cmake  -DHDF5_INCLUDE_DIR=C:\msys64\home\steinbac\software\hdf5\1.8.15\lib\include ..
 $ cmake.exe --build . --target ALL_BUILD --config Release
 $ ctest.exe -C Release #(optional) the above builds in Release mode
 $ cmake.exe --build . --target install --config Release

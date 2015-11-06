@@ -27,8 +27,9 @@ FIND_PACKAGE(TIFF REQUIRED)
 
 IF(TIFF_FOUND)
   INCLUDE_DIRECTORIES(${TIFF_INCLUDE_DIR})
+  
   IF(WIN32)
-    add_library(ext_static_tiff STATIC IMPORTED)
+	add_library(ext_static_tiff STATIC IMPORTED)
     IF("${TIFF_LIBRARIES}" MATCHES ".*.dll$")
       STRING(REPLACE .dll .lib TIFF_STATIC_LIB ${TIFF_LIBRARIES})
     ELSE()
@@ -44,15 +45,27 @@ IF(TIFF_FOUND)
     ENDIF()
 
     IF(EXISTS ${TIFF_STATIC_LIB})
-      MESSAGE("[BENCH] using static ${TIFF_STATIC_LIB} for bench")
+      MESSAGE(STATUS "[BENCH] using static ${TIFF_STATIC_LIB} for bench")
     ELSE()
-      MESSAGE("[BENCH] using dynamic ${TIFF_LIBRARIES} for bench")
+      MESSAGE(STATUS"[BENCH] using dynamic ${TIFF_LIBRARIES} for bench")
     ENDIF()
 
   ELSE(WIN32)
-    add_library(ext_dyn_tiff SHARED IMPORTED)
-    set_target_properties(ext_dyn_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIBRARIES}") 
-
+  
+	IF(UNIX OR APPLE)
+		IF("${TIFF_LIBRARIES}" MATCHES ".*.a$")
+			add_library(ext_static_tiff STATIC IMPORTED)
+			set_target_properties(ext_static_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIBRARIES}") 
+		ENDIF()
+		
+		IF("${TIFF_LIBRARIES}" MATCHES ".*.so$" OR "${TIFF_LIBRARIES}" MATCHES ".*.dylib$")
+			add_library(ext_dyn_tiff SHARED IMPORTED)
+			set_target_properties(ext_dyn_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIBRARIES}") 
+		ENDIF()
+	ENDIF()
+	
+	
+	
   ENDIF(WIN32)
 
 
