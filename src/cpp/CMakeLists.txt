@@ -170,7 +170,7 @@ MESSAGE(WARNING ">> unable to build benchmark suite due to missing C++11 support
 ENDIF()
 
 # test
-IF(WIN32)
+IF(WIN32 OR MSYS)
 SET(Boost_USE_STATIC_LIBS ON)
 SET(Boost_USE_MULTITHREADED ON)
 ENDIF()

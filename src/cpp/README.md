@@ -84,7 +84,7 @@ A default msys2 installation is assumed for the following:
 $ cd X:\path\to\repo
 $ mkdir build
 $ cd build
-$ cmake.exe  -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX=$HOME/temp_sqy -DBOOST_ROOT=C:\\msys64\\mingw64 -DLZ4_ROOT=C:/msys64/mingw64 -DTIFF_INCLUDE_DIR=/mingw64/include -DTIFF_LIBRARY=/mingw64/lib/libtiff.a -DHDF5_DIR=/home/steinbac/software/hdf5/1.8.15/cmake  -DHDF5_INCLUDE_DIR=/home/steinbac/software/hdf5/1.8.15/include ..
+$ cmake.exe  -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX=$HOME/temp_sqy -DBOOST_ROOT=/c/msys64/mingw64 -DLZ4_ROOT=/c/msys64/mingw64 -DTIFF_INCLUDE_DIR=/c/msys64/mingw64/include -DTIFF_LIBRARY=/c/msys64/mingw64/lib/libtiff.a -DHDF5_DIR=/home/steinbac/software/hdf5/1.8.15/cmake  -DHDF5_INCLUDE_DIR=/home/steinbac/software/hdf5/1.8.15/include ..
 $ cmake.exe --build . --target ALL_BUILD --config Release
 $ ctest.exe -C Release #(optional) the above builds in Release mode
 $ cmake.exe --build . --target install --config Release
