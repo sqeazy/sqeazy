@@ -87,7 +87,7 @@ $ cd build
 #if you use MSYS2
 $ cmake  -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX=$HOME/temp_sqy -DBOOST_ROOT=/c/msys64/mingw64 -DLZ4_ROOT=/c/msys64/mingw64 -DTIFF_INCLUDE_DIR=/c/msys64/mingw64/include -DTIFF_LIBRARY=/c/msys64/mingw64/lib/libtiff.a -DHDF5_DIR=/home/steinbac/software/hdf5/1.8.15/cmake  -DHDF5_INCLUDE_DIR=/home/steinbac/software/hdf5/1.8.15/include ..
 #for a MSVS based build
-$ "C:\Program Files (x86)\CMake\bin\cmake.exe" -DCMAKE_INSTALL_PREFIX=C:\Users\steinbac\temp_sqy  -DBOOST_INCLUDEDIR=C:\boost\1_59_0 -DBOOST_LIBRARYDIR=C:\boost\1_59_0\lib64-msvc-14.0 -DLZ4_ROOT=C:\msys64\home\steinbac\software\lz4\r131-msvs -DTIFF_INCLUDE_DIR=C:\msys64\home\steinbac\software\tiff\3.8.2-1-bin\include -DTIFF_LIBRARY=C:\msys64\home\steinbac\software\tiff\3.8.2-1-bin\lib\libtiff.dll -DHDF5_DIR=C:\msys64\home\steinbac\software\hdf5\1.8.15\lib\cmake  -DHDF5_INCLUDE_DIR=C:\msys64\home\steinbac\software\hdf5\1.8.15\lib\include ..
+$ cmake.exe -DCMAKE_INSTALL_PREFIX=C:\Users\steinbac\temp_sqy  -DBOOST_INCLUDEDIR=C:\boost\1_59_0 -DBOOST_LIBRARYDIR=C:\boost\1_59_0\lib64-msvc-14.0 -DLZ4_ROOT=C:\lz4\r131\vc14 -DTIFF_INCLUDE_DIR=C:\tiff\3.8.2-1\include -DTIFF_LIBRARY=C:\tiff\3.8.2-1\lib\libtiff.dll -DCMAKE_BUILD_TYPE=Release ..
 $ cmake.exe --build . --target ALL_BUILD --config Release
 $ ctest.exe -C Release #(optional) the above builds in Release mode
 $ cmake.exe --build . --target install --config Release

@@ -8,6 +8,10 @@ if(NOT(${CMAKE_VERSION} VERSION_LESS "3.0.0"))
 cmake_policy(SET CMP0042 NEW)
 endif()
 
+if(NOT(${CMAKE_VERSION} VERSION_LESS "3.3.0"))
+cmake_policy(SET CMP0054 NEW)
+endif()
+
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
  
@@ -177,14 +181,17 @@ ENDIF()
 ADD_SUBDIRECTORY(src) # source code of the library
 
 # bench
+IF(UNIX OR APPLE)
 IF(HAS_CPP11_COMPILERFLAG)
 ADD_SUBDIRECTORY(bench) # source code of the benchmark suite
-export(TARGETS bench ${PROJECT_NAME}
-  FILE "${PROJECT_BINARY_DIR}/sqeazy-targets.cmake")
+export(TARGETS bench ${PROJECT_NAME} FILE "${PROJECT_BINARY_DIR}/sqeazy-targets.cmake")
 ELSE()
 MESSAGE(WARNING ">> unable to build benchmark suite due to missing C++11 support")
 ENDIF()
-
+ELSE()
+ADD_SUBDIRECTORY(bench) # source code of the benchmark suite
+export(TARGETS bench ${PROJECT_NAME} FILE "${PROJECT_BINARY_DIR}/sqeazy-targets.cmake")
+ENDIF()
 # test
 IF(WIN32)
 SET(Boost_USE_STATIC_LIBS ON)

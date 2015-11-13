@@ -1,11 +1,13 @@
 #define SQEAZY_CPP_
 #include "sqeazy.h"
+#include "pipeline.hpp"
+#include "pipeline_select.hpp"
 #include "sqeazy_impl.hpp"
 #include "sqeazy_header.hpp"
-#include "pipeline_select.hpp"
+
 #include "sqeazy_hdf5_impl.hpp"
 #include "hdf5_utils.hpp"
-#include "pipeline.hpp"
+
 
 /*
 *	Sqeazy - Fast and flexible volume compression library

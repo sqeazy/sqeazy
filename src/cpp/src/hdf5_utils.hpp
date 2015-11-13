@@ -202,8 +202,12 @@ namespace sqeazy {
       
       if(type_map.empty())
 	fill(type_map);
-      
+
+#if _WIN32
+	  map_t::const_iterator found = type_map.find(_id);
+#else
       typename map_t::const_iterator found = type_map.find(_id);
+#endif
       if(found!=type_map.end())
 	return found->second();
       else{
@@ -391,7 +395,7 @@ namespace sqeazy {
       catch(H5::DataSetIException & error){
 	return value;
       }
-      catch(H5::Exception & error){
+      catch(...){
 	return value;
       }
             
@@ -458,7 +462,7 @@ namespace sqeazy {
       try {
 	ds = new H5::DataSet(file_->openDataSet( _dname ));
       }
-      catch(H5::Exception & error){
+      catch(...){
 	return rvalue;
       }
 
@@ -479,8 +483,8 @@ namespace sqeazy {
       try {
 	ds = new H5::DataSet(file_->openDataSet( _dname ));
       }
-      catch(H5::Exception & error){
-	return rvalue;
+      catch(...){
+		return rvalue;
       }
 
       H5T_class_t type_class = ds->getTypeClass();
@@ -503,7 +507,7 @@ namespace sqeazy {
       try {
 	ds = new H5::DataSet(file_->openDataSet( _dname ));
       }
-      catch(H5::Exception & error){
+      catch(...){
 	return rvalue;
       }
 
