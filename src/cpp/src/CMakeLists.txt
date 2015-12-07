@@ -23,6 +23,27 @@ IF(Boost_FOUND)
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 ENDIF()
 
+FIND_PACKAGE(LZ4 REQUIRED)
+IF(LZ4_FOUND)
+INCLUDE_DIRECTORIES(${LZ4_INCLUDE_DIRS})
+LINK_DIRECTORIES(${LZ4_LIBRARY_DIRS}) 
+MESSAGE(STATUS "LZ4 found !! shared: ${LZ4_SHARED_LIB} static: ${LZ4_STATIC_LIB}")
+
+IF(EXISTS ${LZ4_SHARED_LIB})
+add_library(ext_lz4 SHARED IMPORTED )
+set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}")
+
+IF(WIN32)
+	STRING(REPLACE dll lib LZ4_SHARED_IMPLIB ${LZ4_SHARED_LIB})
+	set_target_properties(ext_lz4 PROPERTIES IMPORTED_IMPLIB "${LZ4_SHARED_LIB}")
+	#TODO: #add HDF5_cxx_libraries in a similar fashion
+ENDIF(WIN32)
+
+ENDIF()
+
+
+ENDIF()
+
 ########################################### LIBSQY ######################################################
 
 #DYNAMIC LIBRARY
@@ -30,13 +51,6 @@ add_library(${PROJECT_NAME} SHARED sqeazy.cpp)
 set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-I${HDF5_INCLUDE_DIRS}")
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED YES)
 
-add_library(ext_lz4 SHARED IMPORTED )
-set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}") 
-IF(WIN32)
-STRING(REPLACE dll lib LZ4_SHARED_IMPLIB ${LZ4_SHARED_LIB})
-set_target_properties(ext_lz4 PROPERTIES IMPORTED_IMPLIB "${LZ4_SHARED_LIB}")
-#TODO: #add HDF5_cxx_libraries in a similar fashion
-ENDIF(WIN32)
 
 target_link_libraries(${PROJECT_NAME} ext_lz4 ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
 SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${PROJECT_SOURCE_DIR}/inc/sqeazy.h;${PROJECT_SOURCE_DIR}/inc/H5PLextern.h")
@@ -51,6 +65,7 @@ if(EXISTS ${LZ4_STATIC_LIB})
   SET_TARGET_PROPERTIES(${PROJECT_NAME}_static PROPERTIES PUBLIC_HEADER "${PROJECT_SOURCE_DIR}/inc/sqeazy.h;${PROJECT_SOURCE_DIR}/inc/H5PLextern.h")
   add_library(ext_lz4_static STATIC IMPORTED)
   set_target_properties(ext_lz4_static PROPERTIES IMPORTED_LOCATION "${LZ4_STATIC_LIB}")
+  MESSAGE(STATUS "defining ext_lz4_static as ${LIB_STATIC_LIB}")
 
   #just here to reset ${Boost_LIBRARIES}
   #REMINDER: it would be nice to use Boost_USE_STATIC_LIBS for the shared lib as well (requires an fPIC enabled installed boost)

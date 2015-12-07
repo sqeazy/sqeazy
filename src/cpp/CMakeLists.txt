@@ -1,9 +1,17 @@
 # cmake compatibility issues
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
 
 
 # project name
 PROJECT(sqeazy CXX)
+
+# this project is C++11
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+include(CheckCCompilerFlag)
+include(CheckCXXCompilerFlag)
+
+
 if(NOT(${CMAKE_VERSION} VERSION_LESS "3.0.0"))
 cmake_policy(SET CMP0042 NEW)
 endif()
@@ -76,6 +84,7 @@ IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
   check_cxx_compiler_flag(-ftree-vectorize HAS_GCC_TREE_VECTORIZE_COMPILERFLAG)
   check_cxx_compiler_flag(-march=native HAS_MARCH_COMPILERFLAG)
   check_cxx_compiler_flag(-ffast-math HAS_FAST_MATH_COMPILERFLAG)
+  check_cxx_compiler_flag("-Xclang -march=native" HAS_XCLANG_COMPILERFLAG)
 ENDIF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
  
  #for clang
@@ -125,13 +134,20 @@ ENDIF()
 
 
 
-IF(UNIX)
+IF(UNIX OR APPLE)
 IF(HAS_MARCH_COMPILERFLAG)
   # SET(HOST_COMPILER_RELEASE_FLAGS "${HOST_COMPILER_RELEASE_FLAGS} -march=native")
   # SET(HOST_COMPILER_DEBUG_FLAGS "${HOST_COMPILER_DEBUG_FLAGS} -march=native")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 ENDIF()
 ENDIF()
+
+#TODO: look into preference of libc++ over other std libraries
+IF( CMAKE_GENERATOR STREQUAL Xcode )
+    SET( CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++11" )
+    SET( CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++" )
+ENDIF()					     
+
 
 IF(HAS_FAST_MATH_COMPILERFLAG)
   SET(HOST_COMPILER_RELEASE_FLAGS "${HOST_COMPILER_RELEASE_FLAGS} -ffast-math")

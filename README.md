@@ -26,15 +26,17 @@ where in the above all required libraries by sqeazy are installed under /opt/loc
 ```libsqeazy``` dependencies are listed below:
 
 * lz4
-* boost (> 1.42)
+* boost (> 1.55)
 * hdf5 (>1.8)
+* ffmpeg (>= 2.5.8) with libx256 (>= 1.7)
 
 ```sqy``` - the binary application to use similar to zip/tar/etc. depends on:
 
 * lz4
 * libtiff
-* boost (> 1.42)
+* boost (>= 1.55)
 * hdf5 (>1.8)
+* ffmpeg (>= 2.5.8) with libx256 (>= 1.7)
 
 For further information on building native sqeazy on the supported platforms, see [src/cpp/README.md].
 
