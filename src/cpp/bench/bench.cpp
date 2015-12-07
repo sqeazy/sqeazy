@@ -7,12 +7,17 @@
 #include <set>
 #include <cmath>
 #include <fstream>
-
 #include <unordered_map>
+
+#include "tiff_utils.hpp"
+#include "tiff_fixtures.hpp"
+
 #include "bench_fixtures.hpp"
 #include "bench_utils.hpp"
 #include "bench_common.hpp"
 #include "boost/filesystem.hpp"
+
+
 
 template <typename MapT>
 int print_help(const MapT& _av_targets) {
@@ -117,7 +122,7 @@ void fill_suite(const std::vector<std::string>& _args,
         current_file = _args[i];
 
 	//load image located under current_file
-	sqeazy_bench::tiff_fixture<value_type, false> reference(current_file.string());
+	sqeazy::tiff_fixture<value_type, false> reference(current_file.string());
 
 	//skip the rest if nothing was loaded
         if(reference.empty())
@@ -183,7 +188,7 @@ void fill_suite(const std::vector<std::string>& _args,
             name += PipeType::name();
             name += "-enc-dec";
             name += current_file.extension().string();
-            sqeazy_bench::write_tiff_from_vector(reference.tiff_data, 
+            sqeazy::write_tiff_from_vector(reference.tiff_data, 
 						 reference.axis_lengths,
 						 name);
         }

@@ -1,13 +1,11 @@
 #define SQEAZY_CPP_
 #include "sqeazy.h"
-#include "pipeline.hpp"
-#include "pipeline_select.hpp"
 #include "sqeazy_impl.hpp"
 #include "sqeazy_header.hpp"
-
+#include "pipeline_select.hpp"
 #include "sqeazy_hdf5_impl.hpp"
 #include "hdf5_utils.hpp"
-
+#include "pipeline.hpp"
 
 /*
 *	Sqeazy - Fast and flexible volume compression library
@@ -216,9 +214,9 @@ int SQY_RmBackground_AtMode_UI16(char* src, char* dst, long length, unsigned sho
 int SQY_RmBackground_Estimated_UI16(int width, int height, int depth, char* src, char* dst){  
   typedef unsigned short raw_type;
   std::vector<int> dims(3);
-  dims[0] = width;
+  dims[2] = width;
   dims[1] = height;
-  dims[2] = depth;
+  dims[0] = depth;
     return sqeazy::remove_estimated_background<raw_type>::encode(reinterpret_cast<raw_type*>(src),
             reinterpret_cast<raw_type*>(dst),
             dims

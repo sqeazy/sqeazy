@@ -3,7 +3,6 @@ INCLUDE_DIRECTORIES(.)
 
 #SET(HDF5_USE_STATIC_LIBRARIES TRUE)#only works on Unix and requires static lib to be compiled with -fPIC
 FIND_PACKAGE(HDF5 1.8 QUIET REQUIRED CXX)
-
 IF(HDF5_FOUND)
   INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIRS})
   ADD_DEFINITIONS(${HDF5_DEFINITIONS})
@@ -11,77 +10,62 @@ IF(HDF5_FOUND)
 ENDIF()
 
 
-IF(WIN32 OR MSYS)
-SET(Boost_USE_STATIC_LIBS ON)
-SET(Boost_USE_MULTITHREADED ON)
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+find_package(FFMPEG REQUIRED)
+IF(FFMPEG_FOUND)
+  INCLUDE_DIRECTORIES(${FFMPEG_INCLUDE_DIRS})
+  LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
 ENDIF()
 
-FIND_PACKAGE (Boost 1.42 QUIET COMPONENTS filesystem system REQUIRED)
+#needed for MPL include path
+FIND_PACKAGE (Boost 1.55 QUIET COMPONENTS filesystem system REQUIRED)
 IF(Boost_FOUND)
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-LINK_DIRECTORIES(${Boost_LIBRARY_DIRS}) 
 ENDIF()
+
+########################################### LIBSQY ######################################################
 
 #DYNAMIC LIBRARY
 add_library(${PROJECT_NAME} SHARED sqeazy.cpp)
 set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-I${HDF5_INCLUDE_DIRS}")
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED YES)
 
-IF(LZ4_FOUND)
+add_library(ext_lz4 SHARED IMPORTED )
+set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}") 
+IF(WIN32)
+STRING(REPLACE dll lib LZ4_SHARED_IMPLIB ${LZ4_SHARED_LIB})
+set_target_properties(ext_lz4 PROPERTIES IMPORTED_IMPLIB "${LZ4_SHARED_LIB}")
+#TODO: #add HDF5_cxx_libraries in a similar fashion
+ENDIF(WIN32)
 
-	IF(EXISTS ${LZ4_STATIC_LIB})
-		add_library(ext_lz4 STATIC IMPORTED )
-		set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_STATIC_LIB}") 
-	ELSE()
-		IF(EXISTS ${LZ4_SHARED_LIB})
-			add_library(ext_lz4 SHARED IMPORTED )
-			set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}") 
-		ENDIF()
-	ENDIF()
-
-ENDIF(LZ4_FOUND)
-
-# IF(WIN32)
-# STRING(REPLACE dll lib LZ4_SHARED_IMPLIB ${LZ4_SHARED_LIB})
-# set_target_properties(ext_lz4 PROPERTIES IMPORTED_IMPLIB "${LZ4_SHARED_LIB}")
-# #TODO: #add HDF5_cxx_libraries in a similar fashion
-# ENDIF(WIN32)
-message("[src/cpp/src] lz4 libs used: (shared) ${LZ4_SHARED_LIB} (static) ${LZ4_STATIC_LIB}")
-message("[src/cpp/src] hdf5 libs used: ${HDF5_LIBRARIES} vs ${HDF5_CXX_LIBRARIES}")
-
-
-
-#shared libsqy (needed for Java interface)
 target_link_libraries(${PROJECT_NAME} ext_lz4 ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
-#SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${PROJECT_SOURCE_DIR}/inc/sqeazy.h;")
 SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${PROJECT_SOURCE_DIR}/inc/sqeazy.h;${PROJECT_SOURCE_DIR}/inc/H5PLextern.h")
-set_target_properties(${PROJECT_NAME} PROPERTIES LINK_SEARCH_START_STATIC 1)
 SET(SQY_SRC_TARGETS ${PROJECT_NAME})
 
-#static libsqy (needed for Java interface)
-if(EXISTS ${LZ4_STATIC_LIB})
 
+#STATIC LIBRARY
+if(EXISTS ${LZ4_STATIC_LIB})
   add_library(${PROJECT_NAME}_static STATIC sqeazy.cpp)
+  set_target_properties(${PROJECT_NAME}_static PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED YES)
   set_target_properties(${PROJECT_NAME}_static PROPERTIES COMPILE_FLAGS "-I${HDF5_INCLUDE_DIRS}")
-  #SET_TARGET_PROPERTIES(${PROJECT_NAME}_static PROPERTIES PUBLIC_HEADER "${PROJECT_SOURCE_DIR}/inc/sqeazy.h;")
   SET_TARGET_PROPERTIES(${PROJECT_NAME}_static PROPERTIES PUBLIC_HEADER "${PROJECT_SOURCE_DIR}/inc/sqeazy.h;${PROJECT_SOURCE_DIR}/inc/H5PLextern.h")
   add_library(ext_lz4_static STATIC IMPORTED)
   set_target_properties(ext_lz4_static PROPERTIES IMPORTED_LOCATION "${LZ4_STATIC_LIB}")
 
   #just here to reset ${Boost_LIBRARIES}
   #REMINDER: it would be nice to use Boost_USE_STATIC_LIBS for the shared lib as well (requires an fPIC enabled installed boost)
+  set(Boost_USE_STATIC_LIBS ON)
   FIND_PACKAGE (Boost 1.42 QUIET COMPONENTS system REQUIRED)
   
   target_link_libraries(${PROJECT_NAME}_static ext_lz4_static ${HDF5_LIBRARIES} ${Boost_LIBRARIES}) 
-  set_target_properties(${PROJECT_NAME}_static PROPERTIES LINK_SEARCH_START_STATIC 1)
   IF(UNIX)
     SET_TARGET_PROPERTIES(${PROJECT_NAME}_static PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
   ENDIF(UNIX)
   SET(SQY_SRC_TARGETS ${SQY_SRC_TARGETS} ${PROJECT_NAME}_static)
-  set_target_properties(${PROJECT_NAME}_static PROPERTIES LINK_SEARCH_END_STATIC 1)
 else()
-  message(WARNING "static lz4 library (${LZ4_STATIC_LIB}) not found, static libsqeazy cannot be built")
+  message(WARNING "static lz4 library not found, static libsqeazy cannot be built")
 endif()
-set_target_properties(${PROJECT_NAME} PROPERTIES LINK_SEARCH_END_STATIC 1)
+
 
 
 INSTALL(TARGETS ${SQY_SRC_TARGETS}
@@ -90,4 +74,69 @@ INSTALL(TARGETS ${SQY_SRC_TARGETS}
   ARCHIVE DESTINATION "${INSTALL_LIB_DIR}"
   PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}" COMPONENT inc)
 
+
+########################################### SQY ######################################################
+FIND_PACKAGE (Boost 1.55 QUIET COMPONENTS regex system filesystem program_options REQUIRED)
+#TODO: is this needed?
+IF(Boost_FOUND)
+  LINK_DIRECTORIES(${Boost_LIBRARY_DIRS}) 
+ENDIF()
+
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+find_package(FFMPEG REQUIRED)
+IF(FFMPEG_FOUND)
+  INCLUDE_DIRECTORIES(${FFMPEG_INCLUDE_DIRS})
+  LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
+ENDIF()
+
+FIND_PACKAGE(TIFF REQUIRED)
+IF(TIFF_FOUND)
+  INCLUDE_DIRECTORIES(${TIFF_INCLUDE_DIR})
+  IF(WIN32)
+    add_library(ext_static_tiff STATIC IMPORTED)
+    IF("${TIFF_LIBRARIES}" MATCHES ".*.dll$")
+      STRING(REPLACE .dll .lib TIFF_STATIC_LIB ${TIFF_LIBRARIES})
+    ELSE()
+      SET(TIFF_STATIC_LIB ${TIFF_LIBRARIES})
+    ENDIF()
+    set_target_properties(ext_static_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_STATIC_LIB}") 
+
+    add_library(ext_dyn_tiff SHARED IMPORTED)
+    IF("${TIFF_LIBRARIES}" MATCHES ".*.dll$")
+      STRING(REPLACE .dll _i.lib TIFF_IMP_LIB ${TIFF_LIBRARIES})
+      set_target_properties(ext_dyn_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIBRARIES}") 
+      set_target_properties(ext_dyn_tiff PROPERTIES IMPORTED_IMPLIB "${TIFF_IMP_LIB}") 
+    ENDIF()
+
+  ELSE(WIN32)
+    add_library(ext_dyn_tiff SHARED IMPORTED)
+    set_target_properties(ext_dyn_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIBRARIES}") 
+
+  ENDIF(WIN32)
+
+  SET(LIST_ADDITIONAL_COMPILE_FLAGS "")
+  if(SQY_VERBOSE)
+    list(APPEND LIST_ADDITIONAL_COMPILE_FLAGS " -D_SQY_VERBOSE_=1")
+  endif(SQY_VERBOSE)
+
+  if(${LIST_ADDITIONAL_COMPILE_FLAGS})
+    STRING(REPLACE ";" " " ADDITIONAL_COMPILE_FLAGS ${LIST_ADDITIONAL_COMPILE_FLAGS})
+    ENDIF()
+
+  add_executable(sqy sqy.cpp)
+  IF(EXISTS ${TIFF_STATIC_LIB})
+    target_link_libraries(sqy ext_static_tiff ext_lz4 ${Boost_LIBRARIES})
+  ELSE()
+    target_link_libraries(sqy ext_dyn_tiff ext_lz4 ${Boost_LIBRARIES})
+  ENDIF()
+  set_target_properties(sqy PROPERTIES COMPILE_FLAGS "${ADDITIONAL_COMPILE_FLAGS}")
+
+  INSTALL(TARGETS sqy
+    EXPORT sqeazy-targets 
+    RUNTIME DESTINATION "${INSTALL_BIN_DIR}" 
+    COMPONENT bin)
+
+ELSE()
+  WARNING("Skipping sqy app, libtiff not found (but required for build)\!")
+ENDIF()
 

@@ -32,13 +32,16 @@ task cmake(type:Exec) {
   def native_build_type = project.hasProperty("sqy_build_type") ? sqy_build_type : "Release"
   def sqy_x = project.hasProperty("sqy_experimental") ? sqy_experimental : "0"
   def path_to_lz4 = project.hasProperty("lz4_path") ? lz4_path : ""
+  def path_to_ffmpeg = project.hasProperty("ffmpeg_path") ? ffmpeg_path : ""
   def path_to_hdf5 = project.hasProperty("hdf5_path") ? hdf5_path : ""
   def path_to_tiff = project.hasProperty("tiff_path") ? tiff_path : ""	
-  def path_to_boost = project.hasProperty("boost_path") ? lz4_path : ""
-
+  def path_to_boost = project.hasProperty("boost_path") ? boost_path : ""
+  def path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake"
+  
   def cmake_args = [] as List
 
-  cmake_args.add("-DCMAKE_BUILD_TYPE=\""+native_build_type+"\" ")
+  cmake_args.add("-DCMAKE_BUILD_TYPE="+native_build_type+" ")
+  
   if(sqy_x != "0"){
     cmake_args.add("-DSQY_EXPERIMENTAL=ON")
   }
@@ -48,6 +51,12 @@ task cmake(type:Exec) {
     cmake_args.add("-DLZ4_ROOT=" + path_to_lz4 + " ")
   }
 
+  if(path_to_ffmpeg){
+    //TODO: see if path exists
+    cmake_args.add("-DFFMPEG_ROOT=" + path_to_ffmpeg + " ")
+  }
+
+  
   if(path_to_hdf5){
     //TODO: see if path exists
     cmake_args.add("-DHDF5_DIR=" + path_to_hdf5 + " ")
@@ -70,16 +79,16 @@ task cmake(type:Exec) {
   //DEFINE DEFAULTS
   if (Os.isFamily(Os.FAMILY_WINDOWS)){
     //TODO
-    executable 'cmake.exe'
+    executable path_to_cmake_app
   } 
   else if (Os.isFamily(Os.FAMILY_MAC))
   {
-    executable 'cmake'
+    executable path_to_cmake_app
     args cmake_args
   } 
   else if (Os.isFamily(Os.FAMILY_UNIX))
   {
-    executable 'cmake'
+    executable path_to_cmake_app
     args cmake_args
   }
 

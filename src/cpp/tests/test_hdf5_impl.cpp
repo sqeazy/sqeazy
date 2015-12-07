@@ -76,6 +76,7 @@ BOOST_AUTO_TEST_CASE( open_close ){
   BOOST_CHECK(testme.ready());
   H5::DataSet tds = testme.load_h5_dataset(dname);
   BOOST_REQUIRE_NE(tds.getStorageSize(),0);
+  BOOST_REQUIRE_NE(tds.getId(),0);
 
   testme.close();
   BOOST_CHECK(testme.has_h5_item(dname)==false);
@@ -86,6 +87,7 @@ BOOST_AUTO_TEST_CASE( open_close ){
   BOOST_CHECK(testme_ro.ready());
   H5::DataSet tds_ro = testme_ro.load_h5_dataset(dname);
   BOOST_REQUIRE_NE(tds_ro.getStorageSize(),0);
+  BOOST_REQUIRE_NE(tds_ro.getId(),0);
 
 }
 
@@ -107,7 +109,12 @@ BOOST_AUTO_TEST_CASE( load_dataset_wrong_name ){
   newname << dname << "_foo";
   
   H5::DataSet tds = testme.load_h5_dataset(newname.str());
-  BOOST_CHECK_LT(tds.getId(),0);
+
+  if(H5_VERSION_GE(1,8,14))
+    BOOST_CHECK_LT(tds.getId(),0);
+  else
+    BOOST_CHECK_EQUAL(tds.getId(),0);
+
   
 }
 
@@ -756,7 +763,11 @@ BOOST_AUTO_TEST_CASE( load_dataset_through_index ){
   
   BOOST_REQUIRE_NO_THROW(index.load_h5_dataset(dataset_names[0]));
   H5::DataSet tds = index.load_h5_dataset("/dangling_link");
-  BOOST_CHECK_LT(tds.getId(), 0);
+  if(H5_VERSION_GE(1,8,14))
+    BOOST_CHECK_LT(tds.getId(),0);
+  else
+    BOOST_CHECK_EQUAL(tds.getId(),0);
+
   
   tds = index.load_h5_dataset(dataset_names[0]);
   BOOST_REQUIRE_NE(tds.getStorageSize(),0);

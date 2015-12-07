@@ -165,9 +165,9 @@ struct halo {
 
     halo(const U& _w, const U& _h, const U& _d) {
         world.resize(3);
-        world[0] = _w;
+        world[2] = _w;
         world[1] = _h;
-        world[2] = _d;
+        world[0] = _d;
     }
 
     template <typename Itr>
@@ -221,7 +221,7 @@ struct halo {
             for(T z_index = non_halo_begin(2); z_index<non_halo_end(2); ++z_index) {
                 for(T y_index = non_halo_begin(1); y_index<non_halo_end(1); ++y_index) {
 
-                    offset = z_index*world[1]*world[0] + y_index*world[0] + non_halo_begin(0);
+                    offset = z_index*world[1]*world[2] + y_index*world[2] + non_halo_begin(0);
                     if(offset<length)
                         _offsets.push_back(offset);
 

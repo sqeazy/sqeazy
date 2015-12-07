@@ -10,7 +10,6 @@
 #include <map>
 #include <stdexcept>
 #include <typeinfo>
-#include <numeric>
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/lexical_cast.hpp>
