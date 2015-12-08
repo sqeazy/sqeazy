@@ -97,26 +97,6 @@ IF(TIFF_FOUND)
   #   COMPONENT bin)
 
   
-  FIND_PACKAGE(ROOT QUIET)
-  IF(ROOT_FOUND)
-    add_executable(histo histo.cpp)
-    IF(EXISTS ${TIFF_STATIC_LIB})
-      target_link_libraries(histo ext_static_tiff ${ROOT_LIBRARIES} ${Boost_LIBRARIES})
-    ELSE()
-      target_link_libraries(histo ext_dyn_tiff ${ROOT_LIBRARIES} ${Boost_LIBRARIES})
-    ENDIF()
-
-    execute_process(
-      COMMAND ${ROOT_CONFIG_EXECUTABLE} --cflags
-      OUTPUT_VARIABLE ROOT_INCLUDE_FLAGS
-      OUTPUT_STRIP_TRAILING_WHITESPACE)
-    
-    SET(HISTO_COMPILE_FLAGS "${ROOT_INCLUDE_FLAGS} ${ADDITIONAL_COMPILE_FLAGS}")
-    set_target_properties(histo PROPERTIES COMPILE_FLAGS "${HISTO_COMPILE_FLAGS}")
-
-  ELSE(ROOT_FOUND)
-    MESSAGE(STATUS ">> Skipping optional bench/histo utility, ROOT libraries not found!")
-  ENDIF(ROOT_FOUND)
 
 
 ELSE(TIFF_FOUND)
