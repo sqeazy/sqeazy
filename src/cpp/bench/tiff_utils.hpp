@@ -1,6 +1,7 @@
 #ifndef _TIFF_UTILS_H_
 #define _TIFF_UTILS_H_
 #include <iostream>
+#include <sstream>
 #include <climits>
 #include <set>
 #include <algorithm>
@@ -108,7 +109,7 @@ namespace sqeazy_bench {
     TIFFGetField(_tiff_handle, TIFFTAG_BITSPERSAMPLE, &bits_per_sample);
     if(bits_per_sample!=(sizeof(ValueT)*CHAR_BIT)){
       std::string fname(TIFFFileName(_tiff_handle));
-      std::ostringstream msg; 
+      std::stringstream msg; 
       msg << "[SQY] ERROR: expected " << sizeof(ValueT)*CHAR_BIT << ", but received " << bits_per_sample << " from " << fname << "\n";
       throw std::runtime_error(msg.str());
     }
