@@ -23,10 +23,6 @@ IF(Boost_FOUND)
   LINK_DIRECTORIES(${Boost_LIBRARY_DIRS}) 
 ENDIF()
 
-# IF(TIFF_ROOT)
-#   SET(TIFF_DIR ${TIFF_ROOT})
-# ENDIF()
-
 FIND_PACKAGE(TIFF REQUIRED)
 
 IF(TIFF_FOUND)
@@ -53,7 +49,8 @@ IF(TIFF_FOUND)
 
   ENDIF(WIN32)
 
-
+  INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src)
+  INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/tests)
   #TODO:
   add_executable(bench bench.cpp)
   IF(EXISTS ${TIFF_STATIC_LIB})
@@ -70,33 +67,12 @@ IF(TIFF_FOUND)
     list(APPEND ADDITIONAL_COMPILE_FLAGS " /I${PROJECT_SOURCE_DIR}/tests")
   ENDIF()
 
-  # IF(NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
-  #   IF(HAS_CPP11_COMPILERFLAG)
-  #     SET(ADDITIONAL_COMPILE_FLAGS "${ADDITIONAL_COMPILE_FLAGS} -std=c++11")
-  #   ENDIF()
-  # ENDIF()
-
   if(SQY_VERBOSE)
     list(APPEND ADDITIONAL_COMPILE_FLAGS " -D_SQY_VERBOSE_=1")
   endif(SQY_VERBOSE)
 
   STRING(REPLACE ";" " " ADDITIONAL_COMPILE_FLAGS ${ADDITIONAL_COMPILE_FLAGS})
   set_target_properties(bench PROPERTIES COMPILE_FLAGS "${ADDITIONAL_COMPILE_FLAGS}")
-
-  # add_executable(sqy sqy.cpp)
-  # IF(EXISTS ${TIFF_STATIC_LIB})
-  #   target_link_libraries(sqy ext_static_tiff ext_lz4 ${Boost_LIBRARIES})
-  # ELSE()
-  #   target_link_libraries(sqy ext_dyn_tiff ext_lz4 ${Boost_LIBRARIES})
-  # ENDIF()
-  # set_target_properties(sqy PROPERTIES COMPILE_FLAGS "${ADDITIONAL_COMPILE_FLAGS}")
-
-  # INSTALL(TARGETS sqy
-  #   EXPORT sqeazy-targets 
-  #   RUNTIME DESTINATION "${INSTALL_BIN_DIR}" 
-  #   COMPONENT bin)
-
-  
 
 
 ELSE(TIFF_FOUND)
