@@ -67,13 +67,24 @@ struct shift_left_m128i<unsigned char> {
     first = _mm_shuffle_epi8(first, _mm_set_epi8(15,13,11,9,7,5,3,1,14,12,10,8,6,4,2,0) );
 
     //treat lower half
-    __m128 casted_block = reinterpret_cast<__m128>(_block);
-    __m128i second = reinterpret_cast<__m128i>(_mm_movehl_ps(casted_block,casted_block));
+#ifdef WIN32 
+	__m128 casted_block = _mm_castsi128_ps(_block);
+	__m128i second = _mm_castps_si128(_mm_movehl_ps(casted_block, casted_block));
+#else
+	__m128 casted_block = reinterpret_cast<__m128>(_block);
+	__m128i second = reinterpret_cast<__m128i>(_mm_movehl_ps(casted_block, casted_block));
+#endif
+
+    
     second = _mm_cvtepu8_epi16(second);
     second = _mm_slli_epi16(second, num_bits);
     second = _mm_shuffle_epi8(second,  _mm_set_epi8(14,12,10,8,6,4,2,0,15,13,11,9,7,5,3,1) );
-    __m128d value = _mm_move_sd(reinterpret_cast<__m128d>(second), reinterpret_cast<__m128d>(first));
-    return reinterpret_cast<__m128i>(value);
+#ifdef WIN32 
+	__m128i value = _mm_castpd_si128(_mm_move_sd(_mm_castsi128_pd(second), _mm_castsi128_pd(first)));
+#else
+	__m128i value = reinterpret_cast<__m128i>(_mm_move_sd(reinterpret_cast<__m128d>(second), reinterpret_cast<__m128d>(first)));
+#endif
+    return value;
   }
 };
 
@@ -147,13 +158,23 @@ struct shift_right_m128i<unsigned char> {
     first = _mm_shuffle_epi8(first, _mm_set_epi8(15,13,11,9,7,5,3,1,14,12,10,8,6,4,2,0) );
 
     //treat lower half
+#ifdef WIN32 
+	__m128 casted_block = _mm_castsi128_ps(_block);
+	__m128i second = _mm_castps_si128(_mm_movehl_ps(casted_block, casted_block));
+#else
     __m128 casted_block = reinterpret_cast<__m128>(_block);
     __m128i second = reinterpret_cast<__m128i>(_mm_movehl_ps(casted_block,casted_block));
+#endif
     second = _mm_cvtepu8_epi16(second);
     second = _mm_srli_epi16(second, num_bits);
     second = _mm_shuffle_epi8(second,  _mm_set_epi8(14,12,10,8,6,4,2,0,15,13,11,9,7,5,3,1) );
-    __m128d value = _mm_move_sd(reinterpret_cast<__m128d>(second), reinterpret_cast<__m128d>(first));
-    return reinterpret_cast<__m128i>(value);
+
+#ifdef WIN32 
+	__m128i value = _mm_castpd_si128(_mm_move_sd(_mm_castsi128_pd(second), _mm_castsi128_pd(first)));
+#else
+	__m128i value = reinterpret_cast<__m128i>(_mm_move_sd(reinterpret_cast<__m128d>(second), reinterpret_cast<__m128d>(first)));
+#endif
+	return value;
   }
 };
 
