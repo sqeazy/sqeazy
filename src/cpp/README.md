@@ -51,26 +51,32 @@ The are some cmake build flags that are supported/required:
 
 This library must be built with MS Visual Compiler 14 (aka visual studio 2015) on Windows.
 
-Here is a list of items to check before building on Win 7 :
+To obtain the dependencies on your system, we recommend the following installations:
 
-1 have boost installed
-2 have lz4 installed
-3 have hdf5 installed
-4 have ffmpeg with x264/x265 encoder installed
+* lz4 (download the source from [gitgub](https://github.com/Cyan4973/lz4) and build with cmake through the cmake_unofficial directory)
+* libtiff (http://gnuwin32.sourceforge.net/packages/tiff.htm)
+* boost (>= 1.55, either the official binaries from [boost binary website](http://sourceforge.net/projects/boost/files/boost-binaries/) or build it from source)
+* hdf5 (>1.8, use the project [binaries for Windows](https://www.hdfgroup.org/HDF5/release/obtain5.html))
+* ffmpeg (>= 2.5.8) with libx256 (>= 1.7) (take the relevant ffmpeg installation of binary and libraries from [ffmpeg.zeranoe.com](https://ffmpeg.zeranoe.com/blog/))
+* cmake (>=3.1 from https://cmake.org/download/)
 
-For now, a DOS prompt based build is supported:
-
+Here is how to build sqeazy on Windows from the command line (GUI based cmake invocation needs to be adapted along this): 
 ```
-$ cd X:\path\to\repo
-$ mkdir build
-$ cd build
-$ cmake.exe -DCMAKE_INSTALL_PREFIX=C:\Users\steinbac\temp_sqy  -DBOOST_INCLUDEDIR=C:\boost\1_59_0 -DBOOST_LIBRARYDIR=C:\boost\1_59_0\lib64-msvc-14.0 -DLZ4_ROOT=C:\lz4\r131\vc14 -DTIFF_INCLUDE_DIR=C:\tiff\3.8.2-1\include -DTIFF_LIBRARY=C:\tiff\3.8.2-1\lib\libtiff.dll -DCMAKE_BUILD_TYPE=Release ..
-$ cmake.exe --build . --target ALL_BUILD --config Release
-$ ctest.exe -C Release #(optional) the above builds in Release mode
-$ cmake.exe --build . --target install --config Release
+> cd X:\path\to\sqy\repo
+> mkdir build
+> cd build
+> cmake.exe -DCMAKE_INSTALL_PREFIX=C:\Users\steinbac\temp_sqy -DHDF5_ROOT=C:\Users\steinbac\software\hdf5\1.8.1
+6 -DBOOST_ROOT=C:\Users\steinbac\software\boost\1_59_0_static -DLZ4_ROOT=C:\Users\steinbac\software\lz4\r131\vc14 -DTIFF_INCLUDE_DIR=C:\Users\steinbac\software\
+tiff\3.8.2-1\include -DTIFF_LIBRARY=C:\Users\steinbac\software\tiff\3.8.2-1\lib\libtiff.dll -DFFMPEG_ROOT_DIR=C:\Users\steinbac\software\ffmpeg\2.8.1 -DCMAKE_BU
+ILD_TYPE=Release ..
+> cmake.exe --build . --target ALL_BUILD --config Release
+> ctest.exe -C Release #(optional) the above builds in Release mode
+> cmake.exe --build . --target install --config Release
 ```
 
-Sqeazy will build as much as possible using static libraries on Windows in order to reduce administrative overhead. If you encounter any problems or have questions, please use the bug tracker.
+Sqeazy will build as much as possible using static libraries on Windows in order to reduce administrative overhead. 
+If you encounter any problems or have questions, please use the bug tracker.
+
 
 # Experimental Features
 
