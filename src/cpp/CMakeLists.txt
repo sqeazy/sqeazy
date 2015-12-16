@@ -213,7 +213,7 @@ IF(WIN32)
 SET(Boost_USE_STATIC_LIBS ON)
 SET(Boost_USE_MULTITHREADED ON)
 ENDIF()
-FIND_PACKAGE (Boost 1.42 COMPONENTS system filesystem unit_test_framework thread REQUIRED)
+FIND_PACKAGE (Boost 1.55 COMPONENTS system filesystem unit_test_framework thread REQUIRED)
 IF(Boost_FOUND)
 MESSAGE(STATUS "Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES}")
 ADD_SUBDIRECTORY(tests)
@@ -223,6 +223,10 @@ ELSE()
 MESSAGE(WARNING ">> Boost libraries not found, unable to compile tests (skipping)")
 ENDIF()
 
+#needed for FindHDF5 as it expects an ENVIRONMENT variable called HDF5_ROOT as hint to the HDF5 path
+IF(EXISTS ${HDF5_ROOT})
+	SET(ENV{HDF5_ROOT} ${HDF5_ROOT})
+ENDIF(EXISTS ${HDF5_ROOT})
 
 # export stuff
 export(PACKAGE ${PROJECT_NAME})
