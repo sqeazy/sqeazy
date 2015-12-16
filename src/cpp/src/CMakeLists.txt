@@ -2,6 +2,11 @@ INCLUDE_DIRECTORIES(.)
 
 
 #SET(HDF5_USE_STATIC_LIBRARIES TRUE)#only works on Unix and requires static lib to be compiled with -fPIC
+#needed for FindHDF5 as it expects an ENVIRONMENT variable called HDF5_ROOT as hint to the HDF5 path
+IF(EXISTS ${HDF5_ROOT})
+	SET(ENV{HDF5_ROOT} ${HDF5_ROOT})
+ENDIF(EXISTS ${HDF5_ROOT})
+
 FIND_PACKAGE(HDF5 1.8 QUIET REQUIRED CXX)
 IF(HDF5_FOUND)
   INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIRS})
@@ -15,19 +20,27 @@ find_package(FFMPEG REQUIRED)
 IF(FFMPEG_FOUND)
   INCLUDE_DIRECTORIES(${FFMPEG_INCLUDE_DIRS})
   LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
+ ELSE()
+  MESSAGE(WARNING "[src/cpp/src] FFMPEG not found!")
 ENDIF()
 
 #needed for MPL include path
+IF(WIN32)
+SET(Boost_USE_STATIC_LIBS ON)
+SET(Boost_USE_MULTITHREADED ON)
+ENDIF()
 FIND_PACKAGE (Boost 1.55 QUIET COMPONENTS filesystem system REQUIRED)
 IF(Boost_FOUND)
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+ELSE()
+  MESSAGE(WARNING "[src/cpp/src] BOOST not found!")
 ENDIF()
 
 FIND_PACKAGE(LZ4 REQUIRED)
 IF(LZ4_FOUND)
 INCLUDE_DIRECTORIES(${LZ4_INCLUDE_DIRS})
 LINK_DIRECTORIES(${LZ4_LIBRARY_DIRS}) 
-MESSAGE(STATUS "LZ4 found !! shared: ${LZ4_SHARED_LIB} static: ${LZ4_STATIC_LIB}")
+MESSAGE(STATUS "[src/cpp/src] LZ4 found !! shared: ${LZ4_SHARED_LIB} static: ${LZ4_STATIC_LIB}")
 
 IF(EXISTS ${LZ4_SHARED_LIB})
 add_library(ext_lz4 SHARED IMPORTED )
@@ -152,6 +165,6 @@ IF(TIFF_FOUND)
     COMPONENT bin)
 
 ELSE()
-  WARNING("Skipping sqy app, libtiff not found (but required for build)\!")
+  WARNING("[src/cpp/src] Skipping sqy app, libtiff not found (but required for build)\!")
 ENDIF()
 
