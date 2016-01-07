@@ -37,7 +37,7 @@ namespace sqeazy {
 	
 	#ifdef _SQY_VERBOSE_
 	std::cout << "[SQY_VERBOSE]\t extract_darkest_face on image ";
-	for(short i = 0;i<_dims.size();++i){
+	for(auto i = 0;i<_dims.size();++i){
 	  std::cout << _dims[i] << ((_dims[i]!=_dims.back()) ? "x" : " ");
 	}
 	std::cout << "\n";
