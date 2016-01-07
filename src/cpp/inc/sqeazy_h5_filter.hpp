@@ -2,7 +2,7 @@
 #define _SQEAZY_H5_FILTER_HPP_
 
 #include "hdf5.h"
-#include "H5PLextern.h"
+//#include "H5PLextern.h"
 #include "sqeazy_definitions.hpp"
 #include "pipeline_select.hpp"
 
@@ -129,7 +129,7 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
   if(!ret)//success!
     {
     
-    delete [] *_buf;
+      delete [] *(char**)_buf;//do we know the size of _buf?
     *_buf = outbuf;
     *_buf_size = outbuflen;
     value = outbuflen;
