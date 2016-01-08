@@ -129,6 +129,10 @@ target_link_libraries(test_hdf5_impl ${HDF5_LIBRARIES} ${Boost_LIBRARIES} ext_lz
 add_executable(test_pipeline_impl test_pipeline_impl.cpp)
 target_link_libraries(test_pipeline_impl ${Boost_LIBRARIES} ext_lz4)
 
+add_executable(test_dynamic_pipeline_impl test_dynamic_pipeline_impl.cpp)
+target_link_libraries(test_dynamic_pipeline_impl ${Boost_LIBRARIES} ext_lz4)
+
+
 add_executable(test_quantiser_impl test_quantiser_impl.cpp)
 target_link_libraries(test_quantiser_impl ${Boost_LIBRARIES})
 set_target_properties(test_quantiser_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")  
