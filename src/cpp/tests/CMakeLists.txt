@@ -126,8 +126,8 @@ set_target_properties(test_hdf5_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURC
 target_link_libraries(test_hdf5_impl ${HDF5_LIBRARIES} ${Boost_LIBRARIES} ext_lz4)
 
 
-add_executable(test_apply test_apply.cpp)
-target_link_libraries(test_apply ${Boost_LIBRARIES} ext_lz4)
+add_executable(test_pipeline_impl test_pipeline_impl.cpp)
+target_link_libraries(test_pipeline_impl ${Boost_LIBRARIES} ext_lz4)
 
 add_executable(test_quantiser_impl test_quantiser_impl.cpp)
 target_link_libraries(test_quantiser_impl ${Boost_LIBRARIES})
