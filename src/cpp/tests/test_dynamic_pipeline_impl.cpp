@@ -1,8 +1,9 @@
-#define BOOST_TEST_MODULE TEST_APPLY
+#define BOOST_TEST_MODULE TEST_DYNAMIC_PIPELINE
 #include "boost/test/unit_test.hpp"
 #include <numeric>
 #include <vector>
 #include <cstdint>
+#include <sstream>
 #include "../src/dynamic_pipeline.hpp"
 #include "array_fixtures.hpp"
 #include "../src/sqeazy_impl.hpp"
@@ -167,6 +168,56 @@ struct sum_up : public sqy::stage {
 
 typedef add_one<int> add_one_to_ints;
 
+
+BOOST_AUTO_TEST_SUITE( factory_test_suite )
+
+
+typedef sqy::stage_factory<add_one_to_ints> int_factory_with_one_entry;
+typedef sqy::stage_factory<add_one_to_ints, square<int>, sum_up<int> > int_factory;
+
+template <typename T>
+using filter_factory = sqy::stage_factory<add_one<T>, square<T>, sum_up<T> >;
+  
+BOOST_AUTO_TEST_CASE( factory_finds_valid )
+{
+
+  std::shared_ptr<sqy::stage> result = int_factory_with_one_entry::create("add_one");
+  BOOST_CHECK_NE(result->name(),"");
+  BOOST_CHECK_EQUAL(result->name(),"add_one");
+    
+}
+
+BOOST_AUTO_TEST_CASE( factory_finds_valid_from_list )
+{
+
+  std::shared_ptr<sqy::stage> result = int_factory::create("add_one");
+  BOOST_CHECK_NE(result->name(),"");
+  BOOST_CHECK_EQUAL(result->name(),"add_one");
+  BOOST_CHECK_EQUAL(int_factory::create("sum_up")->name(),"sum_up");
+  
+}
+
+
+BOOST_AUTO_TEST_CASE( templated_factory_finds_valid )
+{
+
+  std::shared_ptr<sqy::stage> result = filter_factory<int>::create("sum_up");
+  BOOST_CHECK_NE(result->name(),"");
+  BOOST_CHECK_EQUAL(result->name(),"sum_up");
+    
+}
+
+
+BOOST_AUTO_TEST_CASE( factory_finds_nothing )
+{
+
+  BOOST_CHECK_THROW(int_factory::create("dope"),std::runtime_error);
+    
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+
 BOOST_AUTO_TEST_SUITE( access_test_suite )
 
 
@@ -211,14 +262,6 @@ BOOST_AUTO_TEST_CASE (copy_construct) {
 
 }
 
-BOOST_AUTO_TEST_CASE (names_correct) {
-
-  sqy::dynamic_pipeline setup_pipe = {std::make_shared<add_one<int> >(),std::make_shared<square<int> >()};
-
-  for( auto i : setup_pipe )
-    BOOST_CHECK_NE(i->name(), "void");
-
-}
 
 BOOST_AUTO_TEST_CASE (types_match) {
 
@@ -274,6 +317,24 @@ BOOST_AUTO_TEST_CASE (output_type) {
 
 }
 
+// BOOST_AUTO_TEST_CASE (bootstrap) {
+
+//   sqy::dynamic_pipeline filter_pipe;
+//   BOOST_CHECK_EQUAL(filter_pipe.output_type(),"");
+
+//   filter_pipe = sqy::dynamic_pipeline::load("add_one->square");
+//   BOOST_CHECK_NE(filter_pipe.empty(),true);
+//   BOOST_CHECK_EQUAL(filter_pipe.size(),2);
+
+//   sqy::dynamic_pipeline sink_pipe;
+//   BOOST_CHECK_EQUAL(sink_pipe.output_type(),"");
+
+//   sink_pipe = sqy::dynamic_pipeline::load("add_one->sum_up");
+//   BOOST_CHECK_NE(sink_pipe.empty(),true);
+//   BOOST_CHECK_EQUAL(sink_pipe.size(),2);
+//   BOOST_CHECK_EQUAL(sink_pipe.is_compressor(),true);
+// }
+
 
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -281,11 +342,3 @@ BOOST_AUTO_TEST_SUITE_END()
 // BOOST_AUTO_TEST_SUITE( stage_suite )
 
 
-// BOOST_AUTO_TEST_CASE( stages_in_vector )
-// {
-
-//   BOOST_CHECK_EQUAL();
-    
-// }
-
-// BOOST_AUTO_TEST_SUITE_END()

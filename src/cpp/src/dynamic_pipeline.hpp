@@ -11,10 +11,12 @@
 #include <stdexcept>
 
 #include "boost/blank.hpp"
+#include "sqeazy_utils.hpp"
 
 namespace sqeazy
 {
-
+  
+  
   struct stage
   {
 
@@ -28,6 +30,47 @@ namespace sqeazy
     virtual bool is_compressor() const = 0;
   };
 
+    template <class Head> std::shared_ptr<stage> extract(const std::string &_name)
+  {
+    if(Head().name() == _name)
+    {
+      //got it
+      return std::make_shared<Head>();
+    }
+    else
+    {
+      std::ostringstream msg;
+      msg << _name << " not available as pipeline step\n";
+      throw std::runtime_error(msg.str());
+    }
+  }
+
+  template <class Head, class Second, class... Tail> std::shared_ptr<stage> extract(const std::string &_name)
+  {
+    if(Head().name() == _name)
+    {
+      //got it
+      return std::make_shared<Head>();
+    }
+    else
+    {
+      return extract<Second, Tail...>(_name);
+    }
+  }
+
+
+  template <class... available_types> struct stage_factory
+  {
+
+    static std::shared_ptr<stage> create(const std::string &_name) 
+    {
+      static_assert(sizeof...(available_types) > 0, "Need at least one type for factory");
+
+      return extract<available_types...>(_name);
+    }
+  };
+
+  
 
   struct dynamic_pipeline : public stage
   {
@@ -39,6 +82,18 @@ namespace sqeazy
     filter_holder_t	filters_;
     sink_t		sink_;
 
+
+    
+    static dynamic_pipeline load(const std::string& _config){
+
+      std::vector<std::string> tags = sqeazy::split(_config,std::string("->"));
+
+      dynamic_pipeline value;
+      
+      return value;
+      
+    }
+    
     friend void swap(dynamic_pipeline &_lhs, dynamic_pipeline &_rhs) {
       std::swap(_lhs.filters_, _rhs.filters_);
       std::swap(_lhs.sink_, _rhs.sink_);
@@ -113,16 +168,16 @@ namespace sqeazy
     */
     const std::size_t size() const { return filters_.size()+ (sink_ ? 1 : 0); }
 
-    const bool empty() const { return filters_.empty(); }
+    const bool empty() const { return filters_.empty() && !sink_; }
 
-    filter_holder_t::iterator begin() { return filters_.begin(); }
+    // filter_holder_t::iterator begin() { return filters_.begin(); }
 
-    filter_holder_t::const_iterator begin() const { return filters_.begin(); }
+    // filter_holder_t::const_iterator begin() const { return filters_.begin(); }
 
 
-    filter_holder_t::iterator end() { return filters_.end(); }
+    // filter_holder_t::iterator end() { return filters_.end(); }
 
-    filter_holder_t::const_iterator end() const { return filters_.end(); }
+    // filter_holder_t::const_iterator end() const { return filters_.end(); }
 
     void add_filter(ptr_t _new_item)
     {

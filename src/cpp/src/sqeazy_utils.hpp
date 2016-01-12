@@ -12,6 +12,8 @@ namespace sqeazy {
       ++value;
       start += _token.size(); // see the note
     }
+
+    return value;
   }
   
   /**

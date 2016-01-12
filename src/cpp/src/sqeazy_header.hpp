@@ -44,7 +44,7 @@ namespace sqeazy {
     size_t begin = 0;
     size_t end = _buffer.find(delimiter);
 
-    std::string token;
+    
 
     for(size_t id = 0; id<_v.size(); ++id) {
       std::istringstream converter(_buffer.substr(begin,end - begin));
@@ -55,6 +55,9 @@ namespace sqeazy {
 
   }
 
+  
+
+  
   static unsigned sizeof_typeinfo(const std::string& _lit) {
 
     static std::map<std::string,int> type_size_map;

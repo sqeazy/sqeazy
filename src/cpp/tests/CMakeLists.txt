@@ -88,6 +88,9 @@ add_executable(test_rotate_by_intrinsics test_rotate_by_intrinsics.cpp)
 target_link_libraries(test_rotate_by_intrinsics ${Boost_LIBRARIES})
 # set_target_properties(test_rotate_by_intrinsics PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src -march=native")
 
+add_executable(test_sqeazy_utils_impl test_sqeazy_utils_impl.cpp)
+target_link_libraries(test_sqeazy_utils_impl ${Boost_LIBRARIES} )
+
 add_executable(test_sqeazy_header_impl test_sqeazy_header_impl.cpp)
 target_link_libraries(test_sqeazy_header_impl ${SQY_LIB} ${Boost_LIBRARIES})
 
