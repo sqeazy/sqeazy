@@ -167,16 +167,19 @@ struct sum_up : public sqy::stage {
 };
 
 typedef add_one<int> add_one_to_ints;
+using int_factory_with_one_entry = sqy::stage_factory<add_one_to_ints> ;
+using int_factory = sqy::stage_factory<add_one_to_ints, square<int>, sum_up<int> > ;
+
+template <typename T>
+using filter_factory = sqy::stage_factory<add_one<T>, square<T> >;
+
+template <typename T>
+using sink_factory = sqy::stage_factory<sum_up<T> >;
 
 
 BOOST_AUTO_TEST_SUITE( factory_test_suite )
 
 
-typedef sqy::stage_factory<add_one_to_ints> int_factory_with_one_entry;
-typedef sqy::stage_factory<add_one_to_ints, square<int>, sum_up<int> > int_factory;
-
-template <typename T>
-using filter_factory = sqy::stage_factory<add_one<T>, square<T>, sum_up<T> >;
   
 BOOST_AUTO_TEST_CASE( factory_finds_valid )
 {
@@ -201,9 +204,9 @@ BOOST_AUTO_TEST_CASE( factory_finds_valid_from_list )
 BOOST_AUTO_TEST_CASE( templated_factory_finds_valid )
 {
 
-  std::shared_ptr<sqy::stage> result = filter_factory<int>::create("sum_up");
+  std::shared_ptr<sqy::stage> result = filter_factory<int>::create("square");
   BOOST_CHECK_NE(result->name(),"");
-  BOOST_CHECK_EQUAL(result->name(),"sum_up");
+  BOOST_CHECK_EQUAL(result->name(),"square");
     
 }
 
@@ -211,7 +214,7 @@ BOOST_AUTO_TEST_CASE( templated_factory_finds_valid )
 BOOST_AUTO_TEST_CASE( factory_finds_nothing )
 {
 
-  BOOST_CHECK_THROW(int_factory::create("dope"),std::runtime_error);
+  BOOST_CHECK(int_factory::create("dope")==nullptr);
     
 }
 
@@ -219,8 +222,6 @@ BOOST_AUTO_TEST_SUITE_END()
 
 
 BOOST_AUTO_TEST_SUITE( access_test_suite )
-
-
 
 
 BOOST_AUTO_TEST_CASE( without_pipeline )
@@ -317,23 +318,39 @@ BOOST_AUTO_TEST_CASE (output_type) {
 
 }
 
-// BOOST_AUTO_TEST_CASE (bootstrap) {
+BOOST_AUTO_TEST_CASE (add) {
 
-//   sqy::dynamic_pipeline filter_pipe;
-//   BOOST_CHECK_EQUAL(filter_pipe.output_type(),"");
+  sqy::dynamic_pipeline empty_step;
+  BOOST_CHECK_EQUAL(empty_step.output_type(),"");
 
-//   filter_pipe = sqy::dynamic_pipeline::load("add_one->square");
-//   BOOST_CHECK_NE(filter_pipe.empty(),true);
-//   BOOST_CHECK_EQUAL(filter_pipe.size(),2);
+  sqy::dynamic_pipeline::filter_holder_t input = {std::make_shared<add_one<int> >(),std::make_shared<square<int> >()};
+  for(auto step : input)
+    empty_step.add(step);
+  
+  BOOST_CHECK_EQUAL(empty_step.empty(),false);
+  BOOST_CHECK_EQUAL(empty_step.size(),2);
 
-//   sqy::dynamic_pipeline sink_pipe;
-//   BOOST_CHECK_EQUAL(sink_pipe.output_type(),"");
+}
 
-//   sink_pipe = sqy::dynamic_pipeline::load("add_one->sum_up");
-//   BOOST_CHECK_NE(sink_pipe.empty(),true);
-//   BOOST_CHECK_EQUAL(sink_pipe.size(),2);
-//   BOOST_CHECK_EQUAL(sink_pipe.is_compressor(),true);
-// }
+
+BOOST_AUTO_TEST_CASE (bootstrap) {
+
+  sqy::dynamic_pipeline filter_pipe;
+  BOOST_CHECK_EQUAL(filter_pipe.output_type(),"");
+
+  filter_pipe = sqy::dynamic_pipeline::load("add_one->square", filter_factory<int>(), sink_factory<int>());
+  BOOST_CHECK_NE(filter_pipe.empty(),true);
+  BOOST_CHECK_EQUAL(filter_pipe.size(),2);
+
+  sqy::dynamic_pipeline sink_pipe;
+  BOOST_CHECK_EQUAL(sink_pipe.output_type(),"");
+
+  sink_pipe = sqy::dynamic_pipeline::load("add_one->sum_up",filter_factory<int>(), sink_factory<int>());
+  BOOST_CHECK_NE(sink_pipe.empty(),true);
+  BOOST_CHECK_EQUAL(sink_pipe.size(),2);
+  BOOST_CHECK_EQUAL(sink_pipe.is_compressor(),true);
+  BOOST_CHECK_EQUAL(sink_pipe.name(),"add_one->sum_up");
+}
 
 
 BOOST_AUTO_TEST_SUITE_END()

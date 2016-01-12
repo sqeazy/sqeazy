@@ -39,9 +39,11 @@ namespace sqeazy
     }
     else
     {
-      std::ostringstream msg;
-      msg << _name << " not available as pipeline step\n";
-      throw std::runtime_error(msg.str());
+      // std::ostringstream msg;
+      // msg << _name << " not available as pipeline step\n";
+      
+      // throw std::runtime_error(msg.str());
+      return nullptr;
     }
   }
 
@@ -59,14 +61,50 @@ namespace sqeazy
   }
 
 
+  template <class Head> bool contains(const std::string &_name)
+  {
+    if(Head().name() == _name)
+    {
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }
+
+  
+  template <class Head, class Second, class... Tail> bool contains(const std::string &_name)
+  {
+    if(Head().name() == _name)
+    {
+      //got it
+      return true;
+    }
+    else
+    {
+      return contains<Second, Tail...>(_name);
+    }
+  }
+
+
+  
+
   template <class... available_types> struct stage_factory
   {
-
+    static_assert(sizeof...(available_types) > 0, "Need at least one type for factory");
+    
     static std::shared_ptr<stage> create(const std::string &_name) 
     {
-      static_assert(sizeof...(available_types) > 0, "Need at least one type for factory");
+      // static_assert(sizeof...(available_types) > 0, "Need at least one type for factory");
 
       return extract<available_types...>(_name);
+    }
+
+    static bool count(const std::string &_name) 
+    {
+      
+      return contains<available_types...>(_name);
     }
   };
 
@@ -83,12 +121,21 @@ namespace sqeazy
     sink_t		sink_;
 
 
-    
-    static dynamic_pipeline load(const std::string& _config){
+    template <typename filter_factory_t,typename sink_factory_t> 
+    static dynamic_pipeline load(const std::string& _config, filter_factory_t f, sink_factory_t s){
 
       std::vector<std::string> tags = sqeazy::split(_config,std::string("->"));
 
       dynamic_pipeline value;
+
+      for(std::string & word : tags){
+      	if(sink_factory_t::count(word))
+	  value.sink_ = sink_factory_t::create(word);
+      }
+
+      for(std::string & word : tags)
+	if(filter_factory_t::count(word))
+	  value.add(filter_factory_t::create(word));
       
       return value;
       
@@ -265,6 +312,18 @@ namespace sqeazy
 	 
       return value;
     };
+
+    void add(ptr_t _new_item){
+
+      if(_new_item->is_compressor()){
+	sink_ = _new_item;
+	return ;
+      }
+
+      filters_.push_back(_new_item);
+      
+    }
+    
   };
 }
 
