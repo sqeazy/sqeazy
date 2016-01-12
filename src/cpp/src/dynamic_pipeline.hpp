@@ -1,6 +1,7 @@
 #ifndef _DYNAMIC_PIPELINE_H_
 #define _DYNAMIC_PIPELINE_H_
 #include <utility>
+#include <iostream>
 #include <vector>
 #include <string>
 #include <initializer_list>
@@ -19,9 +20,12 @@ namespace sqeazy
 
     virtual ~stage() {}
 
+    
     virtual std::string input_type() const = 0;
     virtual std::string output_type() const = 0;
     virtual std::string name() const = 0;
+
+    virtual bool is_compressor() const = 0;
   };
 
 
@@ -30,10 +34,10 @@ namespace sqeazy
 
     typedef std::shared_ptr<stage> ptr_t;
     typedef std::shared_ptr<stage> sink_t;
-    typedef std::vector<ptr_t> holder_t;
+    typedef std::vector<ptr_t> filter_holder_t;
 
-    holder_t filters_;
-    sink_t	sink_;
+    filter_holder_t	filters_;
+    sink_t		sink_;
 
     friend void swap(dynamic_pipeline &_lhs, dynamic_pipeline &_rhs) {
       std::swap(_lhs.filters_, _rhs.filters_);
@@ -50,7 +54,7 @@ namespace sqeazy
     */
     dynamic_pipeline()
       : filters_(),
-	sink_()
+	sink_(nullptr)
     {};
 
     /**
@@ -63,7 +67,25 @@ namespace sqeazy
 
     */
     dynamic_pipeline(std::initializer_list<ptr_t> _stages)
-      : filters_(_stages), sink_() {};
+      : filters_(), sink_(nullptr) {
+
+      for(ptr_t step : _stages){
+
+	if(!step->is_compressor())
+	  filters_.push_back(step);
+	else{
+	  if(sink_==nullptr)
+	    sink_ = step;
+	  else
+	    std::cerr << "sqeazy::dynamic_pipeline:"<< __LINE__ << ":\t"
+		      <<" skipping second sink in stages " << step->name()
+		      << "(known sink: " << sink_->name() << ")\n";
+
+	}
+      }
+
+
+    };
 
     /**
        \brief copy-by-assignment using copy&swap idiom
@@ -89,18 +111,18 @@ namespace sqeazy
        \retval
 
     */
-    const std::size_t size() const { return filters_.size(); }
+    const std::size_t size() const { return filters_.size()+ (sink_ ? 1 : 0); }
 
     const bool empty() const { return filters_.empty(); }
 
-    holder_t::iterator begin() { return filters_.begin(); }
+    filter_holder_t::iterator begin() { return filters_.begin(); }
 
-    holder_t::const_iterator begin() const { return filters_.begin(); }
+    filter_holder_t::const_iterator begin() const { return filters_.begin(); }
 
 
-    holder_t::iterator end() { return filters_.end(); }
+    filter_holder_t::iterator end() { return filters_.end(); }
 
-    holder_t::const_iterator end() const { return filters_.end(); }
+    filter_holder_t::const_iterator end() const { return filters_.end(); }
 
     void add_filter(ptr_t _new_item)
     {
@@ -117,18 +139,18 @@ namespace sqeazy
         throw std::runtime_error("sqeazy::dynamic_pipeline::add_filter failed");
     }
 
-    bool valid_types() const
+    bool valid_filters() const
     {
 
       bool value = true;
       if(empty())
         return !value;
 
-      if(size() == 1)
+      if(filters_.size() == 1)
         return value;
 
 
-      for(unsigned i = 1; i < size(); ++i)
+      for(unsigned i = 1; i < filters_.size(); ++i)
       {
         value = value && (filters_[i]->input_type() == filters_[i - 1]->output_type());
       }
@@ -139,34 +161,53 @@ namespace sqeazy
     std::string input_type() const
     {
 
-      if(size())
+      if(filters_.size())
         return filters_.front()->input_type();
-      else
-        return std::string("");
+
+      if(sink_)
+        return sink_->input_type();
+      
+      return std::string("");
     };
 
     std::string output_type() const
     {
 
-      if(size())
-        return filters_.back()->input_type();
-      else
-        return std::string("");
+      if(sink_){
+	return sink_->input_type();
+      } else{
+	if(filters_.size()){
+	  return filters_.back()->input_type();
+	}
+	else
+	  return std::string("");
+      }
     };
 
+    bool is_compressor() const {
+
+      return sink_ != nullptr;
+      
+    }
+    
     std::string name() const
     {
 
       std::string value = "";
-      // for(std::size_t i = 0;i<size();++i){
-      for(auto step : filters_)
+
+      for(auto & step : filters_)
       {
         value.append(step->name());
 
-        if(step != (filters_.back()))
+        if(step != filters_.back())
           value.append("->");
       }
 
+      if(is_compressor()){
+	value.append("->");
+	value.append(sink_->name());
+      }
+	 
       return value;
     };
   };

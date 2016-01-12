@@ -14,8 +14,13 @@ struct add_one : public sqy::stage {
 
   typedef T raw_type;
   typedef T compressed_type;
-  static const bool is_compressor = false;
-
+  
+  bool is_compressor() const {
+    
+    return false;
+    
+  }
+  
   std::string name() const {
 
     return std::string("add_one");
@@ -27,7 +32,7 @@ struct add_one : public sqy::stage {
     return _in + 1;
   }
 
-  static int encode( const T* _in, T* _out, const unsigned long& _size) {
+  static int encode( const raw_type* _in, compressed_type* _out, const unsigned long& _size) {
     const T* begin = _in;
     const T* end = begin + _size;
    
@@ -63,7 +68,12 @@ struct square : public sqy::stage {
 
   typedef T raw_type;
   typedef T compressed_type;
-  static const bool is_compressor = false;
+
+  bool is_compressor() const {
+    
+    return false;
+    
+  }
 
   std::string name() const {
 
@@ -75,7 +85,7 @@ struct square : public sqy::stage {
     return _in * _in;
   }
 
-  static int encode( const T* _in, T* _out, const unsigned long& _size) {
+  static int encode( const raw_type* _in, compressed_type* _out, const unsigned long& _size) {
     const T* begin = _in;
     const T* end = begin + _size;
 
@@ -91,6 +101,54 @@ struct square : public sqy::stage {
 
   ~square(){};
 
+  
+
+  std::string input_type() const {
+
+    return typeid(raw_type).name();
+    
+  }
+
+  std::string output_type() const {
+
+    return typeid(compressed_type).name();
+    
+  }
+  
+};
+
+template <typename T >
+struct sum_up : public sqy::stage {
+
+  typedef T raw_type;
+  typedef uint32_t compressed_type;
+  
+  bool is_compressor() const {
+    
+    return true;
+    
+  }
+  
+  std::string name() const {
+
+    return std::string("sum_up");
+
+  }
+
+  static int encode( const raw_type* _in, compressed_type* _out, const unsigned long& _size) {
+    const T* begin = _in;
+    const T* end = begin + _size;
+
+    *_out = std::accumulate(begin, end, 0);
+
+    return 0;
+  }
+
+  static const unsigned long max_encoded_size(unsigned long _size_bytes){
+    return sizeof(compressed_type);
+  }
+
+  ~sum_up(){};
   
 
   std::string input_type() const {
@@ -135,11 +193,6 @@ BOOST_AUTO_TEST_CASE (construct) {
   BOOST_CHECK_EQUAL(empty_pipe.size(), 0);
   BOOST_CHECK_EQUAL(empty_pipe.empty(), true);
 
- 
-  sqy::dynamic_pipeline setup_pipe = {std::make_shared<add_one<int> >(),std::make_shared<square<int> >()};
-  BOOST_CHECK_EQUAL(setup_pipe.size(), 2);
-  BOOST_CHECK_NE(setup_pipe.empty(), true);
-
   
 }
 
@@ -170,16 +223,21 @@ BOOST_AUTO_TEST_CASE (names_correct) {
 BOOST_AUTO_TEST_CASE (types_match) {
 
   sqy::dynamic_pipeline empty_step;
-  BOOST_CHECK_NE(empty_step.valid_types(),true);
+  BOOST_CHECK_NE(empty_step.valid_filters(),true);
   
   sqy::dynamic_pipeline single_step = {std::make_shared<add_one<int> >()};
-  BOOST_CHECK(single_step.valid_types());
+  BOOST_CHECK(single_step.valid_filters());
   
   sqy::dynamic_pipeline working_pipe = {std::make_shared<add_one<int> >(),std::make_shared<square<int> >()};
-  BOOST_CHECK(working_pipe.valid_types());
+  BOOST_CHECK(working_pipe.valid_filters());
   
   sqy::dynamic_pipeline failing_pipe = {std::make_shared<add_one<int> >(),std::make_shared<square<char> >()};
-  BOOST_CHECK_NE(failing_pipe.valid_types(),true);
+  BOOST_CHECK_NE(failing_pipe.valid_filters(),true);
+
+  sqy::dynamic_pipeline working_pipe_with_sink = {std::make_shared<add_one<int> >(),
+						  std::make_shared<square<int> >(),
+						  std::make_shared<sum_up<int> >()};
+  BOOST_CHECK(working_pipe_with_sink.valid_filters());
   
 }
 
@@ -190,6 +248,9 @@ BOOST_AUTO_TEST_CASE (name_given) {
 
   sqy::dynamic_pipeline working_pipe = {std::make_shared<add_one<int> >(),std::make_shared<square<int> >()};
   BOOST_CHECK_EQUAL(working_pipe.name(),"add_one->square");
+
+  sqy::dynamic_pipeline compressing_pipe = {std::make_shared<add_one<int> >(),std::make_shared<sum_up<int> >()};
+  BOOST_CHECK_EQUAL(compressing_pipe.name(),"add_one->sum_up");
 
 }
 
@@ -213,21 +274,6 @@ BOOST_AUTO_TEST_CASE (output_type) {
 
 }
 
-
-BOOST_AUTO_TEST_CASE (push_back) {
-
-  sqy::dynamic_pipeline pipe_to_fill;
-  BOOST_CHECK_EQUAL(pipe_to_fill.empty(),true);
-  BOOST_CHECK_NE(pipe_to_fill.valid_types(),true);
-
-  pipe_to_fill.push_back(std::make_shared<add_one<int> >());
-  BOOST_CHECK_NE(pipe_to_fill.empty(),true);
-  BOOST_CHECK_NE(pipe_to_fill.size(),0);
-
-  BOOST_CHECK_THROW(pipe_to_fill.push_back(std::make_shared<square<char> >()),std::runtime_error);
-  pipe_to_fill.push_back(std::make_shared<square<int> >());
-  BOOST_CHECK_EQUAL(pipe_to_fill.valid_types(),true);
-}
 
 BOOST_AUTO_TEST_SUITE_END()
 
