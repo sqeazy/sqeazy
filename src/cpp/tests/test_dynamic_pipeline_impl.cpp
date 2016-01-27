@@ -338,7 +338,9 @@ BOOST_AUTO_TEST_CASE (bootstrap) {
   sqy::dynamic_pipeline filter_pipe;
   BOOST_CHECK_EQUAL(filter_pipe.output_type(),"");
 
-  filter_pipe = sqy::dynamic_pipeline::load("add_one->square", filter_factory<int>(), sink_factory<int>());
+  filter_pipe = sqy::dynamic_pipeline::load("add_one->square",
+					    filter_factory<int>(),
+					    sink_factory<int>());
   BOOST_CHECK_NE(filter_pipe.empty(),true);
   BOOST_CHECK_EQUAL(filter_pipe.size(),2);
 
@@ -350,9 +352,29 @@ BOOST_AUTO_TEST_CASE (bootstrap) {
   BOOST_CHECK_EQUAL(sink_pipe.size(),2);
   BOOST_CHECK_EQUAL(sink_pipe.is_compressor(),true);
   BOOST_CHECK_EQUAL(sink_pipe.name(),"add_one->sum_up");
+
+  sqy::dynamic_pipeline empty_pipe;
+  empty_pipe = sqy::dynamic_pipeline::load("add_one->square");
+  BOOST_CHECK_EQUAL(empty_pipe.empty(),true);
 }
 
+BOOST_AUTO_TEST_CASE (encode) {
 
+  std::vector<int> input(10);
+  std::iota(input.begin(), input.end(),0);
+  BOOST_CHECK_EQUAL(input.front(),0);
+  BOOST_CHECK_EQUAL(input.back(),9);
+  
+  std::vector<int> output(input);
+
+  sqy::dynamic_pipeline sink_pipe = sqy::dynamic_pipeline::load("square",filter_factory<int>(), sink_factory<int>());
+  sink_pipe.encode(&input[0],&output[0],input.size());
+
+  BOOST_CHECK_NE(output.front(),0);
+  BOOST_CHECK_NE(output.back(),9);
+  
+}
+  
 BOOST_AUTO_TEST_SUITE_END()
 
 

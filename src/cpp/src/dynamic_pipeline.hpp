@@ -12,103 +12,10 @@
 
 #include "boost/blank.hpp"
 #include "sqeazy_utils.hpp"
+#include "dynamic_stage.hpp"
 
 namespace sqeazy
 {
-  
-  
-  struct stage
-  {
-
-    virtual ~stage() {}
-
-    
-    virtual std::string input_type() const = 0;
-    virtual std::string output_type() const = 0;
-    virtual std::string name() const = 0;
-
-    virtual bool is_compressor() const = 0;
-  };
-
-    template <class Head> std::shared_ptr<stage> extract(const std::string &_name)
-  {
-    if(Head().name() == _name)
-    {
-      //got it
-      return std::make_shared<Head>();
-    }
-    else
-    {
-      // std::ostringstream msg;
-      // msg << _name << " not available as pipeline step\n";
-      
-      // throw std::runtime_error(msg.str());
-      return nullptr;
-    }
-  }
-
-  template <class Head, class Second, class... Tail> std::shared_ptr<stage> extract(const std::string &_name)
-  {
-    if(Head().name() == _name)
-    {
-      //got it
-      return std::make_shared<Head>();
-    }
-    else
-    {
-      return extract<Second, Tail...>(_name);
-    }
-  }
-
-
-  template <class Head> bool contains(const std::string &_name)
-  {
-    if(Head().name() == _name)
-    {
-      return true;
-    }
-    else
-    {
-      return false;
-    }
-  }
-
-  
-  template <class Head, class Second, class... Tail> bool contains(const std::string &_name)
-  {
-    if(Head().name() == _name)
-    {
-      //got it
-      return true;
-    }
-    else
-    {
-      return contains<Second, Tail...>(_name);
-    }
-  }
-
-
-  
-
-  template <class... available_types> struct stage_factory
-  {
-    static_assert(sizeof...(available_types) > 0, "Need at least one type for factory");
-    
-    static std::shared_ptr<stage> create(const std::string &_name) 
-    {
-      // static_assert(sizeof...(available_types) > 0, "Need at least one type for factory");
-
-      return extract<available_types...>(_name);
-    }
-
-    static bool count(const std::string &_name) 
-    {
-      
-      return contains<available_types...>(_name);
-    }
-  };
-
-  
 
   struct dynamic_pipeline : public stage
   {
@@ -117,31 +24,47 @@ namespace sqeazy
     typedef std::shared_ptr<stage> sink_t;
     typedef std::vector<ptr_t> filter_holder_t;
 
-    filter_holder_t	filters_;
-    sink_t		sink_;
+    filter_holder_t filters_;
+    sink_t sink_;
 
 
-    template <typename filter_factory_t,typename sink_factory_t> 
-    static dynamic_pipeline load(const std::string& _config, filter_factory_t f, sink_factory_t s){
+    template <typename filter_factory_t, typename sink_factory_t>
+    static dynamic_pipeline load(const std::string &_config,
+				 filter_factory_t f = stage_factory<blank_stage>(),
+				 sink_factory_t s = stage_factory<blank_stage>())
+    {
 
-      std::vector<std::string> tags = sqeazy::split(_config,std::string("->"));
+      std::vector<std::string> tags = sqeazy::split(_config, std::string("->"));
 
       dynamic_pipeline value;
 
-      for(std::string & word : tags){
-      	if(sink_factory_t::count(word))
-	  value.sink_ = sink_factory_t::create(word);
+      for(std::string &word : tags)
+      {
+        if(sink_factory_t::has(word))
+          value.sink_ = sink_factory_t::create(word);
       }
 
-      for(std::string & word : tags)
-	if(filter_factory_t::count(word))
-	  value.add(filter_factory_t::create(word));
-      
+      for(std::string &word : tags)
+        if(filter_factory_t::has(word))
+          value.add(filter_factory_t::create(word));
+
       return value;
-      
     }
-    
-    friend void swap(dynamic_pipeline &_lhs, dynamic_pipeline &_rhs) {
+
+    template <typename filter_factory_t = stage_factory<blank_stage>,
+	      typename sink_factory_t = stage_factory<blank_stage>
+	      >
+    static dynamic_pipeline load(const char *_config,
+				 filter_factory_t f = stage_factory<blank_stage>(),
+				 sink_factory_t s = stage_factory<blank_stage>())
+    {
+      std::string config = _config;
+
+      return load(config, f, s);
+    }
+
+    friend void swap(dynamic_pipeline &_lhs, dynamic_pipeline &_rhs)
+    {
       std::swap(_lhs.filters_, _rhs.filters_);
       std::swap(_lhs.sink_, _rhs.sink_);
     }
@@ -155,9 +78,8 @@ namespace sqeazy
 
     */
     dynamic_pipeline()
-      : filters_(),
-	sink_(nullptr)
-    {};
+        : filters_()
+        , sink_(nullptr){};
 
     /**
        \brief construct an pipeline from given stages
@@ -169,24 +91,24 @@ namespace sqeazy
 
     */
     dynamic_pipeline(std::initializer_list<ptr_t> _stages)
-      : filters_(), sink_(nullptr) {
+        : filters_()
+        , sink_(nullptr)
+    {
 
-      for(ptr_t step : _stages){
+      for(ptr_t step : _stages)
+      {
 
-	if(!step->is_compressor())
-	  filters_.push_back(step);
-	else{
-	  if(sink_==nullptr)
-	    sink_ = step;
-	  else
-	    std::cerr << "sqeazy::dynamic_pipeline:"<< __LINE__ << ":\t"
-		      <<" skipping second sink in stages " << step->name()
-		      << "(known sink: " << sink_->name() << ")\n";
-
-	}
+        if(!step->is_compressor())
+          filters_.push_back(step);
+        else
+        {
+          if(sink_ == nullptr)
+            sink_ = step;
+          else
+            std::cerr << "sqeazy::dynamic_pipeline:" << __LINE__ << ":\t"
+                      << " skipping second sink in stages " << step->name() << "(known sink: " << sink_->name() << ")\n";
+        }
       }
-
-
     };
 
     /**
@@ -213,18 +135,10 @@ namespace sqeazy
        \retval
 
     */
-    const std::size_t size() const { return filters_.size()+ (sink_ ? 1 : 0); }
+    const std::size_t size() const { return filters_.size() + (sink_ ? 1 : 0); }
 
     const bool empty() const { return filters_.empty() && !sink_; }
 
-    // filter_holder_t::iterator begin() { return filters_.begin(); }
-
-    // filter_holder_t::const_iterator begin() const { return filters_.begin(); }
-
-
-    // filter_holder_t::iterator end() { return filters_.end(); }
-
-    // filter_holder_t::const_iterator end() const { return filters_.end(); }
 
     void add_filter(ptr_t _new_item)
     {
@@ -268,36 +182,45 @@ namespace sqeazy
 
       if(sink_)
         return sink_->input_type();
-      
+
       return std::string("");
     };
 
     std::string output_type() const
     {
 
-      if(sink_){
-	return sink_->input_type();
-      } else{
-	if(filters_.size()){
-	  return filters_.back()->input_type();
-	}
-	else
-	  return std::string("");
+      if(sink_)
+      {
+        return sink_->input_type();
+      }
+      else
+      {
+        if(filters_.size())
+        {
+          return filters_.back()->input_type();
+        }
+        else
+          return std::string("");
       }
     };
 
-    bool is_compressor() const {
+    bool is_compressor() const { return sink_ != nullptr; }
 
-      return sink_ != nullptr;
-      
-    }
-    
+    /**
+       \brief produce string of pipeline, separated by ->
+
+       \param[in]
+
+       \return
+       \retval
+
+    */
     std::string name() const
     {
 
       std::string value = "";
 
-      for(auto & step : filters_)
+      for(auto &step : filters_)
       {
         value.append(step->name());
 
@@ -305,25 +228,52 @@ namespace sqeazy
           value.append("->");
       }
 
-      if(is_compressor()){
-	value.append("->");
-	value.append(sink_->name());
+      if(is_compressor())
+      {
+        value.append("->");
+        value.append(sink_->name());
       }
-	 
+
       return value;
     };
 
-    void add(ptr_t _new_item){
+    /**
+       \brief add new stage to pipeline (if stage is a sink, the sink will be replaced)
 
-      if(_new_item->is_compressor()){
-	sink_ = _new_item;
-	return ;
+       \param[in] _new_item new stage to add (filter or sink)
+
+       \return
+       \retval
+
+    */
+    void add(ptr_t _new_item)
+    {
+
+      if(_new_item->is_compressor())
+      {
+        sink_ = _new_item;
+        return;
       }
 
       filters_.push_back(_new_item);
-      
     }
     
+    /**
+       \brief encode one-dimensional array _in and write results to _out
+       
+       \param[in] 
+       
+       \return 
+       \retval 
+       
+    */
+    template <typename raw_type, typename compressed_type>
+    int encode(const raw_type *_in, compressed_type *_out, std::size_t _len) {
+
+      
+      return 0;
+
+    }
   };
 }
 
