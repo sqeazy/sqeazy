@@ -79,11 +79,12 @@ namespace sqeazy{
 
     constexpr static bool is_compressor = true;
     typedef raw_t in_type;
+    typedef std::int8_t out_type;
     
     virtual ~sink() {}
 
-    virtual int encode(const raw_t*, std::int8_t*,std::vector<std::size_t>){return 1;};
-    int encode(const raw_t* _in, std::int8_t* _out,std::size_t len) const {
+    virtual int encode(const raw_t*, out_type*,std::vector<std::size_t>){return 1;};
+    int encode(const raw_t* _in, out_type* _out,std::size_t len) const {
 
       std::vector<std::size_t> shape(1,len);
       return encode(_in,_out,shape);
@@ -91,8 +92,8 @@ namespace sqeazy{
     };
 
 
-    virtual int decode(const std::int8_t*, raw_t*,std::vector<std::size_t>){return 1;};
-    int decode(const std::int8_t* _in, raw_t* _out,std::size_t len) const {
+    virtual int decode(const out_type*, raw_t*,std::vector<std::size_t>){return 1;};
+    int decode(const out_type* _in, raw_t* _out,std::size_t len) const {
 
       std::vector<std::size_t> shape(1,len);
       return decode(_in,_out,shape);

@@ -472,14 +472,25 @@ BOOST_AUTO_TEST_CASE (encode) {
   BOOST_CHECK_EQUAL(input.front(),0);
   BOOST_CHECK_EQUAL(input.back(),9);
   
-  std::vector<int> output(input);
+  std::vector<int> intermediate(input);
 
   sqy::dynamic_pipeline<int> sink_pipe = sqy::dynamic_pipeline<int>::load("square",filter_factory<int>(), sink_factory<int>());
-  sink_pipe.encode(&input[0],&output[0],input.size());
+  int err_code = sink_pipe.encode(&input[0],&intermediate[0],input.size());
 
-  BOOST_CHECK_NE(output.front(),0);
-  BOOST_CHECK_NE(output.back(),9);
+  BOOST_CHECK_EQUAL(intermediate.front(),0);
+  BOOST_CHECK_EQUAL(intermediate.back(),std::pow(9,2));
+  BOOST_CHECK_EQUAL(err_code,0);
+}
+
+BOOST_AUTO_TEST_CASE (decode) {
+
+  std::vector<int> input(10,16);
+  std::vector<int> output(input.size(),0);
   
+  sqy::dynamic_pipeline<int> sink_pipe = sqy::dynamic_pipeline<int>::load("square",filter_factory<int>(), sink_factory<int>());
+  int err_code = sink_pipe.decode(&input[0],&output[0],input.size());
+  BOOST_CHECK_EQUAL(err_code,0);
+  BOOST_CHECK_EQUAL(output.back(),4);
 }
   
 BOOST_AUTO_TEST_SUITE_END()

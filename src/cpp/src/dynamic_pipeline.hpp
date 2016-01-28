@@ -155,7 +155,7 @@ namespace sqeazy
     };
 
     /**
-       \brief copy-by-assignment using copy&swap idiom
+       \brief copy-constructor using copy&swap idiom
 
        \param[in]
 
@@ -331,8 +331,8 @@ namespace sqeazy
     
     int encode(const raw_t *_in, compressed_t *_out, std::size_t _len) const {
 
-      
-      return 1;
+      std::vector<std::size_t> shape(1,_len);
+      return encode(_in,_out,shape);
 
     }
 
@@ -348,12 +348,50 @@ namespace sqeazy
     
     int encode(const raw_t *_in, compressed_t *_out, std::vector<std::size_t> _shape) const {
 
-      return 1;
+      int value = 0;
+      std::size_t len = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
+
+      std::vector<raw_t> temp(_in, _in+len);
+      raw_t* out = reinterpret_cast<raw_t*>(_out);
+      int err_code = 1;
+      for( std::size_t fidx = 0;fidx<filters_.size();++fidx )
+	{
+
+	  err_code = filters_[fidx]->encode(&temp[0],
+					     out,
+					     _shape);
+	  value += err_code ? (10*fidx)+err_code : 0;
+	  std::copy(out, out+len,temp.begin());
+	}
+
+      
+      if(is_compressor()){
+	err_code = sink_->encode(&temp[0],
+				 (typename sink_t::out_type*)_out,
+				 _shape);
+	value += err_code ? 10*err_code : 0;
+      }
+      return value;
 
     }
 
     
+      /**
+       \brief decode one-dimensional array _in and write results to _out
+       
+       \param[in] 
+       
+       \return 
+       \retval 
+       
+    */
+    
+    int decode(const raw_t *_in, compressed_t *_out, std::size_t _len) const {
 
+      std::vector<std::size_t> shape = {_len};
+      return decode(_in,_out,shape);
+
+    }
         /**
        \brief decode one-dimensional array _in and write results to _out
        
@@ -364,9 +402,34 @@ namespace sqeazy
        
     */
     
-    int decode(const raw_t *_in, compressed_t *_out, std::vector<std::size_t> _shape) const {
+    int decode(const compressed_t *_in, raw_t *_out, std::vector<std::size_t> _shape) const {
 
-      return 1;
+      int value = 0;
+      int err_code = 0;
+      std::size_t len = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
+
+      const raw_t* begin = reinterpret_cast<const raw_t*>(_in);
+      std::vector<raw_t> temp(begin, begin+len);
+      
+      if(is_compressor()){
+	err_code = sink_->decode((const typename sink_t::out_type*)_in,
+				 &temp[0],
+				 _shape);
+	value += err_code ;
+      }       
+
+      for( std::size_t fidx = 0;fidx<filters_.size();++fidx )
+	{
+	  
+	  err_code = filters_[fidx]->decode(&temp[0],
+					    _out,
+					    _shape);
+	  value += err_code ? (10*(fidx+1))+err_code : 0;
+	  std::copy(_out, _out+len,temp.begin());
+	}
+
+      
+      return value;
 
     }
   };
