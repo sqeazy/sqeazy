@@ -163,6 +163,23 @@ namespace sqeazy
        \retval
 
     */
+    template <typename T>
+    dynamic_pipeline(const T& _rhs):
+      filters_(_rhs.filters_),
+      sink_(_rhs.sink_)
+    {
+
+    }
+
+    /**
+       \brief copy-by-assignment using copy&swap idiom
+
+       \param[in]
+
+       \return
+       \retval
+
+    */
     dynamic_pipeline &operator=(dynamic_pipeline _rhs)
     {
 
@@ -202,7 +219,7 @@ namespace sqeazy
     void add(const sink_ptr_t& _new_sink)
     {
       if(sink_)
-	delete sink_;
+	sink_.reset();
 
       sink_ = _new_sink;
     }

@@ -238,6 +238,7 @@ using sink_factory = sqy::stage_factory<sum_up<T> >;
 
 static auto adder_sptr = std::make_shared<add_one<int>>(add_one<int>());
 static auto square_sptr = std::make_shared<square<int>>(square<int>());
+static auto summer_sptr = std::make_shared<sum_up<int>>(sum_up<int>());
 
 BOOST_AUTO_TEST_SUITE( factory_test_suite )
 
@@ -324,7 +325,8 @@ BOOST_AUTO_TEST_CASE (copy_construct) {
   
   sqy::dynamic_pipeline<int> filled_pipe{adder_sptr,square_sptr};
   BOOST_CHECK_EQUAL(filled_pipe.size(), 2);
-  sqy::dynamic_pipeline<int> assigned_pipe = filled_pipe;
+
+  sqy::dynamic_pipeline<int> assigned_pipe(filled_pipe);
   BOOST_CHECK_EQUAL(assigned_pipe.size(), 2);
   BOOST_CHECK_NE(assigned_pipe.empty(), true);
 
@@ -332,7 +334,34 @@ BOOST_AUTO_TEST_CASE (copy_construct) {
   BOOST_CHECK_EQUAL(copied_pipe.size(), 2);
   BOOST_CHECK_NE(copied_pipe.empty(), true);
 
+  sqy::dynamic_pipeline<int,std::uint32_t> sink_pipe(filled_pipe);
+  sink_pipe.add(summer_sptr);
+  BOOST_CHECK_EQUAL(sink_pipe.size(), 3);
+  BOOST_CHECK_NE(sink_pipe.empty(), true);
+  BOOST_CHECK(sink_pipe.is_compressor());
 }
+
+BOOST_AUTO_TEST_CASE (assign_construct) {
+
+  sqy::dynamic_pipeline<int> filled_pipe{adder_sptr,square_sptr};
+  BOOST_CHECK_EQUAL(filled_pipe.size(), 2);
+  BOOST_CHECK(!filled_pipe.is_compressor());
+
+  sqy::dynamic_pipeline<int> assigned_pipe = (filled_pipe);
+  BOOST_CHECK_EQUAL(assigned_pipe.size(), 2);
+  BOOST_CHECK_NE(assigned_pipe.empty(), true);
+
+  sqy::dynamic_pipeline<int> copied_pipe = (filled_pipe);
+  BOOST_CHECK_EQUAL(copied_pipe.size(), 2);
+  BOOST_CHECK_NE(copied_pipe.empty(), true);
+
+  sqy::dynamic_pipeline<int,std::uint32_t> sink_pipe = (filled_pipe);
+  sink_pipe.add(summer_sptr);
+  BOOST_CHECK_EQUAL(sink_pipe.size(), 3);
+  BOOST_CHECK_NE(sink_pipe.empty(), true);
+  BOOST_CHECK(sink_pipe.is_compressor());
+}
+
 
 
 BOOST_AUTO_TEST_CASE (types_match) {
