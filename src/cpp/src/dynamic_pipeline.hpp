@@ -5,58 +5,110 @@
 #include <vector>
 #include <string>
 #include <initializer_list>
-#include <memory>
 #include <cstdint>
 #include <typeinfo>
 #include <stdexcept>
+#include <type_traits>
+#include <memory>
 
-#include "boost/blank.hpp"
 #include "sqeazy_utils.hpp"
 #include "dynamic_stage.hpp"
 
 namespace sqeazy
 {
 
-  struct dynamic_pipeline : public stage
+  
+  
+  template <typename head_t, typename tail_t, bool flag = true>
+  struct binary_select_type{
+    typedef head_t type;
+  };
+
+  template <typename head_t, typename tail_t>
+  struct binary_select_type<head_t,tail_t,false>{
+    typedef tail_t type;
+  };
+
+  
+  template <typename raw_t, typename compressed_t = raw_t>
+  struct dynamic_pipeline : public binary_select_type<filter<raw_t>,//true
+						      sink<raw_t>,//false
+						      std::is_same<raw_t,compressed_t>::value
+						      >::type
   {
 
-    typedef std::shared_ptr<stage> ptr_t;
-    typedef std::shared_ptr<stage> sink_t;
-    typedef std::vector<ptr_t> filter_holder_t;
+    typedef raw_t incoming_t;
+    typedef compressed_t outgoing_t;
 
+    typedef typename binary_select_type<filter<raw_t>,//true
+					sink<raw_t>,//false
+					std::is_same<raw_t,compressed_t>::value
+					>::type
+    base_t;
+    
+    typedef sink<incoming_t> sink_t;
+    typedef filter<incoming_t> filter_t;
+    typedef stage<incoming_t> stage_t;
+
+    typedef std::shared_ptr< filter<incoming_t> > filter_ptr_t;
+    typedef std::shared_ptr< sink<incoming_t> > sink_ptr_t;
+    typedef std::vector<filter_ptr_t> filter_holder_t;
+
+    static_assert(std::is_arithmetic<incoming_t>::value==true, "[dynamic_pipeline.hpp:31] received non-arithmetic type for input");
+    static_assert(std::is_arithmetic<outgoing_t>::value==true, "[dynamic_pipeline.hpp:31] received non-arithmetic type for output");
+    
     filter_holder_t filters_;
-    sink_t sink_;
+    sink_ptr_t sink_;
 
 
-    template <typename filter_factory_t, typename sink_factory_t>
+    
+    /**
+       \brief given a string, this static method can fill the filter_holder and set the sink
+       
+       \param[in] _config string to parse
+       \param[in] f filter factory that is aware of all possible filters to choose from
+       \param[in] s sink factory that is aware of all possible sinks to choose from
+
+       \return 
+       \retval 
+       
+    */
+    template <typename filter_factory_t = stage_factory<blank_filter>,
+	      typename sink_factory_t = stage_factory<blank_sink>
+	      >
     static dynamic_pipeline load(const std::string &_config,
-				 filter_factory_t f = stage_factory<blank_stage>(),
-				 sink_factory_t s = stage_factory<blank_stage>())
+				 filter_factory_t f = stage_factory<blank_filter>(),
+				 sink_factory_t s = stage_factory<blank_sink>())
     {
 
       std::vector<std::string> tags = sqeazy::split(_config, std::string("->"));
 
       dynamic_pipeline value;
 
-      for(std::string &word : tags)
+      for(const std::string &word : tags)
       {
-        if(sink_factory_t::has(word))
-          value.sink_ = sink_factory_t::create(word);
+        if(sink_factory_t::has(word)){
+	  auto temp = sink_factory_t::template create< sink_t >(word);
+          value.sink_ = temp;
+	}
+	//what if sink is present in _config, but not in factory
       }
 
-      for(std::string &word : tags)
+      for(const std::string &word : tags){
         if(filter_factory_t::has(word))
-          value.add(filter_factory_t::create(word));
-
+          value.add((filter_factory_t::template create<filter_t>(word)));
+      	//what if filter is present in _config, but not in factory
+      }
+      
       return value;
     }
 
-    template <typename filter_factory_t = stage_factory<blank_stage>,
-	      typename sink_factory_t = stage_factory<blank_stage>
+    template <typename filter_factory_t = stage_factory<blank_filter>,
+	      typename sink_factory_t = stage_factory<blank_sink>
 	      >
     static dynamic_pipeline load(const char *_config,
-				 filter_factory_t f = stage_factory<blank_stage>(),
-				 sink_factory_t s = stage_factory<blank_stage>())
+				 filter_factory_t f = stage_factory<blank_filter>(),
+				 sink_factory_t s = stage_factory<blank_sink>())
     {
       std::string config = _config;
 
@@ -82,32 +134,23 @@ namespace sqeazy
         , sink_(nullptr){};
 
     /**
-       \brief construct an pipeline from given stages
-
+       //DEPRECATE THIS?//
+       \brief construct an pipeline from given stages (mainly for debugging)
+       
        \param[in] _size how many stages will the pipeline have
 
        \return
        \retval
 
     */
-    dynamic_pipeline(std::initializer_list<ptr_t> _stages)
+    dynamic_pipeline(std::initializer_list<filter_ptr_t> _stages)
         : filters_()
         , sink_(nullptr)
     {
 
-      for(ptr_t step : _stages)
+      for(const filter_ptr_t& step : _stages)
       {
-
-        if(!step->is_compressor())
-          filters_.push_back(step);
-        else
-        {
-          if(sink_ == nullptr)
-            sink_ = step;
-          else
-            std::cerr << "sqeazy::dynamic_pipeline:" << __LINE__ << ":\t"
-                      << " skipping second sink in stages " << step->name() << "(known sink: " << sink_->name() << ")\n";
-        }
+	filters_.push_back(step);
       }
     };
 
@@ -137,38 +180,55 @@ namespace sqeazy
     */
     const std::size_t size() const { return filters_.size() + (sink_ ? 1 : 0); }
 
-    const bool empty() const { return filters_.empty() && !sink_; }
+    const bool empty() const { return (filters_.empty() && !sink_); }
 
 
-    void add_filter(ptr_t _new_item)
+    void add(const filter_ptr_t& _new_filter)
     {
 
       if(empty())
       {
-        filters_.push_back(_new_item);
+        filters_.push_back(_new_filter);
         return;
       }
 
-      if(_new_item->input_type() == filters_.back()->output_type())
-        filters_.push_back(_new_item);
+      auto view = const_stage_view(_new_filter);
+      if(view->input_type() == typeid(incoming_t).name())
+        filters_.push_back(_new_filter);
       else
         throw std::runtime_error("sqeazy::dynamic_pipeline::add_filter failed");
     }
 
+    void add(const sink_ptr_t& _new_sink)
+    {
+      if(sink_)
+	delete sink_;
+
+      sink_ = _new_sink;
+    }
+
+    
     bool valid_filters() const
     {
 
       bool value = true;
-      if(empty())
+      if(filters_.empty())
         return !value;
 
       if(filters_.size() == 1)
         return value;
 
-
+      
       for(unsigned i = 1; i < filters_.size(); ++i)
       {
-        value = value && (filters_[i]->input_type() == filters_[i - 1]->output_type());
+	auto this_filter =  const_stage_view(filters_[i]);
+	auto last_filter =  const_stage_view(filters_[i-1]);
+
+	if(!this_filter || !last_filter){
+	  value = false ;
+	  break;
+	}
+        value = value && (this_filter->input_type() == last_filter->output_type());
       }
 
       return value;
@@ -178,10 +238,10 @@ namespace sqeazy
     {
 
       if(filters_.size())
-        return filters_.front()->input_type();
+        return const_stage_view(filters_.front())->input_type();
 
       if(sink_)
-        return sink_->input_type();
+        return const_stage_view(sink_)->input_type();
 
       return std::string("");
     };
@@ -191,20 +251,24 @@ namespace sqeazy
 
       if(sink_)
       {
-        return sink_->input_type();
+        return const_stage_view(sink_)->output_type();
       }
       else
       {
         if(filters_.size())
         {
-          return filters_.back()->input_type();
+          return const_stage_view(filters_.front())->output_type();
         }
         else
           return std::string("");
       }
     };
 
-    bool is_compressor() const { return sink_ != nullptr; }
+    bool is_compressor() const {
+      
+      return base_t::is_compressor ;
+      
+    }
 
     /**
        \brief produce string of pipeline, separated by ->
@@ -220,9 +284,9 @@ namespace sqeazy
 
       std::string value = "";
 
-      for(auto &step : filters_)
+      for(const auto& step : filters_)
       {
-        value.append(step->name());
+        value.append(const_stage_view(step)->name());
 
         if(step != filters_.back())
           value.append("->");
@@ -231,33 +295,13 @@ namespace sqeazy
       if(is_compressor())
       {
         value.append("->");
-        value.append(sink_->name());
+        value.append(const_stage_view(sink_)->name());
       }
 
       return value;
     };
 
-    /**
-       \brief add new stage to pipeline (if stage is a sink, the sink will be replaced)
 
-       \param[in] _new_item new stage to add (filter or sink)
-
-       \return
-       \retval
-
-    */
-    void add(ptr_t _new_item)
-    {
-
-      if(_new_item->is_compressor())
-      {
-        sink_ = _new_item;
-        return;
-      }
-
-      filters_.push_back(_new_item);
-    }
-    
     /**
        \brief encode one-dimensional array _in and write results to _out
        
@@ -267,11 +311,45 @@ namespace sqeazy
        \retval 
        
     */
-    template <typename raw_type, typename compressed_type>
-    int encode(const raw_type *_in, compressed_type *_out, std::size_t _len) {
+    
+    int encode(const raw_t *_in, compressed_t *_out, std::size_t _len) const {
 
       
-      return 0;
+      return 1;
+
+    }
+
+        /**
+       \brief encode one-dimensional array _in and write results to _out
+       
+       \param[in] 
+       
+       \return 
+       \retval 
+       
+    */
+    
+    int encode(const raw_t *_in, compressed_t *_out, std::vector<std::size_t> _shape) const {
+
+      return 1;
+
+    }
+
+    
+
+        /**
+       \brief decode one-dimensional array _in and write results to _out
+       
+       \param[in] 
+       
+       \return 
+       \retval 
+       
+    */
+    
+    int decode(const raw_t *_in, compressed_t *_out, std::vector<std::size_t> _shape) const {
+
+      return 1;
 
     }
   };
