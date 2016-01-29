@@ -32,19 +32,21 @@ namespace sqeazy
   
   template <typename raw_t, typename compressed_t = raw_t>
   struct dynamic_pipeline : public binary_select_type<filter<raw_t>,//true
-						      sink<raw_t>,//false
+						      sink<raw_t,compressed_t>,//false
 						      std::is_same<raw_t,compressed_t>::value
 						      >::type
   {
 
-    typedef raw_t incoming_t;
-    typedef compressed_t outgoing_t;
 
     typedef typename binary_select_type<filter<raw_t>,//true
-					sink<raw_t>,//false
+					sink<raw_t, compressed_t>,//false
 					std::is_same<raw_t,compressed_t>::value
 					>::type
     base_t;
+
+    typedef raw_t incoming_t;
+    typedef typename base_t::out_type outgoing_t;
+
     
     typedef sink<incoming_t> sink_t;
     typedef filter<incoming_t> filter_t;
@@ -329,7 +331,7 @@ namespace sqeazy
        
     */
     
-    int encode(const raw_t *_in, compressed_t *_out, std::size_t _len) const {
+    int encode(const raw_t *_in, compressed_t *_out, std::size_t _len) const override final {
 
       std::vector<std::size_t> shape(1,_len);
       return encode(_in,_out,shape);
@@ -339,14 +341,15 @@ namespace sqeazy
         /**
        \brief encode one-dimensional array _in and write results to _out
        
-       \param[in] 
+       \param[in] _in input buffer
+       \param[out] _out output buffer must be of size max_encoded_size or larger // FIXME!!
        
        \return 
        \retval 
        
     */
     
-    int encode(const raw_t *_in, compressed_t *_out, std::vector<std::size_t> _shape) const {
+    int encode(const raw_t *_in, compressed_t *_out, std::vector<std::size_t> _shape) const override final {
 
       int value = 0;
       std::size_t len = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
@@ -386,7 +389,7 @@ namespace sqeazy
        
     */
     
-    int decode(const raw_t *_in, compressed_t *_out, std::size_t _len) const {
+    int decode(const compressed_t *_in, raw_t *_out, std::size_t _len) const override final {
 
       std::vector<std::size_t> shape = {_len};
       return decode(_in,_out,shape);
@@ -395,14 +398,15 @@ namespace sqeazy
         /**
        \brief decode one-dimensional array _in and write results to _out
        
-       \param[in] 
+       \param[in] _in input buffer
+       \param[in] _out output buffer //FIXME might be larger than _in for sink type pipelines
        
        \return 
        \retval 
        
     */
     
-    int decode(const compressed_t *_in, raw_t *_out, std::vector<std::size_t> _shape) const {
+    int decode(const compressed_t *_in, raw_t *_out, std::vector<std::size_t> _shape) const override final {
 
       int value = 0;
       int err_code = 0;
@@ -432,6 +436,14 @@ namespace sqeazy
       return value;
 
     }
+
+    std::intmax_t max_encoded_size(std::intmax_t _incoming_size_byte){
+      if(!is_compressor())
+	return _incoming_size_byte;
+      else
+	return sink_->max_encoded_size(_incoming_size_byte);
+    }
+    
   };
 }
 

@@ -42,11 +42,12 @@ namespace sqeazy{
 
     constexpr static bool is_compressor = false;
     typedef raw_t in_type;
-    
+    typedef raw_t out_type;
+
     virtual ~filter() {}
 
-    virtual int encode(const in_type*, in_type*,std::vector<std::size_t>) const {return 1;};
-    int encode(const in_type* _in, in_type* _out,std::size_t len) const {
+    virtual int encode(const in_type*, out_type*,std::vector<std::size_t>) const {return 1;};
+    virtual int encode(const in_type* _in, out_type* _out,std::size_t len) const {
 
       std::vector<std::size_t> shape(1,len);
       return encode(_in,_out,shape);
@@ -54,8 +55,8 @@ namespace sqeazy{
     };
 
 
-    virtual int decode(const in_type*, in_type*,std::vector<std::size_t>) const {return 1;};
-    int decode(const in_type* _in, in_type* _out,std::size_t len) const {
+    virtual int decode(const in_type*, out_type*,std::vector<std::size_t>) const {return 1;};
+    virtual int decode(const in_type* _in, out_type* _out,std::size_t len) const {
 
       std::vector<std::size_t> shape(1,len);
       return decode(_in,_out,shape);
@@ -73,18 +74,18 @@ namespace sqeazy{
      \retval 
      
   */
-  template <typename raw_t>
+  template <typename raw_t, typename compressed_t = std::int8_t>
   struct sink : public stage<raw_t>
   {
 
     constexpr static bool is_compressor = true;
     typedef raw_t in_type;
-    typedef std::int8_t out_type;
+    typedef compressed_t out_type;
     
     virtual ~sink() {}
 
-    virtual int encode(const raw_t*, out_type*,std::vector<std::size_t>){return 1;};
-    int encode(const raw_t* _in, out_type* _out,std::size_t len) const {
+    virtual int encode(const raw_t*, out_type*,std::vector<std::size_t>) const {return 1;};
+    virtual int encode(const raw_t* _in, out_type* _out,std::size_t len) const {
 
       std::vector<std::size_t> shape(1,len);
       return encode(_in,_out,shape);
@@ -92,15 +93,15 @@ namespace sqeazy{
     };
 
 
-    virtual int decode(const out_type*, raw_t*,std::vector<std::size_t>){return 1;};
-    int decode(const out_type* _in, raw_t* _out,std::size_t len) const {
+    virtual int decode(const out_type*, raw_t*,std::vector<std::size_t>) const {return 1;};
+    virtual int decode(const out_type* _in, raw_t* _out,std::size_t len) const {
 
       std::vector<std::size_t> shape(1,len);
       return decode(_in,_out,shape);
 
     };
 
-    
+    virtual std::intmax_t max_encoded_size(std::intmax_t _incoming_size_byte) const { return 0; };
   };    
     
 
