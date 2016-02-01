@@ -354,26 +354,43 @@ namespace sqeazy
       int value = 0;
       std::size_t len = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
 
-      std::vector<raw_t> temp(_in, _in+len);
-      raw_t* out = reinterpret_cast<raw_t*>(_out);
+      //prepare temp data
+      std::vector<raw_t> temp_in(_in, _in+len);
+      std::vector<raw_t> temp_out;
+      raw_t* out = nullptr;
+      if(is_compressor()){
+	temp_out.resize(len);
+	out = &temp_out[0];
+      }
+      else {
+	out = reinterpret_cast<raw_t*>(_out);
+      }
+
+      //loop filters
       int err_code = 1;
       for( std::size_t fidx = 0;fidx<filters_.size();++fidx )
 	{
 
-	  err_code = filters_[fidx]->encode(&temp[0],
+	  err_code = filters_[fidx]->encode(&temp_in[0],
 					     out,
 					     _shape);
 	  value += err_code ? (10*fidx)+err_code : 0;
-	  std::copy(out, out+len,temp.begin());
+	  std::copy(out, out+len,temp_in.begin());
 	}
 
       
       if(is_compressor()){
-	err_code = sink_->encode(&temp[0],
+	err_code = sink_->encode(&temp_in[0],
 				 (typename sink_t::out_type*)_out,
 				 _shape);
 	value += err_code ? 10*err_code : 0;
       }
+      else {
+	std::copy(out, out+len,_out);
+      }
+
+      
+      
       return value;
 
     }

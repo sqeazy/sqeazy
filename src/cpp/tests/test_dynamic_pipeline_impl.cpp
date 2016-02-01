@@ -511,8 +511,8 @@ BOOST_AUTO_TEST_CASE (encode_with_sink) {
   BOOST_CHECK_EQUAL(max_encoded_size,8);
 
   //FIXME
-  //std::vector<std::int8_t> intermediate(max_encoded_size);
-  std::vector<std::int8_t> intermediate(input.size()*sizeof(int),0);
+  std::vector<std::int8_t> intermediate(max_encoded_size,0);
+  // std::vector<std::int8_t> intermediate(input.size()*sizeof(int),0);
 
   int err_code = sink_pipe.encode(&input[0],&intermediate[0],input.size());
 
