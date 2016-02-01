@@ -46,8 +46,8 @@ namespace sqeazy{
 
     virtual ~filter() {}
 
-    virtual int encode(const in_type*, out_type*,std::vector<std::size_t>) const {return 1;};
-    virtual int encode(const in_type* _in, out_type* _out,std::size_t len) const {
+    virtual out_type* encode(const in_type*, out_type*,std::vector<std::size_t>) const {return nullptr;};
+    virtual out_type* encode(const in_type* _in, out_type* _out,std::size_t len) const {
 
       std::vector<std::size_t> shape(1,len);
       return encode(_in,_out,shape);
@@ -84,22 +84,30 @@ namespace sqeazy{
     
     virtual ~sink() {}
 
-    virtual int encode(const raw_t*, out_type*,std::vector<std::size_t>) const {return 1;};
-    virtual int encode(const raw_t* _in, out_type* _out,std::size_t len) const {
+    /**
+       \brief encode raw_t buffer _in of shape len and write results to _out
+       
+       \param[in] 
+       
+       \return out_type* pointer to the last+1 element of _out that was written (if error occurred nullptr is returned)
+       \retval 
+       
+    */
+    virtual out_type* encode(const raw_t* _in, out_type* _out,std::size_t len) const {
 
       std::vector<std::size_t> shape(1,len);
       return encode(_in,_out,shape);
 
     };
+    virtual out_type* encode(const raw_t*, out_type*,std::vector<std::size_t>) const {return nullptr;};
 
-
-    virtual int decode(const out_type*, raw_t*,std::vector<std::size_t>) const {return 1;};
     virtual int decode(const out_type* _in, raw_t* _out,std::size_t len) const {
 
       std::vector<std::size_t> shape(1,len);
       return decode(_in,_out,shape);
 
     };
+    virtual int decode(const out_type*, raw_t*,std::vector<std::size_t>) const {return 1;};
 
     virtual std::intmax_t max_encoded_size(std::intmax_t _incoming_size_byte) const { return 0; };
   };    
@@ -148,8 +156,8 @@ namespace sqeazy{
 
     bool is_compressor() const {return false;}
 
-    int encode(const raw_t* _in, std::int8_t* _out,std::vector<std::size_t> _shape) const { return 1; };
-    int decode(const std::int8_t* _in, raw_t* _out,std::vector<std::size_t> _shape) const { return 1; };
+    std::int8_t* encode(const raw_t* _in, std::int8_t* _out,std::vector<std::size_t> _shape) const override final { return nullptr; };
+    int decode(const std::int8_t* _in, raw_t* _out,std::vector<std::size_t> _shape) const override final { return 1; };
     
   };
   
@@ -166,8 +174,8 @@ namespace sqeazy{
 
     bool is_compressor() const {return false;}
 
-    int encode(const raw_t* _in, std::int8_t* _out,std::vector<std::size_t> _shape) const { return 1; };
-    int decode(const std::int8_t* _in, raw_t* _out,std::vector<std::size_t> _shape) const { return 1; };
+    std::int8_t* encode(const raw_t* _in, std::int8_t* _out,std::vector<std::size_t> _shape) const override final { return nullptr; };
+    int decode(const std::int8_t* _in, raw_t* _out,std::vector<std::size_t> _shape) const override final { return 1; };
     
   };
   /**

@@ -10,6 +10,7 @@
 #include <map>
 #include <stdexcept>
 #include <typeinfo>
+#include <cstdint>
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/lexical_cast.hpp>
@@ -91,7 +92,7 @@ namespace sqeazy {
     std::vector<unsigned long> raw_shape_;
     std::string pipeline_;
     std::string raw_type_name_;
-    unsigned long compressed_size_byte_;
+    std::intmax_t compressed_size_byte_;
 
     /**
        \brief swap
@@ -278,7 +279,19 @@ namespace sqeazy {
       }
     }
 
-
+    void set_compressed_size_byte(std::intmax_t _new)
+    {
+      compressed_size_byte_ = _new;
+      
+      try{
+	header_ = pack<value_type>(raw_shape_,
+				   pipeline_,
+				   compressed_size_byte_);
+      }
+      catch(...){
+	std::cerr << "["<< __FILE__ <<":" << __LINE__ <<"]\t unable to pack pipe!\n";
+      }
+    }
     
     static const image_header unpack(const std::string& _buffer) {
 
