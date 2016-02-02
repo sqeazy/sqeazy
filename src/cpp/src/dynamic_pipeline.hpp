@@ -353,10 +353,11 @@ namespace sqeazy
     
     compressed_t* encode(const raw_t *_in, compressed_t *_out, std::vector<std::size_t> _shape) const override final {
 
-      compressed_t* value = 0;
+      compressed_t* value = nullptr;
       std::size_t len = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
       std::size_t max_len_byte = len*sizeof(raw_t);
-      
+
+      ////////////////////// HEADER RELATED //////////////////
       //insert header
       sqeazy::image_header hdr(raw_t(),
 			       _shape,
@@ -382,39 +383,37 @@ namespace sqeazy
       }
 
       //loop filters
-      compressed_t * err_code = nullptr;
       for( std::size_t fidx = 0;fidx<filters_.size();++fidx )
 	{
 
-	  err_code = filters_[fidx]->encode(&temp_in[0],
-					     out,
-					     _shape);
-	  value = err_code ? err_code : 0;
+	  auto encoded_end = filters_[fidx]->encode(&temp_in[0],
+						    out,
+						    _shape);
+	  value = reinterpret_cast<decltype(value)>(encoded_end);
 	  std::copy(out, out+len,temp_in.begin());
 	}
 
       
       if(is_compressor()){
-	err_code = sink_->encode(&temp_in[0],
-				 (typename sink_t::out_type*)first_output,
-				 _shape);
-	value += err_code ? (10*filters_.size())+1 : 0;
+	value = (compressed_t*)sink_->encode(&temp_in[0],
+					     (typename sink_t::out_type*)first_output,
+					     _shape);
+
+	////////////////////// HEADER RELATED //////////////////
+	//finalize+update header
+	std::intmax_t compressed_size = value-(decltype(value))first_output;
+	hdr.set_compressed_size_byte<raw_t>(compressed_size*sizeof(compressed_t));
+	
+	if(hdr.size()!=hdr_shift)
+	  std::copy(first_output,value,first_output+(hdr.size()-hdr_shift));
+	
+	std::copy(hdr.begin(), hdr.end(), output_buffer);
+	value = (compressed_t*)output_buffer+hdr.size()+compressed_size;
       }
       else {
 	std::copy(out, out+len,first_output);
       }
 
-      //finalize+update header
-      std::intmax_t compressed_size = err_code-(typename sink_t::out_type*)first_output;
-      hdr.set_compressed_size_byte(compressed_size*sizeof(compressed_t));
-
-      if(hdr.size()<=hdr_shift){
-	std::copy(hdr.begin(), hdr.end(), output_buffer);
-      }
-      else{
-	std::copy(first_output,err_code,first_output+(hdr.size()-hdr_shift));
-	std::copy(hdr.begin(), hdr.end(), output_buffer);
-      }
       
       return value;
 
@@ -438,7 +437,8 @@ namespace sqeazy
       return decode(_in,_out,shape);
 
     }
-        /**
+    
+    /**
        \brief decode one-dimensional array _in and write results to _out
        
        \param[in] _in input buffer
@@ -467,24 +467,28 @@ namespace sqeazy
 						 1,
 						 std::multiplies<std::intmax_t>());
 
-      const compressed_t* payload_begin = reinterpret_cast<const compressed_t*>(_in_char_begin + hdr.size());
-      // const compressed_t* payload_end   = payload_begin + (len-hdr.size());
-      
       std::vector<raw_t> temp(output_len,0);
       
+      
       if(is_compressor()){
+	auto payload_begin = reinterpret_cast<const compressed_t*>(_in_char_begin + hdr.size());
 	err_code = sink_->decode((const typename sink_t::out_type*)payload_begin,
 				 &temp[0],
-				 _shape);
+				 len - hdr.size()
+				 );
 	value += err_code ;
-      }       
+      }
+      else{
+	auto payload_begin = reinterpret_cast<const raw_t*>(_in_char_begin + hdr.size());
+	std::copy(payload_begin,payload_begin+output_len,temp.begin());
+      }
 
       for( std::size_t fidx = 0;fidx<filters_.size();++fidx )
 	{
 	  
 	  err_code = filters_[fidx]->decode(&temp[0],
 					    _out,
-					    _shape);
+					    output_shape);
 	  value += err_code ? (10*(fidx+1))+err_code : 0;
 	  std::copy(_out, _out+output_len,temp.begin());
 	}

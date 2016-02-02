@@ -279,6 +279,7 @@ namespace sqeazy {
       }
     }
 
+    template <typename value_type>    
     void set_compressed_size_byte(std::intmax_t _new)
     {
       compressed_size_byte_ = _new;

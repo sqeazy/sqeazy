@@ -196,12 +196,12 @@ struct sum_up :  public sqy::sink<T> {
 
     result_type value = std::accumulate(begin, end, 0);
 
+    *reinterpret_cast<result_type*>(_out) = value;
+    // std::copy(reinterpret_cast<compressed_type*>(&value),
+    // 	      reinterpret_cast<compressed_type*>(&value)+sizeof(result_type),
+    // 	      _out);
     
-    std::copy(reinterpret_cast<compressed_type*>(&value),
-	      reinterpret_cast<compressed_type*>(&value)+sizeof(result_type),
-	      _out);
-    
-    return _out+sizeof(result_type);
+    return _out+(sizeof(result_type)/sizeof(compressed_type));
   }
 
   int decode( const compressed_type* _in, raw_type* _out, std::vector<std::size_t> _shape) const override final {
@@ -476,16 +476,18 @@ BOOST_AUTO_TEST_CASE (encode_with_filters) {
   BOOST_CHECK_EQUAL(input.front(),0);
   BOOST_CHECK_EQUAL(input.back(),9);
 
-  sqy::dynamic_pipeline<int> filters_pipe = sqy::dynamic_pipeline<int>::load("square",filter_factory<int>(), sink_factory<int>());
+  auto filters_pipe = sqy::dynamic_pipeline<int>::load("square",filter_factory<int>(), sink_factory<int>());
 
   std::size_t max_encoded_size_byte = filters_pipe.max_encoded_size(input.size()*sizeof(int));
   std::vector<int> intermediate(max_encoded_size_byte/sizeof(int),0);
 
-  int err_code = filters_pipe.encode(&input[0],&intermediate[0],input.size());
+  int* encoded_end = filters_pipe.encode(&input[0],&intermediate[0],input.size());
 
-  // BOOST_CHECK_EQUAL(intermediate.front(),0);
   BOOST_CHECK_EQUAL(intermediate.back(),std::pow(9,2));
-  BOOST_CHECK_EQUAL(err_code,0);
+  BOOST_CHECK_EQUAL(*(encoded_end - input.size()),std::pow(0,2));
+  BOOST_CHECK_EQUAL(*(encoded_end - input.size()+4),std::pow(4,2));
+  BOOST_CHECK(encoded_end!=nullptr);
+  BOOST_CHECK_EQUAL(encoded_end-&intermediate[0],intermediate.size());
 }
 
 BOOST_AUTO_TEST_CASE (decode_with_filters) {
@@ -498,11 +500,16 @@ BOOST_AUTO_TEST_CASE (decode_with_filters) {
   std::size_t max_encoded_size_byte = filters_pipe.max_encoded_size(input.size()*sizeof(int));
   std::vector<int> intermediate(max_encoded_size_byte/sizeof(int));
 
-  int err_code = filters_pipe.encode(&input[0],&intermediate[0],input.size());
+  int* encoded_end = filters_pipe.encode(&input[0],&intermediate[0],input.size());
+  BOOST_CHECK(encoded_end!=nullptr);
+  
+  std::size_t encoded_size = encoded_end - &intermediate[0];
+  
+  int err_code = filters_pipe.decode(&intermediate[0],&output[0],encoded_size);
   BOOST_CHECK_EQUAL(err_code,0);
-  err_code = filters_pipe.decode(&intermediate[0],&output[0],input.size());
-  BOOST_CHECK_EQUAL(err_code,0);
-  BOOST_CHECK_EQUAL(output.back(),4);
+
+  for(std::size_t i = 0;i<input.size();++i)
+    BOOST_CHECK_EQUAL(output[i],input[i]);
 }
 
 BOOST_AUTO_TEST_CASE (encode_with_sink) {
@@ -522,10 +529,10 @@ BOOST_AUTO_TEST_CASE (encode_with_sink) {
   std::vector<std::int8_t> intermediate(max_encoded_size,0);
   // std::vector<std::int8_t> intermediate(input.size()*sizeof(int),0);
 
-  int err_code = sink_pipe.encode(&input[0],&intermediate[0],input.size());
+  std::int8_t* encoded_end = sink_pipe.encode(&input[0],&intermediate[0],input.size());
 
   BOOST_CHECK_NE(intermediate.front(),0);
-  BOOST_CHECK_EQUAL(err_code,0);
+  BOOST_CHECK(encoded_end!=nullptr);
 }
 
 BOOST_AUTO_TEST_CASE (encode_with_sink_header) {
@@ -541,14 +548,12 @@ BOOST_AUTO_TEST_CASE (encode_with_sink_header) {
   BOOST_CHECK_NE(max_encoded_size,0);
   BOOST_CHECK_GT(max_encoded_size,8);
 
-  //FIXME
   std::vector<std::int8_t> intermediate(max_encoded_size,0);
-  // std::vector<std::int8_t> intermediate(input.size()*sizeof(int),0);
 
-  int err_code = sink_pipe.encode(&input[0],&intermediate[0],input.size());
-  BOOST_CHECK_EQUAL(err_code,0);
+  std::int8_t* encoded_end = sink_pipe.encode(&input[0],&intermediate[0],input.size());
+  BOOST_CHECK(encoded_end!=nullptr);
   std::vector<std::size_t> decoded_shape = sink_pipe.decoded_shape(&intermediate[0],
-								   &intermediate[0]);
+								   &intermediate[0]+intermediate.size());
 
   BOOST_CHECK_NE(decoded_shape.empty(),true);
   BOOST_CHECK_EQUAL(decoded_shape.size(),1);
@@ -558,22 +563,26 @@ BOOST_AUTO_TEST_CASE (encode_with_sink_header) {
 }
 
 
-// BOOST_AUTO_TEST_CASE (decode_with_sink) {
+BOOST_AUTO_TEST_CASE (decode_with_sink) {
 
-//   std::vector<int> input(10,4);
-//   std::vector<int> output(input.size(),0);
+  std::vector<int> input(8,4);
+  std::vector<int> output(input.size(),0);
   
-//   auto sink_pipe = sqy::dynamic_pipeline<int,std::int8_t>::load("square->sum_up",filter_factory<int>(), sink_factory<int>());
-//   int max_encoded_size = sink_pipe.max_encoded_size(input.size()*sizeof(int));
+  auto sink_pipe = sqy::dynamic_pipeline<int,std::int8_t>::load("square->sum_up",filter_factory<int>(), sink_factory<int>());
+  int max_encoded_size = sink_pipe.max_encoded_size(input.size()*sizeof(int));
 
-//   std::vector<std::int8_t> intermediate(input.size()*sizeof(int),0);
-//   int err_code = sink_pipe.encode(&input[0],&intermediate[0],input.size());
-//   BOOST_CHECK_EQUAL(err_code,0);
+  std::vector<std::int8_t> intermediate(max_encoded_size,0);
+  std::int8_t* encoded_end = sink_pipe.encode(&input[0],&intermediate[0],input.size());
+  BOOST_REQUIRE(encoded_end!=nullptr);
+
+  std::size_t intermediate_size = encoded_end - &intermediate[0];
+  BOOST_CHECK_LE(intermediate_size,max_encoded_size);
   
-//   err_code = sink_pipe.decode(&intermediate[0],&output[0],input.size());
-//   BOOST_CHECK_EQUAL(err_code,0);
-//   BOOST_CHECK_EQUAL(output.back(),input.back());
-// }
+  int err_code = sink_pipe.decode(&intermediate[0],&output[0],intermediate_size);
+  
+  BOOST_CHECK_EQUAL(err_code,0);
+  BOOST_CHECK_EQUAL(output.back(),input.back());
+}
 
 
 BOOST_AUTO_TEST_SUITE_END()

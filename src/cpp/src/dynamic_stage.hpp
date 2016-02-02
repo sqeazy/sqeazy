@@ -156,8 +156,8 @@ namespace sqeazy{
 
     bool is_compressor() const {return false;}
 
-    std::int8_t* encode(const raw_t* _in, std::int8_t* _out,std::vector<std::size_t> _shape) const override final { return nullptr; };
-    int decode(const std::int8_t* _in, raw_t* _out,std::vector<std::size_t> _shape) const override final { return 1; };
+    raw_t* encode(const raw_t* _in, raw_t* _out,std::vector<std::size_t> _shape) const override final { return nullptr; };
+    int decode(const raw_t* _in, raw_t* _out,std::vector<std::size_t> _shape) const override final { return 1; };
     
   };
   

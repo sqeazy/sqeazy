@@ -278,7 +278,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
      \brief compress through pipeline, given that pipeline is not a compressing one, i.e. data will keep it's volume
      
      \param[in] _in input buffer of size given by _size
-     \param[in] _out output buffer of size equal to the input plus header
+     \param[out] _out output buffer of size equal to the input plus header
      \param[in] _size shape of in the input buffer
 	  
      \return 
