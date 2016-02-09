@@ -11,6 +11,7 @@
 #include <type_traits>
 #include <memory>
 
+#include "string_parsers.hpp"
 #include "sqeazy_utils.hpp"
 #include "dynamic_stage.hpp"
 #include "sqeazy_header.hpp"
@@ -84,22 +85,24 @@ namespace sqeazy
 				 sink_factory_t s = stage_factory<blank_sink>())
     {
 
-      std::vector<std::string> tags = sqeazy::split(_config, std::string("->"));
+      sqeazy::vec_of_pairs_t tags_n_valus = sqeazy::parse_by(_config.begin(),
+							     _config.end(),
+							     "->");
 
       dynamic_pipeline value;
 
-      for(const std::string &word : tags)
+      for(const auto &pair : tags_n_valus)
       {
-        if(sink_factory_t::has(word)){
-	  auto temp = sink_factory_t::template create< sink_t >(word);
+        if(sink_factory_t::has(pair.first)){
+	  auto temp = sink_factory_t::template create< sink_t >(pair.first, pair.second);
           value.sink_ = temp;
 	}
 	//what if sink is present in _config, but not in factory
       }
 
-      for(const std::string &word : tags){
-        if(filter_factory_t::has(word))
-          value.add((filter_factory_t::template create<filter_t>(word)));
+      for(const auto &pair : tags_n_valus){
+        if(filter_factory_t::has(pair.first))
+          value.add((filter_factory_t::template create<filter_t>(pair.first, pair.second)));
       	//what if filter is present in _config, but not in factory
       }
       
@@ -442,8 +445,8 @@ namespace sqeazy
        \brief decode one-dimensional array _in and write results to _out
        
        \param[in] _in input buffer
-       \param[out] _out output buffer //FIXME might be larger than _in for sink type pipelines
-       \param[in] _shape of input buffer size in units of compressed_t
+       \param[out] _out output buffer //NOTE: might be larger than _in for sink type pipelines
+       \param[in] _shape of input buffer size in units of its type, aka compressed_t
        
        \return 
        \retval 

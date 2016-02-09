@@ -13,7 +13,6 @@ namespace sqeazy{
 
     typedef raw_t in_type;
     virtual ~stage() {}
-
     
     virtual std::string input_type() const {
       return typeid(raw_t).name();
@@ -44,6 +43,8 @@ namespace sqeazy{
     typedef raw_t in_type;
     typedef raw_t out_type;
 
+    filter(const std::string& _params = ""){}
+    
     virtual ~filter() {}
 
     virtual out_type* encode(const in_type*, out_type*,std::vector<std::size_t>) const {return nullptr;};
@@ -83,7 +84,8 @@ namespace sqeazy{
     typedef compressed_t out_type;
     
     virtual ~sink() {}
-
+    sink(const std::string& _params = ""){}
+    
     /**
        \brief encode raw_t buffer _in of shape len and write results to _out
        
@@ -149,7 +151,8 @@ namespace sqeazy{
 
     typedef void raw_t;
     ~blank_filter() {}
-
+    blank_filter(const std::string& _params="") {}
+    
     std::string input_type() const {return "";}
     std::string output_type() const {return "";}
     std::string name() const { return "blank";}
@@ -167,7 +170,8 @@ namespace sqeazy{
 
     typedef void raw_t;
     ~blank_sink() {}
-
+    blank_sink(const std::string& _params="") {}
+    
     std::string input_type() const {return "";}
     std::string output_type() const {return "";}
     std::string name() const { return "blank";}
@@ -188,11 +192,12 @@ namespace sqeazy{
      
   */
   template <typename pointee_t, typename Head>
-  std::shared_ptr<pointee_t> create_by_name(const std::string &_name)
+  std::shared_ptr<pointee_t> create_by_name(const std::string &_name,
+					    const std::string &_payload = "")
   {
     if(Head().name() == _name)
     {
-      return std::dynamic_pointer_cast<pointee_t>(std::make_shared<Head>());
+      return std::dynamic_pointer_cast<pointee_t>(std::make_shared<Head>(_payload));
     }
     else
     {
@@ -201,15 +206,16 @@ namespace sqeazy{
   }
 
   template <typename pointee_t, typename Head, typename Second, typename... Tail>
-  std::shared_ptr<pointee_t> create_by_name(const std::string &_name)
+  std::shared_ptr<pointee_t> create_by_name(const std::string &_name,
+					    const std::string &_payload = "")
   {
     if(Head().name() == _name)
     {
-      return std::dynamic_pointer_cast<pointee_t>(std::make_shared<Head>());
+      return std::dynamic_pointer_cast<pointee_t>(std::make_shared<Head>(_payload));
     }
     else
     {
-      return create_by_name<pointee_t, Second, Tail...>(_name);
+      return create_by_name<pointee_t, Second, Tail...>(_name,_payload);
     }
   }
 
@@ -265,10 +271,11 @@ namespace sqeazy{
     static_assert(sizeof...(available_types) > 0, "[dynamic_stage.hpp::stage_factory] Need at least one type for factory");
 
     template <typename pointee_t>
-    static const std::shared_ptr<pointee_t> create(const std::string &_name)
+    static const std::shared_ptr<pointee_t> create(const std::string &_name,
+					    const std::string &_payload = "")
     {
       // static_assert(sizeof...(available_types) > 0, "Need at least one type for factory");
-      auto value = create_by_name<pointee_t,available_types...>(_name);
+      auto value = create_by_name<pointee_t,available_types...>(_name,_payload);
       
       return value;
     }

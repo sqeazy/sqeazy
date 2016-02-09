@@ -13,6 +13,87 @@
 namespace sqy = sqeazy;
 
 template <typename T>
+struct set_to :  public sqy::filter<T> {
+
+  typedef T raw_type;
+  typedef T compressed_type;
+  
+  raw_type value;
+  static_assert(std::is_arithmetic<raw_type>::value==true,"[set_to]");
+  
+  set_to(const std::string& _payload=""):
+    value()
+  {
+
+    if(_payload.size()){
+      std::string number(_payload.begin()+_payload.find("=")+1,
+			 _payload.end());
+      try{
+	value = std::stoi(number);
+      }
+      catch(...){
+	std::cerr << "[set_to::constructor]\t unable to convert ." << number << ". to number\n";
+      }
+    }
+  }
+
+  std::string name() const {
+
+    return std::string("set_to");
+
+  }
+
+  T operator()( const T& _in) {
+    return value;
+  }
+
+  compressed_type* encode( const raw_type* _in, compressed_type* _out, std::vector<std::size_t> _shape) const override final {
+
+    std::size_t size = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
+    
+    const raw_type* begin = _in;
+    const raw_type* end = begin + size;
+   
+    
+    std::transform(begin, end, _out, [&](raw_type _in){return this->value;});
+
+    return _out+size;
+  }
+
+  int decode( const raw_type* _in, compressed_type* _out, std::vector<std::size_t> _shape) const override final {
+
+    std::size_t size = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
+    
+    const compressed_type* begin = _in;
+    const compressed_type* end = begin + size;
+   
+    std::transform(begin, end, _out, [](compressed_type _in){return 0;});
+
+    return 0;
+  }
+  
+  const unsigned long max_encoded_size(unsigned long _size_bytes)  {
+    return _size_bytes;
+  }
+
+  ~set_to(){};
+  
+
+  std::string output_type() const final override {
+
+    return typeid(compressed_type).name();
+    
+  }
+
+  bool is_compressor() const final override {
+    
+    return sqy::filter<T>::is_compressor;
+    
+  }
+
+};
+
+template <typename T>
 struct add_one :  public sqy::filter<T> {
 
   typedef T raw_type;
@@ -25,6 +106,9 @@ struct add_one :  public sqy::filter<T> {
 
   }
 
+  add_one(const std::string& _payload="")
+  { }
+  
 
   T operator()( const T& _in) {
     return _in + 1;
@@ -94,7 +178,9 @@ struct square :  public sqy::filter<T> {
     
   }
   
-  
+  square(const std::string& _payload="")
+  { }
+
   std::string name() const {
 
     return std::string("square");
@@ -171,6 +257,8 @@ struct sum_up :  public sqy::sink<T> {
 
   }
 
+  sum_up(const std::string& _payload="")
+  { }
 
   ~sum_up(){};
   
@@ -235,7 +323,7 @@ using int_factory_with_one_entry = sqy::stage_factory<add_one_to_ints> ;
 using int_factory = sqy::stage_factory<add_one_to_ints, square<int> > ;
   
 template <typename T>
-using filter_factory = sqy::stage_factory<add_one<T>, square<T> >;
+using filter_factory = sqy::stage_factory<add_one<T>, square<T>, set_to<T> >;
 
 template <typename T>
 using sink_factory = sqy::stage_factory<sum_up<T> >;
@@ -587,7 +675,24 @@ BOOST_AUTO_TEST_CASE (decode_with_sink) {
 
 BOOST_AUTO_TEST_SUITE_END()
 
+BOOST_AUTO_TEST_SUITE( parameter_test_suite )
+BOOST_AUTO_TEST_CASE (set_all_to_42) {
 
-// BOOST_AUTO_TEST_SUITE( stage_suite )
+  std::vector<int> input(8,4);
+  std::vector<int> output(input.size(),0);
+  
+  auto filters_pipe = sqy::dynamic_pipeline<int>::load("set_to(value=42)",filter_factory<int>(), sink_factory<int>());
+
+  BOOST_CHECK_EQUAL(filters_pipe.empty(),false);
+  
+  std::size_t max_encoded_size_byte = filters_pipe.max_encoded_size(input.size()*sizeof(int));
+  std::vector<int> intermediate(max_encoded_size_byte/sizeof(int));
+
+  int* encoded_end = filters_pipe.encode(&input[0],&intermediate[0],input.size());
+  BOOST_CHECK(encoded_end!=nullptr);
+
+  
+}
+BOOST_AUTO_TEST_SUITE_END()
 
 
