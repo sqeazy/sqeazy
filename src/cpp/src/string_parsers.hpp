@@ -88,16 +88,7 @@ namespace sqeazy {
 
     return_t value;
 
-    ordered_command_sequence<std::string::iterator> p;
-    pairs_type v;
-
-    bool r = qi::parse(_begin, _end, p, v);
-    if (_begin != _end  && !r) // fail if we did not get a full match
-      {
-	std::string msg(_begin,_end);
-	std::cerr << "[sqeazy::parse_by] couldn't parse anything in " << msg << "\n";
-	return value;
-      }
+    pairs_type v = parse_by(_begin,_end,_sep);
 
     for( auto & pair : v )
       value[pair.first] = pair.second;
