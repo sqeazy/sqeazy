@@ -20,6 +20,10 @@ struct string_fixture
   std::vector<std::string> four_keys = {"ls","cd","cp","rm"};
   std::vector<std::string> four_values = {"test=0","any=..1..","from=to2","what=4"};
   std::string four_keywords = "ls->cd->cp->rm";
+
+  std::string one_key = "ls";
+  std::string one_value = "test=0";
+  std::string one_command = "ls(test=0)";
   
 };
 
@@ -76,7 +80,7 @@ BOOST_AUTO_TEST_CASE (parse_preserves_order) {
   BOOST_REQUIRE_EQUAL(parsed_to_vec.empty(),
 		      false);
 
-  int count = 0;
+
   for( std::size_t i = 0;i<parsed_to_vec.size();++i ){
     BOOST_CHECK_EQUAL(parsed_to_vec[i].first,four_keys[i]) ;
   }
@@ -91,13 +95,30 @@ BOOST_AUTO_TEST_CASE (parse_preserves_order_and_value) {
   BOOST_REQUIRE_EQUAL(parsed_to_vec.empty(),
 		      false);
 
-  int count = 0;
+
   for( std::size_t i = 0;i<parsed_to_vec.size();++i ){
     BOOST_CHECK_EQUAL(parsed_to_vec[i].first,four_keys[i]) ;
     BOOST_CHECK_EQUAL(parsed_to_vec[i].second,four_values[i]) ;
   }
 
   
+}
+
+BOOST_AUTO_TEST_CASE (parse_without_token) {
+  auto parsed_to_vec = sqy::parse_by(one_command.begin(),
+				     one_command.end(),
+				     "->");
+  BOOST_REQUIRE_EQUAL(parsed_to_vec.empty(),
+		      false);
+
+  BOOST_REQUIRE_EQUAL(parsed_to_vec.size(),
+		      1);
+
+  BOOST_REQUIRE_EQUAL(parsed_to_vec.at(0).first,
+		      one_key);
+
+  BOOST_REQUIRE_EQUAL(parsed_to_vec.at(0).second,
+		      one_value);
 }
 BOOST_AUTO_TEST_SUITE_END()
 

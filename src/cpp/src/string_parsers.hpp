@@ -43,11 +43,12 @@ namespace sqeazy {
 
   }
 
-  typedef std::vector<std::pair<std::string, std::string> > pairs_type;
+  
+  typedef std::vector<std::pair<std::string, std::string> > vec_of_pairs_t;
   
   template <typename Iterator>
     struct ordered_command_sequence 
-      : qi::grammar<Iterator, pairs_type()>
+      : qi::grammar<Iterator, vec_of_pairs_t()>
     {
         ordered_command_sequence()
           : ordered_command_sequence::base_type(query)
@@ -58,16 +59,17 @@ namespace sqeazy {
 	  value =  qi::alnum >> *qi::char_("a-zA-Z_0-9.=,;");
         }
 
-        qi::rule<Iterator, pairs_type()> query;
+        qi::rule<Iterator, vec_of_pairs_t()> query;
         qi::rule<Iterator, std::pair<std::string, std::string>()> pair;
         qi::rule<Iterator, std::string()> key, value;
     };
-
-
+  
   template <typename char_itr_t>
-  pairs_type parse_by(char_itr_t _begin, char_itr_t _end, const std::string& _sep = ","){
-    ordered_command_sequence<std::string::iterator> p;
-    pairs_type v;
+  vec_of_pairs_t parse_by(char_itr_t _begin, char_itr_t _end, const std::string& _sep = ","){
+
+    // ordered_command_sequence<std::string::iterator> p;
+    ordered_command_sequence<char_itr_t> p;
+    vec_of_pairs_t v;
 
     bool r = qi::parse(_begin, _end, p, v);
     if (_begin != _end  && !r) // fail if we did not get a full match
@@ -88,7 +90,7 @@ namespace sqeazy {
 
     return_t value;
 
-    pairs_type v = parse_by(_begin,_end,_sep);
+    vec_of_pairs_t v = parse_by(_begin,_end,_sep);
 
     for( auto & pair : v )
       value[pair.first] = pair.second;
