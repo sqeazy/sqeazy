@@ -690,7 +690,7 @@ BOOST_AUTO_TEST_CASE (set_all_to_42) {
 
   int* encoded_end = filters_pipe.encode(&input[0],&intermediate[0],input.size());
   BOOST_CHECK(encoded_end!=nullptr);
-
+  BOOST_CHECK_EQUAL(*(encoded_end-1),42);
   
 }
 BOOST_AUTO_TEST_SUITE_END()
