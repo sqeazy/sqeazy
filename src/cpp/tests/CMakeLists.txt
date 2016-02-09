@@ -62,6 +62,8 @@ INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS}) 
 ENDIF()
 
+add_executable(test_string_parsers_impl test_string_parsers_impl.cpp)
+target_link_libraries(test_string_parsers_impl ${SQY_LIB} ${Boost_LIBRARIES})
 
 add_executable(test_diff_schemes test_diff_schemes.cpp)
 target_link_libraries(test_diff_schemes ${SQY_LIB} ${Boost_LIBRARIES})
