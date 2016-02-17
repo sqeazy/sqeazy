@@ -679,7 +679,7 @@ BOOST_AUTO_TEST_SUITE( parameter_test_suite )
 BOOST_AUTO_TEST_CASE (set_all_to_42) {
 
   std::vector<int> input(8,4);
-  std::vector<int> output(input.size(),0);
+  std::vector<int> output(input.size(),1);
   
   auto filters_pipe = sqy::dynamic_pipeline<int>::load("set_to(value=42)",filter_factory<int>(), sink_factory<int>());
 
@@ -692,6 +692,55 @@ BOOST_AUTO_TEST_CASE (set_all_to_42) {
   BOOST_CHECK(encoded_end!=nullptr);
   BOOST_CHECK_EQUAL(*(encoded_end-1),42);
   
+  std::size_t intermediate_size = encoded_end - &intermediate[0];
+  int err_code = filters_pipe.decode(&intermediate[0],&output[0],intermediate_size);
+  BOOST_CHECK_EQUAL(err_code,0);
+  BOOST_CHECK_EQUAL(output.back(),0);
+  BOOST_CHECK_EQUAL(output.front(),0);
+  
+}
+
+BOOST_AUTO_TEST_CASE (set_all_to_42_and_sum) {
+
+  std::vector<int> input(8,4);
+  std::vector<int> output(input.size(),0);
+  
+  auto sink_pipe = sqy::dynamic_pipeline<int,std::int8_t>::load("set_to(value=42)->sum_up",filter_factory<int>(), sink_factory<int>());
+
+  BOOST_CHECK_EQUAL(sink_pipe.empty(),false);
+  
+  std::size_t max_encoded_size_byte = sink_pipe.max_encoded_size(input.size()*sizeof(int));
+  std::vector<std::int8_t> intermediate(max_encoded_size_byte);
+
+  std::int8_t* encoded_end = sink_pipe.encode(&input[0],&intermediate[0],input.size());
+  BOOST_CHECK(encoded_end!=nullptr);
+
+  std::string buffer(&intermediate[0],encoded_end);
+  size_t pos = buffer.rfind("|")+1;
+
+  BOOST_CHECK_NE(pos,std::string::npos);
+  
+  std::uint64_t result = *reinterpret_cast<std::uint64_t*>(&buffer[pos]);
+  BOOST_CHECK_NE(result,0);
+  BOOST_CHECK_EQUAL(result,42*input.size());
+  
+}
+
+BOOST_AUTO_TEST_CASE (save_sum) {
+
+  std::vector<int> input(8,4);
+  
+  auto filters_pipe = sqy::dynamic_pipeline<int>::load("set_to(value=42)->save_sum",filter_factory<int>(), sink_factory<int>());
+  BOOST_CHECK_EQUAL(filters_pipe.empty(),false);
+  
+  std::size_t max_encoded_size_byte = filters_pipe.max_encoded_size(input.size()*sizeof(int));
+  std::vector<int> intermediate(max_encoded_size_byte/sizeof(int));
+
+  int* encoded_end = filters_pipe.encode(&input[0],&intermediate[0],input.size());
+  BOOST_CHECK(encoded_end!=nullptr);
+
+  //TODO: extract header & check if sum of all 42 is contained
+  BOOST_FAIL("not implemented yet");
 }
 BOOST_AUTO_TEST_SUITE_END()
 
