@@ -811,6 +811,7 @@ BOOST_AUTO_TEST_CASE (filters_only_same_name) {
   std::string buffer((char*)&intermediate[0],(char*)&intermediate[intermediate.size()-1]);
   auto bootstrapped = sqy::dynamic_pipeline<int>::load(buffer,filter_factory<int>(), sink_factory<int>());
 
+  BOOST_CHECK_EQUAL(bootstrapped.empty(),false);
   BOOST_CHECK_EQUAL(filters_pipe.name(),bootstrapped.name());
 }
 BOOST_AUTO_TEST_SUITE_END()
