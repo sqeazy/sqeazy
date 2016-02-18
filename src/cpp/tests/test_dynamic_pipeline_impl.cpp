@@ -19,10 +19,13 @@ struct set_to :  public sqy::filter<T> {
   typedef T compressed_type;
   
   raw_type value;
+  raw_type first_value;
+  
   static_assert(std::is_arithmetic<raw_type>::value==true,"[set_to]");
   
   set_to(const std::string& _payload=""):
-    value()
+    value(),
+    first_value()
   {
 
     if(_payload.size()){
@@ -43,20 +46,38 @@ struct set_to :  public sqy::filter<T> {
 
   }
 
+  /**
+     \brief serialize the parameters of this filter
+     
+     \return 
+     \retval string .. that encodes the configuration paramters
+     
+  */
+  std::string config() const {
+
+    std::ostringstream cfg;
+    cfg << "value=" << value << ",";
+    cfg << "first_value=" << first_value;
+    return cfg.str();
+
+  }
+  
   T operator()( const T& _in) {
     return value;
   }
 
-  compressed_type* encode( const raw_type* _in, compressed_type* _out, std::vector<std::size_t> _shape) const override final {
+  compressed_type* encode( const raw_type* _in, compressed_type* _out, std::vector<std::size_t> _shape) override final {
 
     std::size_t size = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
     
     const raw_type* begin = _in;
     const raw_type* end = begin + size;
    
+    if(size)
+      first_value = *begin;
     
     std::transform(begin, end, _out, [&](raw_type _in){return this->value;});
-
+    
     return _out+size;
   }
 
@@ -67,7 +88,7 @@ struct set_to :  public sqy::filter<T> {
     const compressed_type* begin = _in;
     const compressed_type* end = begin + size;
    
-    std::transform(begin, end, _out, [](compressed_type _in){return 0;});
+    std::transform(begin, end, _out, [=](compressed_type _in){return first_value;});
 
     return 0;
   }
@@ -106,6 +127,12 @@ struct add_one :  public sqy::filter<T> {
 
   }
 
+  std::string config() const {
+
+    return std::string("");
+
+  }  
+  
   add_one(const std::string& _payload="")
   { }
   
@@ -114,7 +141,7 @@ struct add_one :  public sqy::filter<T> {
     return _in + 1;
   }
 
-  compressed_type* encode( const raw_type* _in, compressed_type* _out, std::vector<std::size_t> _shape) const override final {
+  compressed_type* encode( const raw_type* _in, compressed_type* _out, std::vector<std::size_t> _shape) override final {
 
     std::size_t size = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
     
@@ -187,6 +214,13 @@ struct square :  public sqy::filter<T> {
 
   }
 
+  
+  std::string config() const {
+
+    return std::string("");
+
+  }  
+  
   T operator()( const T& _in) {
     return _in * _in;
   }
@@ -212,7 +246,7 @@ struct square :  public sqy::filter<T> {
     
   }
 
-   compressed_type*  encode( const raw_type* _in, compressed_type* _out, std::vector<std::size_t> _shape) const override final {
+   compressed_type*  encode( const raw_type* _in, compressed_type* _out, std::vector<std::size_t> _shape) override final {
 
     std::size_t size = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
     
@@ -257,6 +291,13 @@ struct sum_up :  public sqy::sink<T> {
 
   }
 
+  
+  std::string config() const {
+
+    return std::string("");
+
+  }  
+  
   sum_up(const std::string& _payload="")
   { }
 
@@ -275,7 +316,7 @@ struct sum_up :  public sqy::sink<T> {
     
   }
 
-  compressed_type* encode( const raw_type* _in, compressed_type* _out, std::vector<std::size_t> _shape) const override final {
+  compressed_type* encode( const raw_type* _in, compressed_type* _out, std::vector<std::size_t> _shape) override final {
 
     std::size_t size = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
     
@@ -692,11 +733,11 @@ BOOST_AUTO_TEST_CASE (set_all_to_42) {
   BOOST_CHECK(encoded_end!=nullptr);
   BOOST_CHECK_EQUAL(*(encoded_end-1),42);
   
-  std::size_t intermediate_size = encoded_end - &intermediate[0];
-  int err_code = filters_pipe.decode(&intermediate[0],&output[0],intermediate_size);
-  BOOST_CHECK_EQUAL(err_code,0);
-  BOOST_CHECK_EQUAL(output.back(),0);
-  BOOST_CHECK_EQUAL(output.front(),0);
+  // std::size_t intermediate_size = encoded_end - &intermediate[0];
+  // int err_code = filters_pipe.decode(&intermediate[0],&output[0],intermediate_size);
+  // BOOST_CHECK_EQUAL(err_code,0);
+  // BOOST_CHECK_EQUAL(output.back(),0);
+  // BOOST_CHECK_EQUAL(output.front(),0);
   
 }
 
@@ -726,11 +767,12 @@ BOOST_AUTO_TEST_CASE (set_all_to_42_and_sum) {
   
 }
 
-BOOST_AUTO_TEST_CASE (save_sum) {
+BOOST_AUTO_TEST_CASE (set_all_to_42_and_decode_to_first_value) {
 
   std::vector<int> input(8,4);
+  std::vector<int> output(8,0);
   
-  auto filters_pipe = sqy::dynamic_pipeline<int>::load("set_to(value=42)->save_sum",filter_factory<int>(), sink_factory<int>());
+  auto filters_pipe = sqy::dynamic_pipeline<int>::load("set_to(value=42)",filter_factory<int>(), sink_factory<int>());
   BOOST_CHECK_EQUAL(filters_pipe.empty(),false);
   
   std::size_t max_encoded_size_byte = filters_pipe.max_encoded_size(input.size()*sizeof(int));
@@ -739,9 +781,36 @@ BOOST_AUTO_TEST_CASE (save_sum) {
   int* encoded_end = filters_pipe.encode(&input[0],&intermediate[0],input.size());
   BOOST_CHECK(encoded_end!=nullptr);
 
-  //TODO: extract header & check if sum of all 42 is contained
-  BOOST_FAIL("not implemented yet");
+  std::size_t intermediate_size = encoded_end - &intermediate[0];
+  int err_code = filters_pipe.decode(&intermediate[0],&output[0],intermediate_size);
+  BOOST_CHECK_EQUAL(err_code,0);
+  BOOST_CHECK_EQUAL(output.back(),4);
+  BOOST_CHECK_EQUAL(output.front(),4);
+
 }
+
+
 BOOST_AUTO_TEST_SUITE_END()
 
+BOOST_AUTO_TEST_SUITE( bootstrap_pipeline )
+BOOST_AUTO_TEST_CASE (filters_only_same_name) {
 
+  std::vector<int> input(8,4);
+  std::vector<int> output(8,0);
+  
+  auto filters_pipe = sqy::dynamic_pipeline<int>::load("set_to(value=42)",filter_factory<int>(), sink_factory<int>());
+  BOOST_CHECK_EQUAL(filters_pipe.empty(),false);
+  
+  std::size_t max_encoded_size_byte = filters_pipe.max_encoded_size(input.size()*sizeof(int));
+  std::vector<int> intermediate(max_encoded_size_byte/sizeof(int));
+
+  int* encoded_end = filters_pipe.encode(&input[0],&intermediate[0],input.size());
+  BOOST_CHECK(encoded_end!=nullptr);
+
+  //extract header
+  std::string buffer((char*)&intermediate[0],(char*)&intermediate[intermediate.size()-1]);
+  auto bootstrapped = sqy::dynamic_pipeline<int>::load(buffer,filter_factory<int>(), sink_factory<int>());
+
+  BOOST_CHECK_EQUAL(filters_pipe.name(),bootstrapped.name());
+}
+BOOST_AUTO_TEST_SUITE_END()
