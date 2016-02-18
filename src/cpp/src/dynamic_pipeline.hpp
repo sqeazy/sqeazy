@@ -305,25 +305,38 @@ namespace sqeazy
     std::string name() const
     {
 
-      std::string value = "";
+      std::ostringstream value;
 
       for(const auto& step : filters_)
       {
-        value.append(const_stage_view(step)->name());
+        value << const_stage_view(step)->name();
+	std::string cfg = const_stage_view(step)->config();
 
+	if(!cfg.empty())
+	  value << "(" << cfg << ")";
+		
         if(step != filters_.back())
-          value.append("->");
+          value << "->";
       }
 
       if(is_compressor())
       {
-        value.append("->");
-        value.append(const_stage_view(sink_)->name());
+        value << "->";
+        value << const_stage_view(sink_)->name();
+	std::string cfg = const_stage_view(sink_)->config();
+
+	if(!cfg.empty())
+	  value << "(" << cfg << ")";
+
       }
 
-      return value;
+      return value.str();
     };
 
+    std::string config() const
+    {
+      return name();
+    }
 
     /**
        \brief encode one-dimensional array _in and write results to _out
@@ -335,7 +348,7 @@ namespace sqeazy
        
     */
     
-    compressed_t * encode(const raw_t *_in, compressed_t *_out, std::size_t _len) const override final {
+    compressed_t * encode(const raw_t *_in, compressed_t *_out, std::size_t _len) override final {
 
       std::vector<std::size_t> shape(1,_len);
       return encode(_in,_out,shape);
@@ -354,7 +367,7 @@ namespace sqeazy
        
     */
     
-    compressed_t* encode(const raw_t *_in, compressed_t *_out, std::vector<std::size_t> _shape) const override final {
+    compressed_t* encode(const raw_t *_in, compressed_t *_out, std::vector<std::size_t> _shape) override final {
 
       compressed_t* value = nullptr;
       std::size_t len = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());

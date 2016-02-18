@@ -20,6 +20,7 @@ namespace sqeazy{
     
     virtual std::string output_type() const = 0;
     virtual std::string name() const = 0;
+    virtual std::string config() const = 0;
     virtual bool is_compressor() const = 0;
 
     
@@ -47,8 +48,8 @@ namespace sqeazy{
     
     virtual ~filter() {}
 
-    virtual out_type* encode(const in_type*, out_type*,std::vector<std::size_t>) const {return nullptr;};
-    virtual out_type* encode(const in_type* _in, out_type* _out,std::size_t len) const {
+    virtual out_type* encode(const in_type*, out_type*,std::vector<std::size_t>) {return nullptr;};
+    virtual out_type* encode(const in_type* _in, out_type* _out,std::size_t len) {
 
       std::vector<std::size_t> shape(1,len);
       return encode(_in,_out,shape);
@@ -95,13 +96,13 @@ namespace sqeazy{
        \retval 
        
     */
-    virtual out_type* encode(const raw_t* _in, out_type* _out,std::size_t len) const {
+    virtual out_type* encode(const raw_t* _in, out_type* _out,std::size_t len) {
 
       std::vector<std::size_t> shape(1,len);
       return encode(_in,_out,shape);
 
     };
-    virtual out_type* encode(const raw_t*, out_type*,std::vector<std::size_t>) const {return nullptr;};
+    virtual out_type* encode(const raw_t*, out_type*,std::vector<std::size_t>) {return nullptr;};
 
     virtual int decode(const out_type* _in, raw_t* _out,std::size_t len) const {
 
@@ -156,10 +157,11 @@ namespace sqeazy{
     std::string input_type() const {return "";}
     std::string output_type() const {return "";}
     std::string name() const { return "blank";}
+    std::string config() const { return "";}
 
     bool is_compressor() const {return false;}
 
-    raw_t* encode(const raw_t* _in, raw_t* _out,std::vector<std::size_t> _shape) const override final { return nullptr; };
+    raw_t* encode(const raw_t* _in, raw_t* _out,std::vector<std::size_t> _shape) override final { return nullptr; };
     int decode(const raw_t* _in, raw_t* _out,std::vector<std::size_t> _shape) const override final { return 1; };
     
   };
@@ -175,10 +177,11 @@ namespace sqeazy{
     std::string input_type() const {return "";}
     std::string output_type() const {return "";}
     std::string name() const { return "blank";}
-
+    std::string config() const { return "";}
+    
     bool is_compressor() const {return false;}
 
-    std::int8_t* encode(const raw_t* _in, std::int8_t* _out,std::vector<std::size_t> _shape) const override final { return nullptr; };
+    std::int8_t* encode(const raw_t* _in, std::int8_t* _out,std::vector<std::size_t> _shape) override final { return nullptr; };
     int decode(const std::int8_t* _in, raw_t* _out,std::vector<std::size_t> _shape) const override final { return 1; };
     
   };
