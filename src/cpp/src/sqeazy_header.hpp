@@ -293,6 +293,21 @@ namespace sqeazy {
 	std::cerr << "["<< __FILE__ <<":" << __LINE__ <<"]\t unable to pack pipe!\n";
       }
     }
+
+    template <typename value_type>    
+    void set_pipeline(const std::string& _pname)
+    {
+      pipeline_ = _pname;
+      
+      try{
+	header_ = pack<value_type>(raw_shape_,
+				   pipeline_,
+				   compressed_size_byte_);
+      }
+      catch(...){
+	std::cerr << "["<< __FILE__ <<":" << __LINE__ <<"]\t unable to pack pipe!\n";
+      }
+    }
     
     static const image_header unpack(const std::string& _buffer) {
 
