@@ -575,7 +575,7 @@ BOOST_AUTO_TEST_CASE (bootstrap) {
   sqy::dynamic_pipeline<int> filter_pipe;
   BOOST_CHECK_EQUAL(filter_pipe.output_type(),"");
 
-  filter_pipe = sqy::dynamic_pipeline<int>::load("add_one->square",
+  filter_pipe = sqy::dynamic_pipeline<int>::from_string("add_one->square",
 						 filter_factory<int>(),
 						 sink_factory<int>());
   BOOST_CHECK_NE(filter_pipe.empty(),true);
@@ -585,7 +585,7 @@ BOOST_AUTO_TEST_CASE (bootstrap) {
   sqy::dynamic_pipeline<int,std::uint32_t> sink_pipe;
   BOOST_CHECK_EQUAL(sink_pipe.output_type(),"");
 
-  sink_pipe = sqy::dynamic_pipeline<int, std::uint32_t>::load("add_one->sum_up",
+  sink_pipe = sqy::dynamic_pipeline<int, std::uint32_t>::from_string("add_one->sum_up",
 							      filter_factory<int>(),
 							      sink_factory<int>());
   BOOST_CHECK_NE(sink_pipe.empty(),true);
@@ -594,7 +594,7 @@ BOOST_AUTO_TEST_CASE (bootstrap) {
   BOOST_CHECK_EQUAL(sink_pipe.name(),"add_one->sum_up");
 
   sqy::dynamic_pipeline<int> empty_pipe;
-  empty_pipe = sqy::dynamic_pipeline<int>::load("add_one->square");
+  empty_pipe = sqy::dynamic_pipeline<int>::from_string("add_one->square");
   BOOST_CHECK_EQUAL(empty_pipe.empty(),true);
 }
 
@@ -605,7 +605,7 @@ BOOST_AUTO_TEST_CASE (encode_with_filters) {
   BOOST_CHECK_EQUAL(input.front(),0);
   BOOST_CHECK_EQUAL(input.back(),9);
 
-  auto filters_pipe = sqy::dynamic_pipeline<int>::load("square",filter_factory<int>(), sink_factory<int>());
+  auto filters_pipe = sqy::dynamic_pipeline<int>::from_string("square",filter_factory<int>(), sink_factory<int>());
 
   std::size_t max_encoded_size_byte = filters_pipe.max_encoded_size(input.size()*sizeof(int));
   std::vector<int> intermediate(max_encoded_size_byte/sizeof(int),0);
@@ -624,7 +624,7 @@ BOOST_AUTO_TEST_CASE (decode_with_filters) {
   std::vector<int> input(10,16);
   std::vector<int> output(input.size(),0);
 
-  sqy::dynamic_pipeline<int> filters_pipe = sqy::dynamic_pipeline<int>::load("square",filter_factory<int>(), sink_factory<int>());
+  sqy::dynamic_pipeline<int> filters_pipe = sqy::dynamic_pipeline<int>::from_string("square",filter_factory<int>(), sink_factory<int>());
 
   std::size_t max_encoded_size_byte = filters_pipe.max_encoded_size(input.size()*sizeof(int));
   std::vector<int> intermediate(max_encoded_size_byte/sizeof(int));
@@ -648,7 +648,7 @@ BOOST_AUTO_TEST_CASE (encode_with_sink) {
   BOOST_CHECK_EQUAL(input.front(),0);
   BOOST_CHECK_EQUAL(input.back(),9);
 
-  auto sink_pipe = sqy::dynamic_pipeline<int,std::int8_t>::load("square->sum_up",filter_factory<int>(), sink_factory<int>());
+  auto sink_pipe = sqy::dynamic_pipeline<int,std::int8_t>::from_string("square->sum_up",filter_factory<int>(), sink_factory<int>());
 
   int max_encoded_size = sink_pipe.max_encoded_size(input.size()*sizeof(int));
   BOOST_CHECK_NE(max_encoded_size,0);
@@ -671,7 +671,7 @@ BOOST_AUTO_TEST_CASE (encode_with_sink_header) {
   BOOST_CHECK_EQUAL(input.front(),0);
   BOOST_CHECK_EQUAL(input.back(),9);
 
-  auto sink_pipe = sqy::dynamic_pipeline<int,std::int8_t>::load("square->sum_up",filter_factory<int>(), sink_factory<int>());
+  auto sink_pipe = sqy::dynamic_pipeline<int,std::int8_t>::from_string("square->sum_up",filter_factory<int>(), sink_factory<int>());
 
   int max_encoded_size = sink_pipe.max_encoded_size(input.size()*sizeof(int));
   BOOST_CHECK_NE(max_encoded_size,0);
@@ -697,7 +697,7 @@ BOOST_AUTO_TEST_CASE (decode_with_sink) {
   std::vector<int> input(8,4);
   std::vector<int> output(input.size(),0);
   
-  auto sink_pipe = sqy::dynamic_pipeline<int,std::int8_t>::load("square->sum_up",filter_factory<int>(), sink_factory<int>());
+  auto sink_pipe = sqy::dynamic_pipeline<int,std::int8_t>::from_string("square->sum_up",filter_factory<int>(), sink_factory<int>());
   int max_encoded_size = sink_pipe.max_encoded_size(input.size()*sizeof(int));
 
   std::vector<std::int8_t> intermediate(max_encoded_size,0);
@@ -722,7 +722,7 @@ BOOST_AUTO_TEST_CASE (set_all_to_42) {
   std::vector<int> input(8,4);
   std::vector<int> output(input.size(),1);
   
-  auto filters_pipe = sqy::dynamic_pipeline<int>::load("set_to(value=42)",filter_factory<int>(), sink_factory<int>());
+  auto filters_pipe = sqy::dynamic_pipeline<int>::from_string("set_to(value=42)",filter_factory<int>(), sink_factory<int>());
 
   BOOST_CHECK_EQUAL(filters_pipe.empty(),false);
   
@@ -746,7 +746,7 @@ BOOST_AUTO_TEST_CASE (set_all_to_42_and_sum) {
   std::vector<int> input(8,4);
   std::vector<int> output(input.size(),0);
   
-  auto sink_pipe = sqy::dynamic_pipeline<int,std::int8_t>::load("set_to(value=42)->sum_up",filter_factory<int>(), sink_factory<int>());
+  auto sink_pipe = sqy::dynamic_pipeline<int,std::int8_t>::from_string("set_to(value=42)->sum_up",filter_factory<int>(), sink_factory<int>());
 
   BOOST_CHECK_EQUAL(sink_pipe.empty(),false);
   
@@ -772,7 +772,7 @@ BOOST_AUTO_TEST_CASE (set_all_to_42_and_decode_to_first_value) {
   std::vector<int> input(8,4);
   std::vector<int> output(8,0);
   
-  auto filters_pipe = sqy::dynamic_pipeline<int>::load("set_to(value=42)",filter_factory<int>(), sink_factory<int>());
+  auto filters_pipe = sqy::dynamic_pipeline<int>::from_string("set_to(value=42)",filter_factory<int>(), sink_factory<int>());
   BOOST_CHECK_EQUAL(filters_pipe.empty(),false);
   
   std::size_t max_encoded_size_byte = filters_pipe.max_encoded_size(input.size()*sizeof(int));
@@ -798,7 +798,7 @@ BOOST_AUTO_TEST_CASE (filters_only_same_name) {
   std::vector<int> input(8,4);
   std::vector<int> output(8,0);
   
-  auto filters_pipe = sqy::dynamic_pipeline<int>::load("set_to(value=42)",filter_factory<int>(), sink_factory<int>());
+  auto filters_pipe = sqy::dynamic_pipeline<int>::from_string("set_to(value=42)",filter_factory<int>(), sink_factory<int>());
   BOOST_CHECK_EQUAL(filters_pipe.empty(),false);
   
   std::size_t max_encoded_size_byte = filters_pipe.max_encoded_size(input.size()*sizeof(int));
@@ -809,7 +809,7 @@ BOOST_AUTO_TEST_CASE (filters_only_same_name) {
 
   //extract header
   std::string buffer((char*)&intermediate[0],(char*)&intermediate[intermediate.size()-1]);
-  auto bootstrapped = sqy::dynamic_pipeline<int>::load(buffer,filter_factory<int>(), sink_factory<int>());
+  auto bootstrapped = sqy::dynamic_pipeline<int>::bootstrap(buffer,filter_factory<int>(), sink_factory<int>());
 
   BOOST_CHECK_EQUAL(bootstrapped.empty(),false);
   BOOST_CHECK_EQUAL(filters_pipe.name(),bootstrapped.name());
