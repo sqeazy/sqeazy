@@ -65,6 +65,55 @@ namespace sqeazy
     sink_ptr_t sink_;
 
 
+    /**
+       \brief given a buffer that contains a valid header, this static method can fill the filter_holder and set the sink
+       
+       \param[in] _buffer string to parse
+       \param[in] f filter factory that is aware of all possible filters to choose from
+       \param[in] s sink factory that is aware of all possible sinks to choose from
+
+       \return 
+       \retval 
+       
+    */
+    template <typename filter_factory_t = stage_factory<blank_filter>,
+	      typename sink_factory_t = stage_factory<blank_sink>
+	      >
+    static dynamic_pipeline bootstrap(const std::string &_config,
+				      filter_factory_t f = stage_factory<blank_filter>(),
+				      sink_factory_t s = stage_factory<blank_sink>())
+    {
+
+      if(_config.empty())
+	return dynamic_pipeline();
+      else
+	return bootstrap(_config.begin(), _config.end(),f,s);
+    }
+
+    /**
+       \brief given an iterator range that contains a valid header, this static method can fill the filter_holder and set the sink
+       
+       \param[in] _buffer string to parse
+       \param[in] f filter factory that is aware of all possible filters to choose from
+       \param[in] s sink factory that is aware of all possible sinks to choose from
+
+       \return 
+       \retval 
+       
+    */
+    template <typename iterator_t,
+	      typename filter_factory_t = stage_factory<blank_filter>,
+	      typename sink_factory_t = stage_factory<blank_sink>
+	      >
+    static dynamic_pipeline bootstrap(iterator_t _begin, iterator_t _end,
+				      filter_factory_t f = stage_factory<blank_filter>(),
+				      sink_factory_t s = stage_factory<blank_sink>())
+    {
+      sqeazy::image_header hdr(_begin,_end);
+
+      dynamic_pipeline value;
+      return value;
+    }
     
     /**
        \brief given a string, this static method can fill the filter_holder and set the sink
@@ -80,7 +129,7 @@ namespace sqeazy
     template <typename filter_factory_t = stage_factory<blank_filter>,
 	      typename sink_factory_t = stage_factory<blank_sink>
 	      >
-    static dynamic_pipeline load(const std::string &_config,
+    static dynamic_pipeline from_string(const std::string &_config,
 				 filter_factory_t f = stage_factory<blank_filter>(),
 				 sink_factory_t s = stage_factory<blank_sink>())
     {
@@ -109,18 +158,31 @@ namespace sqeazy
       return value;
     }
 
+    /**
+       \brief given a char buffer, this static method can fill the filter_holder and set the sink
+       
+       \param[in] _config string to parse
+       \param[in] f filter factory that is aware of all possible filters to choose from
+       \param[in] s sink factory that is aware of all possible sinks to choose from
+
+       \return 
+       \retval 
+       
+    */
     template <typename filter_factory_t = stage_factory<blank_filter>,
 	      typename sink_factory_t = stage_factory<blank_sink>
 	      >
-    static dynamic_pipeline load(const char *_config,
+    static dynamic_pipeline from_string(const char *_config,
 				 filter_factory_t f = stage_factory<blank_filter>(),
 				 sink_factory_t s = stage_factory<blank_sink>())
     {
       std::string config = _config;
 
-      return load(config, f, s);
+      return from_string(config, f, s);
     }
 
+
+    
     friend void swap(dynamic_pipeline &_lhs, dynamic_pipeline &_rhs)
     {
       std::swap(_lhs.filters_, _rhs.filters_);
@@ -384,20 +446,22 @@ namespace sqeazy
       std::int8_t* output_buffer = reinterpret_cast<std::int8_t*>(_out);
       std::copy(hdr.begin(), hdr.end(), output_buffer);
       compressed_t* first_output = reinterpret_cast<compressed_t*>(output_buffer+hdr_shift);
-      
-      //prepare temp data
+
+      ////////////////////// ENCODING //////////////////
+      //prepare temp data for encoding
       std::vector<raw_t> temp_in(_in, _in+len);
       std::vector<raw_t> temp_out;
-      raw_t* out = nullptr;
+
       if(is_compressor()){
 	max_len_byte = sink_->max_encoded_size(len*sizeof(raw_t));
 	temp_out.resize(max_len_byte/sizeof(raw_t) > len ? max_len_byte/sizeof(raw_t) : len );
-	out = &temp_out[0];
       }
       else {
-	out = reinterpret_cast<raw_t*>(first_output);
+	temp_out.resize(temp_in.size());
       }
 
+      raw_t* out = &temp_out[0];
+      
       //loop filters
       for( std::size_t fidx = 0;fidx<filters_.size();++fidx )
 	{
@@ -412,25 +476,28 @@ namespace sqeazy
       
       if(is_compressor()){
 	value = (compressed_t*)sink_->encode(&temp_in[0],
-					     (typename sink_t::out_type*)first_output,
+					     (typename sink_t::out_type*)out,
 					     _shape);
 
-	////////////////////// HEADER RELATED //////////////////
-	//finalize+update header
-	std::intmax_t compressed_size = value-(decltype(value))first_output;
-	hdr.set_compressed_size_byte<raw_t>(compressed_size*sizeof(compressed_t));
-	
-	if(hdr.size()!=hdr_shift)
-	  std::copy(first_output,value,first_output+(hdr.size()-hdr_shift));
-	
-	std::copy(hdr.begin(), hdr.end(), output_buffer);
-	value = (compressed_t*)output_buffer+hdr.size()+compressed_size;
-      }
-      else {
-	std::copy(out, out+len,first_output);
       }
 
-      
+      ////////////////////// HEADER RELATED //////////////////
+      //update header
+      std::intmax_t compressed_size = value-((decltype(value))&temp_out[0]);
+      hdr.set_compressed_size_byte<raw_t>(compressed_size*sizeof(compressed_t));
+      hdr.set_pipeline<raw_t>(name());
+	
+      if(hdr.size()!=hdr_shift)
+	first_output = reinterpret_cast<compressed_t*>(output_buffer+hdr.size());
+	
+      std::copy(hdr.begin(), hdr.end(), output_buffer);
+
+      compressed_t* temp_out_begin = reinterpret_cast<compressed_t*>(&temp_out[0]);
+      compressed_t* temp_out_end = temp_out_begin+compressed_size;
+      std::copy(temp_out_begin, temp_out_end, first_output);
+            
+      value = (compressed_t*)(output_buffer+hdr.size()+(compressed_size*sizeof(compressed_t)));
+            
       return value;
 
     }

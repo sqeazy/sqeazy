@@ -294,7 +294,7 @@ namespace sqeazy {
       }
     }
 
-    template <typename value_type>    
+    template <typename value_type>     
     void set_pipeline(const std::string& _pname)
     {
       pipeline_ = _pname;
