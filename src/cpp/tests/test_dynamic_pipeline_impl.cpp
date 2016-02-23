@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <sstream>
 #include "dynamic_pipeline.hpp"
+#include "dynamic_stage.hpp"
 #include "array_fixtures.hpp"
 #include "encoders/sqeazy_impl.hpp"
 
@@ -21,7 +22,7 @@ struct set_to :  public sqy::filter<T> {
   raw_type value;
   raw_type first_value;
   
-  static_assert(std::is_arithmetic<raw_type>::value==true,"[set_to]");
+  static_assert(std::is_arithmetic<raw_type>::value==true,"[set_to] input type is non-arithmetic");
   
   set_to(const std::string& _payload=""):
     value(),
