@@ -135,13 +135,13 @@ namespace sqeazy
 				 sink_factory_t s = stage_factory<blank_sink>())
     {
 
-      sqeazy::vec_of_pairs_t tags_n_valus = sqeazy::parse_by(_config.begin(),
+      sqeazy::vec_of_pairs_t steps_n_args = sqeazy::parse_by(_config.begin(),
 							     _config.end(),
 							     "->");
 
       dynamic_pipeline value;
 
-      for(const auto &pair : tags_n_valus)
+      for(const auto &pair : steps_n_args)
       {
         if(sink_factory_t::has(pair.first)){
 	  auto temp = sink_factory_t::template create< sink_t >(pair.first, pair.second);
@@ -150,7 +150,7 @@ namespace sqeazy
 	//what if sink is present in _config, but not in factory
       }
 
-      for(const auto &pair : tags_n_valus){
+      for(const auto &pair : steps_n_args){
         if(filter_factory_t::has(pair.first))
           value.add((filter_factory_t::template create<filter_t>(pair.first, pair.second)));
       	//what if filter is present in _config, but not in factory
