@@ -194,6 +194,9 @@ IF(FFMPEG_FOUND)
 
   add_executable(test_hevc_scheme_impl test_hevc_scheme_impl.cpp)
   target_link_libraries(test_hevc_scheme_impl ${Boost_LIBRARIES} ext_tiff ext_avcodec ext_avutil ext_avformat ext_swscale m)
+
+  add_executable(test_h264_scheme_impl test_h264_scheme_impl.cpp)
+  target_link_libraries(test_h264_scheme_impl ${Boost_LIBRARIES} ext_tiff ext_avcodec ext_avutil ext_avformat ext_swscale m)
 #  set_target_properties(test_hevc_scheme_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")  
 
   add_executable(test_hevc_scheme_utils test_hevc_scheme_utils.cpp)
