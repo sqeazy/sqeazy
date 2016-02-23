@@ -20,13 +20,18 @@ namespace sqeazy {
   std::vector<std::string> split_by(char_itr_t _begin, char_itr_t _end, const std::string& _sep = ","
 				    ){
 
-      
+    std::string allowed_characters = "a-zA-Z_0-9.=";
+    auto f_itr = allowed_characters.find(_sep);
+
+    if(f_itr != std::string::npos)
+      allowed_characters.erase(f_itr,f_itr + _sep.size());
+    
     std::vector<std::string> v;
 
     bool r = qi::parse( _begin,                          /*< start iterator >*/
 			_end,                           /*< end iterator >*/
 			(
-			 +qi::alnum % +qi::char_(_sep)
+			 +qi::char_(allowed_characters) % +qi::lit(_sep)
 			 ),
 			v
 			);
@@ -45,6 +50,7 @@ namespace sqeazy {
 
   
   typedef std::vector<std::pair<std::string, std::string> > vec_of_pairs_t;
+  typedef std::map<std::string, std::string> parsed_map_t;
   
   template <typename Iterator>
     struct ordered_command_sequence 
@@ -84,16 +90,32 @@ namespace sqeazy {
   }
   
   template <typename char_itr_t>
-  std::map<std::string,std::string> unordered_parse_by(char_itr_t _begin, char_itr_t _end, const std::string& _sep = ","){
+  parsed_map_t unordered_parse_by(char_itr_t _begin, char_itr_t _end,
+				  const std::string& _pair_sep = ",",
+				  const std::string& _kv_sep = "="){
 
     using return_t = std::map<std::string,std::string>;
 
     return_t value;
 
-    vec_of_pairs_t v = parse_by(_begin,_end,_sep);
+    std::vector<std::string> parts = split_by(_begin,_end,_pair_sep);
+    std::vector<std::string> key_value;
+    
+    for( auto & str : parts ){
 
-    for( auto & pair : v )
-      value[pair.first] = pair.second;
+      key_value = split_by(str.begin(),
+			   str.end(),
+			   _kv_sep);
+
+      if(key_value.size()==1)
+	value[key_value.front()] = "";
+      
+      if(key_value.size()>1 && key_value.size() % 2 == 0)
+	value[key_value.front()] = key_value.back();
+
+      key_value.clear();
+
+    }
     
     return value;
     

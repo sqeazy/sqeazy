@@ -21,6 +21,12 @@ struct string_fixture
   std::vector<std::string> four_values = {"test=0","any=..1..","from=to2","what=4"};
   std::string four_keywords = "ls->cd->cp->rm";
 
+  std::string multiple_args = "value=42,first=2";
+  std::map<std::string,std::string> multiple_kv = {
+    {"value", "42"},
+    {"first", "2"}
+  };
+  
   std::string one_key = "ls";
   std::string one_value = "test=0";
   std::string one_command = "ls(test=0)";
@@ -47,8 +53,8 @@ BOOST_FIXTURE_TEST_SUITE( parsing, string_fixture )
 
 BOOST_AUTO_TEST_CASE (parse_digits) {
   auto parsed_to_map = sqy::unordered_parse_by(four_keywords.begin(),
-				     four_keywords.end(),
-				     "->");
+					       four_keywords.end(),
+					       "->");
   BOOST_CHECK_EQUAL(parsed_to_map.empty(),
 		    false);
   BOOST_CHECK_EQUAL(parsed_to_map.size(),
@@ -119,6 +125,27 @@ BOOST_AUTO_TEST_CASE (parse_without_token) {
 
   BOOST_REQUIRE_EQUAL(parsed_to_vec.at(0).second,
 		      one_value);
+}
+
+BOOST_AUTO_TEST_CASE (parse_to_map) {
+
+  
+  std::vector<std::string> pairs = sqy::split_by(multiple_args.begin(), multiple_args.end());
+  BOOST_CHECK_EQUAL(pairs.size(),2);
+  BOOST_TEST_MESSAGE("split_by \'" << multiple_args << "\'");
+  for(auto p : pairs)
+    BOOST_TEST_MESSAGE(">> " << p);
+  
+  sqy::parsed_map_t value = sqy::unordered_parse_by(multiple_args.begin(), multiple_args.end());
+
+  BOOST_CHECK_EQUAL(value.size(),2);
+
+  BOOST_TEST_MESSAGE("unordered_parse_by \'" << multiple_args << "\'");
+  for(auto v : value)
+    BOOST_CHECK_MESSAGE(v.second == multiple_kv[v.first],
+			"values for " << v.first << " do not match: "
+			<< v.second << " != " << multiple_kv[v.first]);
+  
 }
 BOOST_AUTO_TEST_SUITE_END()
 

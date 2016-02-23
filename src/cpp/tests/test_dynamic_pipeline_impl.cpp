@@ -28,16 +28,32 @@ struct set_to :  public sqy::filter<T> {
     first_value()
   {
 
-    if(_payload.size()){
-      std::string number(_payload.begin()+_payload.find("=")+1,
-			 _payload.end());
-      try{
-	value = std::stoi(number);
+    sqy::parsed_map_t parsed_map = sqy::unordered_parse_by(_payload.begin(), _payload.end());
+    if(parsed_map.size()){
+
+      if(parsed_map.find("value")!=parsed_map.end()){
+	
+	try{
+	  value = std::stoi(parsed_map.find("value")->second);
+	}
+	catch(...){
+	  std::cerr << "[set_to::constructor]\t unable to convert ." << parsed_map.find("value")->second << ". to number\n";
+	}
       }
-      catch(...){
-	std::cerr << "[set_to::constructor]\t unable to convert ." << number << ". to number\n";
+
+      if(parsed_map.find("first_value")!=parsed_map.end()){
+	try{
+	  first_value = std::stoi(parsed_map.find("first_value")->second);
+	}
+	catch(...){
+	  std::cerr << "[set_to::constructor]\t unable to convert ." << parsed_map.find("first_value")->second << ". to number\n";
+	}
       }
+      
     }
+    
+
+    
   }
 
   std::string name() const {

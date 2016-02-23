@@ -111,8 +111,9 @@ namespace sqeazy
     {
       sqeazy::image_header hdr(_begin,_end);
 
-      dynamic_pipeline value;
-      return value;
+      std::string pipeline = hdr.pipeline();
+      
+      return from_string(pipeline,f,s);
     }
     
     /**
