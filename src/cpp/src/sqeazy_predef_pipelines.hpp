@@ -1,9 +1,9 @@
 #ifndef _SQEAZY_PREDEF_PIPELINES_H_
 #define _SQEAZY_PREDEF_PIPELINES_H_
 
-#include "sqeazy_impl.hpp"
 #include "pipeline.hpp"
-#include "external_encoders.hpp"
+#include "encoders/external_encoders.hpp"
+#include "encoders/sqeazy_impl.hpp"
 
 
 namespace sqeazy {

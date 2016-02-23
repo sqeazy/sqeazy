@@ -8,7 +8,7 @@
 #include <sstream>
 #include "dynamic_pipeline.hpp"
 #include "array_fixtures.hpp"
-#include "sqeazy_impl.hpp"
+#include "encoders/sqeazy_impl.hpp"
 
 namespace sqy = sqeazy;
 

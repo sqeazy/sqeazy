@@ -5,8 +5,8 @@
 #include <iostream>
 #include <bitset>
 #include <map>
-#include "../src/hist_impl.hpp"
-#include "../src/huffman_utils.hpp"
+#include "hist_impl.hpp"
+#include "encoders/huffman_utils.hpp"
 
 struct huffman_fixture {
 

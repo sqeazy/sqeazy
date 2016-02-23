@@ -1,12 +1,13 @@
 #define SQEAZY_CPP_
 #include "sqeazy.h"
-#include "sqeazy_impl.hpp"
+
 #include "sqeazy_header.hpp"
 #include "pipeline_select.hpp"
 #include "sqeazy_hdf5_impl.hpp"
 #include "hdf5_utils.hpp"
 #include "pipeline.hpp"
 
+#include "encoders/sqeazy_impl.hpp"
 /*
 *	Sqeazy - Fast and flexible volume compression library
 *
@@ -224,7 +225,7 @@ int SQY_RmBackground_Estimated_UI16(int width, int height, int depth, char* src,
 }
 
 #ifndef LZ4_VERSION_MAJOR
-#include "external_encoders.hpp"
+#include "encoders/external_encoders.hpp"
 #endif
 
 typedef sqeazy::bmpl::vector< sqeazy::lz4_scheme<char> > lz4_;

@@ -6,7 +6,7 @@
 #include <bitset>
 #include <map>
 #include "array_fixtures.hpp"
-#include "../src/sqeazy_impl.hpp"
+#include "encoders/sqeazy_impl.hpp"
 
 #include "boost/random.hpp"
 

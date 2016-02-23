@@ -5,7 +5,7 @@
 #include <iostream>
 #include <algorithm> // for copy
 #include <iterator> // for ostream_iterator
-#include "sqeazy_impl.hpp"
+#include "encoders/sqeazy_impl.hpp"
 
 #include "sse_test_utils.hpp"
 #include "bitplane_reorder_detail.hpp"

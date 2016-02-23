@@ -12,7 +12,7 @@
 #include <sstream>
 #include "array_fixtures.hpp"
 #include <bitset>
-#include "../src/sqeazy_header.hpp"
+#include "sqeazy_header.hpp"
 
 namespace bpt = boost::property_tree;
 

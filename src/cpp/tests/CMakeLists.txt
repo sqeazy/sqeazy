@@ -1,6 +1,7 @@
 #include project relevant directories
 INCLUDE_DIRECTORIES(.)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/include)
 
 #needed for FindHDF5 as it expects an ENVIRONMENT variable called HDF5_ROOT as hint to the HDF5 path
 IF(EXISTS ${HDF5_ROOT})
@@ -193,11 +194,11 @@ IF(FFMPEG_FOUND)
 
   add_executable(test_hevc_scheme_impl test_hevc_scheme_impl.cpp)
   target_link_libraries(test_hevc_scheme_impl ${Boost_LIBRARIES} ext_tiff ext_avcodec ext_avutil ext_avformat ext_swscale m)
-  set_target_properties(test_hevc_scheme_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")  
+#  set_target_properties(test_hevc_scheme_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")  
 
   add_executable(test_hevc_scheme_utils test_hevc_scheme_utils.cpp)
   target_link_libraries(test_hevc_scheme_utils ${Boost_LIBRARIES} ext_tiff ext_avcodec ext_avutil ext_avformat ext_swscale m)
-  set_target_properties(test_hevc_scheme_utils PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")  
+#  set_target_properties(test_hevc_scheme_utils PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")  
 
   
   
@@ -207,7 +208,7 @@ ENDIF(FFMPEG_FOUND)
 
 FIND_PACKAGE (Boost 1.42 QUIET COMPONENTS system filesystem unit_test_framework thread date_time REQUIRED)
 target_link_libraries(test_bench_utils_impl ${Boost_LIBRARIES} ext_tiff)
-set_target_properties(test_bench_utils_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")  
+#set_target_properties(test_bench_utils_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")  
 
 
 

@@ -6,7 +6,7 @@
 #include <vector>
 #include <iostream>
 #include "array_fixtures.hpp"
-#include "../src/hist_impl.hpp"
+#include "hist_impl.hpp"
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/mean.hpp>

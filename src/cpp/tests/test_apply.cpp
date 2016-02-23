@@ -2,9 +2,9 @@
 #include "boost/test/unit_test.hpp"
 #include <numeric>
 #include <vector>
-#include "../src/pipeline.hpp"
+#include "pipeline.hpp"
 #include "array_fixtures.hpp"
-#include "../src/sqeazy_impl.hpp"
+#include "encoders/sqeazy_impl.hpp"
 
 template <typename T>
 struct add_one {
@@ -129,7 +129,7 @@ BOOST_AUTO_TEST_CASE (with_pipeline_apply) {
 }
 BOOST_AUTO_TEST_SUITE_END()
 
-#include "../src/external_encoders.hpp"
+#include "encoders/external_encoders.hpp"
 
 typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 typedef sqeazy::array_fixture<unsigned char> uint8_cube_of_8;

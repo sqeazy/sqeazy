@@ -1,9 +1,10 @@
 #ifndef _BENCH_COMMON_H_
 #define _BENCH_COMMON_H_
 
-#include "sqeazy_impl.hpp"
+
 #include "pipeline.hpp"
-#include "external_encoders.hpp"
+#include "encoders/external_encoders.hpp"
+#include "encoders/sqeazy_impl.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 // 16-bit

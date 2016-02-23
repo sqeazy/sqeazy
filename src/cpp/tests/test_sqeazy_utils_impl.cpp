@@ -4,7 +4,7 @@
 #include <vector>
 #include <cstdint>
 
-#include "../src/sqeazy_utils.hpp"
+#include "sqeazy_utils.hpp"
 
 namespace sqy = sqeazy;
 

@@ -9,7 +9,7 @@
 
 #define DEBUG_HEVC
 
-#include "external_encoders.hpp"
+#include "encoders/external_encoders.hpp"
 #include "volume_fixtures.hpp"
 #include "tiff_utils.hpp"
 #include "yuv_utils.hpp"

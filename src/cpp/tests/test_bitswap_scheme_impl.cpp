@@ -7,7 +7,7 @@
 #include <bitset>
 #include <map>
 #include "array_fixtures.hpp"
-#include "../src/sqeazy_impl.hpp"
+#include "encoders/sqeazy_impl.hpp"
 
 typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 typedef sqeazy::bitswap_scheme<unsigned short> bswap1_scheme;
