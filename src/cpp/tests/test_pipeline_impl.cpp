@@ -11,9 +11,9 @@ struct add_one {
 
   typedef T raw_type;
   typedef T compressed_type;
-  static const bool is_compressor = false;
+  static const bool is_sink = false;
 
-  static std::string name() {
+  static std::string static_name() {
 
     return std::string("add_one");
 
@@ -24,7 +24,7 @@ struct add_one {
     return _in + 1;
   }
 
-  static int encode( const T* _in, T* _out, const unsigned long& _size) {
+  static int static_encode( const T* _in, T* _out, const unsigned long& _size) {
     const T* begin = _in;
     const T* end = begin + _size;
    
@@ -34,7 +34,7 @@ struct add_one {
     return 0;
   }
 
-  static const unsigned long max_encoded_size(unsigned long _size_bytes){
+  static const unsigned long static_max_encoded_size(unsigned long _size_bytes){
     return _size_bytes;
   }
 
@@ -45,9 +45,9 @@ struct square {
 
   typedef T raw_type;
   typedef T compressed_type;
-  static const bool is_compressor = false;
+  static const bool is_sink = false;
 
-  static std::string name() {
+  static std::string static_name() {
 
     return std::string("square");
 
@@ -57,7 +57,7 @@ struct square {
     return _in * _in;
   }
 
-  static int encode( const T* _in, T* _out, const unsigned long& _size) {
+  static int static_encode( const T* _in, T* _out, const unsigned long& _size) {
     const T* begin = _in;
     const T* end = begin + _size;
 
@@ -67,7 +67,7 @@ struct square {
     return 0;
   }
 
-  static const unsigned long max_encoded_size(unsigned long _size_bytes){
+  static const unsigned long static_max_encoded_size(unsigned long _size_bytes){
     return _size_bytes;
   }
   
@@ -102,11 +102,11 @@ BOOST_AUTO_TEST_CASE (with_pipeline_apply) {
     typedef sqeazy::pipeline<test_pipe> current_pipe;
 
     unsigned hdr_size_bytes = current_pipe::header_size(test_in.size());
-    long expected_size_bytes = current_pipe::max_bytes_encoded(test_in.size()*sizeof(int), hdr_size_bytes);
+    long expected_size_bytes = current_pipe::static_max_bytes_encoded(test_in.size()*sizeof(int), hdr_size_bytes);
     test_out.resize(std::ceil(expected_size_bytes/float(sizeof(int))));
     std::fill(test_out.begin(), test_out.end(),0);
 
-    std::string pipe_name = current_pipe::name();
+    std::string pipe_name = current_pipe::static_name();
 
     BOOST_CHECK_NE(pipe_name.size(),0);
     BOOST_CHECK_NE(pipe_name.find("square"),std::string::npos);
@@ -141,7 +141,7 @@ BOOST_AUTO_TEST_CASE( encode_bitswap1 )
     typedef sqeazy::bmpl::vector<sqeazy::bitswap_scheme<value_type>, sqeazy::lz4_scheme<value_type> > test_pipe;
     typedef sqeazy::pipeline<test_pipe> current_pipe;
 
-    std::string pipe_name = current_pipe::name();
+    std::string pipe_name = current_pipe::static_name();
 
     
 
@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE( encode_bitswap1 )
 
     const value_type* input = reinterpret_cast<const value_type*>(&constant_cube[0]);
 
-    long expected_size = current_pipe::max_bytes_encoded(size_in_byte, current_pipe::header_size(size));
+    long expected_size = current_pipe::static_max_bytes_encoded(size_in_byte, current_pipe::header_size(size));
     if(expected_size!=size_in_byte)
       to_play_with.resize(expected_size);
 
@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_CASE( plain_encode_decode_chars )
     typedef sqeazy::bmpl::vector<sqeazy::lz4_scheme<value_type> > test_pipe;
     typedef sqeazy::pipeline<test_pipe> current_pipe;
 
-    to_play_with.resize(current_pipe::max_bytes_encoded(to_play_with.size()));
+    to_play_with.resize(current_pipe::static_max_bytes_encoded(to_play_with.size()));
     char* output = reinterpret_cast<char*>(&to_play_with[0]);
     
     unsigned local_size = size;
@@ -203,7 +203,7 @@ BOOST_AUTO_TEST_CASE( encode_decode_bitswap_chars )
     typedef sqeazy::bmpl::vector<sqeazy::bitswap_scheme<value_type>, sqeazy::lz4_scheme<value_type> > test_pipe;
     typedef sqeazy::pipeline<test_pipe> current_pipe;
 
-    long expected_size = current_pipe::max_bytes_encoded(size_in_byte, current_pipe::header_size(size));
+    long expected_size = current_pipe::static_max_bytes_encoded(size_in_byte, current_pipe::header_size(size));
     if(expected_size!=size_in_byte)
       to_play_with.resize(expected_size);
 
@@ -234,7 +234,7 @@ BOOST_AUTO_TEST_CASE( plain_encode_decode_shorts )
     typedef sqeazy::bmpl::vector<sqeazy::lz4_scheme<value_type> > test_pipe;
     typedef sqeazy::pipeline<test_pipe> current_pipe;
 
-    long expected_size = current_pipe::max_bytes_encoded(size_in_byte, current_pipe::header_size(size));
+    long expected_size = current_pipe::static_max_bytes_encoded(size_in_byte, current_pipe::header_size(size));
     if(expected_size!=size_in_byte)
       to_play_with.resize(expected_size);
 
@@ -267,7 +267,7 @@ BOOST_AUTO_TEST_CASE( encode_decode_bitswap_shorts )
     typedef sqeazy::pipeline<test_pipe> current_pipe;
 
     long hdr_size = current_pipe::header_size(size);
-    long expected_size_byte = current_pipe::max_bytes_encoded(size_in_byte, hdr_size);
+    long expected_size_byte = current_pipe::static_max_bytes_encoded(size_in_byte, hdr_size);
     
     std::vector<char> output(expected_size_byte,'z');
 
@@ -295,7 +295,7 @@ BOOST_AUTO_TEST_CASE( encode_decode_bitswap_shorts_dims_input )
     typedef sqeazy::pipeline<test_pipe> current_pipe;
 
     long hdr_size = current_pipe::header_size(size);
-    long expected_size_byte = current_pipe::max_bytes_encoded(size_in_byte, hdr_size);
+    long expected_size_byte = current_pipe::static_max_bytes_encoded(size_in_byte, hdr_size);
     std::vector<char> output(expected_size_byte,'z');
 
 
@@ -326,7 +326,7 @@ BOOST_AUTO_TEST_CASE( encode_decode_diff_shorts_dims_input )
     typedef sqeazy::bmpl::vector<sqeazy::diff_scheme<value_type>, sqeazy::lz4_scheme<value_type> > test_pipe;
     typedef sqeazy::pipeline<test_pipe> current_pipe;
 
-    long expected_size = current_pipe::max_bytes_encoded(size_in_byte, current_pipe::header_size(size));
+    long expected_size = current_pipe::static_max_bytes_encoded(size_in_byte, current_pipe::header_size(size));
     if(expected_size!=size_in_byte)
       to_play_with.resize(expected_size);
 
@@ -359,7 +359,7 @@ BOOST_AUTO_TEST_CASE( encode_decode_diff_shorts_incrementing_input )
     typedef sqeazy::bmpl::vector<sqeazy::diff_scheme<value_type>, sqeazy::lz4_scheme<value_type> > test_pipe;
     typedef sqeazy::pipeline<test_pipe> current_pipe;
 
-    long expected_size = current_pipe::max_bytes_encoded(size_in_byte, current_pipe::header_size(size));
+    long expected_size = current_pipe::static_max_bytes_encoded(size_in_byte, current_pipe::header_size(size));
     if(expected_size!=size_in_byte)
       to_play_with.resize(expected_size);
 
@@ -390,7 +390,7 @@ BOOST_AUTO_TEST_CASE( encode_decode_diff_shorts_incrementing_input_last_pixels_o
             sqeazy::lz4_scheme<value_type> > test_pipe;
     typedef sqeazy::pipeline<test_pipe> current_pipe;
 
-    long expected_size = current_pipe::max_bytes_encoded(size_in_byte, current_pipe::header_size(size));
+    long expected_size = current_pipe::static_max_bytes_encoded(size_in_byte, current_pipe::header_size(size));
     if(expected_size!=size_in_byte)
       to_play_with.resize(expected_size);
     char* output = reinterpret_cast<char*>(&to_play_with[0]);
@@ -425,7 +425,7 @@ BOOST_AUTO_TEST_CASE( encode_decode_diff_shorts_incrementing_onrow_types )
 				 sqeazy::bitswap_scheme<signed_value_type,1> > var_raw_type_;
     typedef sqeazy::pipeline<var_raw_type_> var_type_pipe;
 
-    long expected_size = const_raw_type_pipe::max_bytes_encoded(size_in_byte, const_raw_type_pipe::header_size(size));
+    long expected_size = const_raw_type_pipe::static_max_bytes_encoded(size_in_byte, const_raw_type_pipe::header_size(size));
     if(expected_size!=size_in_byte)
       to_play_with.resize(expected_size);
 

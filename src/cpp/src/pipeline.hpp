@@ -32,7 +32,7 @@ namespace sqeazy {
   struct max_bytes_encoded_detail<T,true> {
     unsigned long operator()(unsigned long _data_in_bytes, 
   			     unsigned _len_header_bytes){
-      unsigned long compressor_bound = T::max_encoded_size(_data_in_bytes);
+      unsigned long compressor_bound = T::static_max_encoded_size(_data_in_bytes);
       return compressor_bound+_len_header_bytes
       ;
     }
@@ -56,7 +56,7 @@ namespace bmpl = boost::mpl;
 
       if(text) {
 	*text += std::string("_");
-	*text += T::name();
+	*text += T::static_name();
       }
     }
 
@@ -84,7 +84,7 @@ struct loop_encode {
         std::vector<raw_type> temp_(total_size);
         std::copy(_in, _in + total_size, temp_.begin());
 
-        int retvalue = current_step::encode(&temp_[0], _out, _size);
+        int retvalue = current_step::static_encode(&temp_[0], _out, _size);
 
         std::copy(_out, _out + total_size, temp_.begin());
 
@@ -101,7 +101,7 @@ struct loop_encode {
         std::vector<raw_type> temp_(_size);
         std::copy(_in, _in + _size, temp_.begin());
 
-        int retvalue = current_step::encode(&temp_[0], _out, _size);
+        int retvalue = current_step::static_encode(&temp_[0], _out, _size);
 
         std::copy(_out, _out + _size, temp_.begin());
 
@@ -146,7 +146,7 @@ struct loop_decode {
         unsigned long input_size = std::accumulate(_size.begin(),_size.end(),1,std::multiplies<S>());
         std::vector<compressed_type> temp_(_in, _in + input_size);
 
-        int retvalue = current_step::decode(&temp_[0], _out, _size);
+        int retvalue = current_step::static_decode(&temp_[0], _out, _size);
 
         std::copy(_out, _out + input_size, temp_.begin());
 
@@ -161,7 +161,7 @@ struct loop_decode {
 
         std::vector<compressed_type> temp_(_in, _in + _size);
 
-        int retvalue = current_step::decode(&temp_[0], _out, _size);
+        int retvalue = current_step::static_decode(&temp_[0], _out, _size);
 
         std::copy(_out, _out + _size, temp_.begin());
 
@@ -208,7 +208,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
 
   static const int type_list_size = bmpl::size<TypeList>::value;
 
-  static std::string name() {
+  static std::string static_name() {
 
     std::string temp = type_to_name_match<raw_type>::id();
       
@@ -234,7 +234,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
      
   */
   template <typename SizeType, typename ScalarType>
-  static typename boost::enable_if_c<sizeof(ScalarType) && compressor_type::is_compressor,int>::type
+  static typename boost::enable_if_c<sizeof(ScalarType) && compressor_type::is_sink == true,int>::type
 									   compress(const raw_type* _in, 
 										    compressed_type* _out,
 										    SizeType& _size,
@@ -254,7 +254,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
     //produce header
     sqeazy::image_header hdr(raw_type(),
 			     _size,
-			     pipeline::name(),
+			     pipeline::static_name(),
 			     _num_compressed_bytes);
 	
     //shift output 
@@ -299,7 +299,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
     unsigned long in_size_in_bytes = sizeof(raw_type)*sqeazy::collapse::sum<SizeType>(_size);
     sqeazy::image_header hdr(raw_type(),
 			     _size,
-			     pipeline::name(),
+			     pipeline::static_name(),
 			     in_size_in_bytes);
 	
     char* output_buffer = reinterpret_cast<char*>(_out);
@@ -328,7 +328,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
      
   */
   template <typename SizeType, typename ScalarType>
-  static typename boost::enable_if_c<sizeof(ScalarType) && compressor_type::is_compressor == false,int>::type
+  static typename boost::enable_if_c<sizeof(ScalarType) && compressor_type::is_sink == false,int>::type
 									   compress(const raw_type* _in, 
 										    compressed_type* _out,
 										    SizeType& _size,
@@ -339,7 +339,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
     value = compress(_in,_out,_size);
 
     unsigned long in_size_in_bytes = sizeof(raw_type)*sqeazy::collapse::sum<SizeType>(_size);
-    sqeazy::image_header hdr(raw_type(),_size,pipeline::name(),in_size_in_bytes);
+    sqeazy::image_header hdr(raw_type(),_size,pipeline::static_name(),in_size_in_bytes);
     
     _num_compressed_bytes = hdr.raw_size_byte_as<raw_type>() + hdr.size();
     return value;
@@ -347,7 +347,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
   }
 
   template <typename SizeType>
-  static typename boost::enable_if_c<sizeof(SizeType) && compressor_type::is_compressor,int>::type
+  static typename boost::enable_if_c<sizeof(SizeType) && compressor_type::is_sink,int>::type
 									 decompress(const compressed_type* _in, raw_type* _out, SizeType& _size) {
 
     typedef typename bmpl::reverse<TypeList>::type pipe_list;
@@ -366,7 +366,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
     const compressed_type* input_begin = _in + hdr_shift;
 	
     unsigned long input_size = _size - hdr_shift;
-    int dec_result = compressor_type::decode(input_begin, &temp[0], input_size , temp_size_byte);
+    int dec_result = compressor_type::static_decode(input_begin, &temp[0], input_size , temp_size_byte);
     dec_result *= 10*(type_list_size - 1);
 
 
@@ -398,7 +398,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
   }
 
   template <typename SizeType>
-  static typename boost::enable_if_c<sizeof(SizeType) && compressor_type::is_compressor!=true,int>::type
+  static typename boost::enable_if_c<sizeof(SizeType) && compressor_type::is_sink!=true,int>::type
 									 decompress(const compressed_type* _in, raw_type* _out, SizeType& _size) {
 
 
@@ -418,7 +418,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
   template <typename U>
   static const unsigned long header_size(const std::vector<U>& _in) {
 
-    image_header value(raw_type(),_in, pipeline::name());
+    image_header value(raw_type(),_in, pipeline::static_name());
 	
     return value.size();
 
@@ -428,7 +428,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
   static const unsigned long header_size(unsigned long _in) {
 
       
-    image_header value(raw_type(), _in, pipeline::name());
+    image_header value(raw_type(), _in, pipeline::static_name());
 	
     return value.size();
 
@@ -445,11 +445,11 @@ struct pipeline : public bmpl::back<TypeList>::type {
      \retval 
      
   */
-  static const unsigned long max_bytes_encoded(unsigned long _data_in_bytes, 
+  static const unsigned long static_max_bytes_encoded(unsigned long _data_in_bytes, 
 					       unsigned _len_header_bytes = 0
 					       ) {
 
-    max_bytes_encoded_detail<compressor_type, compressor_type::is_compressor> detail;
+    max_bytes_encoded_detail<compressor_type, compressor_type::is_sink> detail;
 
     return detail(_data_in_bytes, 
 		  2*_len_header_bytes//to safe-guard invalid writes due to header inserts

@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_CASE( created_huff_map )
     map_type codes;
     std::string dummy = sample;
     unsigned size = sample.size();
-    sqeazy::huffman_scheme<value_type>::encode(sample.c_str(),&dummy[0],size, codes);
+    sqeazy::huffman_scheme<value_type>::static_encode(sample.c_str(),&dummy[0],size, codes);
 
 
     BOOST_CHECK_EQUAL(codes.size(),expected_map.size());
@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE( huff_map_correct )
     map_type codes;
     std::string dummy = sample;
     unsigned size = sample.size();
-    sqeazy::huffman_scheme<value_type>::encode(sample.c_str(),&dummy[0],size, codes);
+    sqeazy::huffman_scheme<value_type>::static_encode(sample.c_str(),&dummy[0],size, codes);
 
 
 
@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE( reduces_entropy )
     
     std::string encoded = sample;
     unsigned size = sample.size();
-    sqeazy::huffman_scheme<value_type>::encode(sample.c_str(),&encoded[0],size);
+    sqeazy::huffman_scheme<value_type>::static_encode(sample.c_str(),&encoded[0],size);
 
     sqeazy::histogram<char> encoded_hist(encoded.begin(), encoded.end());
     

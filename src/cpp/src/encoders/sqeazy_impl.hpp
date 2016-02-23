@@ -22,14 +22,14 @@ struct pass_through {
   typedef char compressed_type;
 
 
-  static const bool is_compressor = false;
+  static const bool is_sink = false;
 
   /**
    * @brief producing the name of this scheme and return it as a string
    *
    * @return const std::string
    */
-  static const std::string name() {
+  static const std::string static_name() {
 
     //TODO: add name of Neighborhood
     std::ostringstream msg;
@@ -51,7 +51,7 @@ struct pass_through {
    * @param _output output stack of type compressed_type but same extent than the input
    * @return sqeazy::error_code
    */
-  static const error_code encode(const size_type& _width,
+  static const error_code static_encode(const size_type& _width,
 				 const size_type& _height,
 				 const size_type& _depth,
 				 const raw_type* _input,
@@ -65,22 +65,22 @@ struct pass_through {
 
 
   template <typename size_type>
-  static const error_code encode(const raw_type* _input,
+  static const error_code static_encode(const raw_type* _input,
 				 compressed_type* _output,
 				 size_type& _dim
 				 )
   {
 
-    return encode(_dim, 1, 1, _input, _output);
+    return static_encode(_dim, 1, 1, _input, _output);
   }
 
   template <typename size_type>
-  static const error_code encode(const raw_type* _input,
+  static const error_code static_encode(const raw_type* _input,
 				 compressed_type* _output,
 				 std::vector<size_type>& _dims
 				 )
   {
-    return encode(_dims.at(0), _dims.at(1), _dims.at(2), _input, _output);
+    return static_encode(_dims.at(0), _dims.at(1), _dims.at(2), _input, _output);
   }
 
   template <typename size_type>
@@ -89,7 +89,7 @@ struct pass_through {
    * 
    * @return sqeazy::error_code
    */
-  static const error_code decode(const size_type& _width,
+  static const error_code static_decode(const size_type& _width,
 				 const size_type& _height,
 				 const size_type& _depth,
 				 const compressed_type* _input,
@@ -102,23 +102,23 @@ struct pass_through {
 
 
   template <typename size_type>
-  static const error_code decode(const compressed_type* _input,
+  static const error_code static_decode(const compressed_type* _input,
 				 raw_type* _output,
 				 std::vector<size_type>& _dims
 				 ) {
 
-    return decode(_dims.at(0), _dims.at(1), _dims.at(2), _input, _output);
+    return static_decode(_dims.at(0), _dims.at(1), _dims.at(2), _input, _output);
 
   }
 
   template <typename size_type>
-  static const error_code decode(const compressed_type* _input,
+  static const error_code static_decode(const compressed_type* _input,
 				 raw_type* _output,
 				 size_type& _dim
 				 ) {
 
     const size_type one = 1;
-    return decode(_dim, one, one, _input, _output);
+    return static_decode(_dim, one, one, _input, _output);
 
   }
   
@@ -136,14 +136,14 @@ struct diff_scheme {
     typedef typename remove_unsigned<T>::type compressed_type;
 
     typedef typename add_unsigned<typename twice_as_wide<T>::type >::type sum_type;
-    static const bool is_compressor = false;
+    static const bool is_sink = false;
 
     /**
      * @brief producing the name of this scheme and return it as a string
      *
      * @return const std::string
      */
-    static const std::string name() {
+    static const std::string static_name() {
 
         //TODO: add name of Neighborhood
         std::ostringstream msg;
@@ -168,7 +168,7 @@ struct diff_scheme {
      * @param _output output stack of type compressed_type but same extent than the input
      * @return sqeazy::error_code
      */
-    static const error_code encode(const size_type& _width,
+    static const error_code static_encode(const size_type& _width,
                                    const size_type& _height,
                                    const size_type& _depth,
                                    const raw_type* _input,
@@ -208,22 +208,22 @@ struct diff_scheme {
 
 
     template <typename size_type>
-    static const error_code encode(const raw_type* _input,
+    static const error_code static_encode(const raw_type* _input,
                                    compressed_type* _output,
                                    size_type& _dim
                                   )
     {
 
-        return encode(_dim, 1, 1, _input, _output);
+        return static_encode(_dim, 1, 1, _input, _output);
     }
 
     template <typename size_type>
-    static const error_code encode(const raw_type* _input,
+    static const error_code static_encode(const raw_type* _input,
                                    compressed_type* _output,
                                    std::vector<size_type>& _dims
                                   )
     {
-        return encode(_dims.at(0), _dims.at(1), _dims.at(2), _input, _output);
+        return static_encode(_dims.at(0), _dims.at(1), _dims.at(2), _input, _output);
     }
 
     template <typename size_type>
@@ -232,7 +232,7 @@ struct diff_scheme {
      * 
      * @return sqeazy::error_code
      */
-    static const error_code decode(const size_type& _width,
+    static const error_code static_decode(const size_type& _width,
                                    const size_type& _height,
                                    const size_type& _depth,
                                    const compressed_type* _input,
@@ -269,23 +269,23 @@ struct diff_scheme {
 
 
     template <typename size_type>
-    static const error_code decode(const compressed_type* _input,
+    static const error_code static_decode(const compressed_type* _input,
                                    raw_type* _output,
                                    std::vector<size_type>& _dims
                                   ) {
 
-        return decode(_dims.at(0), _dims.at(1), _dims.at(2), _input, _output);
+        return static_decode(_dims.at(0), _dims.at(1), _dims.at(2), _input, _output);
 
     }
 
     template <typename size_type>
-    static const error_code decode(const compressed_type* _input,
+    static const error_code static_decode(const compressed_type* _input,
                                    raw_type* _output,
                                    size_type& _dim
                                   ) {
 
         const size_type one = 1;
-        return decode(_dim, one, one, _input, _output);
+        return static_decode(_dim, one, one, _input, _output);
 
     }
 
@@ -297,7 +297,7 @@ struct bitswap_scheme {
   
     typedef T raw_type;
     typedef T compressed_type;
-    static const bool is_compressor = false;
+    static const bool is_sink = false;
 
     static const unsigned raw_type_num_bits = sizeof(T)*CHAR_BIT;
     static const unsigned num_planes = raw_type_num_bits/num_bits_per_plane;
@@ -307,7 +307,7 @@ struct bitswap_scheme {
          *
          * @return const std::string
          */
-    static const std::string name() {
+    static const std::string static_name() {
 
         std::ostringstream val("");
         val << "bswap" << num_bits_per_plane;
@@ -327,12 +327,12 @@ struct bitswap_scheme {
      * @param _length vector of extents
      * @return sqeazy::error_code
      */
-    static const error_code encode(const raw_type* _input,
+    static const error_code static_encode(const raw_type* _input,
                                    raw_type* _output,
                                    const std::vector<S>& _length)
     {
         typename sqeazy::twice_as_wide<S>::type total_length = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<S>());
-        return encode(_input, _output, total_length);
+        return static_encode(_input, _output, total_length);
     }
 
     
@@ -348,7 +348,7 @@ struct bitswap_scheme {
      * @return sqeazy::error_code
      */
   template <typename size_type>
-    static const error_code encode(const raw_type* _input,
+    static const error_code static_encode(const raw_type* _input,
                                    raw_type* _output,
                                    const size_type& _length)
     {
@@ -376,16 +376,16 @@ struct bitswap_scheme {
     }
 
   template <typename S>
-    static const error_code decode(const raw_type* _input,
+    static const error_code static_decode(const raw_type* _input,
                                    raw_type* _output,
                                    const std::vector<S>& _length)
     {
         typename sqeazy::twice_as_wide<S>::type total_length = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<S>());
-        return decode(_input, _output, total_length);
+        return static_decode(_input, _output, total_length);
     }
 
   template <typename size_type>
-    static const error_code decode(const raw_type* _input,
+    static const error_code static_decode(const raw_type* _input,
                                    raw_type* _output,
                                    const size_type& _length)
     {
@@ -405,14 +405,14 @@ struct remove_background {
     typedef T raw_type;
     typedef T compressed_type;
     typedef S size_type;
-    static const bool is_compressor = false;
+    static const bool is_sink = false;
 
     /**
      * @brief producing the name of this scheme and return it as a string
      *
      * @return const std::string
      */
-    static const std::string name() {
+    static const std::string static_name() {
 
 
         return std::string("rmbkrd");
@@ -429,7 +429,7 @@ struct remove_background {
      * @param _threshold threshold to apply
      * @return sqeazy::error_code
      */
-    static const error_code encode(raw_type* _input,
+    static const error_code static_encode(raw_type* _input,
                                    raw_type* _output,
                                    const std::vector<size_type>& _data,
 				   const raw_type& _threshold
@@ -438,7 +438,7 @@ struct remove_background {
 
         unsigned long length = std::accumulate(_data.begin(), _data.end(), 1, std::multiplies<size_type>());
 
-        return encode(_input, _output, length, _threshold);
+        return static_encode(_input, _output, length, _threshold);
 
     }
 
@@ -451,15 +451,15 @@ struct remove_background {
      * @param _threshold threshold to apply
      * @return sqeazy::error_code
      */
-    static const error_code encode(raw_type* _input,
+    static const error_code static_encode(raw_type* _input,
                                    raw_type* _output,
                                    const size_type& _length,
                                    const raw_type& _threshold)
     {
         if(_output)
-            return encode_out_of_place(_input, _output, _length, _threshold);
+            return static_encode_out_of_place(_input, _output, _length, _threshold);
         else
-            return encode_inplace(_input, _length, _threshold);
+            return static_encode_inplace(_input, _length, _threshold);
 
     }
 
@@ -474,7 +474,7 @@ struct remove_background {
      * @param _threshold threshold to apply
      * @return sqeazy::error_code
      */
-    static const error_code encode_out_of_place(raw_type* _input,
+    static const error_code static_encode_out_of_place(raw_type* _input,
             raw_type* _output,
             const size_type& _length,
             const raw_type& _threshold)
@@ -497,7 +497,7 @@ struct remove_background {
      * @param _threshold threshold to apply
      * @return sqeazy::error_code
      */
-    static const error_code encode_inplace(raw_type* _input,
+    static const error_code static_encode_inplace(raw_type* _input,
                                            const size_type& _length,
                                            const raw_type& _threshold)
     {
@@ -518,7 +518,7 @@ struct remove_background {
     *
     * @return sqeazy::error_code
     */
-    static const error_code decode(const raw_type* _input,
+    static const error_code static_decode(const raw_type* _input,
                                    raw_type* _output,
                                    const SizeType& _length)
     {
@@ -533,13 +533,13 @@ struct remove_background {
     *
     * @return sqeazy::error_code
     */
-    static const error_code decode(const raw_type* _input,
+    static const error_code static_decode(const raw_type* _input,
                                    raw_type* _output,
                                    const std::vector<SizeType>& _length)
     {
         unsigned long total_size = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<SizeType>());
 
-        return decode(_input, _output, total_size);
+        return static_decode(_input, _output, total_size);
     }
 
 };
@@ -565,7 +565,7 @@ struct flatten_to_neighborhood {
     typedef T compressed_type;
 
 
-    static const bool is_compressor = false;
+    static const bool is_sink = false;
 
 
     /**
@@ -573,7 +573,7 @@ struct flatten_to_neighborhood {
      *
      * @return const std::string
      */
-    static const std::string name() {
+    static const std::string static_name() {
 
         std::ostringstream msg;
         msg << "rmbkrd_neighbor"
@@ -599,7 +599,7 @@ struct flatten_to_neighborhood {
 
      * @return sqeazy::error_code
      */
-    static const error_code encode(raw_type* _input,
+    static const error_code static_encode(raw_type* _input,
                                    raw_type* _output,
                                    const std::vector<size_type>& _dims,
                                    const raw_type& _threshold,
@@ -671,7 +671,7 @@ struct flatten_to_neighborhood {
      *
      * @return sqeazy::error_code
      */
-    static const error_code decode(const raw_type* _input,
+    static const error_code static_decode(const raw_type* _input,
                                    raw_type* _output,
                                    const SizeType& _length)
     {
@@ -688,13 +688,13 @@ struct flatten_to_neighborhood {
      *
      * @return sqeazy::error_code
      */
-    static const error_code decode(const raw_type* _input,
+    static const error_code static_decode(const raw_type* _input,
                                    raw_type* _output,
                                    const std::vector<SizeType>& _length)
     {
         unsigned long total_size = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<SizeType>());
 
-        return decode(_input, _output, total_size);
+        return static_decode(_input, _output, total_size);
     }
 
 
@@ -708,14 +708,14 @@ struct remove_estimated_background {
 
     typedef T raw_type;
     typedef T compressed_type;
-    static const bool is_compressor = false;
+    static const bool is_sink = false;
 
     /**
      * @brief producing the name of this scheme and return it as a string
      *
      * @return const std::string
      */
-    static const std::string name() {
+    static const std::string static_name() {
 
 
         return std::string("rmestbkrd");
@@ -762,7 +762,7 @@ struct remove_estimated_background {
      * @param _dims dimensionality of input, i.e. the extents along each dimension
      * @return sqeazy::error_code
      */
-    static const error_code encode(raw_type* _input,
+    static const error_code static_encode(raw_type* _input,
                                    compressed_type* _output,
                                    const std::vector<size_type>& _dims)
     {
@@ -792,14 +792,14 @@ struct remove_estimated_background {
 
         if(_output) {
 	    //copies the input to output, skipping pixels that have a neighborhood complying crirteria
-            flatten_to_neighborhood<raw_type>::encode(_input, _output, _dims, reduce_by);
+            flatten_to_neighborhood<raw_type>::static_encode(_input, _output, _dims, reduce_by);
 	    //set those pixels to 0 that fall below reduce_by
-            remove_background<raw_type>::encode_inplace(_output, input_length, reduce_by);
+            remove_background<raw_type>::static_encode_inplace(_output, input_length, reduce_by);
         }
         else {
-            std::cerr << "WARNING ["<< name() <<"::encode]\t inplace operation requested, flatten_to_neighborhood skipped\n";
+            std::cerr << "WARNING ["<< static_name() <<"::encode]\t inplace operation requested, flatten_to_neighborhood skipped\n";
 	    //set those pixels to 0 that fall below reduce_by
-            remove_background<raw_type>::encode_inplace(_input, input_length, reduce_by);
+            remove_background<raw_type>::static_encode_inplace(_input, input_length, reduce_by);
 
         }
 
@@ -816,7 +816,7 @@ struct remove_estimated_background {
      *
      * @return sqeazy::error_code
      */
-    static const error_code decode(const compressed_type* _input,
+    static const error_code static_decode(const compressed_type* _input,
                                    raw_type* _output,
                                    const SizeType& _length)
     {
@@ -831,13 +831,13 @@ struct remove_estimated_background {
     *
     * @return sqeazy::error_code
     */
-    static const error_code decode(const compressed_type* _input,
+    static const error_code static_decode(const compressed_type* _input,
                                    raw_type* _output,
                                    const std::vector<SizeType>& _length)
     {
         unsigned long total_size = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<SizeType>());
 
-        return decode(_input, _output, total_size);
+        return static_decode(_input, _output, total_size);
     }
 
 

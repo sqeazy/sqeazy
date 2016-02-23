@@ -20,24 +20,24 @@ BOOST_AUTO_TEST_CASE( typesize_matches )
   sqeazy::pipeline_select<> decide;
   BOOST_CHECK_EQUAL(decide.typesize_matches(),false);
 
-  decide.set(1,sqeazy::char_rmbkg_bswap1_lz4_pipe::name());
+  decide.set(1,sqeazy::char_rmbkg_bswap1_lz4_pipe::static_name());
   BOOST_CHECK_EQUAL(decide.typesize_matches(),false);
 
-  decide.set(8,sqeazy::char_rmbkg_bswap1_lz4_pipe::name());
+  decide.set(8,sqeazy::char_rmbkg_bswap1_lz4_pipe::static_name());
   BOOST_CHECK_EQUAL(decide.typesize_matches(),true);
 
 
-  decide.set(1,sqeazy::rmbkg_bswap1_lz4_pipe::name());
+  decide.set(1,sqeazy::rmbkg_bswap1_lz4_pipe::static_name());
   BOOST_CHECK_EQUAL(decide.typesize_matches(),false);
 
-  decide.set(16,sqeazy::rmbkg_bswap1_lz4_pipe::name());
+  decide.set(16,sqeazy::rmbkg_bswap1_lz4_pipe::static_name());
   BOOST_CHECK_EQUAL(decide.typesize_matches(),true);
   
 }
 
 BOOST_AUTO_TEST_CASE( max_compressed_size )
 {
-  sqeazy::pipeline_select<> decide(std::make_pair(8,sqeazy::char_rmbkg_bswap1_lz4_pipe::name()));
+  sqeazy::pipeline_select<> decide(std::make_pair(8,sqeazy::char_rmbkg_bswap1_lz4_pipe::static_name()));
   
   BOOST_CHECK_NE(decide.max_compressed_size(42,0),0);  
   BOOST_CHECK_GT(decide.max_compressed_size(42,0),42);  
@@ -54,10 +54,10 @@ BOOST_AUTO_TEST_CASE( max_compressed_size_throws_on_unknown )
 
 BOOST_AUTO_TEST_CASE( change_current )
 {
-  sqeazy::pipeline_select<> decide(std::make_pair(8,sqeazy::char_rmbkg_bswap1_lz4_pipe::name()));
+  sqeazy::pipeline_select<> decide(std::make_pair(8,sqeazy::char_rmbkg_bswap1_lz4_pipe::static_name()));
   unsigned result_8bit = decide.max_compressed_size(42);
 
-  decide.set(std::make_pair(16,sqeazy::rmbkg_bswap1_lz4_pipe::name()));
+  decide.set(std::make_pair(16,sqeazy::rmbkg_bswap1_lz4_pipe::static_name()));
   unsigned result_16bit = decide.max_compressed_size(42);
 
 
@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE( change_current )
 
 BOOST_AUTO_TEST_CASE( compress_callable )
 {
-  sqeazy::pipeline_select<> decide(std::make_pair(16,sqeazy::bswap1_lz4_pipe::name()));
+  sqeazy::pipeline_select<> decide(std::make_pair(16,sqeazy::bswap1_lz4_pipe::static_name()));
   
   unsigned long num_encoded = 0;
   to_play_with.resize(decide.max_compressed_size(size_in_byte)/2);
@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE( compress_callable )
 
 BOOST_AUTO_TEST_CASE( compress_correct_given_native_pipeline )
 {
-  sqeazy::pipeline_select<> decide(std::make_pair(16,sqeazy::bswap1_lz4_pipe::name()));
+  sqeazy::pipeline_select<> decide(std::make_pair(16,sqeazy::bswap1_lz4_pipe::static_name()));
   to_play_with.resize(decide.max_compressed_size(size_in_byte)/2);
   unsigned long num_encoded = 0;
   int ret = decide.compress((const char*)&incrementing_cube[0], (char*)&to_play_with[0], dims, num_encoded);
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE( compress_throws )
   unsigned long num_encoded = 0;
   BOOST_CHECK_THROW(decide.compress((const char*)&incrementing_cube[0], (char*)&to_play_with[0], dims, num_encoded),std::runtime_error);
   
-  sqeazy::pipeline_select<> decide2(std::make_pair(24,sqeazy::bswap1_lz4_pipe::name()));
+  sqeazy::pipeline_select<> decide2(std::make_pair(24,sqeazy::bswap1_lz4_pipe::static_name()));
   BOOST_CHECK_THROW(decide2.compress((const char*)&incrementing_cube[0], (char*)&to_play_with[0], dims, num_encoded),std::runtime_error);
   
 
@@ -117,7 +117,7 @@ BOOST_AUTO_TEST_CASE( compress_throws )
 
 BOOST_AUTO_TEST_CASE( compress_correct_header )
 {
-  sqeazy::pipeline_select<> decide(std::make_pair(16,sqeazy::bswap1_lz4_pipe::name()));
+  sqeazy::pipeline_select<> decide(std::make_pair(16,sqeazy::bswap1_lz4_pipe::static_name()));
   unsigned long num_encoded = 0;
   to_play_with.resize(decide.max_compressed_size(size_in_byte)/2);
   int ret = decide.compress((const char*)&incrementing_cube[0], (char*)&to_play_with[0], dims, num_encoded);
@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE( compress_correct_header )
   const char* output = (char*)&to_play_with[0];
   sqeazy::image_header local(output, output + num_encoded);
 
-  BOOST_CHECK_EQUAL(sqeazy::bswap1_lz4_pipe::name(), local.pipeline());  
+  BOOST_CHECK_EQUAL(sqeazy::bswap1_lz4_pipe::static_name(), local.pipeline());  
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -138,8 +138,8 @@ BOOST_FIXTURE_TEST_SUITE( decompess_pipeline_select , uint16_cube_of_8 )
 
 BOOST_AUTO_TEST_CASE( decoded_size_byte )
 {
-  std::string hdr = sqeazy::image_header::pack<value_type>(dims, sqeazy::bswap1_lz4_pipe::name());
-  sqeazy::pipeline_select<> decide(16, sqeazy::bswap1_lz4_pipe::name());
+  std::string hdr = sqeazy::image_header::pack<value_type>(dims, sqeazy::bswap1_lz4_pipe::static_name());
+  sqeazy::pipeline_select<> decide(16, sqeazy::bswap1_lz4_pipe::static_name());
   
   unsigned long long size_ = size;
   unsigned long long expected_size_byte_all_known = decide.decoded_size_byte(&hdr[0],hdr.size());
@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE( decoded_size_byte )
 
 BOOST_AUTO_TEST_CASE( decoded_size_byte_throws )
 {
-  std::string hdr = sqeazy::image_header::pack<value_type>(dims, sqeazy::bswap1_lz4_pipe::name());
+  std::string hdr = sqeazy::image_header::pack<value_type>(dims, sqeazy::bswap1_lz4_pipe::static_name());
   sqeazy::pipeline_select<> decide(24, "");
   
   
@@ -164,8 +164,8 @@ BOOST_AUTO_TEST_CASE( decoded_size_byte_throws )
 
 BOOST_AUTO_TEST_CASE( decoded_shape )
 {
-  std::string hdr = sqeazy::image_header::pack<value_type>(dims, sqeazy::bswap1_lz4_pipe::name());
-  sqeazy::pipeline_select<> decide(16, sqeazy::bswap1_lz4_pipe::name());
+  std::string hdr = sqeazy::image_header::pack<value_type>(dims, sqeazy::bswap1_lz4_pipe::static_name());
+  sqeazy::pipeline_select<> decide(16, sqeazy::bswap1_lz4_pipe::static_name());
   
   std::vector<unsigned long> found_shape = decide.decode_dimensions(&hdr[0],hdr.size());
 
@@ -175,7 +175,7 @@ BOOST_AUTO_TEST_CASE( decoded_shape )
 
 BOOST_AUTO_TEST_CASE( decoded_shape_throws )
 {
-  std::string hdr = sqeazy::image_header::pack<value_type>(dims, sqeazy::bswap1_lz4_pipe::name());
+  std::string hdr = sqeazy::image_header::pack<value_type>(dims, sqeazy::bswap1_lz4_pipe::static_name());
   sqeazy::pipeline_select<> decide(16, " ");
   
   BOOST_CHECK_THROW(decide.decode_dimensions(&hdr[0],hdr.size()), std::runtime_error);
@@ -183,14 +183,14 @@ BOOST_AUTO_TEST_CASE( decoded_shape_throws )
   decide.set(16,"empty");
   BOOST_CHECK_THROW(decide.decode_dimensions(&hdr[0],hdr.size()), std::runtime_error);
 
-  decide.set(1,sqeazy::bswap1_lz4_pipe::name());
+  decide.set(1,sqeazy::bswap1_lz4_pipe::static_name());
   BOOST_CHECK_THROW(decide.decode_dimensions(&hdr[0],hdr.size()), std::runtime_error);
 }
 
 BOOST_AUTO_TEST_CASE( decompress_callable )
 {
 
-  sqeazy::pipeline_select<> decide(16, sqeazy::bswap1_lz4_pipe::name());
+  sqeazy::pipeline_select<> decide(16, sqeazy::bswap1_lz4_pipe::static_name());
 
   to_play_with.resize(decide.max_compressed_size(size_in_byte)/2);
   char* output_to_decompress = reinterpret_cast<char*>(&to_play_with[0]);
@@ -210,7 +210,7 @@ BOOST_AUTO_TEST_CASE( decompress_callable )
 BOOST_AUTO_TEST_CASE( decompress_throws )
 {
 
-  sqeazy::pipeline_select<> decide(7, sqeazy::bswap1_lz4_pipe::name());
+  sqeazy::pipeline_select<> decide(7, sqeazy::bswap1_lz4_pipe::static_name());
 
 
   char* output_to_decompress = reinterpret_cast<char*>(&to_play_with[0]);
@@ -234,7 +234,7 @@ BOOST_FIXTURE_TEST_SUITE( from_sqy_header , uint16_cube_of_8 )
 
 BOOST_AUTO_TEST_CASE( non_empty_from_valid_header )
 {
-  std::string hdr = sqeazy::image_header::pack<value_type>(dims, sqeazy::bswap1_lz4_pipe::name());
+  std::string hdr = sqeazy::image_header::pack<value_type>(dims, sqeazy::bswap1_lz4_pipe::static_name());
   sqeazy::pipeline_select<> decide(hdr);
   
   
@@ -259,7 +259,7 @@ BOOST_AUTO_TEST_CASE( header_intact )
   sqeazy::image_header native_hdr((char*)&constant_cube[0],((char*)&constant_cube[0]) + pipeline_payload);
   
   std::string hdr = sqeazy::image_header::pack<value_type>(dims, 
-							   sqeazy::bswap1_lz4_pipe::name(),
+							   sqeazy::bswap1_lz4_pipe::static_name(),
 							   native_hdr.compressed_size_byte()
 							   );
   sqeazy::pipeline_select<> decide(hdr);
@@ -279,7 +279,7 @@ BOOST_AUTO_TEST_CASE( header_intact )
 
 BOOST_AUTO_TEST_CASE( selected_comresses_like_native )
 {
-  std::string hdr = sqeazy::image_header::pack<value_type>(dims, sqeazy::bswap1_lz4_pipe::name());
+  std::string hdr = sqeazy::image_header::pack<value_type>(dims, sqeazy::bswap1_lz4_pipe::static_name());
   sqeazy::pipeline_select<> decide(hdr);
   to_play_with.resize(decide.max_compressed_size(size_in_byte)/2);
   

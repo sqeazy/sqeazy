@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_CASE( diff_it )
 {
 
     short* output = reinterpret_cast<short*>(&to_play_with[0]);
-    sqeazy::diff_scheme<value_type, sqeazy::last_pixels_on_line_neighborhood<> >::encode(
+    sqeazy::diff_scheme<value_type, sqeazy::last_pixels_on_line_neighborhood<> >::static_encode(
         &incrementing_cube[0],
         output,
         dims);

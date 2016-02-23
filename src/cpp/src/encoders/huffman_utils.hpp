@@ -18,13 +18,13 @@ struct huffman_scheme {
     typedef T raw_type;
     typedef char compressed_type;
 
-    static const std::string name() {
+    static const std::string static_name() {
       
       return std::string("huff");
       
     }
     
-    static const bool is_compressor = false;
+    static const bool is_sink = false;
     static const int num_bits = (CHAR_BIT*sizeof(compressed_type));
     static const unsigned long UniqueSymbols = 1 << (num_bits);
 
@@ -126,7 +126,7 @@ struct huffman_scheme {
     }
 
     template <typename SizeType>
-    static const error_code encode(const raw_type* _in, compressed_type* _output,
+    static const error_code static_encode(const raw_type* _in, compressed_type* _output,
                                    SizeType& _size,
                                    HuffCodeMap& _out_map = global_map) {
 
@@ -156,19 +156,19 @@ struct huffman_scheme {
     }
 
     template <typename SizeType>
-    static const error_code encode(const raw_type* _in, compressed_type* _output,
+    static const error_code static_encode(const raw_type* _in, compressed_type* _output,
                                    std::vector<SizeType>& _size,
                                    HuffCodeMap& _out_map = global_map) {
 
         unsigned long scalar_size = std::accumulate(_size.begin(), _size.end(), 1, std::multiplies<SizeType>());
 
-        return encode(_in, _output, scalar_size, _out_map);
+        return static_encode(_in, _output, scalar_size, _out_map);
 
     }
 
 
     template <typename SizeType>
-    static const error_code decode(const compressed_type* _in, raw_type* _output,
+    static const error_code static_decode(const compressed_type* _in, raw_type* _output,
                                    std::vector<SizeType>& _size,
                                    HuffCodeMap& _in_map = global_map) {
 
@@ -177,7 +177,7 @@ struct huffman_scheme {
     }
 
     template <typename SizeType>
-    static const error_code decode(const compressed_type* _in, raw_type* _output,
+    static const error_code static_decode(const compressed_type* _in, raw_type* _output,
                                    SizeType& _size,
                                    HuffCodeMap& _in_map = global_map) {
 

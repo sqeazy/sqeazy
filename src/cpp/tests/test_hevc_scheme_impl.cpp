@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_CASE( encode ){
 				 static_cast<uint32_t>(embryo_.shape()[1]),
 				 static_cast<uint32_t>(embryo_.shape()[2])};
   std::size_t bytes_written = 0;
-  uint32_t err = sqeazy::hevc_scheme<uint8_t>::encode(embryo_.data(),&results[0],shape, bytes_written);
+  uint32_t err = sqeazy::hevc_scheme<uint8_t>::static_encode(embryo_.data(),&results[0],shape, bytes_written);
   results.resize(bytes_written);
   
   BOOST_CHECK_EQUAL(err,0u);
@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_CASE( roundtrip ){
 				 static_cast<uint32_t>(embryo_.shape()[1]),
 				 static_cast<uint32_t>(embryo_.shape()[2])};
   std::size_t bytes_written = 0;
-  uint32_t err = sqeazy::hevc_scheme<uint8_t>::encode(embryo_.data(),&encoded[0],shape, bytes_written);
+  uint32_t err = sqeazy::hevc_scheme<uint8_t>::static_encode(embryo_.data(),&encoded[0],shape, bytes_written);
   encoded.resize(bytes_written);
   
   BOOST_CHECK_EQUAL(err,0u);
@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE( roundtrip ){
 
 
   std::vector<uint8_t> retrieved(embryo_.num_elements(),0);
-  err = sqeazy::hevc_scheme<uint8_t>::decode(reinterpret_cast<const uint8_t*>(&encoded[0]),
+  err = sqeazy::hevc_scheme<uint8_t>::static_decode(reinterpret_cast<const uint8_t*>(&encoded[0]),
 					     &retrieved[0],
 					     encoded.size(),
 					     embryo_.num_elements());
@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE( noisy_roundtrip ){
 				 static_cast<uint32_t>(noisy_embryo_.shape()[1]),
 				 static_cast<uint32_t>(noisy_embryo_.shape()[2])};
   std::size_t bytes_written = 0;
-  uint32_t err = sqeazy::hevc_scheme<uint8_t>::encode(noisy_embryo_.data(),&encoded[0],shape, bytes_written);
+  uint32_t err = sqeazy::hevc_scheme<uint8_t>::static_encode(noisy_embryo_.data(),&encoded[0],shape, bytes_written);
   encoded.resize(bytes_written);
   
   BOOST_CHECK_EQUAL(err,0u);
@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE( noisy_roundtrip ){
   BOOST_CHECK_LT(bytes_written,noisy_embryo_.num_elements());
 
   std::vector<uint8_t> retrieved(noisy_embryo_.num_elements(),0);
-  err = sqeazy::hevc_scheme<uint8_t>::decode(reinterpret_cast<const uint8_t*>(&encoded[0]),
+  err = sqeazy::hevc_scheme<uint8_t>::static_decode(reinterpret_cast<const uint8_t*>(&encoded[0]),
 					     &retrieved[0],
 					     encoded.size(),
 					     noisy_embryo_.num_elements());

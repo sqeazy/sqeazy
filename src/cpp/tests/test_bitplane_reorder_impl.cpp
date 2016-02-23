@@ -21,7 +21,7 @@ BOOST_FIXTURE_TEST_SUITE( bitplane_reorder, default_cv_fixture )
 
 BOOST_AUTO_TEST_CASE( runs_on_data ){
 
-  sqeazy::bitswap_scheme<unsigned short,1>::encode(&input[0], &reference[0],input.size());
+  sqeazy::bitswap_scheme<unsigned short,1>::static_encode(&input[0], &reference[0],input.size());
   
   try{
     BOOST_REQUIRE( reference[input.size()-1] == 0 );

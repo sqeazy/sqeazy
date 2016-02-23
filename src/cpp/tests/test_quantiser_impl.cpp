@@ -10,7 +10,7 @@
 #include "boost/filesystem.hpp"
 #include "volume_fixtures.hpp"
 #include "sqeazy_algorithms.hpp"
-#include "quantiser_impl.hpp"
+#include "encoders/quantiser_impl.hpp"
 
 namespace bfs = boost::filesystem;
 

@@ -21,7 +21,7 @@ int SQY_RasterDiffEncode_3D_UI16(int width, int height, int depth, const char* s
   typedef unsigned short raw_type;
   typedef short compressed_type;
 
-  return sqeazy::diff_scheme<raw_type>::encode(width, height, depth, 
+  return sqeazy::diff_scheme<raw_type>::static_encode(width, height, depth, 
 						 reinterpret_cast<const raw_type*>(src),
 						 reinterpret_cast<compressed_type*>(dst)
 						 );
@@ -34,7 +34,7 @@ int SQY_RasterDiffDecode_3D_UI16(int width, int height, int depth, const char* s
   typedef unsigned short raw_type;
   typedef short compressed_type;
 
-  return sqeazy::diff_scheme<raw_type>::decode(width, height, depth, 
+  return sqeazy::diff_scheme<raw_type>::static_decode(width, height, depth, 
 					       reinterpret_cast<const compressed_type*>(src),
 					       reinterpret_cast<raw_type*>(dst)
 					       );
@@ -47,7 +47,7 @@ int SQY_BitSwap4Encode_UI16(const char* src, char* dst, long length){
 
   typedef unsigned short raw_type;
 
-  return sqeazy::bitswap_scheme<raw_type,4>::encode(reinterpret_cast<const raw_type*>(src),
+  return sqeazy::bitswap_scheme<raw_type,4>::static_encode(reinterpret_cast<const raw_type*>(src),
 						  reinterpret_cast<raw_type*>(dst),
 						  length/sizeof(raw_type)
 						  );
@@ -58,7 +58,7 @@ int SQY_BitSwap4Encode_I16(const char* src, char* dst, long length){
 
   typedef short raw_type;
   
-  return sqeazy::bitswap_scheme<raw_type,4>::encode(reinterpret_cast<const raw_type*>(src),
+  return sqeazy::bitswap_scheme<raw_type,4>::static_encode(reinterpret_cast<const raw_type*>(src),
 						  reinterpret_cast<raw_type*>(dst),
 						  length/sizeof(raw_type)
 						  );
@@ -69,7 +69,7 @@ int SQY_BitSwap4Encode_I16(const char* src, char* dst, long length){
 int SQY_BitSwap4Decode_UI16(const char* src, char* dst, long length){
   
   typedef unsigned short raw_type;
-  return sqeazy::bitswap_scheme<raw_type,4>::decode(reinterpret_cast<const raw_type*>(src),
+  return sqeazy::bitswap_scheme<raw_type,4>::static_decode(reinterpret_cast<const raw_type*>(src),
 						  reinterpret_cast<raw_type*>(dst),
 						  length/sizeof(raw_type)
 						  );
@@ -78,7 +78,7 @@ int SQY_BitSwap4Decode_UI16(const char* src, char* dst, long length){
 int SQY_BitSwap4Decode_I16(const char* src, char* dst, long length){
   
   typedef short raw_type;
-  return sqeazy::bitswap_scheme<raw_type,4>::decode(reinterpret_cast<const raw_type*>(src),
+  return sqeazy::bitswap_scheme<raw_type,4>::static_decode(reinterpret_cast<const raw_type*>(src),
 						  reinterpret_cast<raw_type*>(dst),
 						  length/sizeof(raw_type)
 						  );
@@ -88,7 +88,7 @@ int SQY_BitSwap4Decode_I16(const char* src, char* dst, long length){
 
 int SQY_BitSwap8Encode_UI16(const char* src, char* dst, long length){
     typedef unsigned short raw_type;
-    return sqeazy::bitswap_scheme<raw_type,8>::encode(reinterpret_cast<const raw_type*>(src),
+    return sqeazy::bitswap_scheme<raw_type,8>::static_encode(reinterpret_cast<const raw_type*>(src),
 						      reinterpret_cast<raw_type*>(dst),
 						      length/sizeof(raw_type)
 						      );
@@ -98,7 +98,7 @@ int SQY_BitSwap8Encode_UI16(const char* src, char* dst, long length){
 int SQY_BitSwap8Decode_UI16(const char* src, char* dst, long length){
   
   typedef unsigned short raw_type;
-  return sqeazy::bitswap_scheme<raw_type,8>::decode(reinterpret_cast<const raw_type*>(src),
+  return sqeazy::bitswap_scheme<raw_type,8>::static_decode(reinterpret_cast<const raw_type*>(src),
 						    reinterpret_cast<raw_type*>(dst),
 						    length/sizeof(raw_type)
 						    );
@@ -106,7 +106,7 @@ int SQY_BitSwap8Decode_UI16(const char* src, char* dst, long length){
 
 int SQY_BitSwap8Encode_I16(const char* src, char* dst, long length){
     typedef short raw_type;
-    return sqeazy::bitswap_scheme<raw_type,8>::encode(reinterpret_cast<const raw_type*>(src),
+    return sqeazy::bitswap_scheme<raw_type,8>::static_encode(reinterpret_cast<const raw_type*>(src),
 						      reinterpret_cast<raw_type*>(dst),
 						      length/sizeof(raw_type)
 						      );
@@ -116,7 +116,7 @@ int SQY_BitSwap8Encode_I16(const char* src, char* dst, long length){
 int SQY_BitSwap8Decode_I16(const char* src, char* dst, long length){
   
   typedef  short raw_type;
-  return sqeazy::bitswap_scheme<raw_type,8>::decode(reinterpret_cast<const raw_type*>(src),
+  return sqeazy::bitswap_scheme<raw_type,8>::static_decode(reinterpret_cast<const raw_type*>(src),
 						    reinterpret_cast<raw_type*>(dst),
 						    length/sizeof(raw_type)
 						    );
@@ -124,7 +124,7 @@ int SQY_BitSwap8Decode_I16(const char* src, char* dst, long length){
 
 int SQY_BitSwap2Encode_UI16(const char* src, char* dst, long length){
     typedef unsigned short raw_type;
-    return sqeazy::bitswap_scheme<raw_type,2>::encode(reinterpret_cast<const raw_type*>(src),
+    return sqeazy::bitswap_scheme<raw_type,2>::static_encode(reinterpret_cast<const raw_type*>(src),
 						      reinterpret_cast<raw_type*>(dst),
 						      length/sizeof(raw_type)
 						      );
@@ -134,7 +134,7 @@ int SQY_BitSwap2Encode_UI16(const char* src, char* dst, long length){
 int SQY_BitSwap2Decode_UI16(const char* src, char* dst, long length){
   
   typedef unsigned short raw_type;
-  return sqeazy::bitswap_scheme<raw_type,2>::decode(reinterpret_cast<const raw_type*>(src),
+  return sqeazy::bitswap_scheme<raw_type,2>::static_decode(reinterpret_cast<const raw_type*>(src),
 						    reinterpret_cast<raw_type*>(dst),
 						    length/sizeof(raw_type)
 						    );
@@ -142,7 +142,7 @@ int SQY_BitSwap2Decode_UI16(const char* src, char* dst, long length){
 
 int SQY_BitSwap2Encode_I16(const char* src, char* dst, long length){
     typedef short raw_type;
-    return sqeazy::bitswap_scheme<raw_type,2>::encode(reinterpret_cast<const raw_type*>(src),
+    return sqeazy::bitswap_scheme<raw_type,2>::static_encode(reinterpret_cast<const raw_type*>(src),
 						      reinterpret_cast<raw_type*>(dst),
 						      length/sizeof(raw_type)
 						      );
@@ -152,7 +152,7 @@ int SQY_BitSwap2Encode_I16(const char* src, char* dst, long length){
 int SQY_BitSwap2Decode_I16(const char* src, char* dst, long length){
   
   typedef  short raw_type;
-  return sqeazy::bitswap_scheme<raw_type,2>::decode(reinterpret_cast<const raw_type*>(src),
+  return sqeazy::bitswap_scheme<raw_type,2>::static_decode(reinterpret_cast<const raw_type*>(src),
 						    reinterpret_cast<raw_type*>(dst),
 						    length/sizeof(raw_type)
 						    );
@@ -161,7 +161,7 @@ int SQY_BitSwap2Decode_I16(const char* src, char* dst, long length){
 
 int SQY_BitSwap1Encode_UI16(const char* src, char* dst, long length){
     typedef unsigned short raw_type;
-    return sqeazy::bitswap_scheme<raw_type,1>::encode(reinterpret_cast<const raw_type*>(src),
+    return sqeazy::bitswap_scheme<raw_type,1>::static_encode(reinterpret_cast<const raw_type*>(src),
 						      reinterpret_cast<raw_type*>(dst),
 						      length/sizeof(raw_type)
 						      );
@@ -171,7 +171,7 @@ int SQY_BitSwap1Encode_UI16(const char* src, char* dst, long length){
 int SQY_BitSwap1Decode_UI16(const char* src, char* dst, long length){
   
   typedef unsigned short raw_type;
-  return sqeazy::bitswap_scheme<raw_type,1>::decode(reinterpret_cast<const raw_type*>(src),
+  return sqeazy::bitswap_scheme<raw_type,1>::static_decode(reinterpret_cast<const raw_type*>(src),
 						    reinterpret_cast<raw_type*>(dst),
 						    length/sizeof(raw_type)
 						    );
@@ -179,7 +179,7 @@ int SQY_BitSwap1Decode_UI16(const char* src, char* dst, long length){
 
 int SQY_BitSwap1Encode_I16(const char* src, char* dst, long length){
     typedef short raw_type;
-    return sqeazy::bitswap_scheme<raw_type,1>::encode(reinterpret_cast<const raw_type*>(src),
+    return sqeazy::bitswap_scheme<raw_type,1>::static_encode(reinterpret_cast<const raw_type*>(src),
 						      reinterpret_cast<raw_type*>(dst),
 						      length/sizeof(raw_type)
 						      );
@@ -189,7 +189,7 @@ int SQY_BitSwap1Encode_I16(const char* src, char* dst, long length){
 int SQY_BitSwap1Decode_I16(const char* src, char* dst, long length){
   
   typedef  short raw_type;
-  return sqeazy::bitswap_scheme<raw_type,1>::decode(reinterpret_cast<const raw_type*>(src),
+  return sqeazy::bitswap_scheme<raw_type,1>::static_decode(reinterpret_cast<const raw_type*>(src),
 						    reinterpret_cast<raw_type*>(dst),
 						    length/sizeof(raw_type)
 						    );
@@ -204,7 +204,7 @@ int SQY_RLEDecode_UI8(const char* src, char* dst, long length){return 42;}
 int SQY_RmBackground_AtMode_UI16(char* src, char* dst, long length, unsigned short epsilon){
 
   typedef unsigned short raw_type;
-  return sqeazy::remove_background<raw_type>::encode(reinterpret_cast<raw_type*>(src),
+  return sqeazy::remove_background<raw_type>::static_encode(reinterpret_cast<raw_type*>(src),
 							reinterpret_cast<raw_type*>(dst),
 							length/sizeof(raw_type),
 							epsilon
@@ -218,7 +218,7 @@ int SQY_RmBackground_Estimated_UI16(int width, int height, int depth, char* src,
   dims[2] = width;
   dims[1] = height;
   dims[0] = depth;
-    return sqeazy::remove_estimated_background<raw_type>::encode(reinterpret_cast<raw_type*>(src),
+    return sqeazy::remove_estimated_background<raw_type>::static_encode(reinterpret_cast<raw_type*>(src),
             reinterpret_cast<raw_type*>(dst),
             dims
 								    );
@@ -234,7 +234,8 @@ typedef sqeazy::pipeline<lz4_> lz4_pipe;
 
 int SQY_LZ4Encode(const char* src, long srclength, char* dst, long* dstlength){
 
-  int retvalue = lz4_pipe::compress(src,dst,srclength,*dstlength);
+  auto local_dst = reinterpret_cast<sqeazy::lz4_scheme<char>::compressed_type*>(dst);
+  int retvalue = lz4_pipe::compress(src,local_dst,srclength,*dstlength);
   
   return retvalue;
 }
@@ -244,9 +245,9 @@ int SQY_LZ4_Max_Compressed_Length(long* length){
   
   std::vector<unsigned> shape(1);
   shape[0] = *length;
-  sqeazy::image_header hdr(char(),shape, lz4_pipe::name());
+  sqeazy::image_header hdr(char(),shape, lz4_pipe::static_name());
   
-  long value = lz4_pipe::max_bytes_encoded(*length, hdr.size());//compression size + one long to encode size of
+  long value = lz4_pipe::static_max_bytes_encoded(*length, hdr.size());//compression size + one long to encode size of
   *length = value;
   return 0;
 
@@ -266,8 +267,9 @@ int SQY_LZ4_Decompressed_Length(const char* data, long *length){
 
 
 int SQY_LZ4Decode(const char* src, long srclength, char* dst){
-
-  int retcode = lz4_pipe::decompress(src,dst,srclength);
+  
+  auto local_src = reinterpret_cast<const sqeazy::lz4_scheme<char>::compressed_type*>(src);
+  int retcode = lz4_pipe::decompress(local_src,dst,srclength);
   
   return retcode;
 }

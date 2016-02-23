@@ -811,7 +811,7 @@ namespace sqeazy {
 			 pipe_type
 			 ){
 
-      static const std::string filter_name = pipe_type::name();
+      static const std::string filter_name = pipe_type::static_name();
       if(filter_name.empty())
 	return write_nd_dataset(_dname, _payload, _shape, _shape_size);
 	

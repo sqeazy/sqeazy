@@ -39,7 +39,7 @@ namespace sqeazy {
     template <typename T>
     typename boost::enable_if_c<boost::is_same<T,boost::blank>::value == false,void>::type  operator()(T any) {
 
-      if(!ref_name.empty() && T::name().size() == ref_name.size() && T::name() == ref_name) {
+      if(!ref_name.empty() && T::static_name().size() == ref_name.size() && T::static_name() == ref_name) {
 	*item = T();
       }
 
@@ -60,7 +60,7 @@ namespace sqeazy {
 
     template <typename T>
     unsigned long operator()(T){
-      return T::max_bytes_encoded(len_in_byte, header_in_byte);
+      return T::static_max_bytes_encoded(len_in_byte, header_in_byte);
     }
       
     unsigned long operator()(boost::blank){
@@ -312,16 +312,16 @@ namespace sqeazy {
       set_if_name_matches<supported_pipes_t> extractor(&pipeholder_, current_.second);
 
       bmpl::for_each<typename supported_pipes_t::types>(extractor);
-      // if(current_.second == char_rmbkg_bswap1_lz4_pipe::name())
+      // if(current_.second == char_rmbkg_bswap1_lz4_pipe::static_name())
       // 	pipeholder_ = char_rmbkg_bswap1_lz4_pipe();
       
-      // if(current_.second == char_bswap1_lz4_pipe::name())
+      // if(current_.second == char_bswap1_lz4_pipe::static_name())
       // 	pipeholder_ = char_bswap1_lz4_pipe();
 
-      // if(current_.second == rmbkg_bswap1_lz4_pipe::name())
+      // if(current_.second == rmbkg_bswap1_lz4_pipe::static_name())
       // 	pipeholder_ = rmbkg_bswap1_lz4_pipe();
       
-      // if(current_.second == bswap1_lz4_pipe::name())
+      // if(current_.second == bswap1_lz4_pipe::static_name())
       // 	pipeholder_ = bswap1_lz4_pipe();
 
 

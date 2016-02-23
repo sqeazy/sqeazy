@@ -105,7 +105,7 @@ void fill_suite(const std::vector<std::string>& _args,
     typedef PipeType current_pipe;
 
     if(_config.verbose)
-        std::cerr << "fill_suite :: " << PipeType::name() << "\n";
+        std::cerr << "fill_suite :: " << PipeType::static_name() << "\n";
 
     unsigned num_files = _args.size();
 
@@ -131,7 +131,7 @@ void fill_suite(const std::vector<std::string>& _args,
 	written_bytes = 0;
 
 	//compute the maximum size of the output buffer
-        unsigned long expected_size = std::ceil(current_pipe::max_bytes_encoded(reference.size_in_byte())/float(sizeof(value_type)));
+        unsigned long expected_size = std::ceil(current_pipe::static_max_bytes_encoded(reference.size_in_byte())/float(sizeof(value_type)));
         if(expected_size>output_data.size()) {
             output_data.resize(expected_size);
         }
@@ -163,7 +163,7 @@ void fill_suite(const std::vector<std::string>& _args,
             std::string name = _config.save_encoded;
             name += current_file.stem().string();
             name += "_";
-            name += PipeType::name();
+            name += PipeType::static_name();
             name += "-enc.sqy";
 
             std::ofstream encoded(name.c_str(), std::ios::binary | std::ios::out);
@@ -185,7 +185,7 @@ void fill_suite(const std::vector<std::string>& _args,
             std::string name = _config.roundtrip;
             name += current_file.stem().string();
             name += "_";
-            name += PipeType::name();
+            name += PipeType::static_name();
             name += "-enc-dec";
             name += current_file.extension().string();
             sqeazy::write_tiff_from_vector(reference.tiff_data, 

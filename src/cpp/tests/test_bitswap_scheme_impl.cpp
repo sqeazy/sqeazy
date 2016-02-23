@@ -176,13 +176,13 @@ BOOST_AUTO_TEST_CASE( roundtrip_ramp )
 
   std::vector<unsigned short> compressed(expected);
   
-  int res = bswap1_scheme::encode(&expected[0], &compressed[0],flat_size);
+  int res = bswap1_scheme::static_encode(&expected[0], &compressed[0],flat_size);
 
   BOOST_CHECK(!res);
 
   std::vector<unsigned short> decoded(flat_size,0);
 
-  res = bswap1_scheme::decode(&compressed[0], &decoded[0] ,flat_size);
+  res = bswap1_scheme::static_decode(&compressed[0], &decoded[0] ,flat_size);
 
   BOOST_CHECK(!res);
   BOOST_CHECK_EQUAL_COLLECTIONS(decoded.begin(), decoded.end(), expected.begin(), expected.end());
@@ -357,14 +357,14 @@ BOOST_FIXTURE_TEST_SUITE( encode_decode_loop, incrementing_array )
 BOOST_AUTO_TEST_CASE( encoded_equals_by_hand_planewidth1 )
 {
 
-  int rv = bswap1_scheme::encode(&input[0], &output[0],input.size());
+  int rv = bswap1_scheme::static_encode(&input[0], &output[0],input.size());
 
 
   BOOST_CHECK(rv == 0);
   for(unsigned i = 0;i<input.size();++i){
         
     BOOST_CHECK_MESSAGE(output[i] == plane1_encoded_by_hand[i],  
-			"bswap1_scheme::encode input["<< i <<"] = " <<  input[i] 
+			"bswap1_scheme::static_encode input["<< i <<"] = " <<  input[i] 
 			<<  ",  output = " << output[i]
 			<<  ",  by_hand = " << plane1_encoded_by_hand[i] );
   }
@@ -374,14 +374,14 @@ BOOST_AUTO_TEST_CASE( encoded_equals_by_hand_planewidth1 )
 BOOST_AUTO_TEST_CASE( decode_encoded_by_hand_planewidth1 )
 {
 
-  int rv = bswap1_scheme::decode(&plane1_encoded_by_hand[0], &output[0],input.size());
+  int rv = bswap1_scheme::static_decode(&plane1_encoded_by_hand[0], &output[0],input.size());
 
 
   BOOST_CHECK(rv == 0);
   for(unsigned i = 0;i<input.size();++i){
         
     BOOST_CHECK_MESSAGE(output[i] == input[i],  
-			"bswap1_scheme::decode input["<< i <<"] = " <<  plane1_encoded_by_hand[i] 
+			"bswap1_scheme::static_decode input["<< i <<"] = " <<  plane1_encoded_by_hand[i] 
 			<<  ",  output = " << output[i]
 			<<  ",  expected = " << input[i] );
   }
@@ -391,14 +391,14 @@ BOOST_AUTO_TEST_CASE( decode_encoded_by_hand_planewidth1 )
 BOOST_AUTO_TEST_CASE( encoded_equals_by_hand_planewidth2 )
 {
 
-  int rv = bswap2_scheme::encode(&input[0], &output[0],input.size());
+  int rv = bswap2_scheme::static_encode(&input[0], &output[0],input.size());
 
 
   BOOST_CHECK(rv == 0);
   for(unsigned i = 0;i<input.size();++i){
         
     BOOST_CHECK_MESSAGE(output[i] == plane2_encoded_by_hand[i],  
-			"bswap2_scheme::encode input["<< i <<"] = " <<  input[i] 
+			"bswap2_scheme::static_encode input["<< i <<"] = " <<  input[i] 
 			<<  ",  output = " << output[i]
 			<<  ",  by_hand = " << plane2_encoded_by_hand[i] );
   }
@@ -408,14 +408,14 @@ BOOST_AUTO_TEST_CASE( encoded_equals_by_hand_planewidth2 )
 BOOST_AUTO_TEST_CASE( decode_encoded_by_hand_planewidth2 )
 {
 
-  int rv = bswap2_scheme::decode(&plane2_encoded_by_hand[0], &output[0],input.size());
+  int rv = bswap2_scheme::static_decode(&plane2_encoded_by_hand[0], &output[0],input.size());
 
 
   BOOST_CHECK(rv == 0);
   for(unsigned i = 0;i<input.size();++i){
         
     BOOST_CHECK_MESSAGE(output[i] == input[i],  
-			"bswap2_scheme::decode input["<< i <<"] = " <<  plane2_encoded_by_hand[i] 
+			"bswap2_scheme::static_decode input["<< i <<"] = " <<  plane2_encoded_by_hand[i] 
 			<<  ",  output = " << output[i]
 			<<  ",  expected = " << input[i] );
   }
@@ -425,14 +425,14 @@ BOOST_AUTO_TEST_CASE( decode_encoded_by_hand_planewidth2 )
 BOOST_AUTO_TEST_CASE( encoded_equals_by_hand_planewidth4 )
 {
 
-  int rv = bswap4_scheme::encode(&input[0], &output[0],input.size());
+  int rv = bswap4_scheme::static_encode(&input[0], &output[0],input.size());
 
 
   BOOST_CHECK(rv == 0);
   for(unsigned i = 0;i<input.size();++i){
         
     BOOST_CHECK_MESSAGE(output[i] == plane4_encoded_by_hand[i],  
-			"bswap4_scheme::encode input["<< i <<"] = " <<  input[i] 
+			"bswap4_scheme::static_encode input["<< i <<"] = " <<  input[i] 
 			<<  ",  output = " << output[i]
 			<<  ",  by_hand = " << plane4_encoded_by_hand[i] );
   }
@@ -442,14 +442,14 @@ BOOST_AUTO_TEST_CASE( encoded_equals_by_hand_planewidth4 )
 BOOST_AUTO_TEST_CASE( decode_encoded_by_hand_planewidth4 )
 {
 
-  int rv = bswap4_scheme::decode(&plane4_encoded_by_hand[0], &output[0],input.size());
+  int rv = bswap4_scheme::static_decode(&plane4_encoded_by_hand[0], &output[0],input.size());
 
 
   BOOST_CHECK(rv == 0);
   for(unsigned i = 0;i<input.size();++i){
         
     BOOST_CHECK_MESSAGE(output[i] == input[i],  
-			"bswap4_scheme::decode input["<< i <<"] = " <<  plane4_encoded_by_hand[i] 
+			"bswap4_scheme::static_decode input["<< i <<"] = " <<  plane4_encoded_by_hand[i] 
 			<<  ",  output = " << output[i]
 			<<  ",  expected = " << input[i] );
   }

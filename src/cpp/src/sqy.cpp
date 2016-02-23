@@ -61,9 +61,9 @@ int main(int argc, char *argv[])
     
   //FIXME:: just a placeholder to make the whole thing compile
 
-  static std::vector<std::string> modes{sqeazy::bswap1_lz4_pipe::name(),
-      sqeazy::rmbkg_bswap1_lz4_pipe::name()};
-  const static std::string default_compression = sqeazy::bswap1_lz4_pipe::name();
+  static std::vector<std::string> modes{sqeazy::bswap1_lz4_pipe::static_name(),
+      sqeazy::rmbkg_bswap1_lz4_pipe::static_name()};
+  const static std::string default_compression = sqeazy::bswap1_lz4_pipe::static_name();
 
   static std::unordered_map<std::string,po::options_description> descriptions(4);
 
