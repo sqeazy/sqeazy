@@ -13,7 +13,7 @@
 #include "bench_utils.hpp"
 #include "bench_common.hpp"
 #include "tiff_utils.hpp"
-#include "pipeline_select.hpp"
+#include "deprecated/static_pipeline_select.hpp"
 
 #include "boost/filesystem.hpp"
 #include <boost/program_options.hpp>

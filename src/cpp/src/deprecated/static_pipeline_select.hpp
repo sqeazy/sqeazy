@@ -6,7 +6,7 @@
 #include <sstream>
 #include <stdexcept>
 
-#include "sqeazy_predef_pipelines.hpp"
+#include "deprecated/static_predef_pipelines.hpp"
 #include "sqeazy_header.hpp"
 
 #include "boost/blank.hpp"

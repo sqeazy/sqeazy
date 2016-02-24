@@ -53,8 +53,8 @@ namespace sqeazy {
      \retval number of bytes the encoded _buffer contains
    
   */
-  template <typename raw_type, AVCodecID codec_id =  AV_CODEC_ID_HEVC>
-  static uint32_t hevc_encode_stack(const raw_type* _volume,
+  template <typename raw_type, AVCodecID codec_id =  AV_CODEC_ID_H264>
+  static uint32_t h264_encode_stack(const raw_type* _volume,
 			       const std::vector<uint32_t>& _shape,
 			       std::vector<uint8_t>& _buffer ,
 			       const std::string& _debug_filename = ""){
@@ -62,7 +62,7 @@ namespace sqeazy {
 
     uint32_t bytes_written = 0;
 
-    sqeazy::av_codec_t codec(AV_CODEC_ID_HEVC);
+    sqeazy::av_codec_t codec(AV_CODEC_ID_H264);
     sqeazy::av_codec_context_t ctx(codec);
 
     /* resolution must be a multiple of two due to YUV420p format*/
@@ -82,7 +82,7 @@ namespace sqeazy {
 
     
     
-    if (codec_id == AV_CODEC_ID_HEVC){
+    if (codec_id == AV_CODEC_ID_H264){
       av_opt_set(ctx.get()->priv_data, "preset", "ultrafast", 0);
       av_opt_set(ctx.get()->priv_data, "profile", "main", 0);
       //http://x265.readthedocs.org/en/default/lossless.html#lossless-encoding
@@ -91,8 +91,8 @@ namespace sqeazy {
       params << "lossless=1";
       params << ":min-keyint=1";
       		
-#ifdef DEBUG_HEVC
-#ifndef TRACE_HEVC
+#ifdef DEBUG_H264
+#ifndef TRACE_H264
       params << ":log-level=info";
 #else
       params << ":log-level=full";
@@ -215,7 +215,7 @@ namespace sqeazy {
    
   */
 template <typename raw_type>
-static uint32_t hevc_decode_stack(const uint8_t* _buffer,
+static uint32_t h264_decode_stack(const uint8_t* _buffer,
 				  const uint32_t& _buffer_len,
 				  raw_type* _volume,
 				  const uint32_t& _volume_len// ,
@@ -433,4 +433,4 @@ static uint32_t hevc_decode_stack(const uint8_t* _buffer,
 
   
 }; //sqeazy namespace
-#endif /* _HEVC_SCHEME_UTILS_H_ */
+#endif /* _H264_SCHEME_UTILS_H_ */

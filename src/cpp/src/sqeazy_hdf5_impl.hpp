@@ -6,7 +6,7 @@
 //#include "sqeazy.h"
 #include "sqeazy_h5_filter.hpp"
 #include "sqeazy_header.hpp"
-#include "sqeazy_predef_pipelines.hpp"
+#include "deprecated/static_predef_pipelines.hpp"
 
 
 namespace sqeazy {

@@ -15,7 +15,7 @@
 namespace bfs = boost::filesystem;
 
 #include "H5Cpp.h"
-#include "sqeazy_predef_pipelines.hpp"
+#include "deprecated/static_predef_pipelines.hpp"
 #include "sqeazy_h5_filter.hpp"
 #include "sqeazy_hdf5_impl.hpp"
 

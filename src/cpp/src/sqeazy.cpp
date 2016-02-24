@@ -2,7 +2,7 @@
 #include "sqeazy.h"
 
 #include "sqeazy_header.hpp"
-#include "pipeline_select.hpp"
+#include "deprecated/static_pipeline_select.hpp"
 #include "sqeazy_hdf5_impl.hpp"
 #include "hdf5_utils.hpp"
 #include "pipeline.hpp"

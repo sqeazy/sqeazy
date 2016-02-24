@@ -11,7 +11,7 @@
 #include <regex>
 
 #include "app_algs.hpp"
-#include "sqeazy_predef_pipelines.hpp"
+#include "deprecated/static_predef_pipelines.hpp"
 
 #include "boost/filesystem.hpp"
 #include <boost/program_options.hpp>

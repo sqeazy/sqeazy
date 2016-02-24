@@ -1,6 +1,6 @@
 #define BOOST_TEST_MODULE TEST_PIPELINE_SELECT
 #include "boost/test/unit_test.hpp"
-#include "pipeline_select.hpp"
+#include "deprecated/static_pipeline_select.hpp"
 //#include "bench_common.hpp"
 #include "array_fixtures.hpp"
 #include "sqeazy_header.hpp"
