@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <fstream>
 
+namespace sqeazy {
+
 static uint32_t write_encoded(const std::string& _filename, std::vector<uint8_t>& _video ){
   
     std::ofstream ofile(_filename, std::ios::binary | std::ios::out );
@@ -16,4 +18,5 @@ static uint32_t write_encoded(const std::string& _filename, std::vector<uint8_t>
     return 0;
   }
 
+};
 #endif /* _VIDEO_IO_H_ */

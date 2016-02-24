@@ -18,19 +18,14 @@ extern "C" {
   
 }
 
-#include "hevc_scheme_utils.hpp"
+//#include "hevc_scheme_utils.hpp"
 #include "sqeazy_algorithms.hpp"
 #include "video_io.hpp"
+#include "video_utils.hpp"
 
 namespace sqeazy {
 
 
-  
-  template <typename T> struct av_pixel_type {};
-  template <> struct av_pixel_type<uint8_t> { static const AVPixelFormat value = AV_PIX_FMT_GRAY8;};
-  template <> struct av_pixel_type<uint16_t> { static const AVPixelFormat value = AV_PIX_FMT_GRAY16;};
-
-  
   /**
      \brief function that uses 
    

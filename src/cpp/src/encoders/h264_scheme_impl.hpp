@@ -3,6 +3,8 @@
 
 #include <fstream>
 #include <cmath>
+#include <map>
+#include <string>
 
 extern "C" {
 
@@ -13,24 +15,21 @@ extern "C" {
 #include <libavutil/imgutils.h>
 #include <libavutil/mathematics.h>
 #include <libavutil/samplefmt.h>
-#include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
   
 }
 
-#include "hevc_scheme_utils.hpp"
+//#include "hevc_scheme_utils.hpp"
 #include "sqeazy_algorithms.hpp"
 #include "traits.hpp"
 #include "video_io.hpp"
+#include "video_utils.hpp"
 
 namespace sqeazy {
 
-  
-    
-  template <typename T> struct av_pixel_type {};
-  template <> struct av_pixel_type<uint8_t> { static const AVPixelFormat value = AV_PIX_FMT_GRAY8;};
-  template <> struct av_pixel_type<uint16_t> { static const AVPixelFormat value = AV_PIX_FMT_GRAY16;};
-
+  static std::map<std::string,std::string> default_h264_config = {
+    {"preset", "slow"}
+  };
   
   /**
      \brief function that uses 
@@ -47,7 +46,7 @@ namespace sqeazy {
   static uint32_t h264_encode_stack(const raw_type* _volume,
 				    const std::vector<uint32_t>& _shape,
 				    std::vector<uint8_t>& _buffer ,
-				    const std::map<std::string,std::string>& config = default_h264_config,
+				    const std::map<std::string,std::string>& _config = default_h264_config,
 				    const std::string& _debug_filename = ""){
 
 
@@ -56,6 +55,8 @@ namespace sqeazy {
     sqeazy::av_codec_t codec(AV_CODEC_ID_H264);
     sqeazy::av_codec_context_t ctx(codec);
 
+    //no rate control at this point
+    //ctx.get()->bit_rate = 400000;
     /* resolution must be a multiple of two due to YUV420p format*/
     ctx.get()->width = _shape[row_major::w];
     ctx.get()->height = _shape[row_major::h];
@@ -70,29 +71,17 @@ namespace sqeazy {
     // ctx.get()->gop_size = 10;
     // ctx.get()->max_b_frames = 1;
     ctx.get()->pix_fmt = AV_PIX_FMT_YUV420P;
-
+    
+    
     
     
     if (codec_id == AV_CODEC_ID_H264){
-      av_opt_set(ctx.get()->priv_data, "preset", "ultrafast", 0);
-      av_opt_set(ctx.get()->priv_data, "profile", "main", 0);
-      //http://x265.readthedocs.org/en/default/lossless.html#lossless-encoding
-      std::stringstream params("");
-	
-      params << "lossless=1";
-      params << ":min-keyint=1";
-      		
-#ifdef DEBUG_H264
-#ifndef TRACE_H264
-      params << ":log-level=info";
-#else
-      params << ":log-level=full";
-#endif
-#else
-      params << ":log-level=warning";
-#endif
+      if(_config.find("preset")!=_config.end()){
+	std::string value = _config.find("preset")->second;
+	av_opt_set(ctx.get()->priv_data, "preset", value.c_str(), 0);}
+      else
+	av_opt_set(ctx.get()->priv_data, "preset", "fast", 0);
 
-      av_opt_set(ctx.get()->priv_data, "x265-params", params.str().c_str(), 0);
     }
 
     try{
