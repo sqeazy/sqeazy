@@ -3,12 +3,15 @@
 #include <cstdint>
 #include <string>
 #include <typeinfo>
+#include <type_traits>
+
 
 #include "sqeazy_common.hpp"
 #include "traits.hpp"
-
 #include "dynamic_stage.hpp"
-
+#include "ffmpeg_video_encode_impl.hpp"
+#include "string_parsers.hpp"
+#include "hevc_scheme_impl.hpp"
 
 
 //TODO: what if ffmpeg is not available??
@@ -30,10 +33,6 @@ extern "C" {
 #endif
 
 
-#include <type_traits>
-#include "ffmpeg_video_encode_impl.hpp"
-
-//#include "hevc_scheme_impl.hpp"
 
 namespace sqeazy {
 
@@ -258,9 +257,9 @@ namespace sqeazy {
 	} 
 
 	if(drange<9)
-	  num_written_bytes = hevc_encode_stack(&temp_in[0],
-						_dims,
-						temp_out);
+	  num_written_bytes = detail::hevc_encode_stack(&temp_in[0],
+							_dims,
+							temp_out);
 	else {
 	  //TODO: apply quantisation
 	  num_written_bytes = 0;
@@ -319,7 +318,7 @@ namespace sqeazy {
       
       const uint8_t* input = reinterpret_cast<const uint8_t*>(_input);
       
-      size_type num_bytes_decoded = hevc_decode_stack(input, _len_in, _output, _len_out);
+      size_type num_bytes_decoded = detail::hevc_decode_stack(input, _len_in, _output, _len_out);
 
       return ( num_bytes_decoded > 0 && num_bytes_decoded == _len_out ) ? SUCCESS : FAILURE;
 

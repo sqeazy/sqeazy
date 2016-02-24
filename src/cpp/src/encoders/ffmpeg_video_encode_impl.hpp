@@ -1,5 +1,5 @@
-#ifndef _HEVC_SCHEME_IMPL_H_
-#define _HEVC_SCHEME_IMPL_H_
+#ifndef _FFMPEG_VIDEO_ENCODE_IMPL_H_
+#define _FFMPEG_VIDEO_ENCODE_IMPL_H_
 
 #include <sstream>
 #include <cmath>
