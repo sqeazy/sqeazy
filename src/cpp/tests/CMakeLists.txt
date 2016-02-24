@@ -132,8 +132,8 @@ set_target_properties(test_hdf5_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURC
 target_link_libraries(test_hdf5_impl ${HDF5_LIBRARIES} ${Boost_LIBRARIES} ext_lz4)
 
 
-add_executable(test_pipeline_impl test_pipeline_impl.cpp)
-target_link_libraries(test_pipeline_impl ${Boost_LIBRARIES} ext_lz4)
+add_executable(deprecated_pipeline_impl deprecated_pipeline_impl.cpp)
+target_link_libraries(deprecated_pipeline_impl ${Boost_LIBRARIES} ext_lz4)
 
 add_executable(test_dynamic_pipeline_impl test_dynamic_pipeline_impl.cpp)
 target_link_libraries(test_dynamic_pipeline_impl ${Boost_LIBRARIES} ext_lz4)
@@ -154,9 +154,9 @@ add_executable(test_tiff_fixture test_tiff_fixture.cpp)
 target_link_libraries(test_tiff_fixture ${Boost_LIBRARIES} ext_tiff)
 set_target_properties(test_tiff_fixture PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/bench")
 
-add_executable(test_pipeline_select test_pipeline_select.cpp)
-target_link_libraries(test_pipeline_select ${Boost_LIBRARIES} ext_tiff ext_lz4)
-set_target_properties(test_pipeline_select PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src ")
+add_executable(deprecated_pipeline_select_impl deprecated_pipeline_select_impl.cpp)
+target_link_libraries(deprecated_pipeline_select_impl ${Boost_LIBRARIES} ext_tiff ext_lz4)
+set_target_properties(deprecated_pipeline_select_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src ")
 
 
 add_executable(test_huffman_utils_impl test_huffman_utils_impl.cpp)
