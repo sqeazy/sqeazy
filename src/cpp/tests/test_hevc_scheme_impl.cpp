@@ -82,9 +82,10 @@ BOOST_AUTO_TEST_CASE( roundtrip ){
   
   try{
     BOOST_REQUIRE_LT(l2norm,1e-2);    
-    // BOOST_WARN_MESSAGE(std::equal(retrieved.begin(),
-    // 				     retrieved.begin()+retrieved.size(),
-    // 				     embryo_.data()),"raw volume and encoded/decoded volume do not match");
+    BOOST_WARN_MESSAGE(std::equal(retrieved.begin(),
+    				     retrieved.begin()+retrieved.size(),
+    				     embryo_.data()),
+		       "raw noisy volume and encoded/decoded volume do not match exactly, l2norm " << l2norm);
 
 	
   }
@@ -131,9 +132,10 @@ BOOST_AUTO_TEST_CASE( noisy_roundtrip ){
 
     //TODO: looks like h265 is not bit exaxt for lossless encoding/decoding
     //TODO: check https://bitbucket.org/multicoreware/x265/issues/173/lossless-mode-is-not-bit-exact-and-the
-    // BOOST_WARN_MESSAGE(std::equal(retrieved.begin(),
-    // 				     retrieved.begin()+retrieved.size(),
-    // 				     noisy_embryo_.data()),"raw noisy volume and encoded/decoded volume do not match");
+    BOOST_WARN_MESSAGE(std::equal(retrieved.begin(),
+				  retrieved.begin()+retrieved.size(),
+				  noisy_embryo_.data()),
+		       "raw noisy volume and encoded/decoded volume do not match exactly, l2norm " << l2norm);
 
 	
   }
@@ -141,12 +143,7 @@ BOOST_AUTO_TEST_CASE( noisy_roundtrip ){
     sqeazy::write_image_stack(noisy_embryo_,"noisy_embryo.tiff");
     sqeazy::write_stack_as_y4m(noisy_embryo_,"noisy_embryo",true);
     sqeazy::write_stack_as_yuv(noisy_embryo_,"noisy_embryo",true);
-    // size_t  ordering[] = {0,1,2};
-    // bool  ascending[] = {true,true,true};
-        
-    // boost::multi_array<pixel_t, 3> retrieved_stack(shape,boost::general_storage_order<3>(ordering,ascending));
-    // std::copy(retrieved.begin(), retrieved.end(),retrieved_stack.data());
-    // retrieved_ = retrieved_stack;
+
     stack_t::extent_gen extent;
     retrieved_.resize(extent[noisy_embryo_.shape()[0]][noisy_embryo_.shape()[1]][noisy_embryo_.shape()[2]]);
     std::copy(retrieved.begin(), retrieved.end(),retrieved_.data());

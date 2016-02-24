@@ -27,7 +27,8 @@ extern "C" {
 namespace sqeazy {
 
   static std::map<std::string,std::string> default_h264_config = {
-    {"preset", "slow"}
+    {"preset", "ultrafast"},
+    {"qp", "0"},
   };
   
   /**
@@ -72,11 +73,22 @@ namespace sqeazy {
     ctx.get()->pix_fmt = AV_PIX_FMT_YUV420P;
     
     if (codec_id == AV_CODEC_ID_H264){
-      if(_config.find("preset")!=_config.end()){
-	std::string value = _config.find("preset")->second;
-	av_opt_set(ctx.get()->priv_data, "preset", value.c_str(), 0);}
-      else
-	av_opt_set(ctx.get()->priv_data, "preset", "fast", 0);
+      if(_config.size()){
+	for( const auto & kv : _config ){
+	  if(kv.first.find("cqp") == std::string::npos ){
+	    
+	    av_opt_set(ctx.get()->priv_data,
+		       kv.first.c_str(),
+		       kv.second.c_str(),
+		       0);
+	  } else{
+	    av_opt_set_int(ctx.get()->priv_data,
+		       "cqp",
+		       std::stoi(kv.second),
+		       0);
+	  }
+	}
+      }
 
     }
 
@@ -96,8 +108,8 @@ namespace sqeazy {
     AVPacket pkt;
 
         
-    const uint32_t frame_size = _shape[_shape.size()-1]*_shape[_shape.size()-2];
-    const uint32_t num_frames = _shape[0];
+    const uint32_t frame_size = _shape[row_major::w]*_shape[row_major::h];
+    const uint32_t num_frames = _shape[row_major::d];
     uint32_t idx = 0;
 
     uint32_t frames_encoded = 0;
@@ -115,7 +127,7 @@ namespace sqeazy {
       // 		     gray_frame.get()->width,
       // 		     gray_frame.get()->height);
 
-      for (uint32_t y = 0; y < _shape[1]; y++) {
+      for (uint32_t y = 0; y < _shape[row_major::h]; y++) {
 	auto src_begin = &_volume[idx] + y*gray_frame.get()->width;
 	auto src_end = src_begin + gray_frame.get()->width;
 	auto dst_begin = &gray_frame.get()->data[0][y*gray_frame.get()->linesize[0]];
@@ -345,15 +357,15 @@ static uint32_t h264_decode_stack(const uint8_t* _buffer,
 	      }
 	      
 	      
-	      shape[2] = shape[2] != (uint32_t)frame.get()->width ? frame.get()->width : shape[2];
-	      shape[1] = shape[1] != (uint32_t)frame.get()->height ? frame.get()->height : shape[1];
-	      shape[0]++;
+	      shape[row_major::w] = shape[row_major::w] != (uint32_t)frame.get()->width ? frame.get()->width : shape[row_major::w];
+	      shape[row_major::h] = shape[row_major::h] != (uint32_t)frame.get()->height ? frame.get()->height : shape[row_major::h];
+	      shape[row_major::d]++;
 
 	      sws_scale((*sws_ctx).get(),
 			(const uint8_t * const*)frame.get()->data, frame.get()->linesize, 0, frame.get()->height,
 			gray_frame.get()->data, gray_frame.get()->linesize);
 
-	      for(uint32_t y=0;y<shape[1];++y){
+	      for(uint32_t y=0;y<shape[row_major::h];++y){
 		auto begin = gray_frame.get()->data[0] + y*gray_frame.get()->linesize[0];
 		auto end = begin + gray_frame.get()->width;
 		std::copy(begin, end,std::back_inserter(temp));
@@ -379,15 +391,15 @@ static uint32_t h264_decode_stack(const uint8_t* _buffer,
     if (frameFinished)
       {
 	   
-	shape[2] = shape[2] != (uint32_t)frame.get()->width ? frame.get()->width : shape[2];
-	shape[1] = shape[1] != (uint32_t)frame.get()->height ? frame.get()->height : shape[1];
-	shape[0]++;
+	shape[row_major::w] = shape[row_major::w] != (uint32_t)frame.get()->width ? frame.get()->width : shape[row_major::w];
+	shape[row_major::h] = shape[row_major::h] != (uint32_t)frame.get()->height ? frame.get()->height : shape[row_major::h];
+	shape[row_major::d]++;
 
 	sws_scale((*sws_ctx).get(),
 		  (const uint8_t * const*)frame.get()->data, frame.get()->linesize, 0, frame.get()->height,
 		  gray_frame.get()->data, gray_frame.get()->linesize);
 
-	for(uint32_t y=0;y<shape[1];++y){
+	for(uint32_t y=0;y<shape[row_major::h];++y){
 	  auto begin = gray_frame.get()->data[0] + y*frame.get()->linesize[0];
 	  auto end = begin + frame.get()->width;
 	  std::copy(begin, end,std::back_inserter(temp));
@@ -396,7 +408,7 @@ static uint32_t h264_decode_stack(const uint8_t* _buffer,
   }
 
 
-  if(temp.size() == _volume_len)
+  if(temp.size() <= _volume_len)
     std::copy(temp.begin(), temp.end(),_volume);
     
   av_free_packet(&packet);

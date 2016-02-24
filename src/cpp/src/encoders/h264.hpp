@@ -33,6 +33,10 @@ extern "C" {
 #include <type_traits>
 
 #include "h264_scheme_impl.hpp"
+#include "string_parsers.hpp"
+
+
+
 
 namespace sqeazy {
 
@@ -47,11 +51,32 @@ namespace sqeazy {
     static_assert(std::is_arithmetic<raw_type>::value==true,"[h264_scheme] input type is non-arithmetic");
 
     std::string h264_config;
-
+    parsed_map_t  config_map;
+    int pixel_shift;
+    
     //TODO: check syntax of h264 configuration at runtime
     h264_scheme(const std::string& _payload=""):
-      h264_config(_payload){
+      h264_config(_payload),
+      config_map(),
+      pixel_shift(0)
+    {
 
+      if(_payload.size())
+	config_map = unordered_parse_by(_payload.begin(), _payload.end());
+
+      auto found_pixel_shift = config_map.find("pixel_shift");
+      if(found_pixel_shift!=config_map.end()){
+	config_map.erase(found_pixel_shift);
+	pixel_shift = std::stoi(found_pixel_shift->second);
+      }
+
+      //TODO: catch this possibly throug the _payload
+#ifndef SQY_TRACE
+      av_log_set_level(AV_LOG_ERROR);
+#else
+      av_log_set_level(AV_LOG_DEBUG);
+#endif
+      
     }
 
     std::string name() const override final {
@@ -74,10 +99,24 @@ namespace sqeazy {
     
     }
 
-    //TODO: not implemented yet!!
+    /**
+       \brief given the size of some input in bytes, how large can the encoded data maximally be
+       I have not yet found a function inside ffmpeg that might do this for me,
+       right now, I assume 25% memory extra if lossless encoding is configured (overhead)
+       
+       \param[in] 
+       
+       \return 
+       \retval 
+       
+    */
     std::intmax_t max_encoded_size(std::intmax_t _size_bytes) const override final {
-    
-      return _size_bytes;
+
+      auto found_qp = config_map.find("qp");
+      if(found_qp!=config_map.end() && std::stoi(found_qp->second)==0)
+	return _size_bytes*1.25;
+      else
+	return _size_bytes;
       
     }
     
@@ -112,19 +151,23 @@ namespace sqeazy {
 	const int min_bit_set = sqeazy::lowest_set_bit(_in,_in + total_length);
 	drange = max_bit_set - min_bit_set;
 
-	if(drange<9)
+	if(drange<9){
+	  pixel_shift = min_bit_set;
 	  std::transform(temp_in.begin(), temp_in.end(),
 			 temp_in.begin(),
 			 [&](raw_type& _item){
 			   if(_item)
-			     return _item >> min_bit_set;
+			     return _item >> pixel_shift;
 			 });
+	  
+	}
       } 
 
       if(drange<9)
 	num_written_bytes = h264_encode_stack((uint8_t*)&temp_in[0],
 					      _shape,
-					      temp_out);
+					      temp_out,
+					      config_map);
       else {
 	//TODO: apply quantisation
 	num_written_bytes = 0;
@@ -147,8 +190,17 @@ namespace sqeazy {
       const uint8_t* input = reinterpret_cast<const uint8_t*>(_in);
       
       std::size_t num_bytes_decoded = h264_decode_stack(input, _len_in, _out, _len_out);
+
+      if(pixel_shift){
+	std::transform(_out, _out + _len_out,
+		       _out,
+		       [&](raw_type& _item){
+			 if(_item)
+			   return _item << pixel_shift;
+		       });
+      }
       
-      return ( num_bytes_decoded > 0 && num_bytes_decoded == _len_out ) ? SUCCESS : FAILURE;
+      return ( num_bytes_decoded > 0 && num_bytes_decoded <= _len_out ) ? SUCCESS : FAILURE;
       
             
     }
