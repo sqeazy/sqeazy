@@ -20,23 +20,13 @@ extern "C" {
 
 #include "hevc_scheme_utils.hpp"
 #include "sqeazy_algorithms.hpp"
-
+#include "traits.hpp"
+#include "video_io.hpp"
 
 namespace sqeazy {
 
-
-  static uint32_t write_encoded(const std::string& _filename, std::vector<uint8_t>& _video ){
   
-  std::ofstream ofile(_filename, std::ios::binary | std::ios::out );
-  
-  for ( const uint8_t& c : _video )
-    ofile << c;
-
-  ofile.close();
-
-  return 0;
-}
-  
+    
   template <typename T> struct av_pixel_type {};
   template <> struct av_pixel_type<uint8_t> { static const AVPixelFormat value = AV_PIX_FMT_GRAY8;};
   template <> struct av_pixel_type<uint16_t> { static const AVPixelFormat value = AV_PIX_FMT_GRAY16;};
@@ -55,9 +45,10 @@ namespace sqeazy {
   */
   template <typename raw_type, AVCodecID codec_id =  AV_CODEC_ID_H264>
   static uint32_t h264_encode_stack(const raw_type* _volume,
-			       const std::vector<uint32_t>& _shape,
-			       std::vector<uint8_t>& _buffer ,
-			       const std::string& _debug_filename = ""){
+				    const std::vector<uint32_t>& _shape,
+				    std::vector<uint8_t>& _buffer ,
+				    const std::map<std::string,std::string>& config = default_h264_config,
+				    const std::string& _debug_filename = ""){
 
 
     uint32_t bytes_written = 0;
@@ -66,8 +57,8 @@ namespace sqeazy {
     sqeazy::av_codec_context_t ctx(codec);
 
     /* resolution must be a multiple of two due to YUV420p format*/
-    ctx.get()->width = _shape[_shape.size()-1];
-    ctx.get()->height = _shape[_shape.size()-2];
+    ctx.get()->width = _shape[row_major::w];
+    ctx.get()->height = _shape[row_major::h];
     /* frames per second */
     ctx.get()->time_base = (AVRational){1,25};
     /* emit one intra frame every ten frames

@@ -20,22 +20,11 @@ extern "C" {
 
 #include "hevc_scheme_utils.hpp"
 #include "sqeazy_algorithms.hpp"
-
+#include "video_io.hpp"
 
 namespace sqeazy {
 
 
-  static uint32_t write_encoded(const std::string& _filename, std::vector<uint8_t>& _video ){
-  
-  std::ofstream ofile(_filename, std::ios::binary | std::ios::out );
-  
-  for ( const uint8_t& c : _video )
-    ofile << c;
-
-  ofile.close();
-
-  return 0;
-}
   
   template <typename T> struct av_pixel_type {};
   template <> struct av_pixel_type<uint8_t> { static const AVPixelFormat value = AV_PIX_FMT_GRAY8;};
