@@ -9,7 +9,7 @@
 
 #include "boost/align/aligned_allocator.hpp"
 #include "boost/multi_array.hpp"
-// #include "image_stack.hpp"
+#include "traits.hpp"
 
 
 namespace sqeazy {
@@ -20,7 +20,7 @@ namespace sqeazy {
     
     // constexpr static const
     const std::array<uint32_t,3> shape_ = {{largest_axis, (largest_axis/3) + 4, (largest_axis/3) }};//z,y,x according to c_storage_order
-    const std::array<uint32_t,3> half_shape_ = {{shape_[0]/2u, shape_[1]/2u , shape_[2]/2u}};
+    const std::array<uint32_t,3> half_shape_ = {{shape_[row_major::z]/2u, shape_[row_major::y]/2u , shape_[row_major::x]/2u}};
     using image_stack = boost::multi_array<T, 3, boost::alignment::aligned_allocator<T, 32>
 					   >;
     typedef image_stack stack_t;
@@ -51,17 +51,17 @@ namespace sqeazy {
       float ellipsoid = 0.f;
       float dist_to_1 = 0.f;
 
-      for(uint32_t z=0;z<shape_[0];z++)
-	for(uint32_t y=0;y<shape_[1];y++)
-	  for(uint32_t x=0;x<shape_[2];x++){
+      for(uint32_t z=0;z<shape_[row_major::z];z++)
+	for(uint32_t y=0;y<shape_[row_major::y];y++)
+	  for(uint32_t x=0;x<shape_[row_major::x];x++){
 	  
-	    float x_2 = (float(x) - half_shape_[2]);x_2 *= x_2;
-	    float y_2 = (float(y) - half_shape_[1]);y_2 *= y_2;
-	    float z_2 = (float(z) - half_shape_[0]);z_2 *= z_2;
+	    float x_2 = (float(x) - half_shape_[row_major::x]);x_2 *= x_2;
+	    float y_2 = (float(y) - half_shape_[row_major::y]);y_2 *= y_2;
+	    float z_2 = (float(z) - half_shape_[row_major::z]);z_2 *= z_2;
 	  
-	    ellipsoid = x_2*denoms[2];
-	    ellipsoid += y_2*denoms[1];
-	    ellipsoid += z_2*denoms[0];
+	    ellipsoid = x_2* denoms[row_major::x];
+	    ellipsoid += y_2*denoms[row_major::y];
+	    ellipsoid += z_2*denoms[row_major::z];
 	  
 	    dist_to_1 = std::abs(1 - ellipsoid);
 	    if ( dist_to_1 < .07 ){
