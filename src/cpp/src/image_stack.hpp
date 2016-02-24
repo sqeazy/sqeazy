@@ -17,7 +17,7 @@ namespace sqeazy {
   typedef float32_image_stack::array_view<2>::type float32_image_stack_frame;
   typedef float32_image_stack::array_view<1>::type float32_image_stack_line;
 
-  typedef boost::multi_array<uint16_t, 3, boost::alignment::aligned_allocator<uint16_t, 32> > uint16_image_stack;
+  typedef boost::multi_array<uint16_t, 3, boost::alignment::aligned_allocator<uint16_t, 32> > uint16_ihmage_stack;
   typedef boost::multi_array_ref<uint16_t, 3> uint16_image_stack_ref;
   typedef boost::const_multi_array_ref<uint16_t, 3> uint16_image_stack_cref;
   typedef uint16_image_stack::array_view<3>::type uint16_image_stack_view;

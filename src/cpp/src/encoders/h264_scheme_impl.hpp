@@ -1,7 +1,7 @@
 #ifndef _H264_SCHEME_IMPL_H_
 #define _H264_SCHEME_IMPL_H_
 
-#include <fstream>
+#include <sstream>
 #include <cmath>
 #include <map>
 #include <string>
@@ -52,7 +52,7 @@ namespace sqeazy {
 
     uint32_t bytes_written = 0;
 
-    sqeazy::av_codec_t codec(AV_CODEC_ID_H264);
+    sqeazy::av_codec_t codec(codec_id);
     sqeazy::av_codec_context_t ctx(codec);
 
     //no rate control at this point
@@ -75,18 +75,11 @@ namespace sqeazy {
     if (codec_id == AV_CODEC_ID_H264){
       if(_config.size()){
 	for( const auto & kv : _config ){
-	  if(kv.first.find("cqp") == std::string::npos ){
-	    
+
 	    av_opt_set(ctx.get()->priv_data,
 		       kv.first.c_str(),
 		       kv.second.c_str(),
 		       0);
-	  } else{
-	    av_opt_set_int(ctx.get()->priv_data,
-		       "cqp",
-		       std::stoi(kv.second),
-		       0);
-	  }
 	}
       }
 

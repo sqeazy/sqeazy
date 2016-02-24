@@ -1,8 +1,10 @@
 #ifndef _HEVC_SCHEME_IMPL_H_
 #define _HEVC_SCHEME_IMPL_H_
 
-#include <fstream>
+#include <sstream>
 #include <cmath>
+#include <map>
+#include <string>
 
 extern "C" {
 
@@ -25,7 +27,22 @@ extern "C" {
 
 namespace sqeazy {
 
-
+  static std::map<std::string,std::string> default_hevc_config = {
+    {"preset", "ultrafast"},
+    {"profile", "main"},
+    {"lossless", "1"},
+    {"min-keyint", "1"},
+#ifdef DEBUG_HEVC
+#ifndef TRACE_HEVC
+    {"log-level","info"}
+#else
+    {"log-level","full"}
+#endif
+#else
+    {"log-level","warning"}
+#endif
+  };
+  
   /**
      \brief function that uses 
    
@@ -39,19 +56,21 @@ namespace sqeazy {
   */
   template <typename raw_type, AVCodecID codec_id =  AV_CODEC_ID_HEVC>
   static uint32_t hevc_encode_stack(const raw_type* _volume,
-			       const std::vector<uint32_t>& _shape,
-			       std::vector<uint8_t>& _buffer ,
-			       const std::string& _debug_filename = ""){
+				    const std::vector<uint32_t>& _shape,
+				    std::vector<uint8_t>& _buffer ,
+				    const std::map<std::string,std::string>& _config = default_hevc_config,
+				    const std::string& _debug_filename = ""){
 
 
     uint32_t bytes_written = 0;
 
-    sqeazy::av_codec_t codec(AV_CODEC_ID_HEVC);
+    sqeazy::av_codec_t codec(codec_id);
     sqeazy::av_codec_context_t ctx(codec);
 
     /* resolution must be a multiple of two due to YUV420p format*/
-    ctx.get()->width = _shape[_shape.size()-1];
-    ctx.get()->height = _shape[_shape.size()-2];
+    ctx.get()->width = _shape[row_major::w];
+    ctx.get()->height = _shape[row_major::h];
+
     /* frames per second */
     ctx.get()->time_base = (AVRational){1,25};
     /* emit one intra frame every ten frames
@@ -67,23 +86,21 @@ namespace sqeazy {
     
     
     if (codec_id == AV_CODEC_ID_HEVC){
-      av_opt_set(ctx.get()->priv_data, "preset", "ultrafast", 0);
-      av_opt_set(ctx.get()->priv_data, "profile", "main", 0);
+
       //http://x265.readthedocs.org/en/default/lossless.html#lossless-encoding
       std::stringstream params("");
-	
-      params << "lossless=1";
-      params << ":min-keyint=1";
-      		
-#ifdef DEBUG_HEVC
-#ifndef TRACE_HEVC
-      params << ":log-level=info";
-#else
-      params << ":log-level=full";
-#endif
-#else
-      params << ":log-level=warning";
-#endif
+      int count = 0;
+      for( const auto & kv : _config )
+	{
+	  if(kv.first == "preset" || kv.first == "profile"){
+	    av_opt_set(ctx.get()->priv_data, kv.first.c_str(), kv.second.c_str(), 0);
+	  }
+	  else {
+	    params << kv.first << "=" << kv.second;
+	    if(count<(_config.size()-1))
+	      params << ":";
+	  }
+	}
 
       av_opt_set(ctx.get()->priv_data, "x265-params", params.str().c_str(), 0);
     }
@@ -210,28 +227,6 @@ static uint32_t hevc_decode_stack(const uint8_t* _buffer,
   uint32_t rcode = 0;
     
     
-
-  // AVIOContext *avio_ctx = NULL;
-  // uint8_t *avio_ctx_buffer = NULL;
-  // size_t avio_ctx_buffer_size = 4096;
-
-          
-  // avio_ctx_buffer = (uint8_t *)av_malloc(avio_ctx_buffer_size);
-  // if (!avio_ctx_buffer) {
-  //   std::cerr << "failed to allocated avio_ctx_buffer\n";
-  //   //handle deallocation
-  //   av_freep(&avio_ctx_buffer);
-  //   return rcode;
-  // }
-
-  
-  // buffer_data read_data = {0};
-  // read_data.ptr = &_buffer[0];
-  // read_data.size = _buffer.size();
-
-  // avio_ctx = avio_alloc_context(avio_ctx_buffer, avio_ctx_buffer_size,
-  // 				0, &read_data, &read_packet, NULL, NULL);
-
   sqeazy::avio_buffer_data read_this;
   read_this.ptr = _buffer;
   read_this.size = _buffer_len;
@@ -250,13 +245,7 @@ static uint32_t hevc_decode_stack(const uint8_t* _buffer,
     
   if (formatContext.open_input(avio_ctx.get()) != 0)
     {
-      
-      // avformat_close_input(&formatContext);
-      // if (avio_ctx) {
-      //   av_freep(&avio_ctx->buffer);
-      //   av_freep(&avio_ctx);
-      // }
-
+        
       std::cerr << "failed to open input\n";
       return rcode;
     }
@@ -281,20 +270,6 @@ static uint32_t hevc_decode_stack(const uint8_t* _buffer,
     std::cerr << "decoder codec cannot be opened\n";
     return rcode;
   }
-  // AVCodecContext* codecContext = ;
-
-  // codecContext->codec = avcodec_find_decoder(codecContext->codec_id);
-  // if (codecContext->codec == NULL)
-  //   {
-  //     avcodec_close(codecContext);
-  //     std::cerr << "codec used in stream not found\n";
-  //     return rcode;
-  //   }
-  // else if (avcodec_open2(codecContext, codecContext->codec, NULL) != 0)
-  //   {
-  //     avcodec_close(codecContext);
-
-  //   }
 
   
   AVPacket packet;
@@ -404,7 +379,7 @@ static uint32_t hevc_decode_stack(const uint8_t* _buffer,
   }
 
 
-  if(temp.size() == _volume_len)
+  if(temp.size() <= _volume_len)
     std::copy(temp.begin(), temp.end(),_volume);
     
   av_free_packet(&packet);
