@@ -37,11 +37,11 @@ extern "C" {
 namespace sqeazy {
 
   
-  template < typename T , typename S = std::size_t>
-  struct h264_scheme :  public sink<T,std::uint8_t> {
+  template < typename in_type , typename out_type = std::uint8_t, typename S = std::size_t>
+  struct h264_scheme :  public sink<in_type,out_type> {
 
-    typedef sink<T,std::uint8_t> sink_type;
-    typedef T raw_type;
+    typedef sink<in_type,out_type> sink_type;
+    typedef in_type raw_type;
     typedef typename sink_type::out_type compressed_type;
 
     static_assert(std::is_arithmetic<raw_type>::value==true,"[h264_scheme] input type is non-arithmetic");
@@ -153,7 +153,7 @@ namespace sqeazy {
             
     }
 
-
+    
     ~h264_scheme(){};
 
     std::string output_type() const final override {
@@ -164,7 +164,7 @@ namespace sqeazy {
 
     bool is_compressor() const final override {
     
-      return sink<T>::is_compressor;
+      return sink<raw_type>::is_compressor;
     
     }
     
@@ -314,8 +314,8 @@ namespace sqeazy {
     
   };
 
-  template < typename T , typename S>
-  S h264_scheme<T,S>::last_num_encoded_bytes = 0;
+  template < typename T, typename O , typename S>
+  S h264_scheme<T,O,S>::last_num_encoded_bytes = 0;
 
   
 };//sqy namespace

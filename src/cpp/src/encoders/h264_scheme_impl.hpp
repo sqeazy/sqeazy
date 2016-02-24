@@ -1,5 +1,5 @@
-#ifndef _HEVC_SCHEME_IMPL_H_
-#define _HEVC_SCHEME_IMPL_H_
+#ifndef _H264_SCHEME_IMPL_H_
+#define _H264_SCHEME_IMPL_H_
 
 #include <fstream>
 #include <cmath>
@@ -19,7 +19,6 @@ extern "C" {
   
 }
 
-//#include "hevc_scheme_utils.hpp"
 #include "sqeazy_algorithms.hpp"
 #include "traits.hpp"
 #include "video_io.hpp"
@@ -44,7 +43,7 @@ namespace sqeazy {
   */
   template <typename raw_type, AVCodecID codec_id =  AV_CODEC_ID_H264>
   static uint32_t h264_encode_stack(const raw_type* _volume,
-				    const std::vector<uint32_t>& _shape,
+				    const std::vector<std::size_t>& _shape,
 				    std::vector<uint8_t>& _buffer ,
 				    const std::map<std::string,std::string>& _config = default_h264_config,
 				    const std::string& _debug_filename = ""){
@@ -71,9 +70,6 @@ namespace sqeazy {
     // ctx.get()->gop_size = 10;
     // ctx.get()->max_b_frames = 1;
     ctx.get()->pix_fmt = AV_PIX_FMT_YUV420P;
-    
-    
-    
     
     if (codec_id == AV_CODEC_ID_H264){
       if(_config.find("preset")!=_config.end()){

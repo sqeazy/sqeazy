@@ -31,6 +31,7 @@ namespace sqeazy {
   template	<> struct twice_as_wide<int>	       { typedef long		type; };
   template	<> struct twice_as_wide<long>	       { typedef long long	type; };
   template	<> struct twice_as_wide<float>	       { typedef double		type; };
+  template	<> struct twice_as_wide<double>	       { typedef long double	type; };
 
   
   
