@@ -5,7 +5,7 @@
 #include <sstream>
 #include <climits>
 #include "sqeazy_common.hpp"
-#include "sqeazy_traits.hpp"
+#include "traits.hpp"
 #include "neighborhood_utils.hpp"
 #include "background_scheme_utils.hpp"
 #include "diff_scheme_utils.hpp"

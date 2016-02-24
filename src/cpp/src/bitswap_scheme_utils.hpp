@@ -3,7 +3,7 @@
 #include <limits>
 #include <climits>
 #include <iostream>
-#include "sqeazy_traits.hpp"
+#include "traits.hpp"
 #include "sqeazy_common.hpp"
 #include "bitplane_reorder_detail.hpp"
 

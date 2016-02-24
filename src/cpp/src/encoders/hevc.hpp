@@ -5,7 +5,7 @@
 #include <typeinfo>
 
 #include "sqeazy_common.hpp"
-#include "sqeazy_traits.hpp"
+#include "traits.hpp"
 
 #include "dynamic_stage.hpp"
 

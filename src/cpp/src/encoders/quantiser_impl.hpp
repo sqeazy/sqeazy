@@ -14,7 +14,7 @@
 #include <fstream>
 #include <iomanip>
 
-#include "sqeazy_traits.hpp"
+#include "traits.hpp"
 
 
 

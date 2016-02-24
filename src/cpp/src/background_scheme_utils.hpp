@@ -4,7 +4,7 @@
 #include <climits>
 #include <iostream>
 #include <vector>
-#include "sqeazy_traits.hpp"
+#include "traits.hpp"
 #include "neighborhood_utils.hpp"
 #include "hist_impl.hpp"
 

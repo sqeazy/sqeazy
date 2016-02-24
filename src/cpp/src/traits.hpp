@@ -52,7 +52,39 @@ namespace sqeazy {
             
     }
   };
-  
+
+  /**
+     \brief struct to help index 3D shapes in a uniform manner for row_major storage
+     the rational behind this is, that in C/C++ row_major for e.g. 3D structures corresponds to
+     
+     int my_3d_integers[Nz][Ny][Nx];
+     
+     therefor, if the shape of a 3D volume is to be stored in a vector, the indexing must make note of this:
+
+     static const std::vector<int> shape = {Nz, Ny, Nx};
+     int my_3d_integers[shape[row_major::z]][shape[row_major::y]][shape[row_major::x]];
+
+     \param[in] 
+     
+     \return 
+     \retval 
+     
+  */
+  struct row_major {
+
+    const static size_t x = 2;
+    const static size_t y = 1;
+    const static size_t z = 0;
+
+    const static size_t w = x;
+    const static size_t h = y;
+    const static size_t d = z;
+
+    const static size_t in_x = x;
+    const static size_t in_y = y;
+    const static size_t in_z = z;
+
+  };
   
 } // sqeazy
 

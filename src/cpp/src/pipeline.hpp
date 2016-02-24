@@ -14,7 +14,7 @@
 
 #include "sqeazy_header.hpp"
 #include "sqeazy_common.hpp"
-#include "sqeazy_traits.hpp"
+#include "traits.hpp"
 
 namespace sqeazy {
 

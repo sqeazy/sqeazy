@@ -4,7 +4,7 @@
 #include <vector>
 #include <numeric>
 
-#include "sqeazy_traits.hpp"
+#include "traits.hpp"
 
 
 namespace sqeazy {

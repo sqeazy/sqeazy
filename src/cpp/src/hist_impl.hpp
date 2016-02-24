@@ -9,7 +9,7 @@
 #include <iomanip>
 #include <numeric>
 #include <algorithm>
-#include "sqeazy_traits.hpp"
+#include "traits.hpp"
 
 namespace sqeazy {
 
