@@ -6,6 +6,7 @@
 
 #include "sqeazy_common.hpp"
 #include "traits.hpp"
+#include "image_stack.hpp"
 
 #include "dynamic_stage.hpp"
 
@@ -32,7 +33,8 @@ extern "C" {
 
 #include <type_traits>
 
-#include "h264_scheme_impl.hpp"
+//#include "h264_scheme_impl.hpp"
+#include "ffmpeg_video_encode_impl.hpp"
 #include "string_parsers.hpp"
 
 
@@ -49,26 +51,19 @@ namespace sqeazy {
     typedef typename sink_type::out_type compressed_type;
 
     static_assert(std::is_arithmetic<raw_type>::value==true,"[h264_scheme] input type is non-arithmetic");
-
+    static_assert(sizeof(raw_type)==1,"[h264_scheme] input type is not 1-byte wide (large bit-depths than 8 are not supported yet)");
+    
     std::string h264_config;
     parsed_map_t  config_map;
-    int pixel_shift;
     
     //TODO: check syntax of h264 configuration at runtime
     h264_scheme(const std::string& _payload=""):
       h264_config(_payload),
-      config_map(),
-      pixel_shift(0)
+      config_map()
     {
 
       if(_payload.size())
 	config_map = unordered_parse_by(_payload.begin(), _payload.end());
-
-      auto found_pixel_shift = config_map.find("pixel_shift");
-      if(found_pixel_shift!=config_map.end()){
-	config_map.erase(found_pixel_shift);
-	pixel_shift = std::stoi(found_pixel_shift->second);
-      }
 
       //TODO: catch this possibly throug the _payload
 #ifndef SQY_TRACE
@@ -138,39 +133,33 @@ namespace sqeazy {
 
 	
       int drange = sizeof(raw_type)*CHAR_BIT;
-      std::vector<compressed_type> temp_out;	
-      std::vector<raw_type> temp_in(_in,_in + total_length);
-	
+
+      std::vector<compressed_type> temp_out;
+      stack<raw_type> temp_in(_shape);
+      std::copy(_in,_in+temp_in.num_elements(),temp_in.data());
+      // std::vector<compressed_type> temp_out;	
+      // std::vector<raw_type> temp_in(_in,_in + total_length);
+      
       size_t num_written_bytes = 0;
 
-      //normalize data if lowest_set_bit is greater than 0
-      //NB. this is lossy compression
+      //normalize data FIXME: is that needed at all?
       if(sizeof(raw_type)!=1){
-	// const compressed_type* input = reinterpret_cast<const compressed_type*>(_in);
 	const int max_bit_set = sqeazy::highest_set_bit(_in,_in + total_length);
 	const int min_bit_set = sqeazy::lowest_set_bit(_in,_in + total_length);
 	drange = max_bit_set - min_bit_set;
-
-	if(drange<9){
-	  pixel_shift = min_bit_set;
-	  std::transform(temp_in.begin(), temp_in.end(),
-			 temp_in.begin(),
-			 [&](raw_type& _item){
-			   if(_item)
-			     return _item >> pixel_shift;
-			 });
-	  
-	}
       } 
 
       if(drange<9)
-	num_written_bytes = h264_encode_stack((uint8_t*)&temp_in[0],
-					      _shape,
-					      temp_out,
-					      config_map);
+	num_written_bytes = ffmpeg_encode_stack<raw_type, AV_CODEC_ID_H264>(temp_in,temp_out,config_map);
+	// num_written_bytes = h264_encode_stack((uint8_t*)&temp_in[0],
+	// 				      _shape,
+	// 				      temp_out,
+	// 				      config_map);
       else {
 	//TODO: apply quantisation
+	std::cerr << "data with dynamic range > 8 found! Doing nothing\n";
 	num_written_bytes = 0;
+	
       }
 
       if(num_written_bytes > 0) 
@@ -189,16 +178,7 @@ namespace sqeazy {
 	
       const uint8_t* input = reinterpret_cast<const uint8_t*>(_in);
       
-      std::size_t num_bytes_decoded = h264_decode_stack(input, _len_in, _out, _len_out);
-
-      if(pixel_shift){
-	std::transform(_out, _out + _len_out,
-		       _out,
-		       [&](raw_type& _item){
-			 if(_item)
-			   return _item << pixel_shift;
-		       });
-      }
+      std::size_t num_bytes_decoded = decode_stack(input, _len_in, _out, _len_out);
       
       return ( num_bytes_decoded > 0 && num_bytes_decoded <= _len_out ) ? SUCCESS : FAILURE;
       

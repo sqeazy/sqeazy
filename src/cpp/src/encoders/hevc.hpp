@@ -31,8 +31,9 @@ extern "C" {
 
 
 #include <type_traits>
+#include "ffmpeg_video_encode_impl.hpp"
 
-#include "hevc_scheme_impl.hpp"
+//#include "hevc_scheme_impl.hpp"
 
 namespace sqeazy {
 
@@ -45,13 +46,26 @@ namespace sqeazy {
     typedef typename sink_type::out_type compressed_type;
 
     static_assert(std::is_arithmetic<raw_type>::value==true,"[hevc_scheme] input type is non-arithmetic");
+    static_assert(sizeof(raw_type)==1,"[hevc_scheme] input type is not 1-byte wide (large bit-depths than 8 are not supported yet)");
 
     std::string hevc_config;
-
+    parsed_map_t  config_map;
+    
     //TODO: check syntax of hevc configuration at runtime
     hevc_scheme(const std::string& _payload=""):
-      hevc_config(_payload){
+      hevc_config(_payload),
+      config_map()
+    {
 
+      if(_payload.size())
+	config_map = unordered_parse_by(_payload.begin(), _payload.end());
+
+      //TODO: catch this possibly throug the _payload
+#ifndef SQY_TRACE
+      av_log_set_level(AV_LOG_ERROR);
+#else
+      av_log_set_level(AV_LOG_DEBUG);
+#endif
     }
 
     std::string name() const override final {
@@ -74,10 +88,24 @@ namespace sqeazy {
     
     }
 
-    //TODO: not implemented yet!!
+/**
+       \brief given the size of some input in bytes, how large can the encoded data maximally be
+       I have not yet found a function inside ffmpeg that might do this for me,
+       right now, I assume 25% memory extra if lossless encoding is configured (overhead)
+       
+       \param[in] 
+       
+       \return 
+       \retval 
+       
+    */
     std::intmax_t max_encoded_size(std::intmax_t _size_bytes) const override final {
-    
-      return _size_bytes;
+
+      auto found_qp = config_map.find("qp");
+      if(found_qp!=config_map.end() && std::stoi(found_qp->second)==0)
+	return _size_bytes*1.25;
+      else
+	return _size_bytes;
       
     }
     
@@ -99,35 +127,33 @@ namespace sqeazy {
 
 	
       int drange = sizeof(raw_type)*CHAR_BIT;
-      std::vector<compressed_type> temp_out;	
-      std::vector<raw_type> temp_in(_in,_in + total_length);
-	
+
+      std::vector<compressed_type> temp_out;
+      stack<raw_type> temp_in(_shape);
+      std::copy(_in,_in+temp_in.num_elements(),temp_in.data());
+      // std::vector<compressed_type> temp_out;	
+      // std::vector<raw_type> temp_in(_in,_in + total_length);
+      
       size_t num_written_bytes = 0;
 
-      //normalize data if lowest_set_bit is greater than 0
-      //NB. this is lossy compression
+      //normalize data FIXME: is that needed at all?
       if(sizeof(raw_type)!=1){
-	// const compressed_type* input = reinterpret_cast<const compressed_type*>(_in);
 	const int max_bit_set = sqeazy::highest_set_bit(_in,_in + total_length);
 	const int min_bit_set = sqeazy::lowest_set_bit(_in,_in + total_length);
 	drange = max_bit_set - min_bit_set;
-
-	if(drange<9)
-	  std::transform(temp_in.begin(), temp_in.end(),
-			 temp_in.begin(),
-			 [&](raw_type& _item){
-			   if(_item)
-			     return _item >> min_bit_set;
-			 });
       } 
 
       if(drange<9)
-	num_written_bytes = hevc_encode_stack((uint8_t*)&temp_in[0],
-					      _shape,
-					      temp_out);
+	num_written_bytes = ffmpeg_encode_stack<raw_type, AV_CODEC_ID_H264>(temp_in,temp_out,config_map);
+	// num_written_bytes = h264_encode_stack((uint8_t*)&temp_in[0],
+	// 				      _shape,
+	// 				      temp_out,
+	// 				      config_map);
       else {
 	//TODO: apply quantisation
+	std::cerr << "data with dynamic range > 8 found! Doing nothing\n";
 	num_written_bytes = 0;
+	
       }
 
       if(num_written_bytes > 0) 
@@ -146,13 +172,12 @@ namespace sqeazy {
 	
       const uint8_t* input = reinterpret_cast<const uint8_t*>(_in);
       
-      std::size_t num_bytes_decoded = hevc_decode_stack(input, _len_in, _out, _len_out);
+      std::size_t num_bytes_decoded = decode_stack(input, _len_in, _out, _len_out);
       
-      return ( num_bytes_decoded > 0 && num_bytes_decoded == _len_out ) ? SUCCESS : FAILURE;
+      return ( num_bytes_decoded > 0 && num_bytes_decoded <= _len_out ) ? SUCCESS : FAILURE;
       
             
     }
-
 
     ~hevc_scheme(){};
 
