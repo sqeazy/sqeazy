@@ -89,15 +89,6 @@ BOOST_AUTO_TEST_CASE( auto_background_removed_success )
   
   BOOST_CHECK_GT(pixels_removed,.8*uint16_cube_of_8::size);
   
-  // retcode = SQY_RmBackground_Estimated_UI16(assumed_axis_dim,
-  //                 assumed_axis_dim,
-  //                 assumed_axis_dim,input,
-  // 					 0
-  // 					 );
-  
-  // BOOST_CHECK_EQUAL(retcode,0);
-  // BOOST_CHECK_NE(1,constant_cube[0]);
-
 }
 
 

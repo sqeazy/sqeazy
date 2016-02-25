@@ -149,7 +149,7 @@ namespace sqeazy {
 
     bool is_compressor() const final override {
     
-      return sink<in_type>::is_compressor;
+      return base_type::is_compressor;
     
     }
 

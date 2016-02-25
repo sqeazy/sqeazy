@@ -8,6 +8,7 @@
 #include "pipeline.hpp"
 
 #include "encoders/sqeazy_impl.hpp"
+
 /*
 *	Sqeazy - Fast and flexible volume compression library
 *
@@ -204,11 +205,25 @@ int SQY_RLEDecode_UI8(const char* src, char* dst, long length){return 42;}
 int SQY_RmBackground_AtMode_UI16(char* src, char* dst, long length, unsigned short epsilon){
 
   typedef unsigned short raw_type;
-  return sqeazy::remove_background<raw_type>::static_encode(reinterpret_cast<raw_type*>(src),
-							reinterpret_cast<raw_type*>(dst),
-							length/sizeof(raw_type),
-							epsilon
-							);
+  sqeazy::remove_background_scheme<raw_type> remove_it(epsilon);
+
+  if(!dst)
+    dst = src;
+  
+  auto end = remove_it.encode(reinterpret_cast<raw_type*>(src),
+			      reinterpret_cast<raw_type*>(dst),
+			      length/sizeof(raw_type));
+
+  if(end!=nullptr)
+    return 0;
+  else
+    return 1;
+  
+  // return sqeazy::remove_background<raw_type>::static_encode(reinterpret_cast<raw_type*>(src),
+  // 							reinterpret_cast<raw_type*>(dst),
+  // 							length/sizeof(raw_type),
+  // 							epsilon
+  // 							);
 
 }
 

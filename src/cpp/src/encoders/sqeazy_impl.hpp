@@ -9,13 +9,14 @@
 #include "traits.hpp"
 
 #include "neighborhood_utils.hpp"
-#include "background_scheme_utils.hpp"
+
 #include "hist_impl.hpp"
 #include "huffman_utils.hpp"
 
 //converted schemes
 #include "diff_scheme_impl.hpp"
 #include "bitswap_scheme_impl.hpp"
+#include "remove_background_scheme_impl.hpp"
 
 #include "dynamic_stage.hpp"
 
@@ -229,150 +230,150 @@ namespace sqeazy {
 
 
 
-template < typename T, typename S = long >
-struct remove_background {
+// template < typename T, typename S = long >
+// struct remove_background {
   
-    typedef T raw_type;
-    typedef T compressed_type;
-    typedef S size_type;
-    static const bool is_sink = false;
+//     typedef T raw_type;
+//     typedef T compressed_type;
+//     typedef S size_type;
+//     static const bool is_sink = false;
 
-    /**
-     * @brief producing the name of this scheme and return it as a string
-     *
-     * @return const std::string
-     */
-    static const std::string static_name() {
-
-
-        return std::string("rmbkrd");
-
-    }
+//     /**
+//      * @brief producing the name of this scheme and return it as a string
+//      *
+//      * @return const std::string
+//      */
+//     static const std::string static_name() {
 
 
-/**
-     * @brief [length given as vector] removal of _threshold from _input buffer, i.e. if any value
-     * inside _input is found to be <= _threshold it is set to 0, it is kept otherwise (inplace version)
-     * @param _input 3D input stack of type raw_type
-     * @param _output 3D output stack of type raw_type
-     * @param _length length of the above in units of raw_type
-     * @param _threshold threshold to apply
-     * @return sqeazy::error_code
-     */
-    static const error_code static_encode(raw_type* _input,
-                                   raw_type* _output,
-                                   const std::vector<size_type>& _data,
-				   const raw_type& _threshold
-				  )
-    {
+//         return std::string("rmbkrd");
 
-        unsigned long length = std::accumulate(_data.begin(), _data.end(), 1, std::multiplies<size_type>());
-
-        return static_encode(_input, _output, length, _threshold);
-
-    }
-
-    /**
-     * @brief [length given as scalar] removal of _threshold from _input buffer, i.e. if any value
-     * inside _input is found to be <= _threshold it is set to 0, it is kept otherwise (inplace version)
-     * @param _input 3D input stack of type raw_type
-     * @param _output 3D output stack of type raw_type
-     * @param _length length of the above in units of raw_type
-     * @param _threshold threshold to apply
-     * @return sqeazy::error_code
-     */
-    static const error_code static_encode(raw_type* _input,
-                                   raw_type* _output,
-                                   const size_type& _length,
-                                   const raw_type& _threshold)
-    {
-        if(_output)
-            return static_encode_out_of_place(_input, _output, _length, _threshold);
-        else
-            return static_encode_inplace(_input, _length, _threshold);
-
-    }
+//     }
 
 
+// /**
+//      * @brief [length given as vector] removal of _threshold from _input buffer, i.e. if any value
+//      * inside _input is found to be <= _threshold it is set to 0, it is kept otherwise (inplace version)
+//      * @param _input 3D input stack of type raw_type
+//      * @param _output 3D output stack of type raw_type
+//      * @param _length length of the above in units of raw_type
+//      * @param _threshold threshold to apply
+//      * @return sqeazy::error_code
+//      */
+//     static const error_code static_encode(raw_type* _input,
+//                                    raw_type* _output,
+//                                    const std::vector<size_type>& _data,
+// 				   const raw_type& _threshold
+// 				  )
+//     {
 
-    /**
-     * @brief clipping removal of _threshold from _input buffer, i.e. if any value
-     * inside _input is found to be <= _threshold it is set to 0, it is kept otherwise (inplace version)
-     * @param _input 3D input stack of type raw_type
-     * @param _output 3D output stack of type raw_type
-     * @param _length length of the above in units of raw_type
-     * @param _threshold threshold to apply
-     * @return sqeazy::error_code
-     */
-    static const error_code static_encode_out_of_place(raw_type* _input,
-            raw_type* _output,
-            const size_type& _length,
-            const raw_type& _threshold)
-    {
-      const unsigned long size = _length;
-        for(unsigned long vox = 0; vox<size; ++vox) {
-            _output[vox] = (_input[vox] > _threshold) ? _input[vox] - _threshold : 0;
-        }
+//         unsigned long length = std::accumulate(_data.begin(), _data.end(), 1, std::multiplies<size_type>());
 
-        return SUCCESS;
-    }
+//         return static_encode(_input, _output, length, _threshold);
+
+//     }
+
+//     /**
+//      * @brief [length given as scalar] removal of _threshold from _input buffer, i.e. if any value
+//      * inside _input is found to be <= _threshold it is set to 0, it is kept otherwise (inplace version)
+//      * @param _input 3D input stack of type raw_type
+//      * @param _output 3D output stack of type raw_type
+//      * @param _length length of the above in units of raw_type
+//      * @param _threshold threshold to apply
+//      * @return sqeazy::error_code
+//      */
+//     static const error_code static_encode(raw_type* _input,
+//                                    raw_type* _output,
+//                                    const size_type& _length,
+//                                    const raw_type& _threshold)
+//     {
+//         if(_output)
+//             return static_encode_out_of_place(_input, _output, _length, _threshold);
+//         else
+//             return static_encode_inplace(_input, _length, _threshold);
+
+//     }
 
 
 
-    /**
-     * @brief clipping removal of _threshold from _input buffer, i.e. if any value
-     * inside _input is found to be <= _threshold it is set to 0, it is kept otherwise (inplace version)
-     * @param _input 3D input stack of type raw_type
-     * @param _length length of the above in units of raw_type
-     * @param _threshold threshold to apply
-     * @return sqeazy::error_code
-     */
-    static const error_code static_encode_inplace(raw_type* _input,
-                                           const size_type& _length,
-                                           const raw_type& _threshold)
-    {
-       const unsigned long size = _length;
-        for(unsigned long vox = 0; vox<size; ++vox) {
-            _input[vox] = (_input[vox] > _threshold) ? _input[vox] - _threshold : 0;
-        }
+//     /**
+//      * @brief clipping removal of _threshold from _input buffer, i.e. if any value
+//      * inside _input is found to be <= _threshold it is set to 0, it is kept otherwise (inplace version)
+//      * @param _input 3D input stack of type raw_type
+//      * @param _output 3D output stack of type raw_type
+//      * @param _length length of the above in units of raw_type
+//      * @param _threshold threshold to apply
+//      * @return sqeazy::error_code
+//      */
+//     static const error_code static_encode_out_of_place(raw_type* _input,
+//             raw_type* _output,
+//             const size_type& _length,
+//             const raw_type& _threshold)
+//     {
+//       const unsigned long size = _length;
+//         for(unsigned long vox = 0; vox<size; ++vox) {
+//             _output[vox] = (_input[vox] > _threshold) ? _input[vox] - _threshold : 0;
+//         }
+
+//         return SUCCESS;
+//     }
 
 
-        return SUCCESS;
-    }
+
+//     /**
+//      * @brief clipping removal of _threshold from _input buffer, i.e. if any value
+//      * inside _input is found to be <= _threshold it is set to 0, it is kept otherwise (inplace version)
+//      * @param _input 3D input stack of type raw_type
+//      * @param _length length of the above in units of raw_type
+//      * @param _threshold threshold to apply
+//      * @return sqeazy::error_code
+//      */
+//     static const error_code static_encode_inplace(raw_type* _input,
+//                                            const size_type& _length,
+//                                            const raw_type& _threshold)
+//     {
+//        const unsigned long size = _length;
+//         for(unsigned long vox = 0; vox<size; ++vox) {
+//             _input[vox] = (_input[vox] > _threshold) ? _input[vox] - _threshold : 0;
+//         }
 
 
-    template <typename SizeType>
-    /**
-    * @brief reconstructing the background removal from an estimate is impossible (so far),
-    * therefor the input buffer is copied to the output buffer of size given by dimensionality
-    *
-    * @return sqeazy::error_code
-    */
-    static const error_code static_decode(const raw_type* _input,
-                                   raw_type* _output,
-                                   const SizeType& _length)
-    {
-        std::copy(_input, _input + _length, _output);
-        return SUCCESS;
-    }
+//         return SUCCESS;
+//     }
 
-    template <typename SizeType>
-    /**
-    * @brief reconstructing the background removal from an estimate is impossible (so far),
-    * therefor the input buffer is copied to the output buffer of size given by dimensionality
-    *
-    * @return sqeazy::error_code
-    */
-    static const error_code static_decode(const raw_type* _input,
-                                   raw_type* _output,
-                                   const std::vector<SizeType>& _length)
-    {
-        unsigned long total_size = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<SizeType>());
 
-        return static_decode(_input, _output, total_size);
-    }
+//     template <typename SizeType>
+//     /**
+//     * @brief reconstructing the background removal from an estimate is impossible (so far),
+//     * therefor the input buffer is copied to the output buffer of size given by dimensionality
+//     *
+//     * @return sqeazy::error_code
+//     */
+//     static const error_code static_decode(const raw_type* _input,
+//                                    raw_type* _output,
+//                                    const SizeType& _length)
+//     {
+//         std::copy(_input, _input + _length, _output);
+//         return SUCCESS;
+//     }
 
-};
+//     template <typename SizeType>
+//     /**
+//     * @brief reconstructing the background removal from an estimate is impossible (so far),
+//     * therefor the input buffer is copied to the output buffer of size given by dimensionality
+//     *
+//     * @return sqeazy::error_code
+//     */
+//     static const error_code static_decode(const raw_type* _input,
+//                                    raw_type* _output,
+//                                    const std::vector<SizeType>& _length)
+//     {
+//         unsigned long total_size = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<SizeType>());
+
+//         return static_decode(_input, _output, total_size);
+//     }
+
+// };
 
 
 
@@ -624,12 +625,12 @@ struct remove_estimated_background {
 	    //copies the input to output, skipping pixels that have a neighborhood complying crirteria
             flatten_to_neighborhood<raw_type>::static_encode(_input, _output, _dims, reduce_by);
 	    //set those pixels to 0 that fall below reduce_by
-            remove_background<raw_type>::static_encode_inplace(_output, input_length, reduce_by);
+            remove_background_scheme<raw_type>::static_encode_inplace(_output, input_length, reduce_by);
         }
         else {
             std::cerr << "WARNING ["<< static_name() <<"::encode]\t inplace operation requested, flatten_to_neighborhood skipped\n";
 	    //set those pixels to 0 that fall below reduce_by
-            remove_background<raw_type>::static_encode_inplace(_input, input_length, reduce_by);
+            remove_background_scheme<raw_type>::static_encode_inplace(_input, input_length, reduce_by);
 
         }
 
