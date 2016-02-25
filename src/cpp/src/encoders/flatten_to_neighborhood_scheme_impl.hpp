@@ -33,10 +33,13 @@ namespace sqeazy {
     typedef in_type raw_type;
     typedef in_type compressed_type;
 
+    raw_type threshold;
     float fraction;
 
-    flatten_to_neighborhood_scheme(float _frac = percentage_below/100.f):
-      fraction(_frac){}
+    flatten_to_neighborhood_scheme(raw_type _threshold, float _frac = percentage_below/100.f):
+      threshold(_threshold),
+      fraction(_frac){
+    }
 
     
     flatten_to_neighborhood_scheme(const std::string& _payload=""):
@@ -48,6 +51,10 @@ namespace sqeazy {
 	auto f_itr = config_map.find("fraction");
 	if(f_itr!=config_map.end())
 	  fraction = std::stof(f_itr->second);
+
+	f_itr = config_map.find("threshold");
+	if(f_itr!=config_map.end())
+	  threshold = std::stoi(f_itr->second);
       }
     }
 
@@ -66,6 +73,7 @@ namespace sqeazy {
     std::string config() const override final {
 
       std::ostringstream msg;
+      msg << "threshold=" << threshold << ",";
       msg << "fraction=" << fraction;
       return msg.str();
     
@@ -78,7 +86,63 @@ namespace sqeazy {
 
     compressed_type* encode( const raw_type* _input, compressed_type* _output, std::vector<std::size_t> _shape) override final {
 
-      return nullptr;
+      typedef std::size_t size_type;
+        unsigned long length = std::accumulate(_shape.begin(), _shape.end(), 1, std::multiplies<size_type>());
+
+        std::vector<size_type> offsets;
+        sqeazy::halo<Neighborhood, size_type> geometry(_shape.begin(), _shape.end());
+        geometry.compute_offsets_in_x(offsets);
+
+        size_type halo_size_x = length - offsets[0];
+
+        //no offsets in other dimensions than x
+        if(offsets.size()!=1)
+        {
+            halo_size_x = geometry.non_halo_end(0) - geometry.non_halo_begin(0) + 1;
+        }
+
+        unsigned long local_index=0;
+        unsigned n_neighbors_below_threshold = 0;
+        typename std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
+
+#ifdef _SQY_VERBOSE_
+	unsigned long num_pixels_discarded=0;
+#endif
+
+        const float cut_fraction = fraction*(size<Neighborhood>()-1);
+        for(; offsetsItr!=offsets.end(); ++offsetsItr) {
+	  for(unsigned long index = 0; index < (unsigned long)halo_size_x; ++index) {
+
+                local_index = index + *offsetsItr;
+
+		//skip pixels that are below threshold
+		if(*(_input + local_index)<threshold)
+		  continue;
+
+                n_neighbors_below_threshold = count_neighbors_if<Neighborhood>(_input + local_index,
+                                              _shape,
+                                              std::bind2nd(std::less<raw_type>(), threshold)
+                                                                              );
+                if(n_neighbors_below_threshold>cut_fraction){
+#ifdef _SQY_VERBOSE_
+		  num_pixels_discarded++;
+#endif
+		  _output[local_index] = 0;
+		}
+                else
+                    _output[local_index] = _input[local_index];
+
+            }
+        }
+#ifdef _SQY_VERBOSE_
+	int prec = std::cout.precision();
+	std::cout.precision(3);
+	std::cout << "[SQY_VERBOSE] flatten_to_neighborhood " << num_pixels_discarded << " / " << length << " ("<< 100*double(num_pixels_discarded)/length <<" %) discarded due to neighborhood\n";
+	std::cout.precision(prec);
+#endif
+
+
+	return _output+length;
       
     }
 
