@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <stdexcept>
 
-#include "hevc_scheme_utils.hpp"
+#include "encoders/video_utils.hpp"
 #include "volume_fixtures.hpp"
 
 extern "C" {

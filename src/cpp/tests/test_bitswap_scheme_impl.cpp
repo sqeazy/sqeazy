@@ -7,7 +7,7 @@
 #include <bitset>
 #include <map>
 #include "array_fixtures.hpp"
-#include "encoders/sqeazy_impl.hpp"
+#include "encoders/bitswap_scheme_impl.hpp"
 
 typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 typedef sqeazy::bitswap_scheme<unsigned short> bswap1_scheme;
@@ -455,6 +455,46 @@ BOOST_AUTO_TEST_CASE( decode_encoded_by_hand_planewidth4 )
   }
 
 }
+
+BOOST_AUTO_TEST_CASE( encoded_equals_by_hand_planewidth4_new_api )
+{
+
+  std::vector<std::size_t> shape(3,1);
+  shape.front() = input.size();
+  bswap4_scheme swap_it;
+  auto end = swap_it.encode(&input[0], &output[0],shape);
+
+
+  BOOST_CHECK(end != nullptr);
+  for(unsigned i = 0;i<input.size();++i){
+        
+    BOOST_CHECK_MESSAGE(output[i] == plane4_encoded_by_hand[i],  
+			"bswap4_scheme::static_encode input["<< i <<"] = " <<  input[i] 
+			<<  ",  output = " << output[i]
+			<<  ",  by_hand = " << plane4_encoded_by_hand[i] );
+  }
+
+}
+
+BOOST_AUTO_TEST_CASE( decode_encoded_by_hand_planewidth4_new_api )
+{
+  std::vector<std::size_t> shape(3,1);
+  shape.front() = input.size();
+  bswap4_scheme swap_it;
+  int rv = swap_it.decode(&plane4_encoded_by_hand[0], &output[0],shape);
+
+
+  BOOST_CHECK(rv == 0);
+  for(unsigned i = 0;i<input.size();++i){
+        
+    BOOST_CHECK_MESSAGE(output[i] == input[i],  
+			"bswap4_scheme::static_decode input["<< i <<"] = " <<  plane4_encoded_by_hand[i] 
+			<<  ",  output = " << output[i]
+			<<  ",  expected = " << input[i] );
+  }
+
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
 
