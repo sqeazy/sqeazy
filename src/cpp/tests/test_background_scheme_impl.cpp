@@ -7,6 +7,7 @@
 #include <map>
 #include "array_fixtures.hpp"
 #include "encoders/sqeazy_impl.hpp"
+#include "encoders/flatten_to_neighborhood_scheme_impl.hpp"
 
 #include "boost/random.hpp"
 
@@ -122,7 +123,7 @@ BOOST_AUTO_TEST_CASE( stamp_removal )
         BOOST_CHECK_EQUAL(sqeazy::offset_end_on_axis<nb_t>(i), 2);
     }
 
-    int rcode = sqeazy::flatten_to_neighborhood<value_type>::static_encode(&constant_cube[0],
+    int rcode = sqeazy::flatten_to_neighborhood_scheme<value_type>::static_encode(&constant_cube[0],
                 &to_play_with[0], dims, 42);
 
 
@@ -152,19 +153,19 @@ BOOST_AUTO_TEST_CASE( stamp_removal_fraction )
     incrementing_cube[central_index - 64] = 1 << 14;
     incrementing_cube[central_index + 64] = 1 << 14;
 
-    int rcode = sqeazy::flatten_to_neighborhood<value_type >::static_encode(&constant_cube[0],
+    int rcode = sqeazy::flatten_to_neighborhood_scheme<value_type >::static_encode(&constant_cube[0],
                 &to_play_with[0], dims, 42);
 
     BOOST_CHECK_EQUAL(rcode, 0);
     BOOST_CHECK_EQUAL(to_play_with[central_index], 0);
 
-    rcode = sqeazy::flatten_to_neighborhood<value_type,sqeazy::cube_neighborhood<3> >::static_encode(&incrementing_cube[0],
+    rcode = sqeazy::flatten_to_neighborhood_scheme<value_type,sqeazy::cube_neighborhood<3> >::static_encode(&incrementing_cube[0],
             &to_play_with[0], dims, 42, 6/(26.f));
 
     BOOST_CHECK_EQUAL(rcode, 0);
     BOOST_CHECK_EQUAL(to_play_with[central_index], 0);
 
-    rcode = sqeazy::flatten_to_neighborhood<value_type,sqeazy::cube_neighborhood<3> >::static_encode(&incrementing_cube[0],
+    rcode = sqeazy::flatten_to_neighborhood_scheme<value_type,sqeazy::cube_neighborhood<3> >::static_encode(&incrementing_cube[0],
             &to_play_with[0], dims, 42, 22/(26.f));
 
     BOOST_CHECK_EQUAL(rcode, 0);
