@@ -64,7 +64,8 @@ namespace sqeazy{
       return decode(_in,_out,shape);
 
     };
-
+    
+    virtual std::intmax_t max_encoded_size(std::intmax_t _incoming_size_byte) const { return 0; };
   };
 
   /**

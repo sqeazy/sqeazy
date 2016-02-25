@@ -4,7 +4,9 @@
 #include <vector>
 #include <iostream>
 #include "array_fixtures.hpp"
-#include "encoders/sqeazy_impl.hpp"
+// #include "encoders/sqeazy_impl.hpp"
+#include "encoders/diff_scheme_impl.hpp"
+
 #include "neighborhood_utils.hpp"
 
 typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
@@ -139,4 +141,46 @@ BOOST_AUTO_TEST_CASE( diff_it )
 
 
 }
+
+BOOST_AUTO_TEST_CASE( diff_it_new_api )
+{
+  std::vector<std::size_t> shape(dims.begin(), dims.end());
+  short* output = reinterpret_cast<short*>(&to_play_with[0]);
+  sqeazy::diff_scheme<value_type, sqeazy::last_pixels_on_line_neighborhood<> > diff;
+  diff.encode(&incrementing_cube[0],
+	      output,
+	      shape);
+
+    BOOST_CHECK_EQUAL(to_play_with[12],to_play_with[13]);
+
+
+}
+
+BOOST_AUTO_TEST_CASE( unsigned_new_api )
+{
+  std::vector<std::size_t> shape(dims.begin(), dims.end());
+  short* output = reinterpret_cast<short*>(&to_play_with[0]);
+  short* in = reinterpret_cast<short*>(&incrementing_cube[0]);
+  sqeazy::diff_scheme<short, sqeazy::last_pixels_on_line_neighborhood<> > diff;
+  diff.encode(in,
+	      output,
+	      shape);
+
+    BOOST_CHECK_EQUAL(to_play_with[12],to_play_with[13]);
+
+
+}
+// BOOST_AUTO_TEST_CASE( diff_it_new_api )
+// {
+//   std::vector<std::size_t> shape(dims.begin(), dims.end());
+//   short* output = reinterpret_cast<short*>(&to_play_with[0]);
+//   sqeazy::diff_scheme<value_type, sqeazy::last_pixels_on_line_neighborhood<> > diff;
+//   diff.encode(&incrementing_cube[0],
+// 	      output,
+// 	      shape);
+
+//     BOOST_CHECK_EQUAL(to_play_with[12],to_play_with[13]);
+
+
+// }
 BOOST_AUTO_TEST_SUITE_END()
