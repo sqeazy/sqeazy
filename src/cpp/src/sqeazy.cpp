@@ -233,7 +233,7 @@ int SQY_RmBackground_Estimated_UI16(int width, int height, int depth, char* src,
   dims[2] = width;
   dims[1] = height;
   dims[0] = depth;
-    return sqeazy::remove_estimated_background<raw_type>::static_encode(reinterpret_cast<raw_type*>(src),
+    return sqeazy::remove_estimated_background_scheme<raw_type>::static_encode(reinterpret_cast<raw_type*>(src),
             reinterpret_cast<raw_type*>(dst),
             dims
 								    );

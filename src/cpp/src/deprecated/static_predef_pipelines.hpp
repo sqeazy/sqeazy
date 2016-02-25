@@ -22,7 +22,7 @@ namespace sqeazy {
   
   
   //LOSSY
-  typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned short>,
+  typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background_scheme<unsigned short>,
 				sqeazy::bitswap_scheme<unsigned short>,
 				sqeazy::lz4_scheme<unsigned short> > rmbkg_bswap1_lz4;
   typedef sqeazy::pipeline<rmbkg_bswap1_lz4> rmbkg_bswap1_lz4_pipe;
@@ -43,7 +43,7 @@ namespace sqeazy {
   // 8-bit
 
   //LOSSY
-  typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned char>,
+  typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background_scheme<unsigned char>,
 				sqeazy::bitswap_scheme<unsigned char>,
 				sqeazy::lz4_scheme<unsigned char> > char_rmbkg_bswap1_lz4;
   typedef sqeazy::pipeline<char_rmbkg_bswap1_lz4> char_rmbkg_bswap1_lz4_pipe;

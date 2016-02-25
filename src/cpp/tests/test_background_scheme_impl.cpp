@@ -8,6 +8,7 @@
 #include "array_fixtures.hpp"
 #include "encoders/sqeazy_impl.hpp"
 #include "encoders/flatten_to_neighborhood_scheme_impl.hpp"
+#include "encoders/remove_estimated_background_scheme_impl.hpp"
 
 #include "boost/random.hpp"
 
@@ -95,7 +96,7 @@ BOOST_AUTO_TEST_CASE( free_mean_var )
 
     float mean = 0;
     float var = 0;
-    sqeazy::remove_estimated_background<value_type>::mean_and_var(to_play_with.begin(),
+    sqeazy::remove_estimated_background_scheme<value_type>::mean_and_var(to_play_with.begin(),
             to_play_with.end(),
             mean,
             var
