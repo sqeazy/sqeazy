@@ -1,6 +1,9 @@
 #ifndef _FLATTEN_TO_NEIGHBORHOOD_SCHEME_IMPL_H_
 #define _FLATTEN_TO_NEIGHBORHOOD_SCHEME_IMPL_H_
 
+#include <sstream>
+#include <string>
+
 #include "neighborhood_utils.hpp"
 #include "sqeazy_common.hpp"
 #include "traits.hpp"
@@ -30,7 +33,74 @@ namespace sqeazy {
     typedef in_type raw_type;
     typedef in_type compressed_type;
 
+    float fraction;
 
+    flatten_to_neighborhood_scheme(float _frac = percentage_below/100.f):
+      fraction(_frac){}
+
+    
+    flatten_to_neighborhood_scheme(const std::string& _payload=""):
+      fraction(percentage_below/100.f){
+
+      auto config_map = unordered_parse_by(_payload.begin(), _payload.end());
+
+      if(config_map.size()){
+	auto f_itr = config_map.find("fraction");
+	if(f_itr!=config_map.end())
+	  fraction = std::stof(f_itr->second);
+      }
+    }
+
+    std::string name() const override final {
+
+      std::ostringstream msg;
+        msg << "rmbkrd_neighbor"
+            << Neighborhood::x_offset_end - Neighborhood::x_offset_begin << "x"
+            << Neighborhood::y_offset_end - Neighborhood::y_offset_begin << "x"
+            << Neighborhood::z_offset_end - Neighborhood::z_offset_begin ;
+
+        return msg.str();
+	
+    }
+
+    std::string config() const override final {
+
+      std::ostringstream msg;
+      msg << "fraction=" << fraction;
+      return msg.str();
+    
+    }
+
+    std::intmax_t max_encoded_size(std::intmax_t _size_bytes) const override final {
+    
+      return _size_bytes;
+    }
+
+    compressed_type* encode( const raw_type* _input, compressed_type* _output, std::vector<std::size_t> _shape) override final {
+
+      return nullptr;
+      
+    }
+
+    int decode( const compressed_type* _input, raw_type* _output, std::vector<std::size_t> _shape) const override final {
+
+      return 1;
+    }
+
+    
+    ~flatten_to_neighborhood_scheme(){};
+
+    std::string output_type() const final override {
+
+      return typeid(compressed_type).name();
+    
+    }
+
+    bool is_compressor() const final override {
+    
+      return base_type::is_compressor;
+    
+    }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // DEPRECATED API
     

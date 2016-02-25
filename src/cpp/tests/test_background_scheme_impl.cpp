@@ -137,6 +137,39 @@ BOOST_AUTO_TEST_CASE( stamp_removal )
 
 }
 
+BOOST_AUTO_TEST_CASE( stamp_removal_newapi )
+{
+
+    std::fill(constant_cube.begin(), constant_cube.end(), 0);
+    constant_cube[constant_cube.size()/2] = 1 << 14;
+    float input_sum = std::accumulate(constant_cube.begin(), constant_cube.end(),0);
+
+    typedef sqeazy::cube_neighborhood<3> nb_t;
+
+    for(int i = 0; i<3; ++i) {
+        BOOST_CHECK_EQUAL(sqeazy::offset_begin_on_axis<nb_t>(i), -1);
+        BOOST_CHECK_EQUAL(sqeazy::offset_end_on_axis<nb_t>(i), 2);
+    }
+
+    std::vector<std::size_t> shape(dims.begin(), dims.end());
+    sqeazy::flatten_to_neighborhood_scheme<value_type> flatten(42);
+    auto end = flatten.encode(&constant_cube[0],
+			      &to_play_with[0],
+			      shape);
+    
+    BOOST_CHECK(end!=nullptr);
+
+    float sum = std::accumulate(to_play_with.begin(), to_play_with.end(),0);
+    
+    BOOST_CHECK_EQUAL(sum, 0);
+    BOOST_CHECK_NE(sum, input_sum);
+
+
+
+
+}
+
+
 BOOST_AUTO_TEST_CASE( stamp_removal_fraction )
 {
 
