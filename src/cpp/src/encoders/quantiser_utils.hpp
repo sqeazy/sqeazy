@@ -265,12 +265,11 @@ namespace sqeazy {
 	  levels_available--;
 	  
 	  quantile_sum = importance_[raw_idx];//or 0?
-
+	  weighted_mean_importance_in_bucket = raw_idx*importance_[raw_idx];
+	  
 	  if(importanceIntegral<importanceSum)
 	    bucketSize = (importanceSum-importanceIntegral)/levels_available;
-	    
-	  weighted_mean_importance_in_bucket += raw_idx*importance_[raw_idx];
-
+	  
 	  if(quantile_sum!=0.)
 	    index_weighted_mean_importance = weighted_mean_importance_in_bucket/quantile_sum;
 
@@ -301,8 +300,7 @@ namespace sqeazy {
       for(uint32_t raw_idx = 0;raw_idx < max_raw_ && comp_idx < lut_decode_.size();++raw_idx){
 
 	lut_encode_[raw_idx] = static_cast<compressed_type>(comp_idx);
-	//FIXME: using std::array::at is expected to harm performance
-	lut_decode_.at(comp_idx) = static_cast<raw_type>(raw_idx);
+	lut_decode_[comp_idx] = static_cast<raw_type>(raw_idx);
 	
 	if(importance_[raw_idx])
 	  comp_idx++;
