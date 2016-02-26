@@ -231,9 +231,9 @@ BOOST_AUTO_TEST_CASE( shifted ){
 
   std::vector<uint8_t> encoded(shifted_.size(),0);
   sqeazy::quantiser<uint16_t,uint8_t> shrinker;
-  shrinker.encode(&shifted_[0],
-		  shifted_.size(),
-		  &encoded[0]);
+  BOOST_REQUIRE_NO_THROW(shrinker.encode(&shifted_[0],
+					 shifted_.size(),
+					 &encoded[0]));
 
   aligned_vector reconstructed(encoded.size(),0);
   shrinker.decode(&encoded[0],
@@ -266,9 +266,9 @@ BOOST_AUTO_TEST_CASE( shifted_wide ){
 
   std::vector<uint8_t> encoded(shifted_wide_.size(),0);
   sqeazy::quantiser<uint16_t,uint8_t> shrinker;
-  shrinker.encode(&shifted_wide_[0],
-		  shifted_wide_.size(),
-		  &encoded[0]);
+  BOOST_REQUIRE_NO_THROW(shrinker.encode(&shifted_wide_[0],
+					 shifted_wide_.size(),
+					 &encoded[0]));
 
   aligned_vector reconstructed(encoded.size(),0);
   shrinker.decode(&encoded[0],
@@ -635,8 +635,7 @@ BOOST_AUTO_TEST_CASE( normal_newapi ){
   std::vector<uint8_t> encoded(input.size(),0);
 
   sqeazy::quantiser_scheme<uint16_t,uint8_t> quant;
-  auto in = &input[0];
-  auto in_end = in + input.size();
+
   uint8_t* end = quant.encode(&input[0],&encoded[0], input.size());
 
   BOOST_CHECK(end!=nullptr);
