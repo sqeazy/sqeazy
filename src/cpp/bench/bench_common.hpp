@@ -9,31 +9,31 @@
 ////////////////////////////////////////////////////////////////////////////////
 // 16-bit
 
-typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned short>,
+typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background_scheme<unsigned short>,
         sqeazy::diff_scheme<unsigned short>,
         sqeazy::bitswap_scheme<unsigned short>,
         sqeazy::lz4_scheme<unsigned short> > rmbkg_diff_bswap1_lz4;
 typedef sqeazy::pipeline<rmbkg_diff_bswap1_lz4> rmbkg_diff_bswap1_lz4_pipe;
 
 
-typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned short>,
+typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background_scheme<unsigned short>,
         sqeazy::bitswap_scheme<unsigned short>,
         sqeazy::huffman_scheme<unsigned short>,
         sqeazy::lz4_scheme<unsigned short> > rmbkg_bswap1_huff_lz4;
 typedef sqeazy::pipeline<rmbkg_bswap1_huff_lz4> rmbkg_bswap1_huff_lz4_pipe;
 
-typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned short>,
+typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background_scheme<unsigned short>,
         sqeazy::huffman_scheme<unsigned short>,
         sqeazy::bitswap_scheme<unsigned short>,
         sqeazy::lz4_scheme<unsigned short> > rmbkg_huff_bswap1_lz4;
 typedef sqeazy::pipeline<rmbkg_huff_bswap1_lz4> rmbkg_huff_bswap1_lz4_pipe;
 
-typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned short>,
+typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background_scheme<unsigned short>,
         sqeazy::lz4_scheme<unsigned short> > rmbkg_lz4;
 typedef sqeazy::pipeline<rmbkg_lz4> rmbkg_lz4_pipe;
 
 
-typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned short>,
+typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background_scheme<unsigned short>,
         sqeazy::bitswap_scheme<unsigned short>,
         sqeazy::lz4_scheme<unsigned short> > rmbkg_bswap1_lz4;
 typedef sqeazy::pipeline<rmbkg_bswap1_lz4> rmbkg_bswap1_lz4_pipe;
@@ -80,7 +80,7 @@ typedef sqeazy::pipeline<huffman_lz4> huff_lz4_pipe;
 ////////////////////////////////////////////////////////////////////////////////
 // 8-bit
 
-typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background<unsigned char>,
+typedef sqeazy::bmpl::vector< sqeazy::remove_estimated_background_scheme<unsigned char>,
         sqeazy::bitswap_scheme<unsigned char>,
         sqeazy::lz4_scheme<unsigned char> > char_rmbkg_bswap1_lz4;
 typedef sqeazy::pipeline<char_rmbkg_bswap1_lz4> char_rmbkg_bswap1_lz4_pipe;
