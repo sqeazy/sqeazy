@@ -104,32 +104,36 @@ namespace sqeazy {
       shrinker.setup_com(in_begin, in_end);
       
       applyLUT<raw_type, compressed_type> lutApplyer(shrinker.lut_encode_);
-      //std::transform(_in,_in+_length,_out,lutApplyer);
+      auto out_end = std::transform(_in,_in+_length,_out,lutApplyer);
       
-      compressed_type* out_begin = _out;
-      for(;in_begin!=in_end;++in_begin,++out_begin)
-	*out_begin = lutApplyer(*in_begin);
+      // compressed_type* out_begin = _out;
+      // for(;in_begin!=in_end;++in_begin,++out_begin)
+      // 	*out_begin = lutApplyer(*in_begin);
       
-      return out_begin;
+      return out_end;
     }
 
 
     int decode( const compressed_type* _in, raw_type* _out, std::vector<std::size_t> _shape) const override final {
 
-      return 1;
+      std::size_t length = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
+
+      return decode(_in,_out,length);
       
     }
 
     int decode( const compressed_type* _in, raw_type* _out, std::size_t _length) const override final {
 
-      return 1;
+      applyLUT<compressed_type, raw_type> lutApplyer(shrinker.lut_decode_);
+      auto end_ptr = std::transform(_in,_in+_length,_out,lutApplyer);
       
+      return (end_ptr - _out) - _length;
     }
 
     
-    void test_setup(const raw_type* _in, const raw_type* _in_end){
+    void dump(const std::string& _fname){
       
-      shrinker.setup_com(_in,_in_end);
+      shrinker.dump(_fname);
       
     }
   };
