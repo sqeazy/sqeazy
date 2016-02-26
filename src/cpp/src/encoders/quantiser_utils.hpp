@@ -298,7 +298,7 @@ namespace sqeazy {
     void linear_mapping_quantisation(){
       uint32_t comp_idx = 0;
 
-      for(uint32_t raw_idx = 0;raw_idx < max_raw_;++raw_idx){
+      for(uint32_t raw_idx = 0;raw_idx < max_raw_ && comp_idx < lut_decode_.size();++raw_idx){
 
 	lut_encode_[raw_idx] = static_cast<compressed_type>(comp_idx);
 	//FIXME: using std::array::at is expected to harm performance
