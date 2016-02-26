@@ -148,6 +148,7 @@ BOOST_AUTO_TEST_CASE( noisy_embryo_roundtrip_newapi ){
 
   BOOST_REQUIRE_GT(l2norm,0);
   BOOST_CHECK_LT(l2norm,10);
+  BOOST_TEST_MESSAGE(boost::unit_test::framework::current_test_case().p_name << ", l2norm = " << l2norm);
 
 }
 
@@ -511,6 +512,9 @@ BOOST_AUTO_TEST_CASE( realistic_roundtrip_newapi ){
   
   double mse = sqeazy::mse(reconstructed.begin(), reconstructed.end(),
 			   realistic_.begin());
+
+  BOOST_TEST_MESSAGE(boost::unit_test::framework::current_test_case().p_name << ", mse = " << mse);
+  
   BOOST_CHECK_GE(mse,0);
   BOOST_WARN_LT(mse,1.f);
   BOOST_CHECK_LT(mse,exp_mse);
@@ -521,7 +525,7 @@ BOOST_AUTO_TEST_CASE( realistic_roundtrip_newapi ){
 	     << ".log";
     
     shrinker.dump(log_file.str());
-    BOOST_TEST_MESSAGE("wrote " << log_file.str());
+    BOOST_TEST_MESSAGE(boost::unit_test::framework::current_test_case().p_name<< ", wrote " << log_file.str());
   }
 
   // BOOST_TEST_MESSAGE("loics_suite/" << boost::unit_test::framework::current_test_case().p_name
@@ -616,6 +620,8 @@ BOOST_AUTO_TEST_CASE( normal_newapi ){
   uint8_t max_value = *std::max_element(encoded.begin(), encoded.end());
   uint8_t max_expected = *std::max_element(input.begin(), input.end())/16;//16 is the bucketsize in this example
 
+  BOOST_TEST_MESSAGE(boost::unit_test::framework::current_test_case().p_name << ", max_value " << (int)max_value
+		     << ", expected " << (int)max_expected);
   try{
     BOOST_REQUIRE_CLOSE_FRACTION((float)max_value,(float)max_expected,5);
     BOOST_REQUIRE_EQUAL(input[0],encoded[0]);
