@@ -10,7 +10,7 @@
 #include "boost/filesystem.hpp"
 #include "volume_fixtures.hpp"
 #include "sqeazy_algorithms.hpp"
-#include "encoders/quantiser_impl.hpp"
+#include "encoders/quantiser_scheme_impl.hpp"
 
 namespace bfs = boost::filesystem;
 
@@ -76,42 +76,6 @@ BOOST_AUTO_TEST_CASE( encodes ){
 
 }
 
-BOOST_AUTO_TEST_CASE( ramp ){
-
-  std::vector<uint16_t> input(1 << 12,0);
-  uint16_t value = 0;
-  for( uint16_t& _el : input )
-    _el = value++;
-  
-  std::vector<uint8_t> encoded(input.size(),0);
-
-  sqeazy::quantiser<uint16_t,uint8_t> shrinker(&input[0],&input[0]+input.size());
-  shrinker.encode(&input[0],input.size(),&encoded[0]);
-
-  float raw_sum = std::accumulate(input.begin(), input.end(),0);
-  float sum = std::accumulate(encoded.begin(), encoded.end(),0);
-  BOOST_CHECK_NE(sum,0);
-  //TODO!!
-  BOOST_CHECK_CLOSE_FRACTION(sum,raw_sum/16,1);
-
-  uint8_t max_value = *std::max_element(encoded.begin(), encoded.end());
-  uint8_t max_expected = *std::max_element(input.begin(), input.end())/16;//16 is the bucketsize in this example
-
-  try{
-    BOOST_REQUIRE_CLOSE_FRACTION((float)max_value,(float)max_expected,5);
-    BOOST_REQUIRE_EQUAL(input[0],encoded[0]);
-    BOOST_REQUIRE_EQUAL(encoded[16],encoded[0]+1);
-  }
-  catch(...){
-    std::stringstream log_file;
-    log_file << "checkon_16bit_"
-	     << boost::unit_test::framework::current_test_case().p_name
-	     << ".log";
-    
-    shrinker.dump(log_file.str());
-    throw;
-  }
-}
 
 BOOST_AUTO_TEST_CASE( ramp_roundtrip ){
 
@@ -545,6 +509,160 @@ BOOST_AUTO_TEST_CASE( write_to_file_realistic_roundtrip ){
   if(bfs::exists(tgt))
     bfs::remove(tgt);
   
+}
+
+BOOST_AUTO_TEST_CASE( write_to_file_realistic_roundtrip_newapi ){
+
+  std::stringstream lut_file;
+  lut_file << "loics_suite_"
+	   << boost::unit_test::framework::current_test_case().p_name
+	   << ".log";
+    
+  bfs::path tgt = lut_file.str(); 
+  sqeazy::quantiser<uint16_t,uint8_t> shrinker(&realistic_[0],
+					       &realistic_[0] + realistic_.size());
+
+  shrinker.lut_to_file(lut_file.str(),shrinker.lut_decode_);
+
+  BOOST_REQUIRE(bfs::exists(tgt));
+  BOOST_REQUIRE_NE(bfs::file_size(tgt),0u);
+
+  std::vector<uint8_t> encoded(realistic_.size(),0);
+  shrinker.encode(&realistic_[0],realistic_.size(),&encoded[0]);
+
+  
+  std::vector<uint16_t> reconstructed(encoded.size(),0);
+  shrinker.decode(lut_file.str(),
+		  &encoded[0],
+		  encoded.size(),
+		  &reconstructed[0]);
+
+  size_t dyn_range = sqeazy::dyn_range(realistic_.begin(), realistic_.end());
+  float exp_deviation_per_value = dyn_range / (256.f);
+  float exp_mse = exp_deviation_per_value*exp_deviation_per_value;
+  
+  double mse = sqeazy::mse(reconstructed.begin(), reconstructed.end(),
+			   realistic_.begin());
+  BOOST_CHECK_GE(mse,0);
+  BOOST_WARN_LT(mse,1.f);
+  BOOST_CHECK_LT(mse,exp_mse);
+  if(mse>1.){
+    std::stringstream log_file;
+    log_file << "loics_suite_"
+	     << boost::unit_test::framework::current_test_case().p_name
+	     << ".log";
+    
+    shrinker.dump(log_file.str());
+  }
+
+  BOOST_TEST_MESSAGE("loics_suite/" << boost::unit_test::framework::current_test_case().p_name
+		     << "\t"  << "mse = " << mse << ", exp-mse = " << exp_mse);
+
+
+  size_t reco_dyn_range = sqeazy::dyn_range(reconstructed.begin(), reconstructed.end());
+  BOOST_CHECK_LT(reco_dyn_range,dyn_range);
+
+  uint16_t min_val_original = *std::min_element(realistic_.begin(), realistic_.end());
+  uint16_t max_val_original = *std::max_element(realistic_.begin(), realistic_.end());
+  
+  uint16_t min_val_reconstr = *std::min_element(reconstructed.begin(), reconstructed.end());
+  uint16_t max_val_reconstr = *std::max_element(reconstructed.begin(), reconstructed.end());
+
+  BOOST_CHECK_LE(max_val_reconstr,max_val_original);
+  BOOST_CHECK_GE(min_val_reconstr,min_val_original);
+
+  BOOST_TEST_MESSAGE("loics_suite/" << boost::unit_test::framework::current_test_case().p_name << " <original|reconstructed>"
+		     << "\t" << "min = " << min_val_original << " | " << min_val_reconstr
+		     << "\tmax = " << max_val_original << " | " << max_val_reconstr
+		     << "\tdrange = " << dyn_range << " | " << reco_dyn_range
+		     );
+
+  if(bfs::exists(tgt))
+    bfs::remove(tgt);
+  
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE( ramps)
+
+BOOST_AUTO_TEST_CASE( normal ){
+
+  std::vector<uint16_t> input(1 << 12,0);
+  uint16_t value = 0;
+  for( uint16_t& _el : input )
+    _el = value++;
+  
+  std::vector<uint8_t> encoded(input.size(),0);
+
+  sqeazy::quantiser<uint16_t,uint8_t> shrinker(&input[0],
+					       &input[0]+input.size()
+					       );
+  shrinker.encode(&input[0],input.size(),&encoded[0]);
+
+  float raw_sum = std::accumulate(input.begin(), input.end(),0);
+  float sum = std::accumulate(encoded.begin(), encoded.end(),0);
+  BOOST_CHECK_NE(sum,0);
+  //TODO!!
+  BOOST_CHECK_CLOSE_FRACTION(sum,raw_sum/16,1);
+
+  uint8_t max_value = *std::max_element(encoded.begin(), encoded.end());
+  uint8_t max_expected = *std::max_element(input.begin(), input.end())/16;//16 is the bucketsize in this example
+
+  try{
+    BOOST_REQUIRE_CLOSE_FRACTION((float)max_value,(float)max_expected,5);
+    BOOST_REQUIRE_EQUAL(input[0],encoded[0]);
+    BOOST_REQUIRE_EQUAL(encoded[16],encoded[0]+1);
+  }
+  catch(...){
+    std::stringstream log_file;
+    log_file << "checkon_16bit_"
+	     << boost::unit_test::framework::current_test_case().p_name
+	     << ".log";
+    
+    shrinker.dump(log_file.str());
+    throw;
+  }
+}
+
+BOOST_AUTO_TEST_CASE( normal_newapi ){
+
+  std::vector<uint16_t> input(1 << 12,0);
+  uint16_t value = 0;
+  for( uint16_t& _el : input )
+    _el = value++;
+  
+  std::vector<uint8_t> encoded(input.size(),0);
+
+  sqeazy::quantiser_scheme<uint16_t,uint8_t> quant;
+  auto in = &input[0];
+  auto in_end = in + input.size();
+  uint8_t* end = quant.encode(&input[0],&encoded[0], input.size());
+
+  BOOST_CHECK(end!=nullptr);
+  // float raw_sum = std::accumulate(input.begin(), input.end(),0);
+  // float sum = std::accumulate(encoded.begin(), encoded.end(),0);
+  // BOOST_CHECK_NE(sum,0);
+  // //TODO!!
+  // BOOST_CHECK_CLOSE_FRACTION(sum,raw_sum/16,1);
+
+  // uint8_t max_value = *std::max_element(encoded.begin(), encoded.end());
+  // uint8_t max_expected = *std::max_element(input.begin(), input.end())/16;//16 is the bucketsize in this example
+
+  // try{
+  //   BOOST_REQUIRE_CLOSE_FRACTION((float)max_value,(float)max_expected,5);
+  //   BOOST_REQUIRE_EQUAL(input[0],encoded[0]);
+  //   BOOST_REQUIRE_EQUAL(encoded[16],encoded[0]+1);
+  // }
+  // catch(...){
+  //   std::stringstream log_file;
+  //   log_file << "checkon_16bit_"
+  // 	     << boost::unit_test::framework::current_test_case().p_name
+  // 	     << ".log";
+    
+  //   shrinker.dump(log_file.str());
+  //   throw;
+  // }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
