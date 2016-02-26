@@ -73,7 +73,7 @@ namespace sqeazy {
       
     }
   
-      };
+  };
 }//sqeazy namespace
 
 #endif
