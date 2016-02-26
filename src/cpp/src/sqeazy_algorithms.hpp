@@ -40,7 +40,24 @@ namespace sqeazy {
     return std::ceil(value);
   }
 
-    template <typename it_type, typename it2_type>
+  template <typename it_type, typename it2_type>
+  static inline double l2norm(it_type _lbegin, it_type _lend,
+			      it2_type _rbegin){
+
+    double dsum = 0;
+    size_t size = _lend - _lbegin;
+
+    for(;_lbegin!=_lend;++_lbegin,++_rbegin){
+      double diff = *_lbegin - *_rbegin;
+      dsum += diff*diff;
+    }
+
+    double value = std::sqrt(dsum)/size;
+
+    return value;
+  }
+  
+  template <typename it_type, typename it2_type>
   static inline double mse(it_type _lbegin, it_type _lend,
 			   it2_type _rbegin){
 
