@@ -60,7 +60,7 @@ namespace sqeazy {
 
     std::intmax_t max_encoded_size(std::intmax_t _size_bytes) const override final {
     
-      unsigned long lz4_bound = LZ4_compressBound(_size_bytes);
+      std::intmax_t lz4_bound = LZ4_compressBound(_size_bytes);
 
       return lz4_bound;
     }
