@@ -34,11 +34,19 @@ namespace sqeazy {
     typedef typename base_type::out_type compressed_type;
 
     std::string quantiser_config;
+    parsed_map_t  config_map;
+
     quantiser<raw_type, compressed_type, weight_functor_t> shrinker;
 
     quantiser_scheme(const std::string& _payload = ""):
-      quantiser_config(),
+      quantiser_config(_payload),
+      
       shrinker(){
+
+      if(_payload.size())
+	config_map = unordered_parse_by(_payload.begin(), _payload.end());
+
+      
     }
 
     ~quantiser_scheme() override final {}
@@ -49,7 +57,22 @@ namespace sqeazy {
     }
 
     std::string config() const override final {
+
+      std::ostringstream msg;
+
+      auto begin = config_map.begin();
+      auto end = config_map.end();
+
+      int count = 0;
+      for (;begin!=end;++begin){
+	msg << begin->first << "=" << begin->second;
+	if((count++)<(config_map.size()-1))
+	  msg << ",";
+      }
+      quantiser_config = msg.str();
+      
       return quantiser_config;
+      
     }
 
     /**
@@ -111,6 +134,12 @@ namespace sqeazy {
       const raw_type* in_begin = _in;
       const raw_type* in_end = _in + _length;
       shrinker.setup_com(in_begin, in_end);
+
+      auto fitr = config_map.find("decode_lut_path");
+      if(fitr!=config_map.end())
+	shrinker.lut_to_file(fitr->second,shrinker.lut_decode_);
+      else
+	config_map["decode_lut_string"] = shrinker.lut_to_string(shrinker.lut_decode_);
       
       applyLUT<raw_type, compressed_type> lutApplyer(shrinker.lut_encode_);
       auto out_end = std::transform(_in,_in+_length,_out,lutApplyer);
@@ -129,6 +158,17 @@ namespace sqeazy {
 
     int decode( const compressed_type* _in, raw_type* _out, std::size_t _length) const override final {
 
+      auto fitr = config_map.find("decode_lut_path");
+      if(fitr!=config_map.end())
+	shrinker.lut_from_file(fitr->second,shrinker.lut_decode_);
+      else{
+	fitr = config_map.find("decode_lut_string");
+	if(fitr!=config_map.end())
+	  shrinker.lut_from_string(fitr->second,shrinker.lut_decode_);
+	else
+	  std::cerr << "unable to read lut from given string\n";
+      }
+      
       applyLUT<compressed_type, raw_type> lutApplyer(shrinker.lut_decode_);
       auto end_ptr = std::transform(_in,_in+_length,_out,lutApplyer);
       
