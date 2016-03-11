@@ -52,6 +52,15 @@ namespace sqeazy {
       return quantiser_config;
     }
 
+    /**
+       \brief expected size of encoded buffer of size _size_bytes (the LUT etc are not included)
+       
+       \param[in] _size_bytes incoming buffer size in Bytes 
+       
+       \return 
+       \retval 
+       
+    */
     std::intmax_t max_encoded_size(std::intmax_t _size_bytes) const override final {
     
       return _size_bytes*sizeof(raw_type)/sizeof(compressed_type);
@@ -105,11 +114,7 @@ namespace sqeazy {
       
       applyLUT<raw_type, compressed_type> lutApplyer(shrinker.lut_encode_);
       auto out_end = std::transform(_in,_in+_length,_out,lutApplyer);
-      
-      // compressed_type* out_begin = _out;
-      // for(;in_begin!=in_end;++in_begin,++out_begin)
-      // 	*out_begin = lutApplyer(*in_begin);
-      
+            
       return out_end;
     }
 

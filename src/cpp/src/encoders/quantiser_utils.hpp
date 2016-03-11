@@ -15,7 +15,7 @@
 #include <iomanip>
 
 #include "traits.hpp"
-
+#include "string_parsers.hpp"
 
 
 template<int base =  std::numeric_limits<uint16_t>::max()>
@@ -29,7 +29,8 @@ struct pow4Weighter{
 };
 
 template<int exponent = 2>
-struct power_law{
+struct power_law
+{
 
   static std::string name (){
     std::ostringstream msg;
@@ -101,8 +102,12 @@ namespace sqeazy {
     std::array<uint32_t, max_raw_> histo_;
     std::array<float, max_raw_> weights_;
     std::array<float, max_raw_> importance_;
-    std::array<compressed_type, max_raw_> lut_encode_;
-    std::array<raw_type, max_compressed_> lut_decode_;
+
+    typedef std::array<compressed_type, max_raw_> lut_encode_t;
+    typedef std::array<raw_type, max_compressed_> lut_decode_t;
+    
+    lut_encode_t lut_encode_;
+    lut_decode_t lut_decode_;
 
     
     quantiser(const raw_type* _begin = 0, const raw_type* _end = 0) :
@@ -330,6 +335,16 @@ namespace sqeazy {
       
     }
 
+    /**
+       \brief setup of quantiser with max value per bucket
+       
+       \param[in] _begin pointer to begin of input data
+       \param[in] _end pointer to end of input data
+       
+       \return 
+       \retval 
+       
+    */
     void setup(const raw_type* _begin, const raw_type* _end){
 
       //safe-guard
@@ -343,6 +358,16 @@ namespace sqeazy {
 
     }
 
+    /**
+       \brief function that set's up the quantiser using center-of-mass waits per bucket
+
+       \param[in] _begin pointer to begin of input data
+       \param[in] _end pointer to end of input data
+       
+       \return 
+       \retval 
+       
+    */
     void setup_com(const raw_type* _begin, const raw_type* _end){
 
       //safe-guard
@@ -353,24 +378,33 @@ namespace sqeazy {
       computeImportance();
 
       float importanceSum = std::accumulate(importance_.begin(),importance_.end(),0.);
-
-      //nothing to do here
+      //nothing to do here, no data available
       if(!(importanceSum!=0))
 	return;
 
       uint32_t n_levels = std::count_if(importance_.begin(), importance_.end(),
 					std::bind(std::not_equal_to<uint32_t>(),std::placeholders::_1,0));
-	
+
+      //compute the LUT
       if(n_levels <= max_compressed_)
       	linear_mapping_quantisation();
       else
-      	// adaptive_lloyd_max(importanceSum);
-	adaptive_lloyd_com(importanceSum);
+      	adaptive_lloyd_com(importanceSum);
       
 
     }
 
-    
+    /**
+       \brief kept for legacy reasons
+       
+       \param[in] _input incoming data
+       \param[in] _in_nelemens number of elements of incoming data
+
+       
+       \return 
+       \retval 
+       
+    */
     void setup(const raw_type* _input, const size_t& _in_nelems){
 
       //safe-guard
@@ -420,6 +454,20 @@ namespace sqeazy {
     }
 
     //could this be replaced by a stream operator overload?
+    template <typename T>
+    std::string lut_to_string(const T& _lut){
+
+      std::ostringstream lut_stream(std::ios::out|std::ios::trunc);
+
+      for(auto& el : _lut)
+	lut_stream << el << "-";
+
+      
+      return lut_stream.str();
+    }
+    
+    
+    //could this be replaced by a stream operator overload?
     void lut_from_file(const std::string& _path, std::array<raw_type, max_compressed_>& _lut){
 
       std::ifstream lutf(_path,std::ios::in);
@@ -434,6 +482,24 @@ namespace sqeazy {
 	}
 
     }
+
+    //could this be replaced by a stream operator overload?
+    //TODO: perhaps very slow
+    void lut_from_string(const std::string& _lut_as_string,
+			 std::array<raw_type, max_compressed_>& _lut){
+
+      std::istringstream lutf(_lut_as_string,std::ios::in);
+
+      std::vector<std::string> splitted = split_by(_lut_as_string.begin(),
+						   _lut_as_string.end(),
+						   "-");
+
+      uint32_t counter = 0;
+      for( const std::string& item : splitted ) 
+	_lut[counter++] = std::stol(item);
+
+    }
+
     
     /**
        \brief load decode table from path and decode the payload given by _input to produce _output
@@ -463,6 +529,33 @@ namespace sqeazy {
     
     }
 
+    /**
+       \brief load decode table from path and decode the payload given by _input to produce _output
+       
+       \param[in] 
+       
+       \return 
+       \retval 
+       
+    */
+    void decode(const std::array<raw_type, max_compressed_>& _lut_decode, 
+    		const compressed_type* _input,
+    		const size_t& _in_nelems,
+    		raw_type* _output){
+
+
+      // std::array<raw_type, max_compressed_> loaded_lut_decode_;
+      // lut_from_file(_path,loaded_lut_decode_);
+      
+      if(!std::accumulate(_lut_decode.begin(), _lut_decode.end(),0)){
+	std::cerr << "incoming lut does not contain any data!\n";
+	return;
+      }
+      
+      applyLUT<compressed_type, raw_type> lutApplyer(_lut_decode);
+      std::transform(_input,_input+_in_nelems,_output,lutApplyer);
+    
+    }
 
   
     const std::array<int, quantiser::max_raw_>* get_histogram() const {

@@ -186,6 +186,38 @@ BOOST_AUTO_TEST_CASE( write_to_file ){
   
 }
 
+BOOST_AUTO_TEST_CASE( write_to_string ){
+
+  std::stringstream lut_file;
+  lut_file << "checkon_16bit_"
+	   << boost::unit_test::framework::current_test_case().p_name
+	   << ".log";
+    
+  sqeazy::quantiser<uint16_t,uint8_t> shrinker(embryo_.data(),
+					       embryo_.data() + embryo_.num_elements());
+
+  std::string lut = shrinker.lut_to_string(shrinker.lut_decode_);
+
+  BOOST_CHECK_GT(lut.size(),0);
+  
+  std::vector<uint8_t> encoded(embryo_.num_elements(),0);
+  shrinker.encode(embryo_.data(),embryo_.num_elements(),&encoded[0]);
+
+  decltype(shrinker.lut_decode_) lut_decode;
+  shrinker.lut_from_string(lut,lut_decode);
+  
+  std::vector<uint16_t> reconstructed(encoded.size(),0);
+  shrinker.decode(lut_decode,
+  		  &encoded[0],
+  		  encoded.size(),
+  		  &reconstructed[0]);
+
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(reconstructed.begin(), reconstructed.end(),embryo_.data(),
+  				  embryo_.data()+ embryo_.num_elements());
+  
+}
+
+
 
 BOOST_AUTO_TEST_SUITE_END()
 
