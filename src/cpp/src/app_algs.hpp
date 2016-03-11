@@ -19,7 +19,7 @@
 
 #include "yuv_utils.hpp"
 #include "image_stack.hpp"
-#include "encoders/quantiser_impl.hpp"
+#include "encoders/quantiser_scheme_impl.hpp"
 #include "sqeazy_algorithms.hpp"
 
 namespace po = boost::program_options;
