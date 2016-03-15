@@ -57,7 +57,7 @@ namespace sqeazy {
     {
 
       if(_payload.size())
-	config_map = unordered_parse_by(_payload.begin(), _payload.end());
+	config_map = parse_string_by(_payload);
 
       //TODO: catch this possibly throug the _payload
 #ifndef SQY_TRACE

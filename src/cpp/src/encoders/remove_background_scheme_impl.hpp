@@ -27,7 +27,7 @@ namespace sqeazy {
       threshold(0)
     {
       
-      auto config_map = unordered_parse_by(_payload.begin(), _payload.end());
+      auto config_map = parse_string_by(_payload);
 
       if(config_map.size()){
 	auto f_itr = config_map.find("threshold");
