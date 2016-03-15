@@ -5,6 +5,7 @@
 #include <cmath>
 #include <vector>
 #include <map>
+#include <chrono>
 #include <cstdint>
 #include <sstream>
 #include "string_parsers.hpp"
@@ -128,10 +129,45 @@ BOOST_AUTO_TEST_CASE (parse_without_token) {
 		      one_value);
 }
 
+BOOST_AUTO_TEST_CASE (speed_split_by) {
+
+  std::ostringstream msg;
+  size_t n_items = (1 << 12);
+  for( size_t i = 0; i < n_items;++i){
+    msg << "item" << i << "=" << i;
+    if(i!=(n_items-1))
+      msg << ",";
+  }
+
+  const std::string payload = msg.str();
+  std::vector<std::string> my_pairs;
+  std::vector<std::string> karma_pairs;
+
+  auto start_t = std::chrono::high_resolution_clock::now();
+  for(int r = 0;r<10;++r)
+    my_pairs = sqy::split_string_by(payload);
+  auto end_t = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double, std::micro> my_split_mus = (end_t-start_t);
+  
+  start_t = std::chrono::high_resolution_clock::now();
+  for(int r = 0;r<10;++r)
+    karma_pairs = sqy::split_by(payload.begin(), payload.end());
+  end_t = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double, std::micro> karma_split_mus = (end_t-start_t);
+
+  BOOST_TEST_MESSAGE("my_split " << my_split_mus.count() << " mus, karma_split " << karma_split_mus.count() << " mus\n");
+
+  //on ivy bridge laptop (under release conditions with gcc 5.3.1)
+  //y_split 1711.59 mus, karma_split 4713.37 mus
+  BOOST_REQUIRE_LT(my_split_mus.count(),.4*karma_split_mus.count());
+  BOOST_CHECK_EQUAL_COLLECTIONS(my_pairs.begin(), my_pairs.end(),
+				karma_pairs.begin(), karma_pairs.end());
+}
+
 BOOST_AUTO_TEST_CASE (parse_to_map) {
 
   
-  std::vector<std::string> pairs = sqy::split_by(multiple_args.begin(), multiple_args.end());
+  std::vector<std::string> pairs = sqy::split_string_by(multiple_args,",");
   BOOST_CHECK_EQUAL(pairs.size(),3);
   BOOST_TEST_MESSAGE("split_by \'" << multiple_args << "\'");
   for(auto p : pairs)

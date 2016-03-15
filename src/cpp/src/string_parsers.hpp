@@ -48,6 +48,40 @@ namespace sqeazy {
 
   }
 
+  std::vector<std::string> split_string_by(const std::string& _data,
+					   const std::string& _sep = ","
+					   ){
+    std::vector<std::string> value;
+
+    if(_sep.empty() || _data.empty())
+      return value;
+
+    auto first_sep_item = _sep[0];
+    size_t approx_count = std::count(_data.begin(), _data.end(),first_sep_item);
+    value.reserve(approx_count);
+    
+    size_t first = 0;
+    size_t last = first;
+
+    while(first!=std::string::npos){
+      
+      first = _data.find(_sep,first);
+
+      if(first!=std::string::npos)
+	value.push_back(_data.substr(last,first-last));
+      else{
+	value.push_back(_data.substr(last));
+	break;
+      }
+			
+      last = (first += _sep.size());
+      
+    }
+    
+    value.reserve(value.size());
+    return value;
+
+  }
   
   typedef std::vector<std::pair<std::string, std::string> > vec_of_pairs_t;
   typedef std::map<std::string, std::string> parsed_map_t;
