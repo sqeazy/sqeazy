@@ -154,6 +154,36 @@ namespace sqeazy {
     return value;
     
   }
+
+  parsed_map_t parse_string_by(const std::string& _payload,
+			       const std::string& _pair_sep = ",",
+			       const std::string& _kv_sep = "="){
+
+    using return_t = std::map<std::string,std::string>;
+
+    return_t value;
+
+    std::vector<std::string> parts = split_string_by(_payload,_pair_sep);
+    std::vector<std::string> key_value;
+    
+    for( auto & str : parts ){
+
+      key_value = split_string_by(str,
+				  _kv_sep);
+
+      if(key_value.size()==1)
+	value[key_value.front()] = "";
+      
+      if(key_value.size()>1 && key_value.size() % 2 == 0)
+	value[key_value.front()] = key_value.back();
+
+      key_value.clear();
+
+    }
+    
+    return value;
+    
+  }
   
 };
 

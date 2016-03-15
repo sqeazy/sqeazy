@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE (parse_to_map) {
   for(auto p : pairs)
     BOOST_TEST_MESSAGE(">> " << p);
   
-  sqy::parsed_map_t value = sqy::unordered_parse_by(multiple_args.begin(), multiple_args.end());
+  sqy::parsed_map_t value = sqy::parse_string_by(multiple_args);
 
   BOOST_CHECK_EQUAL(value.size(),3);
 
