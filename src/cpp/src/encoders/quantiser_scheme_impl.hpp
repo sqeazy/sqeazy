@@ -40,13 +40,21 @@ namespace sqeazy {
 
     quantiser_scheme(const std::string& _payload = ""):
       quantiser_config(_payload),
-      
+      config_map(),
       shrinker(){
 
       if(_payload.size())
 	config_map = unordered_parse_by(_payload.begin(), _payload.end());
 
-      
+      auto fitr = config_map.find("decode_lut_path");
+      if(fitr!=config_map.end())
+	shrinker.lut_from_file(fitr->second,shrinker.lut_decode_);
+      else{
+	fitr = config_map.find("decode_lut_string");
+	if(fitr!=config_map.end()){
+	  shrinker.lut_from_string(fitr->second,shrinker.lut_decode_);
+	}
+      }
     }
 
     ~quantiser_scheme() override final {}
@@ -69,9 +77,8 @@ namespace sqeazy {
 	if((count++)<(config_map.size()-1))
 	  msg << ",";
       }
-      quantiser_config = msg.str();
       
-      return quantiser_config;
+      return msg.str();
       
     }
 
@@ -158,16 +165,7 @@ namespace sqeazy {
 
     int decode( const compressed_type* _in, raw_type* _out, std::size_t _length) const override final {
 
-      auto fitr = config_map.find("decode_lut_path");
-      if(fitr!=config_map.end())
-	shrinker.lut_from_file(fitr->second,shrinker.lut_decode_);
-      else{
-	fitr = config_map.find("decode_lut_string");
-	if(fitr!=config_map.end())
-	  shrinker.lut_from_string(fitr->second,shrinker.lut_decode_);
-	else
-	  std::cerr << "unable to read lut from given string\n";
-      }
+     
       
       applyLUT<compressed_type, raw_type> lutApplyer(shrinker.lut_decode_);
       auto end_ptr = std::transform(_in,_in+_length,_out,lutApplyer);

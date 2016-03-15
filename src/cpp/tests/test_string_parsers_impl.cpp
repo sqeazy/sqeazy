@@ -21,10 +21,11 @@ struct string_fixture
   std::vector<std::string> four_values = {"test=0","any=..1..","from=to2","what=4"};
   std::string four_keywords = "ls->cd->cp->rm";
 
-  std::string multiple_args = "value=42,first=2";
+  std::string multiple_args = "value=42,first=2,long_string=1-2-3-4";
   std::map<std::string,std::string> multiple_kv = {
     {"value", "42"},
-    {"first", "2"}
+    {"first", "2"},
+    {"long_string", "1-2-3-4"}
   };
   
   std::string one_key = "ls";
@@ -131,14 +132,14 @@ BOOST_AUTO_TEST_CASE (parse_to_map) {
 
   
   std::vector<std::string> pairs = sqy::split_by(multiple_args.begin(), multiple_args.end());
-  BOOST_CHECK_EQUAL(pairs.size(),2);
+  BOOST_CHECK_EQUAL(pairs.size(),3);
   BOOST_TEST_MESSAGE("split_by \'" << multiple_args << "\'");
   for(auto p : pairs)
     BOOST_TEST_MESSAGE(">> " << p);
   
   sqy::parsed_map_t value = sqy::unordered_parse_by(multiple_args.begin(), multiple_args.end());
 
-  BOOST_CHECK_EQUAL(value.size(),2);
+  BOOST_CHECK_EQUAL(value.size(),3);
 
   BOOST_TEST_MESSAGE("unordered_parse_by \'" << multiple_args << "\'");
   for(auto v : value)

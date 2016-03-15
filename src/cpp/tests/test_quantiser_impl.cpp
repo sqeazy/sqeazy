@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE( embryo_roundtrip ){
 				embryo_.data()+ embryo_.num_elements());
 }
 
-BOOST_AUTO_TEST_CASE( embryo_roundtrip_newapi ){
+BOOST_AUTO_TEST_CASE( embryo_roundtrip_scheme_api ){
 
   std::vector<uint8_t> encoded(embryo_.num_elements(),0);
   
@@ -132,7 +132,7 @@ BOOST_AUTO_TEST_CASE( noisy_embryo_roundtrip ){
 
 }
 
-BOOST_AUTO_TEST_CASE( noisy_embryo_roundtrip_newapi ){
+BOOST_AUTO_TEST_CASE( noisy_embryo_roundtrip_scheme_api ){
 
   std::vector<uint8_t> encoded(noisy_embryo_.num_elements(),0);
 
@@ -510,7 +510,7 @@ BOOST_AUTO_TEST_CASE( write_to_file_realistic_roundtrip ){
   
 }
 
-BOOST_AUTO_TEST_CASE( realistic_roundtrip_newapi ){
+BOOST_AUTO_TEST_CASE( realistic_roundtrip_scheme_api ){
 
   std::stringstream lut_file;
   lut_file << "loics_suite_"
@@ -522,21 +522,20 @@ BOOST_AUTO_TEST_CASE( realistic_roundtrip_newapi ){
   std::vector<uint8_t> encoded(realistic_.size(),0);
   auto end_ptr = shrinker.encode(&realistic_[0],&encoded[0],realistic_.size());
 
+  std::string shrinker_config = shrinker.config();
+  
   BOOST_CHECK(end_ptr!=nullptr);
   BOOST_CHECK_EQUAL(end_ptr-&encoded[0],realistic_.size());
   
   std::vector<uint16_t> reconstructed(encoded.size(),0);
-  int err =shrinker.decode(&encoded[0],
+  sqeazy::quantiser_scheme<uint16_t,uint8_t> reloaded(shrinker_config);  
+  
+  int err =reloaded.decode(&encoded[0],
 			   &reconstructed[0],
 			   encoded.size());
 
   BOOST_CHECK_EQUAL(err,0);
   
-  // shrinker.lut_to_file(lut_file.str(),shrinker.lut_decode_);
-
-  // BOOST_REQUIRE(bfs::exists(tgt));
-  // BOOST_REQUIRE_NE(bfs::file_size(tgt),0u);
-
 
   size_t dyn_range = sqeazy::dyn_range(realistic_.begin(), realistic_.end());
   float exp_deviation_per_value = dyn_range / (256.f);
@@ -560,32 +559,65 @@ BOOST_AUTO_TEST_CASE( realistic_roundtrip_newapi ){
     BOOST_TEST_MESSAGE(boost::unit_test::framework::current_test_case().p_name<< ", wrote " << log_file.str());
   }
 
-  // BOOST_TEST_MESSAGE("loics_suite/" << boost::unit_test::framework::current_test_case().p_name
-  // 		     << "\t"  << "mse = " << mse << ", exp-mse = " << exp_mse);
-
-
-  // size_t reco_dyn_range = sqeazy::dyn_range(reconstructed.begin(), reconstructed.end());
-  // BOOST_CHECK_LT(reco_dyn_range,dyn_range);
-
-  // uint16_t min_val_original = *std::min_element(realistic_.begin(), realistic_.end());
-  // uint16_t max_val_original = *std::max_element(realistic_.begin(), realistic_.end());
-  
-  // uint16_t min_val_reconstr = *std::min_element(reconstructed.begin(), reconstructed.end());
-  // uint16_t max_val_reconstr = *std::max_element(reconstructed.begin(), reconstructed.end());
-
-  // BOOST_CHECK_LE(max_val_reconstr,max_val_original);
-  // BOOST_CHECK_GE(min_val_reconstr,min_val_original);
-
-  // BOOST_TEST_MESSAGE("loics_suite/" << boost::unit_test::framework::current_test_case().p_name << " <original|reconstructed>"
-  // 		     << "\t" << "min = " << min_val_original << " | " << min_val_reconstr
-  // 		     << "\tmax = " << max_val_original << " | " << max_val_reconstr
-  // 		     << "\tdrange = " << dyn_range << " | " << reco_dyn_range
-  // 		     );
-
-  // if(bfs::exists(tgt))
-  //   bfs::remove(tgt);
-  
 }
+
+BOOST_AUTO_TEST_CASE( reloading_decode_lut_scheme_api ){
+
+  std::stringstream lut_file;
+  lut_file << "loics_suite_"
+	   << boost::unit_test::framework::current_test_case().p_name
+	   << ".log";
+    
+  bfs::path tgt = lut_file.str(); 
+  sqeazy::quantiser_scheme<uint16_t,uint8_t> shrinker;
+  std::vector<uint8_t> encoded(realistic_.size(),0);
+  auto end_ptr = shrinker.encode(&realistic_[0],&encoded[0],realistic_.size());
+
+  std::string shrinker_config = shrinker.config();
+  
+  BOOST_CHECK(end_ptr!=nullptr);
+  BOOST_CHECK_EQUAL(end_ptr-&encoded[0],realistic_.size());
+  
+  std::vector<uint16_t> reconstructed(encoded.size(),0);
+  std::vector<uint16_t> reloaded_decoded(encoded.size(),0);
+
+  sqeazy::quantiser_scheme<uint16_t,uint8_t> reloaded(shrinker_config);  
+  std::string reloaded_config = reloaded.config();
+  BOOST_CHECK_EQUAL_COLLECTIONS(shrinker_config.begin(), shrinker_config.end(),
+				reloaded_config.begin(), reloaded_config.end());
+  
+  int err =reloaded.decode(&encoded[0],
+			   &reloaded_decoded[0],
+			   encoded.size());
+
+  BOOST_CHECK_EQUAL(err,0);
+
+  err =shrinker.decode(&encoded[0],
+		       &reconstructed[0],
+		       encoded.size());
+
+  BOOST_CHECK_EQUAL(err,0);
+
+  double mse = sqeazy::mse(reconstructed.begin(), reconstructed.end(),
+			   reloaded_decoded.begin());
+
+  BOOST_TEST_MESSAGE(boost::unit_test::framework::current_test_case().p_name << ", mse = " << mse);
+
+    
+  BOOST_CHECK_GE(mse,0);
+  BOOST_WARN_LT(mse,1.f);
+  if(mse>1.){
+    std::stringstream log_file;
+    log_file << "loics_suite_"
+	     << boost::unit_test::framework::current_test_case().p_name
+	     << "_reconstructed_vs_reloaded.log";
+    
+    shrinker.dump(log_file.str());
+    BOOST_TEST_MESSAGE(boost::unit_test::framework::current_test_case().p_name<< ", wrote " << log_file.str());
+  }
+
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -630,7 +662,7 @@ BOOST_AUTO_TEST_CASE( normal ){
   }
 }
 
-BOOST_AUTO_TEST_CASE( normal_newapi ){
+BOOST_AUTO_TEST_CASE( normal_scheme_api ){
 
   std::vector<uint16_t> input(1 << 12,0);
   uint16_t value = 0;
