@@ -44,7 +44,7 @@ namespace sqeazy {
       shrinker(){
 
       if(_payload.size())
-	config_map = unordered_parse_by(_payload.begin(), _payload.end());
+	config_map = parse_string_by(_payload.begin(), _payload.end());
 
       auto fitr = config_map.find("decode_lut_path");
       if(fitr!=config_map.end())

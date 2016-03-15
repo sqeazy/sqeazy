@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_CASE (split_to_strings) {
 BOOST_AUTO_TEST_SUITE_END()
 
 
-BOOST_FIXTURE_TEST_SUITE( parsing, string_fixture )
+BOOST_FIXTURE_TEST_SUITE( boost_parsing, string_fixture )
 
 BOOST_AUTO_TEST_CASE (parse_digits) {
   auto parsed_to_map = sqy::unordered_parse_by(four_keywords.begin(),
@@ -164,6 +164,39 @@ BOOST_AUTO_TEST_CASE (speed_split_by) {
 				karma_pairs.begin(), karma_pairs.end());
 }
 
+BOOST_AUTO_TEST_SUITE_END()
+
+
+BOOST_FIXTURE_TEST_SUITE( custom_parsing,
+			  string_fixture )
+
+BOOST_AUTO_TEST_CASE (parse_digits) {
+  auto parsed_to_map = sqy::parse_string_by(four_keywords,
+					    "->");
+  BOOST_CHECK_EQUAL(parsed_to_map.empty(),
+		    false);
+  BOOST_CHECK_EQUAL(parsed_to_map.size(),
+		    four_keys.size());
+  
+}
+
+BOOST_AUTO_TEST_CASE (parse_correctly) {
+  auto parsed_to_map = sqy::parse_string_by(four_keywords,
+				     "->");
+  BOOST_REQUIRE_EQUAL(parsed_to_map.empty(),
+		    false);
+
+  int count = 0;
+  for( auto & key : four_keys ){
+    if(parsed_to_map.find(key) != parsed_to_map.end())
+      count++;
+  }
+
+  BOOST_CHECK_EQUAL(count,
+		    four_keys.size());
+}
+
+
 BOOST_AUTO_TEST_CASE (parse_to_map) {
 
   
@@ -177,7 +210,7 @@ BOOST_AUTO_TEST_CASE (parse_to_map) {
 
   BOOST_CHECK_EQUAL(value.size(),3);
 
-  BOOST_TEST_MESSAGE("unordered_parse_by \'" << multiple_args << "\'");
+  BOOST_TEST_MESSAGE("parse_string_by \'" << multiple_args << "\'");
   for(auto v : value)
     BOOST_CHECK_MESSAGE(v.second == multiple_kv[v.first],
 			"values for " << v.first << " do not match: "
@@ -185,5 +218,4 @@ BOOST_AUTO_TEST_CASE (parse_to_map) {
   
 }
 BOOST_AUTO_TEST_SUITE_END()
-
 
