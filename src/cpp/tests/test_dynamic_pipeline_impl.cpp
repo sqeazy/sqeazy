@@ -327,6 +327,39 @@ BOOST_AUTO_TEST_CASE (encode_with_hibit_sink) {
   BOOST_CHECK(encoded_end!=nullptr);
 }
 
+BOOST_AUTO_TEST_CASE (encode_central_hibit_sink) {
+
+  std::vector<int> input(10);
+  int start_value = 0;
+  std::iota(input.begin(), input.end(),start_value);
+  for( int & i : input )
+    i <<= 28;
+  BOOST_CHECK_EQUAL(input.front(),start_value);
+  BOOST_CHECK_EQUAL(input.back(),(start_value+9)<<28);
+
+  auto sink_pipe = sqy::dynamic_pipeline<int,std::int8_t>::from_string("high_bits->square",filter_factory<int>(), sink_factory<int>());
+
+  int max_encoded_size = sink_pipe.max_encoded_size(input.size()*sizeof(int));
+  BOOST_CHECK_NE(max_encoded_size,0);
+  BOOST_CHECK_GT(max_encoded_size,8);
+
+  //FIXME
+  std::vector<std::int8_t> intermediate(max_encoded_size,0);
+  // std::vector<std::int8_t> intermediate(input.size()*sizeof(int),0);
+
+  std::int8_t* encoded_end = sink_pipe.encode(&input[0],&intermediate[0],input.size());
+
+  BOOST_CHECK_NE(intermediate.front(),0);
+  BOOST_CHECK(encoded_end!=nullptr);
+  int to_square = start_value + 9;
+  int expected = to_square*to_square;
+  int received = *(encoded_end-1);
+
+  BOOST_CHECK_NE(received,0);//happens if square is called before high_bits
+  BOOST_CHECK_NE(received,to_square);//happens if square is skipped
+  BOOST_CHECK_EQUAL(received,expected);
+}
+
 
 BOOST_AUTO_TEST_CASE (encode_with_sink_header) {
 
@@ -402,6 +435,8 @@ BOOST_AUTO_TEST_CASE (decode_with_hibit_sink) {
   BOOST_CHECK_EQUAL(err_code,0);
   BOOST_CHECK_EQUAL(output.back(),input.back());
 }
+
+
 
 BOOST_AUTO_TEST_SUITE_END()
 
