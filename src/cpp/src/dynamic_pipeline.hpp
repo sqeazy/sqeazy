@@ -567,17 +567,22 @@ namespace sqeazy
 	std::copy(payload_begin,payload_begin+output_len,temp.begin());
       }
 
-      for( std::size_t fidx = 0;fidx<filters_.size();++fidx )
-	{
-	  
-	  err_code = filters_[fidx]->decode(&temp[0],
-					    _out,
-					    output_shape);
-	  value += err_code ? (10*(fidx+1))+err_code : 0;
-	  std::copy(_out, _out+output_len,temp.begin());
-	}
+      if(filters_.empty()){
+	std::copy(temp.begin(),temp.begin()+output_len,_out);
+      }
+      else{
+	
+	for( std::size_t fidx = 0;fidx<filters_.size();++fidx )
+	  {
+	    
+	    err_code = filters_[fidx]->decode(&temp[0],
+					      _out,
+					      output_shape);
+	    value += err_code ? (10*(fidx+1))+err_code : 0;
+	    std::copy(_out, _out+output_len,temp.begin());
+	  }
 
-      
+      }
       return value;
 
     }
