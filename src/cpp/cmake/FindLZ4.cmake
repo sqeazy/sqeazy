@@ -50,7 +50,7 @@ if(IS_DIRECTORY ${LZ4_ROOT})
   
 else()    
 
-  #MESSAGE(WARNING "[FindLZ4] LZ4_ROOT not given $ENV{LZ4_ROOT} ${LZ4_ROOT} ${LZ4_DIR}")
+  #MESSAGE(AUTHOR_WARNING "[FindLZ4] LZ4_ROOT not given $ENV{LZ4_ROOT} ${LZ4_ROOT} ${LZ4_DIR}")
   find_path(LZ4_INC_PATH lz4.h)
   find_library(LZ4_LIB_PATH NAMES lz4)
 	
