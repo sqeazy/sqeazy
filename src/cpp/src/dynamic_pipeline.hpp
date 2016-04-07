@@ -61,7 +61,8 @@ namespace sqeazy
     static_assert(std::is_arithmetic<incoming_t>::value==true, "[dynamic_pipeline.hpp:31] received non-arithmetic type for input");
     static_assert(std::is_arithmetic<outgoing_t>::value==true, "[dynamic_pipeline.hpp:31] received non-arithmetic type for output");
     
-    filter_holder_t filters_;
+    filter_holder_t head_filters_;
+    filter_holder_t tail_filters_;
     sink_ptr_t sink_;
 
 
@@ -186,7 +187,9 @@ namespace sqeazy
     
     friend void swap(dynamic_pipeline &_lhs, dynamic_pipeline &_rhs)
     {
-      std::swap(_lhs.filters_, _rhs.filters_);
+      std::swap(_lhs.head_filters_, _rhs.head_filters_);
+      std::swap(_lhs.tail_filters_, _rhs.tail_filters_);
+
       std::swap(_lhs.sink_, _rhs.sink_);
     }
 
@@ -199,8 +202,10 @@ namespace sqeazy
 
     */
     dynamic_pipeline()
-        : filters_()
-        , sink_(nullptr){};
+        :
+      head_filters_(),
+      tail_filters_(),
+      sink_(nullptr){};
 
     /**
        //DEPRECATE THIS?//
@@ -213,13 +218,15 @@ namespace sqeazy
 
     */
     dynamic_pipeline(std::initializer_list<filter_ptr_t> _stages)
-        : filters_()
-        , sink_(nullptr)
+        : 
+      head_filters_(),
+      tail_filters_(),
+      sink_(nullptr)
     {
 
       for(const filter_ptr_t& step : _stages)
       {
-	filters_.push_back(step);
+	head_filters_.push_back(step);
       }
     };
 
@@ -234,7 +241,8 @@ namespace sqeazy
     */
     template <typename T>
     dynamic_pipeline(const T& _rhs):
-      filters_(_rhs.filters_),
+      head_filters_(_rhs.head_filters_),
+      tail_filters_(_rhs.tail_filters_),
       sink_(_rhs.sink_)
     {
 
@@ -264,25 +272,32 @@ namespace sqeazy
        \retval
 
     */
-    const std::size_t size() const { return filters_.size() + (sink_ ? 1 : 0); }
+    const std::size_t size() const { return head_filters_.size() + (sink_ ? 1 : 0) + tail_filters_.size(); }
 
-    const bool empty() const { return (filters_.empty() && !sink_); }
+    const bool empty() const { return (head_filters_.empty() && !sink_ && tail_filters_.empty()); }
 
 
     void add(const filter_ptr_t& _new_filter)
     {
 
-      if(empty())
-      {
-        filters_.push_back(_new_filter);
-        return;
-      }
+      // if(empty())
+      // {
+      //   head_filters_.push_back(_new_filter);
+      //   return;
+      // }
 
       auto view = const_stage_view(_new_filter);
-      if(view->input_type() == typeid(incoming_t).name())
-        filters_.push_back(_new_filter);
-      else
-        throw std::runtime_error("sqeazy::dynamic_pipeline::add_filter failed");
+      if(view->input_type() == typeid(incoming_t).name()){
+        head_filters_.push_back(_new_filter);
+	return;
+      }
+
+      if(view->input_type() == typeid(outgoing_t).name()){
+        tail_filters_.push_back(_new_filter);
+	return;
+      }
+      
+      throw std::runtime_error("sqeazy::dynamic_pipeline::add_filter failed");
     }
 
     void add(const sink_ptr_t& _new_sink)
@@ -298,17 +313,14 @@ namespace sqeazy
     {
 
       bool value = true;
-      if(filters_.empty())
+      if(head_filters_.empty() || tail_filters_.empty())
         return !value;
 
-      if(filters_.size() == 1)
-        return value;
-
-      
-      for(unsigned i = 1; i < filters_.size(); ++i)
+      //TODO: REFACTOR THIS!
+      for(unsigned i = 1; i < head_filters_.size(); ++i)
       {
-	auto this_filter =  const_stage_view(filters_[i]);
-	auto last_filter =  const_stage_view(filters_[i-1]);
+	auto this_filter =  const_stage_view(head_filters_[i]);
+	auto last_filter =  const_stage_view(head_filters_[i-1]);
 
 	if(!this_filter || !last_filter){
 	  value = false ;
@@ -317,14 +329,28 @@ namespace sqeazy
         value = value && (this_filter->input_type() == last_filter->output_type());
       }
 
+      
+      for(unsigned i = 1; i < tail_filters_.size(); ++i)
+      {
+	auto this_filter =  const_stage_view(tail_filters_[i]);
+	auto last_filter =  const_stage_view(tail_filters_[i-1]);
+
+	if(!this_filter || !last_filter){
+	  value = false ;
+	  break;
+	}
+        value = value && (this_filter->input_type() == last_filter->output_type());
+      }
+
+      
       return value;
     }
 
     std::string input_type() const
     {
 
-      if(filters_.size())
-        return const_stage_view(filters_.front())->input_type();
+      if(head_filters_.size())
+        return const_stage_view(head_filters_.front())->input_type();
 
       if(sink_)
         return const_stage_view(sink_)->input_type();
@@ -341,12 +367,22 @@ namespace sqeazy
       }
       else
       {
-        if(filters_.size())
+        if(tail_filters_.size())
         {
-          return const_stage_view(filters_.front())->output_type();
+          return const_stage_view(tail_filters_.front())->output_type();
         }
-        else
-          return std::string("");
+	
+	if(sink_)
+        {
+          return const_stage_view(sink_)->output_type();
+        }
+
+	if(head_filters_.size())
+        {
+          return const_stage_view(head_filters_.front())->output_type();
+        }
+
+	return std::string("");
       }
     };
 
@@ -370,7 +406,8 @@ namespace sqeazy
 
       std::ostringstream value;
 
-      for(const auto& step : filters_)
+      //TODO: REFACTOR THIS!
+      for(const auto& step : head_filters_)
       {
         value << const_stage_view(step)->name();
 	std::string cfg = const_stage_view(step)->config();
@@ -378,7 +415,7 @@ namespace sqeazy
 	if(!cfg.empty())
 	  value << "(" << cfg << ")";
 		
-        if(step != filters_.back())
+        if(step != head_filters_.back())
           value << "->";
       }
 
@@ -391,6 +428,18 @@ namespace sqeazy
 	if(!cfg.empty())
 	  value << "(" << cfg << ")";
 
+      }
+      
+      for(const auto& step : tail_filters_)
+      {
+        value << const_stage_view(step)->name();
+	std::string cfg = const_stage_view(step)->config();
+
+	if(!cfg.empty())
+	  value << "(" << cfg << ")";
+		
+        if(step != tail_filters_.back())
+          value << "->";
       }
 
       return value.str();
@@ -462,18 +511,19 @@ namespace sqeazy
       }
 
       raw_t* out = &temp_out[0];
-      
-      //loop filters
-      for( std::size_t fidx = 0;fidx<filters_.size();++fidx )
-	{
 
-	  auto encoded_end = filters_[fidx]->encode(&temp_in[0],
-						    out,
-						    _shape);
-	  value = reinterpret_cast<decltype(value)>(encoded_end);
-	  std::copy(out, out+len,temp_in.begin());
-	}
+      if(head_filters_.size()){
+	for( std::size_t fidx = 0;fidx<head_filters_.size();++fidx )
+	  {
+	  
+	    auto encoded_end = head_filters_[fidx]->encode(&temp_in[0],
+							   out,
+							   _shape);
+	    value = reinterpret_cast<decltype(value)>(encoded_end);
+	    std::copy(out, out+len,temp_in.begin());
+	  }
 
+      }
       
       if(is_compressor()){
 	value = (compressed_t*)sink_->encode(&temp_in[0],
@@ -482,9 +532,26 @@ namespace sqeazy
 
       }
 
+      std::intmax_t compressed_size = value-((decltype(value))&temp_out[0]);
+      if(tail_filters_.size()){
+
+	std::copy(out, out+compressed_size,temp_in.begin());
+	for( std::size_t fidx = 0;fidx<tail_filters_.size();++fidx )
+	  {
+	  
+	    auto encoded_end = tail_filters_[fidx]->encode(&temp_in[0],
+							   out,
+							   _shape);
+	    value = reinterpret_cast<decltype(value)>(encoded_end);
+	    std::copy(out, out+len,temp_in.begin());
+	  }
+
+      }
+      
+      
       ////////////////////// HEADER RELATED //////////////////
       //update header
-      std::intmax_t compressed_size = value-((decltype(value))&temp_out[0]);
+      compressed_size = value-((decltype(value))&temp_out[0]);
       hdr.set_compressed_size_byte<raw_t>(compressed_size*sizeof(compressed_t));
       hdr.set_pipeline<raw_t>(name());
 	
@@ -567,15 +634,15 @@ namespace sqeazy
 	std::copy(payload_begin,payload_begin+output_len,temp.begin());
       }
 
-      if(filters_.empty()){
+      if(head_filters_.empty()){
 	std::copy(temp.begin(),temp.begin()+output_len,_out);
       }
       else{
 	
-	for( std::size_t fidx = 0;fidx<filters_.size();++fidx )
+	for( std::size_t fidx = 0;fidx<head_filters_.size();++fidx )
 	  {
 	    
-	    err_code = filters_[fidx]->decode(&temp[0],
+	    err_code = head_filters_[fidx]->decode(&temp[0],
 					      _out,
 					      output_shape);
 	    value += err_code ? (10*(fidx+1))+err_code : 0;
