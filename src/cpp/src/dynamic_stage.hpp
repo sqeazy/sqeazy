@@ -251,15 +251,16 @@ namespace sqeazy{
       
     }
     
-    bool valid_filters() const {
+    bool valid() const {
 
       bool value = true;
       if(chain_.empty())
         return !value;
 
-      if(chain_.size()==1)
-	return true;//actually we cannot say anythin about validity here
+      if(chain_.size()==1 || std::is_same<filter_t,filter<incoming_t> >::value)
+	return true;
 
+      //TODO: this loop is obsolete for sqy::filter types
       for(unsigned i = 1; i < chain_.size(); ++i)
 	{
 	  auto this_filter =  const_stage_view(chain_[i]);

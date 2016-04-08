@@ -23,7 +23,7 @@ BOOST_AUTO_TEST_CASE( is_constructable )
   {
   sqy::stage_chain< sqy::filter<int> > local;
   BOOST_CHECK(local.empty());
-  BOOST_CHECK_NE(local.valid_filters(),true);
+  BOOST_CHECK_NE(local.valid(),true);
   BOOST_CHECK_EQUAL(local.name().size(),0);
   }
   
@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_CASE( is_constructable )
   sqy::stage_chain< sqy::filter<int> > filled_with_2 = {adder_sptr,square_sptr};
   BOOST_CHECK_NE(filled_with_2.empty(),true);
   BOOST_CHECK_EQUAL(filled_with_2.size(),2);
-  BOOST_CHECK_EQUAL(filled_with_2.valid_filters(),true);
+  BOOST_CHECK_EQUAL(filled_with_2.valid(),true);
   }
 }
 
@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE( copy_constructable )
   sqy::stage_chain< sqy::filter<int> > local(empty);
   
   BOOST_CHECK(local.empty());
-  BOOST_CHECK_NE(local.valid_filters(),true);
+  BOOST_CHECK_NE(local.valid(),true);
   BOOST_CHECK_EQUAL(local.name().size(),0);
   }
   
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE( copy_constructable )
     sqy::stage_chain< sqy::filter<int> > filled_with_2(reference);
     BOOST_CHECK_NE(filled_with_2.empty(),true);
     BOOST_CHECK_EQUAL(filled_with_2.size(),2);
-    BOOST_CHECK_EQUAL(filled_with_2.valid_filters(),true);
+    BOOST_CHECK_EQUAL(filled_with_2.valid(),true);
   }
 }
 
@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE( assignment )
   sqy::stage_chain< sqy::filter<int> > local = empty;
   
   BOOST_CHECK(local.empty());
-  BOOST_CHECK_NE(local.valid_filters(),true);
+  BOOST_CHECK_NE(local.valid(),true);
   BOOST_CHECK_EQUAL(local.name().size(),0);
   }
   
@@ -78,8 +78,16 @@ BOOST_AUTO_TEST_CASE( assignment )
     sqy::stage_chain< sqy::filter<int> > filled_with_2 = reference ;
     BOOST_CHECK_NE(filled_with_2.empty(),true);
     BOOST_CHECK_EQUAL(filled_with_2.size(),2);
-    BOOST_CHECK_EQUAL(filled_with_2.valid_filters(),true);
+    BOOST_CHECK_EQUAL(filled_with_2.valid(),true);
   }
+}
+
+BOOST_AUTO_TEST_CASE( invalid )
+{
+  //doesn't compile
+  sqy::stage_chain< sqy::sink<int> > local = {summer_sptr,hibits_sptr};
+
+  BOOST_CHECK_EQUAL(local.valid(),false);
 }
 
 BOOST_AUTO_TEST_CASE( encode_with_filters )
