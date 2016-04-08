@@ -138,6 +138,8 @@ target_link_libraries(deprecated_pipeline_impl ${Boost_LIBRARIES} ext_lz4)
 add_executable(test_dynamic_pipeline_impl test_dynamic_pipeline_impl.cpp)
 target_link_libraries(test_dynamic_pipeline_impl ${Boost_LIBRARIES} ext_lz4)
 
+add_executable(test_dynamic_stage_impl test_dynamic_stage_impl.cpp)
+target_link_libraries(test_dynamic_stage_impl ${Boost_LIBRARIES} ext_lz4)
 
 add_executable(test_quantiser_impl test_quantiser_impl.cpp)
 target_link_libraries(test_quantiser_impl ${Boost_LIBRARIES})
