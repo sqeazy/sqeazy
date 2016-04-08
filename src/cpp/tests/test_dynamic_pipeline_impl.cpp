@@ -106,7 +106,8 @@ BOOST_AUTO_TEST_CASE (copy_construct) {
   BOOST_CHECK_EQUAL(copied_pipe.size(), 2);
   BOOST_CHECK_NE(copied_pipe.empty(), true);
 
-  sqy::dynamic_pipeline<int,std::uint32_t> sink_pipe(filled_pipe);
+  sqy::dynamic_pipeline<int//,std::uint32_t
+			> sink_pipe(filled_pipe);
   sink_pipe.add(summer_sptr);
   BOOST_CHECK_EQUAL(sink_pipe.size(), 3);
   BOOST_CHECK_NE(sink_pipe.empty(), true);
@@ -199,7 +200,7 @@ BOOST_AUTO_TEST_CASE (add) {
   sqy::dynamic_pipeline<int> empty_step;
   BOOST_CHECK_EQUAL(empty_step.output_type(),"");
 
-  sqy::dynamic_pipeline<int>::filter_holder_t input = {adder_sptr,square_sptr};
+  sqy::dynamic_pipeline<int>::head_filter_holder_t input = {adder_sptr,square_sptr};
   for(const auto& step : input)
     empty_step.add(step);
   
