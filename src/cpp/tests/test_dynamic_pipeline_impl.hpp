@@ -1,8 +1,10 @@
 #ifndef _TEST_DYNAMIC_PIPELINE_IMPL_HPP_
 #define _TEST_DYNAMIC_PIPELINE_IMPL_HPP_
 
-#include "dynamic_pipeline.hpp"
+//#include "dynamic_pipeline.hpp"
 #include "dynamic_stage.hpp"
+#include "dynamic_stage_factory.hpp"
+#include "string_parsers.hpp"
 
 namespace sqy = sqeazy;
 
