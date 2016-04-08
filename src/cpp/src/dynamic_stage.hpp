@@ -359,7 +359,7 @@ namespace sqeazy{
     outgoing_t* encode(const incoming_t *_in, outgoing_t *_out, std::vector<std::size_t> _shape) /*override final*/ {
       outgoing_t* value = nullptr;
       std::size_t len = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
-      std::size_t max_len_byte = len*sizeof(incoming_t);
+      //      std::size_t max_len_byte = len*sizeof(incoming_t);
 
       std::vector<incoming_t> temp_in(_in, _in+len);
       std::vector<outgoing_t> temp_out(temp_in.size());
@@ -376,11 +376,18 @@ namespace sqeazy{
 
       std::size_t outgoing_size = value-((decltype(value))&temp_out[0]);
       std::copy(&temp_out[0],value, _out);
-           
+      value = _out + outgoing_size;     
       return value;
       
     }
 
+
+    int decode(const outgoing_t *_in, incoming_t *_out, std::size_t _len) const /*override final*/ {
+
+      std::vector<std::size_t> shape(1,_len);
+      return decode(_in,_out,shape);
+      
+    }
     /**
        \brief decode one-dimensional array _in and write results to _out
        
