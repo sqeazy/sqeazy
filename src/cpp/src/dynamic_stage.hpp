@@ -408,10 +408,14 @@ namespace sqeazy{
       std::vector<incoming_t> temp(len,0);
       std::copy(_in,_in+len,temp.begin());
 
-      for( std::size_t fidx = 0;fidx<chain_.size();++fidx )
+      auto rev_begin = chain_.rbegin();
+      auto rev_end   = chain_.rend();
+      int fidx = 0;
+      // for( int fidx = (chain_.size()-1);fidx>=0;--fidx )
+      for(;rev_begin!=rev_end;++rev_begin,++fidx)
 	{
 	    
-	  err_code = chain_[fidx]->decode(&temp[0],
+	  err_code = (*rev_begin)->decode(&temp[0],
 					  _out,
 					  _shape);
 	  value += err_code ? (10*(fidx+1))+err_code : 0;
