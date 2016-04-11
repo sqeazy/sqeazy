@@ -84,11 +84,28 @@ BOOST_AUTO_TEST_CASE( assignment )
 
 BOOST_AUTO_TEST_CASE( invalid )
 {
-  //doesn't compile
+
   sqy::stage_chain< sqy::sink<int> > local = {summer_sptr,hibits_sptr};
 
   BOOST_CHECK_EQUAL(local.valid(),false);
 }
+
+BOOST_AUTO_TEST_CASE( push_back )
+{
+  sqy::stage_chain< sqy::filter<int> > local;
+
+  local.push_back(adder_sptr);
+  local.push_back(square_sptr);
+
+  BOOST_CHECK_NE(local.empty(),true);
+  BOOST_CHECK_EQUAL(local.size(),2);
+
+  local.push_back(summer_sptr); //base of summer is sqy::sink, not sqy::filter
+
+  BOOST_CHECK_NE(local.empty(),true);
+  BOOST_CHECK_EQUAL(local.size(),2);
+}
+
 
 BOOST_AUTO_TEST_CASE( encode_with_filters )
 {

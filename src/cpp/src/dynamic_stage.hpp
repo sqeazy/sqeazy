@@ -233,9 +233,13 @@ namespace sqeazy{
     const std::size_t size() const { return chain_.size(); }
     const bool empty() const { return chain_.empty(); }
 
-    void push_back(const filter_ptr_t& _new){
+    template <typename pointee_t>
+    void push_back(const pointee_t& _new){
 
-      chain_.push_back(_new);
+      //runtime equivalent of checking if pointee_t derives from filter_t
+      auto casted = std::dynamic_pointer_cast<filter_t>(_new);
+      if(casted)
+	chain_.push_back(casted);
       
     }
 
