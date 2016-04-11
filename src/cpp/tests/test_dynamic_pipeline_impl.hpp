@@ -18,6 +18,13 @@ struct set_to :  public sqy::filter<T> {
   raw_type first_value;
   
   static_assert(std::is_arithmetic<raw_type>::value==true,"[set_to] input type is non-arithmetic");
+
+  template <typename U>
+  set_to(const set_to<U>& _rhs):
+    sqy::filter<T>::filter(),
+    value(_rhs.value),
+    first_value(_rhs.first_value)
+  { }
   
   set_to(const std::string& _payload=""):
     value(),
@@ -147,8 +154,12 @@ struct add_one :  public sqy::filter<T> {
   
   add_one(const std::string& _payload="")
   { }
-  
 
+  template <typename U>
+  add_one(const add_one<U>& _rhs):
+    sqy::filter<T>::filter()
+  { }
+  
   T operator()( const T& _in) {
     return _in + 1;
   }
@@ -219,6 +230,12 @@ struct square :  public sqy::filter<T> {
   
   square(const std::string& _payload="")
   { }
+
+  template <typename U>
+  square(const square<U>& _rhs):
+    sqy::filter<T>::filter()
+  { }
+
 
   std::string name() const {
 
@@ -313,6 +330,12 @@ struct sum_up :  public sqy::sink<T> {
   sum_up(const std::string& _payload="")
   { }
 
+  template <typename U>
+  sum_up(const sum_up<U>& _rhs):
+    sqy::filter<T>::filter()
+  { }
+
+  
   ~sum_up(){};
   
 
@@ -398,6 +421,13 @@ struct high_bits :  public sqy::sink<T> {
   high_bits(const std::string& _payload="")
   { }
 
+  template <typename U>
+  high_bits(const high_bits<U>& _rhs):
+    sqy::filter<T>::filter()
+  {
+
+  }
+  
   ~high_bits(){};
   
 

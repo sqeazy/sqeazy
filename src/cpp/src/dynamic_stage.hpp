@@ -45,6 +45,11 @@ namespace sqeazy{
     typedef raw_t out_type;
 
     filter(const std::string& _params = ""){}
+
+    template <typename T>
+    filter(const filter<T>& _rhs):
+      stage<raw_t>::stage()
+    {}
     
     virtual ~filter() {}
 
@@ -221,9 +226,10 @@ namespace sqeazy{
 
 
     stage_chain(const stage_chain& _rhs):
-      chain_(_rhs.chain_)
+      chain_(_rhs.chain_.begin(), _rhs.chain_.end())
     {}
 
+    
     stage_chain& operator=(stage_chain _rhs){
 
       swap(*this, _rhs);

@@ -13,6 +13,19 @@
 
 namespace sqy = sqeazy;
 
+BOOST_AUTO_TEST_SUITE( stage )
+
+BOOST_AUTO_TEST_CASE( to_other_type )
+{
+
+  add_one<int> adder;
+  add_one<char> sadder(adder);
+
+  BOOST_CHECK(adder.input_type()!=sadder.input_type());
+  
+}
+BOOST_AUTO_TEST_SUITE_END()
+
 BOOST_AUTO_TEST_SUITE( stage_chain )
 
   
@@ -57,6 +70,16 @@ BOOST_AUTO_TEST_CASE( copy_constructable )
     BOOST_CHECK_EQUAL(filled_with_2.size(),2);
     BOOST_CHECK_EQUAL(filled_with_2.valid(),true);
   }
+
+  //TODO: from different type
+  // {
+  //   sqy::stage_chain< sqy::filter<int> > int_reference = {adder_sptr,square_sptr};
+  //   sqy::stage_chain< sqy::filter<short> > short_reference(int_reference);
+  //   BOOST_CHECK_EQUAL(short_reference.size(),2);
+  //   BOOST_CHECK_EQUAL(short_reference.valid(),true);
+
+  // }
+
 }
 
 BOOST_AUTO_TEST_CASE( assignment )
@@ -80,6 +103,15 @@ BOOST_AUTO_TEST_CASE( assignment )
     BOOST_CHECK_EQUAL(filled_with_2.size(),2);
     BOOST_CHECK_EQUAL(filled_with_2.valid(),true);
   }
+
+  //TODO: from different type
+  // {
+  //   sqy::stage_chain< sqy::filter<int> > int_reference = {adder_sptr,square_sptr};
+  //   sqy::stage_chain< sqy::filter<short> > short_reference = int_reference;
+  //   BOOST_CHECK_EQUAL(short_reference.size(),2);
+  //   BOOST_CHECK_EQUAL(short_reference.valid(),true);
+
+  // }
 }
 
 BOOST_AUTO_TEST_CASE( invalid )
