@@ -194,7 +194,8 @@ namespace sqeazy{
 
     typedef typename filter_t::in_type incoming_t;
     typedef typename filter_t::out_type outgoing_t;
-    
+
+    typedef filter_t			filter_base_t;
     typedef std::shared_ptr< filter_t > filter_ptr_t;
     typedef std::vector<filter_ptr_t>   filter_holder_t;
 
@@ -234,12 +235,12 @@ namespace sqeazy{
     const bool empty() const { return chain_.empty(); }
 
     template <typename pointee_t>
-    void push_back(const pointee_t& _new){
+    void push_back(const std::shared_ptr<pointee_t>& _new){
 
-      //runtime equivalent of checking if pointee_t derives from filter_t
-      auto casted = std::dynamic_pointer_cast<filter_t>(_new);
-      if(casted)
+      if(std::is_base_of<filter_t,pointee_t>::value){
+	auto casted = std::dynamic_pointer_cast<filter_t>(_new);
 	chain_.push_back(casted);
+      }
       
     }
 
