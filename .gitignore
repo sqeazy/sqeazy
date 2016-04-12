@@ -8,3 +8,6 @@ libsqeazy.dylib
 /src/cpp/src/encoders/loics_suite_shifted_normal.log
 /src/cpp/src/encoders/loics_suite_write_to_file_realistic_roundtrip.log
 /src/cpp/src/encoders/loics_suite_write_to_file_realistic_roundtrip_newapi.log
+*.log
+*.sqy
+*.h5

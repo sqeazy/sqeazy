@@ -45,6 +45,11 @@ namespace sqeazy{
     typedef raw_t out_type;
 
     filter(const std::string& _params = ""){}
+
+    template <typename T>
+    filter(const filter<T>& _rhs):
+      stage<raw_t>::stage()
+    {}
     
     virtual ~filter() {}
 
@@ -194,7 +199,8 @@ namespace sqeazy{
 
     typedef typename filter_t::in_type incoming_t;
     typedef typename filter_t::out_type outgoing_t;
-    
+
+    typedef filter_t			filter_base_t;
     typedef std::shared_ptr< filter_t > filter_ptr_t;
     typedef std::vector<filter_ptr_t>   filter_holder_t;
 
@@ -220,9 +226,10 @@ namespace sqeazy{
 
 
     stage_chain(const stage_chain& _rhs):
-      chain_(_rhs.chain_)
+      chain_(_rhs.chain_.begin(), _rhs.chain_.end())
     {}
 
+    
     stage_chain& operator=(stage_chain _rhs){
 
       swap(*this, _rhs);
@@ -233,9 +240,13 @@ namespace sqeazy{
     const std::size_t size() const { return chain_.size(); }
     const bool empty() const { return chain_.empty(); }
 
-    void push_back(const filter_ptr_t& _new){
+    template <typename pointee_t>
+    void push_back(const std::shared_ptr<pointee_t>& _new){
 
-      chain_.push_back(_new);
+      if(std::is_base_of<filter_t,pointee_t>::value){
+	auto casted = std::dynamic_pointer_cast<filter_t>(_new);
+	chain_.push_back(casted);
+      }
       
     }
 
@@ -408,10 +419,14 @@ namespace sqeazy{
       std::vector<incoming_t> temp(len,0);
       std::copy(_in,_in+len,temp.begin());
 
-      for( std::size_t fidx = 0;fidx<chain_.size();++fidx )
+      auto rev_begin = chain_.rbegin();
+      auto rev_end   = chain_.rend();
+      int fidx = 0;
+      // for( int fidx = (chain_.size()-1);fidx>=0;--fidx )
+      for(;rev_begin!=rev_end;++rev_begin,++fidx)
 	{
 	    
-	  err_code = chain_[fidx]->decode(&temp[0],
+	  err_code = (*rev_begin)->decode(&temp[0],
 					  _out,
 					  _shape);
 	  value += err_code ? (10*(fidx+1))+err_code : 0;
