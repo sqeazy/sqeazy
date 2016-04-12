@@ -1,6 +1,7 @@
 #ifndef _DYNAMIC_PIPELINE_H_
 #define _DYNAMIC_PIPELINE_H_
 #include <utility>
+#include <cmath>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -13,7 +14,10 @@
 
 #include "string_parsers.hpp"
 #include "sqeazy_utils.hpp"
+
 #include "dynamic_stage.hpp"
+#include "dynamic_stage_factory.hpp"
+
 #include "sqeazy_header.hpp"
 
 namespace sqeazy
@@ -49,20 +53,21 @@ namespace sqeazy
     typedef raw_t incoming_t;
     typedef typename base_t::out_type outgoing_t;
 
-    
+    static_assert(std::is_arithmetic<incoming_t>::value==true, "[dynamic_pipeline.hpp:56] received non-arithmetic type for input");
+    static_assert(std::is_arithmetic<outgoing_t>::value==true, "[dynamic_pipeline.hpp:57] received non-arithmetic type for output");
+        
     typedef sink<incoming_t> sink_t;
-    typedef filter<incoming_t> filter_t;
-    typedef stage<incoming_t> stage_t;
-
-    typedef std::shared_ptr< filter<incoming_t> > filter_ptr_t;
     typedef std::shared_ptr< sink<incoming_t> > sink_ptr_t;
-    typedef std::vector<filter_ptr_t> filter_holder_t;
-
-    static_assert(std::is_arithmetic<incoming_t>::value==true, "[dynamic_pipeline.hpp:31] received non-arithmetic type for input");
-    static_assert(std::is_arithmetic<outgoing_t>::value==true, "[dynamic_pipeline.hpp:31] received non-arithmetic type for output");
     
-    filter_holder_t head_filters_;
-    filter_holder_t tail_filters_;
+    typedef filter<incoming_t> head_filter_t;
+    typedef filter<outgoing_t> tail_filter_t;
+    
+    typedef sqeazy::stage_chain<head_filter_t> head_chain_t;
+    typedef sqeazy::stage_chain<tail_filter_t> tail_chain_t;
+
+    
+    head_chain_t head_filters_;
+    tail_chain_t tail_filters_;
     sink_ptr_t sink_;
 
 
@@ -121,19 +126,21 @@ namespace sqeazy
        \brief given a string, this static method can fill the filter_holder and set the sink
        
        \param[in] _config string to parse
-       \param[in] f filter factory that is aware of all possible filters to choose from
-       \param[in] s sink factory that is aware of all possible sinks to choose from
-
+       \param[in] head_f filter factory that yields possible filters that filter raw_type to raw_type arrays
+       \param[in] s sink factory that yields possible sinks to go from raw_type to compressed_type
+       \param[in] tail_f filter factory that yields possible filters that filter compressed_type to compressed_type arrays
        \return 
        \retval 
        
     */
-    template <typename filter_factory_t = stage_factory<blank_filter>,
-	      typename sink_factory_t = stage_factory<blank_sink>
+    template <typename head_filter_factory_t = stage_factory<blank_filter>,
+	      typename sink_factory_t = stage_factory<blank_sink>,
+	      typename tail_filter_factory_t = stage_factory<blank_filter>
 	      >
     static dynamic_pipeline from_string(const std::string &_config,
-				 filter_factory_t f = stage_factory<blank_filter>(),
-				 sink_factory_t s = stage_factory<blank_sink>())
+					head_filter_factory_t head_f = stage_factory<blank_filter>(),
+					sink_factory_t s = stage_factory<blank_sink>(),
+					tail_filter_factory_t tail_f = stage_factory<blank_filter>())
     {
 
       sqeazy::vec_of_pairs_t steps_n_args = sqeazy::parse_by(_config.begin(),
@@ -144,18 +151,25 @@ namespace sqeazy
 
       for(const auto &pair : steps_n_args)
       {
-        if(sink_factory_t::has(pair.first)){
-	  auto temp = sink_factory_t::template create< sink_t >(pair.first, pair.second);
-          value.sink_ = temp;
+	if(!value.sink_){
+	  if(head_filter_factory_t::has(pair.first)){
+	    value.add((head_filter_factory_t::template create<head_filter_t>(pair.first, pair.second)));
+	    continue;
+	  }
+	
+	  if(sink_factory_t::has(pair.first)){
+	    auto temp = sink_factory_t::template create< sink_t >(pair.first, pair.second);
+	    value.sink_ = temp;
+	  }
+	} else {
+	   if(tail_filter_factory_t::has(pair.first)){
+	    value.add((tail_filter_factory_t::template create<tail_filter_t>(pair.first, pair.second)));
+	    
+	  }
 	}
 	//what if sink is present in _config, but not in factory
       }
 
-      for(const auto &pair : steps_n_args){
-        if(filter_factory_t::has(pair.first))
-          value.add((filter_factory_t::template create<filter_t>(pair.first, pair.second)));
-      	//what if filter is present in _config, but not in factory
-      }
       
       return value;
     }
@@ -217,17 +231,17 @@ namespace sqeazy
        \retval
 
     */
-    dynamic_pipeline(std::initializer_list<filter_ptr_t> _stages)
+    dynamic_pipeline(std::initializer_list<typename head_chain_t::filter_ptr_t> _stages)
         : 
-      head_filters_(),
+      head_filters_(_stages),
       tail_filters_(),
       sink_(nullptr)
     {
 
-      for(const filter_ptr_t& step : _stages)
-      {
-	head_filters_.push_back(step);
-      }
+      // for(const head_filter_ptr_t& step : _stages)
+      // {
+      // 	head_filters_.push_back(step);
+      // }
     };
 
     /**
@@ -239,8 +253,7 @@ namespace sqeazy
        \retval
 
     */
-    template <typename T>
-    dynamic_pipeline(const T& _rhs):
+    dynamic_pipeline(const dynamic_pipeline& _rhs):
       head_filters_(_rhs.head_filters_),
       tail_filters_(_rhs.tail_filters_),
       sink_(_rhs.sink_)
@@ -276,34 +289,32 @@ namespace sqeazy
 
     const bool empty() const { return (head_filters_.empty() && !sink_ && tail_filters_.empty()); }
 
-
-    void add(const filter_ptr_t& _new_filter)
+    template <typename pointee_t>
+    void add(const std::shared_ptr<pointee_t>& _new_filter)
     {
 
-      // if(empty())
-      // {
-      //   head_filters_.push_back(_new_filter);
-      //   return;
-      // }
-
       auto view = const_stage_view(_new_filter);
-      if(view->input_type() == typeid(incoming_t).name()){
+      //if(view->input_type() == typeid(incoming_t).name()){
+      if(std::is_base_of<typename head_chain_t::filter_base_t,pointee_t>::value){
         head_filters_.push_back(_new_filter);
 	return;
       }
 
-      if(view->input_type() == typeid(outgoing_t).name()){
+      //      if(view->input_type() == typeid(outgoing_t).name()){
+      if(std::is_base_of<typename tail_chain_t::filter_base_t,pointee_t>::value){
         tail_filters_.push_back(_new_filter);
 	return;
       }
       
-      throw std::runtime_error("sqeazy::dynamic_pipeline::add_filter failed");
+      throw std::runtime_error("sqeazy::dynamic_pipeline::add failed to push_back head_filter");
     }
 
+    
+    
     void add(const sink_ptr_t& _new_sink)
     {
       if(sink_)
-	sink_.reset();
+    	sink_.reset();
 
       sink_ = _new_sink;
     }
@@ -313,35 +324,11 @@ namespace sqeazy
     {
 
       bool value = true;
-      if(head_filters_.empty() || tail_filters_.empty())
+      if(head_filters_.empty() && tail_filters_.empty())
         return !value;
 
-      //TODO: REFACTOR THIS!
-      for(unsigned i = 1; i < head_filters_.size(); ++i)
-      {
-	auto this_filter =  const_stage_view(head_filters_[i]);
-	auto last_filter =  const_stage_view(head_filters_[i-1]);
-
-	if(!this_filter || !last_filter){
-	  value = false ;
-	  break;
-	}
-        value = value && (this_filter->input_type() == last_filter->output_type());
-      }
-
-      
-      for(unsigned i = 1; i < tail_filters_.size(); ++i)
-      {
-	auto this_filter =  const_stage_view(tail_filters_[i]);
-	auto last_filter =  const_stage_view(tail_filters_[i-1]);
-
-	if(!this_filter || !last_filter){
-	  value = false ;
-	  break;
-	}
-        value = value && (this_filter->input_type() == last_filter->output_type());
-      }
-
+      value = value && head_filters_.valid();
+      value = value && tail_filters_.valid();
       
       return value;
     }
@@ -406,18 +393,8 @@ namespace sqeazy
 
       std::ostringstream value;
 
-      //TODO: REFACTOR THIS!
-      for(const auto& step : head_filters_)
-      {
-        value << const_stage_view(step)->name();
-	std::string cfg = const_stage_view(step)->config();
-
-	if(!cfg.empty())
-	  value << "(" << cfg << ")";
-		
-        if(step != head_filters_.back())
-          value << "->";
-      }
+      if(head_filters_.size())
+	value << head_filters_.name();
 
       if(is_compressor())
       {
@@ -429,18 +406,9 @@ namespace sqeazy
 	  value << "(" << cfg << ")";
 
       }
-      
-      for(const auto& step : tail_filters_)
-      {
-        value << const_stage_view(step)->name();
-	std::string cfg = const_stage_view(step)->config();
 
-	if(!cfg.empty())
-	  value << "(" << cfg << ")";
-		
-        if(step != tail_filters_.back())
-          value << "->";
-      }
+      if(tail_filters_.size())
+	value << tail_filters_.name();
 
       return value.str();
     };
@@ -483,7 +451,7 @@ namespace sqeazy
 
       compressed_t* value = nullptr;
       std::size_t len = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
-      std::size_t max_len_byte = len*sizeof(raw_t);
+      // std::size_t max_len_byte = len*sizeof(raw_t);
 
       ////////////////////// HEADER RELATED //////////////////
       //insert header
@@ -498,71 +466,25 @@ namespace sqeazy
       compressed_t* first_output = reinterpret_cast<compressed_t*>(output_buffer+hdr_shift);
 
       ////////////////////// ENCODING //////////////////
-      //prepare temp data for encoding
-      std::vector<raw_t> temp_in(_in, _in+len);
-      std::vector<raw_t> temp_out;
-
-      if(is_compressor()){
-	max_len_byte = sink_->max_encoded_size(len*sizeof(raw_t));
-	temp_out.resize(max_len_byte/sizeof(raw_t) > len ? max_len_byte/sizeof(raw_t) : len );
-      }
-      else {
-	temp_out.resize(temp_in.size());
-      }
-
-      raw_t* out = &temp_out[0];
-
-      if(head_filters_.size()){
-	for( std::size_t fidx = 0;fidx<head_filters_.size();++fidx )
-	  {
-	  
-	    auto encoded_end = head_filters_[fidx]->encode(&temp_in[0],
-							   out,
-							   _shape);
-	    value = reinterpret_cast<decltype(value)>(encoded_end);
-	    std::copy(out, out+len,temp_in.begin());
-	  }
-
-      }
-      
-      if(is_compressor()){
-	value = (compressed_t*)sink_->encode(&temp_in[0],
-					     (typename sink_t::out_type*)out,
-					     _shape);
-
-      }
-
-      std::intmax_t compressed_size = value-((decltype(value))&temp_out[0]);
-      if(tail_filters_.size()){
-
-	std::copy(out, out+compressed_size,temp_in.begin());
-	for( std::size_t fidx = 0;fidx<tail_filters_.size();++fidx )
-	  {
-	  
-	    auto encoded_end = tail_filters_[fidx]->encode(&temp_in[0],
-							   out,
-							   _shape);
-	    value = reinterpret_cast<decltype(value)>(encoded_end);
-	    std::copy(out, out+len,temp_in.begin());
-	  }
-
-      }
-      
+      if(std::is_same<raw_t,compressed_t>::value)
+	value = head_filters_.encode(_in,first_output,_shape);
+      else
+	value = detail_encode(_in,first_output,_shape);
       
       ////////////////////// HEADER RELATED //////////////////
       //update header
-      compressed_size = value-((decltype(value))&temp_out[0]);
+      std::size_t compressed_size = value-first_output;
       hdr.set_compressed_size_byte<raw_t>(compressed_size*sizeof(compressed_t));
       hdr.set_pipeline<raw_t>(name());
-	
-      if(hdr.size()!=hdr_shift)
-	first_output = reinterpret_cast<compressed_t*>(output_buffer+hdr.size());
-	
-      std::copy(hdr.begin(), hdr.end(), output_buffer);
 
-      compressed_t* temp_out_begin = reinterpret_cast<compressed_t*>(&temp_out[0]);
-      compressed_t* temp_out_end = temp_out_begin+compressed_size;
-      std::copy(temp_out_begin, temp_out_end, first_output);
+      if(hdr.size()!=hdr_shift){
+	std::copy(first_output, first_output + compressed_size,
+		  output_buffer+hdr.size()
+		  );
+	first_output = reinterpret_cast<compressed_t*>(output_buffer+hdr.size());
+      }
+      
+      std::copy(hdr.begin(), hdr.end(), output_buffer);
             
       value = (compressed_t*)(output_buffer+hdr.size()+(compressed_size*sizeof(compressed_t)));
             
@@ -570,6 +492,54 @@ namespace sqeazy
 
     }
 
+    compressed_t* detail_encode(const raw_t *_in,
+				compressed_t *_out,
+				std::vector<std::size_t> _shape)  {
+      
+     
+      std::size_t len = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
+      // std::vector<raw_t> temp_in(_in, _in+len);
+      std::vector<raw_t> temp;
+
+      std::size_t max_len_byte = sink_->max_encoded_size(len*sizeof(raw_t));
+      temp.resize(std::max(
+			   std::ceil(max_len_byte/sizeof(raw_t)),
+			   double(len)
+			   )
+		  );
+
+      compressed_t* encoded_end = nullptr;
+      
+      if(head_filters_.size())
+	encoded_end = head_filters_.encode(_in,&temp[0],_shape);
+	
+      
+      if(sink_){
+	encoded_end = (compressed_t*)sink_->encode(temp.data(),
+						   _out,
+						   _shape);
+    
+
+	std::intmax_t compressed_size = encoded_end-_out;
+	if(tail_filters_.size()){
+
+	  compressed_t* casted_temp = reinterpret_cast<compressed_t*>(temp.data());
+	  
+	  std::copy(_out, _out+compressed_size,casted_temp);
+
+
+	  encoded_end = tail_filters_.encode(casted_temp,
+					     _out,
+					     _shape);
+	}
+      }
+      else{
+	std::copy(temp.data(), encoded_end - temp.data(),_out);
+	encoded_end = _out + (encoded_end - temp.data());
+      }
+
+      return encoded_end;
+    }
     
       /**
        \brief decode one-dimensional array _in and write results to _out
@@ -589,49 +559,122 @@ namespace sqeazy
 
     }
     
-    /**
+    
+      /**
        \brief decode one-dimensional array _in and write results to _out
        
        \param[in] _in input buffer
        \param[out] _out output buffer //NOTE: might be larger than _in for sink type pipelines
        \param[in] _shape of input buffer size in units of its type, aka compressed_t
        
-       \return 
+       \return error code encoded as 3-digit decimal number
+		0   .. filter error code before sink
+		10  .. sink error code
+		100 .. filter error code after sink
        \retval 
        
     */
     
     int decode(const compressed_t *_in, raw_t *_out, std::vector<std::size_t> _shape) const override final {
+      
 
-      int value = 0;
-      int err_code = 0;
+      //FIXME: strange, we receive an n-dim array with _in that spans across the payload AND the header
+      //       this would imply that almost always, _shape is 1D?
       std::size_t len = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
 
+      ////////////////////// HEADER RELATED //////////////////
       //load header
       const char* _in_char_begin = (const char*)_in;
+
+      //FIXME: works only if len is greater than hdr.size()
       const char* _in_char_end = _in_char_begin + (len*sizeof(compressed_t));
+      
       image_header hdr(_in_char_begin,_in_char_end);
       std::vector<std::size_t> output_shape(hdr.shape()->begin(),
 					    hdr.shape()->end());
-      std::intmax_t output_len = std::accumulate(output_shape.begin(),
-						 output_shape.end(),
-						 1,
-						 std::multiplies<std::intmax_t>());
+      // std::intmax_t output_len = std::accumulate(output_shape.begin(),
+      // 						 output_shape.end(),
+      // 						 1,
+      // 						 std::multiplies<std::intmax_t>());
+      auto payload_begin = reinterpret_cast<const compressed_t*>(_in_char_begin + hdr.size());
+      size_t in_size_bytes = (len*sizeof(compressed_t)) - hdr.size();
 
-      std::vector<raw_t> temp(output_len,0);
+      int value = 0;
+	    
+      if(std::is_same<compressed_t,raw_t>::value)
+	value = head_filters_.decode(payload_begin,_out,_shape);
+      else
+	value = detail_decode(payload_begin, _out,
+			      in_size_bytes,
+			      output_shape);
+
+      return value;
+    }
+
+
+
+    int detail_decode(const compressed_t *_in, raw_t *_out,
+		      std::size_t in_size_bytes,
+		      std::vector<std::size_t> out_shape) const {
+      int value = 0;
+      int err_code = 0;
+
+      // //FIXME: strange, we receive an n-dim array with _in that spans across the payload AND the header
+      // //       this would imply that almost always, _shape is 1D?
+      // std::size_t len = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
+
+      // ////////////////////// HEADER RELATED //////////////////
+      // //load header
+      // const char* _in_char_begin = (const char*)_in;
+
+      // //FIXME: works only if len is greater than hdr.size()
+      // const char* _in_char_end = _in_char_begin + (len*sizeof(compressed_t));
       
+      // image_header hdr(_in_char_begin,_in_char_end);
+      // std::vector<std::size_t> output_shape(hdr.shape()->begin(),
+      // 					    hdr.shape()->end());
+      // std::intmax_t output_len = std::accumulate(output_shape.begin(),
+      // 						 output_shape.end(),
+      // 						 1,
+      // 						 std::multiplies<std::intmax_t>());
+      // auto payload_begin = reinterpret_cast<const compressed_t*>(_in_char_begin + hdr.size());
+      
+      ////////////////////// DECODING //////////////////
+      std::size_t output_len = std::accumulate(out_shape.begin(), out_shape.end(),
+					       1,
+					       std::multiplies<std::size_t>());
+      std::size_t len = in_size_bytes/sizeof(compressed_t);
+      std::vector<raw_t> temp(output_len,0);
+
       
       if(is_compressor()){
-	auto payload_begin = reinterpret_cast<const compressed_t*>(_in_char_begin + hdr.size());
-	err_code = sink_->decode((const typename sink_t::out_type*)payload_begin,
+	typedef typename sink_t::out_type sink_out_t;
+
+	const sink_out_t* compressor_begin = reinterpret_cast<const sink_out_t*>(_in);
+	std::vector<compressed_t> sink_in;
+	  
+	if(tail_filters_.size()){
+	  const sink_out_t* tail_in = compressor_begin;
+	  sink_in.resize(in_size_bytes/sizeof(compressed_t));
+	  const sink_out_t* tail_out = reinterpret_cast<sink_out_t*>(sink_in.data());
+	  
+	  err_code = tail_filters_.decode(tail_in,
+					  tail_out,
+					  in_size_bytes);
+	  value += err_code ;
+	  
+	  compressor_begin = sink_in.data();
+	}
+		
+
+	err_code = sink_->decode(compressor_begin,
 				 &temp[0],
-				 len - hdr.size()
+				 in_size_bytes
 				 );
-	value += err_code ;
+	value += err_code+10 ;
       }
       else{
-	auto payload_begin = reinterpret_cast<const raw_t*>(_in_char_begin + hdr.size());
-	std::copy(payload_begin,payload_begin+output_len,temp.begin());
+	std::copy(_in,_in+len,temp.begin());
       }
 
       if(head_filters_.empty()){
@@ -639,15 +682,11 @@ namespace sqeazy
       }
       else{
 	
-	for( std::size_t fidx = 0;fidx<head_filters_.size();++fidx )
-	  {
-	    
-	    err_code = head_filters_[fidx]->decode(&temp[0],
-					      _out,
-					      output_shape);
-	    value += err_code ? (10*(fidx+1))+err_code : 0;
-	    std::copy(_out, _out+output_len,temp.begin());
-	  }
+	err_code = head_filters_.decode(&temp[0],
+					_out,
+					out_shape);
+	value += err_code + 100;
+	std::copy(_out, _out+output_len,temp.begin());
 
       }
       return value;
