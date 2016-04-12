@@ -82,7 +82,7 @@ namespace sqeazy{
      \retval 
      
   */
-  template <typename raw_t, typename compressed_t = std::int8_t>
+  template <typename raw_t, typename compressed_t = char>
   struct sink : public stage<raw_t>
   {
 
@@ -177,6 +177,7 @@ namespace sqeazy{
   {
 
     typedef void raw_t;
+    typedef typename sink<void>::out_type compressed_t;
     ~blank_sink() {}
     blank_sink(const std::string& _params="") {}
     
@@ -187,8 +188,8 @@ namespace sqeazy{
     
     bool is_compressor() const {return false;}
 
-    std::int8_t* encode(const raw_t* _in, std::int8_t* _out,std::vector<std::size_t> _shape) override final { return nullptr; };
-    int decode(const std::int8_t* _in, raw_t* _out,std::vector<std::size_t> _shape) const override final { return 1; };
+    compressed_t* encode(const raw_t* _in, compressed_t* _out,std::vector<std::size_t> _shape) override final { return nullptr; };
+    int decode(const compressed_t* _in, raw_t* _out,std::vector<std::size_t> _shape) const override final { return 1; };
     
   };
 
