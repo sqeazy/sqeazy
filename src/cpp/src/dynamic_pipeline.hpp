@@ -469,18 +469,12 @@ namespace sqeazy
 			       len*sizeof(incoming_t));
 
       const std::intmax_t hdr_shift = hdr.size();
-      std::int8_t* output_buffer = reinterpret_cast<std::int8_t*>(_out);
+      char* output_buffer = reinterpret_cast<char*>(_out);
       std::copy(hdr.begin(), hdr.end(), output_buffer);
       outgoing_t* first_output = reinterpret_cast<outgoing_t*>(output_buffer+hdr_shift);
 
       ////////////////////// ENCODING //////////////////
-      if(std::is_same<incoming_t,outgoing_t>::value)
-	value = reinterpret_cast<outgoing_t*>(head_filters_.encode(_in,
-								     reinterpret_cast<incoming_t*>(first_output),
-								     _shape)
-						);
-      else
-	value = detail_encode(_in,first_output,_shape);
+      value = detail_encode(_in,first_output,_shape);
       
       ////////////////////// HEADER RELATED //////////////////
       //update header
@@ -511,7 +505,7 @@ namespace sqeazy
       // std::vector<incoming_t> temp_in(_in, _in+len);
       std::vector<incoming_t> temp;
 
-      std::size_t max_len_byte = sink_->max_encoded_size(len*sizeof(incoming_t));
+      std::size_t max_len_byte = sink_ ? sink_->max_encoded_size(len*sizeof(incoming_t)) : 0;
       temp.resize(std::max(
 			   std::ceil(max_len_byte/sizeof(incoming_t)),
 			   double(len)
@@ -552,8 +546,10 @@ namespace sqeazy
 	}
       }
       else{
-	std::copy(temp.data(), head_filters_end ,_out);
-	encoded_end = _out + (head_filters_end - temp.data());
+	incoming_t* out_as_incoming = reinterpret_cast<incoming_t*>(_out);
+	std::copy(temp.data(), head_filters_end ,
+		  out_as_incoming);
+	encoded_end = reinterpret_cast<outgoing_t*>(out_as_incoming+(head_filters_end-temp.data()));
       }
 
       return encoded_end;
@@ -599,10 +595,12 @@ namespace sqeazy
 				 &temp[0],
 				 in_size_bytes
 				 );
-	value += err_code+10 ;
+	value += err_code ? err_code+10 : 0 ;
       }
       else{
-	std::copy(_in,_in+len,temp.begin());
+	std::copy(_in,
+		  _in+len,
+		  reinterpret_cast<outgoing_t*>(temp.data()));
       }
 
       if(head_filters_.empty()){
@@ -610,12 +608,11 @@ namespace sqeazy
       }
       else{
 	
-	err_code = head_filters_.decode(&temp[0],
+	err_code = head_filters_.decode(reinterpret_cast<const incoming_t*>(temp.data()),
 					_out,
 					out_shape);
-	value += err_code + 100;
-	std::copy(_out, _out+output_len,temp.begin());
-
+	value += err_code ? err_code+100 : 0 ;
+	
       }
       return value;
 
@@ -681,17 +678,10 @@ namespace sqeazy
       // 						 std::multiplies<std::intmax_t>());
       const outgoing_t* payload_begin = reinterpret_cast<const outgoing_t*>(_in_char_begin + hdr.size());
       size_t in_size_bytes = (len*sizeof(outgoing_t)) - hdr.size();
-
-      int value = 0;
-	    
-      if(std::is_same<outgoing_t,incoming_t>::value)
-      	value = head_filters_.decode(reinterpret_cast<const incoming_t*>(payload_begin),
-      				     _out,
-      				     _shape);
-      else
-	value = detail_decode(payload_begin, _out,
-			      in_size_bytes,
-			      output_shape);
+      
+      int value = detail_decode(payload_begin, _out,
+				in_size_bytes,
+				output_shape);
       
       return value;
     }

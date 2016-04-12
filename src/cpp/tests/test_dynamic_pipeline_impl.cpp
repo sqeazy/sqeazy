@@ -203,12 +203,16 @@ BOOST_AUTO_TEST_CASE (encode_with_filters) {
 							      sink_factory<int>());
 
   std::size_t max_encoded_size_byte = filters_pipe.max_encoded_size(input.size()*sizeof(int));
-  std::vector<char> intermediate(max_encoded_size_byte,0);
+  std::vector<int> intermediate(max_encoded_size_byte/sizeof(int),0);
 
-  char* encoded_end = filters_pipe.encode(input.data(),
-					  intermediate.data(),
-					  input.size());
+  char* char_end = filters_pipe.encode(input.data(),
+				       (char*)intermediate.data(),
+				       input.size());
 
+  BOOST_CHECK(char_end!=nullptr);
+  
+  int* encoded_end = reinterpret_cast<int*>(char_end);
+  
   BOOST_CHECK_EQUAL(intermediate.back(),std::pow(9,2));
   BOOST_CHECK_EQUAL(*(encoded_end - input.size()),std::pow(0,2));
   BOOST_CHECK_EQUAL(*(encoded_end - input.size()+4),std::pow(4,2));
@@ -216,27 +220,31 @@ BOOST_AUTO_TEST_CASE (encode_with_filters) {
   BOOST_CHECK_EQUAL(encoded_end-&intermediate[0],intermediate.size());
 }
 
-// BOOST_AUTO_TEST_CASE (decode_with_filters) {
+BOOST_AUTO_TEST_CASE (decode_with_filters) {
 
-//   std::vector<int> input(10,16);
-//   std::vector<int> output(input.size(),0);
+  std::vector<int> input(10,16);
+  std::vector<int> output(input.size(),0);
 
-//   sqy::dynamic_pipeline<int> filters_pipe = sqy::dynamic_pipeline<int>::from_string("square",filter_factory<int>(), sink_factory<int>());
+  sqy::dynamic_pipeline<int> filters_pipe = sqy::dynamic_pipeline<int>::from_string("square",filter_factory<int>(), sink_factory<int>());
 
-//   std::size_t max_encoded_size_byte = filters_pipe.max_encoded_size(input.size()*sizeof(int));
-//   std::vector<int> intermediate(max_encoded_size_byte/sizeof(int));
+  std::size_t max_encoded_size_byte = filters_pipe.max_encoded_size(input.size()*sizeof(int));
+  std::vector<char> intermediate(max_encoded_size_byte);
 
-//   int* encoded_end = filters_pipe.encode(&input[0],&intermediate[0],input.size());
-//   BOOST_CHECK(encoded_end!=nullptr);
+  auto encoded_end = filters_pipe.encode(input.data(),
+					 intermediate.data(),
+					 input.size());
+  BOOST_CHECK(encoded_end!=nullptr);
   
-//   std::size_t encoded_size = encoded_end - &intermediate[0];
+  std::size_t encoded_size = encoded_end - intermediate.data();
   
-//   int err_code = filters_pipe.decode(&intermediate[0],&output[0],encoded_size);
-//   BOOST_CHECK_EQUAL(err_code,0);
+  int err_code = filters_pipe.decode(intermediate.data(),
+				     output.data(),
+				     encoded_size);
+  BOOST_CHECK_EQUAL(err_code,0);
 
-//   for(std::size_t i = 0;i<input.size();++i)
-//     BOOST_CHECK_EQUAL(output[i],input[i]);
-// }
+  for(std::size_t i = 0;i<input.size();++i)
+    BOOST_CHECK_EQUAL(output[i],input[i]);
+}
 
 // BOOST_AUTO_TEST_CASE (encode_with_sink) {
 

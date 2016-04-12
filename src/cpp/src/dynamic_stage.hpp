@@ -427,11 +427,13 @@ namespace sqeazy{
       for(;rev_begin!=rev_end;++rev_begin,++fidx)
 	{
 	    
-	  err_code = (*rev_begin)->decode(&temp[0],
+	  err_code = (*rev_begin)->decode(temp.data(),
 					  _out,
 					  _shape);
 	  value += err_code ? (10*(fidx+1))+err_code : 0;
-	  std::copy(_out, _out+len,temp.begin());
+	  std::copy(_out,
+		    _out+len,
+		    temp.data());
 	}
 
       return value;
