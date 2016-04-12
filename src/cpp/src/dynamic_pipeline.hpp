@@ -151,8 +151,9 @@ namespace sqeazy
 	  }
 	
 	  if(sink_factory_t::has(pair.first)){
-	    auto temp = sink_factory_t::template create< sink_t >(pair.first, pair.second);
-	    value.sink_ = temp;
+	    //auto temp = sink_factory_t::template create< sink_t >(pair.first, pair.second);
+	    //value.sink_ = temp;
+	    value.add(sink_factory_t::template create< sink_t >(pair.first, pair.second));
 	  }
 	} else {
 	   if(tail_filter_factory_t::has(pair.first)){
@@ -323,19 +324,24 @@ namespace sqeazy
       if(head_filters_.empty() && tail_filters_.empty())
         return !value;
 
-      value = value && head_filters_.valid();
+      if(!head_filters_.empty()){
+	value = value && head_filters_.valid();
 
-      if(sink_){
-	auto back_view = const_stage_view(head_filters_.back());
-	auto sink_view = const_stage_view(sink_);
-	value = value && back_view->output_type() == sink_view->input_type();
+	if(sink_){
+	  auto back_view = const_stage_view(head_filters_.back());
+	  auto sink_view = const_stage_view(sink_);
+	  value = value && back_view->output_type() == sink_view->input_type();
+	}
       }
-      
+
       if(!tail_filters_.empty()){
 	auto front_view = const_stage_view(tail_filters_.front());
-	auto sink_view = const_stage_view(sink_);
-	value = value && front_view->input_type() == sink_view->output_type();
-      	
+
+	if(sink_){
+	  auto sink_view = const_stage_view(sink_);
+	  value = value && front_view->input_type() == sink_view->output_type();
+      	}
+
 	value = value && tail_filters_.valid();
       }
       return value;
@@ -523,6 +529,11 @@ namespace sqeazy
 	  return nullptr;
 	}
 	
+      } else {
+	std::copy(_in,
+		  _in + len,
+		  temp.data());
+
       }
       
       outgoing_t* encoded_end = nullptr;
@@ -539,17 +550,24 @@ namespace sqeazy
 	  
 	  std::copy(_out, _out+compressed_size,casted_temp);
 
-
+	  std::vector<std::size_t> casted_shape(1,compressed_size);
+	  
 	  encoded_end = tail_filters_.encode(casted_temp,
 					     _out,
-					     _shape);
+					     casted_shape);
 	}
       }
       else{
 	incoming_t* out_as_incoming = reinterpret_cast<incoming_t*>(_out);
-	std::copy(temp.data(), head_filters_end ,
+	incoming_t* temp_end = nullptr;
+	if(head_filters_.size())
+	  temp_end = head_filters_end;
+	else
+	  temp_end = temp.data() + temp.size();
+	
+	std::copy(temp.data(), temp_end ,
 		  out_as_incoming);
-	encoded_end = reinterpret_cast<outgoing_t*>(out_as_incoming+(head_filters_end-temp.data()));
+	encoded_end = reinterpret_cast<outgoing_t*>(out_as_incoming+(temp_end-temp.data()));
       }
 
       return encoded_end;
@@ -702,8 +720,11 @@ namespace sqeazy
 	return value+sink_->max_encoded_size(_incoming_size_byte);
     }
 
-    std::intmax_t decoded_size(const std::int8_t* _begin, const std::int8_t* _end){
+    template <typename T>
+    std::intmax_t decoded_size(const T* _begin, const T* _end){
 
+      static_assert(sizeof(T)==1, "[dynamic_pipeline.hpp::decoded_size] recived non-byte-size iterator");
+      
       image_header found_header(_begin, _end);
       std::intmax_t value = found_header.raw_size_byte_as<incoming_t>();
 
@@ -719,7 +740,10 @@ namespace sqeazy
        \retval 
        
     */
-    std::vector<std::size_t> decoded_shape(const std::int8_t* _begin, const std::int8_t* _end){
+    template <typename T>
+    std::vector<std::size_t> decoded_shape(const T* _begin, const T* _end){
+
+      static_assert(sizeof(T)==1, "[dynamic_pipeline.hpp::decoded_shape] recived non-byte-size iterator");
 
       image_header found_header(_begin, _end);
       std::vector<std::size_t> value(found_header.shape()->begin(),
