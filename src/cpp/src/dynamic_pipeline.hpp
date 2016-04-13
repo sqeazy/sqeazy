@@ -23,7 +23,11 @@
 namespace sqeazy
 {
 
-  
+  template <typename T>
+  using default_filter_factory = stage_factory<blank_filter<T> >;
+
+  template <typename T>
+  using default_sink_factory = stage_factory<blank_sink<T> >;
   
   template <typename head_t, typename tail_t, bool flag = true>
   struct binary_select_type{
@@ -37,7 +41,11 @@ namespace sqeazy
 
 
   
-  template <typename raw_t>
+  template <
+    typename raw_t,
+    template<typename = raw_t> class filter_factory_t = default_filter_factory,
+    typename sink_factory_t = default_sink_factory<raw_t>
+    >
   struct dynamic_pipeline : public sink<raw_t>
   {
 
@@ -64,6 +72,7 @@ namespace sqeazy
     sink_ptr_t sink_;
 
 
+    
     /**
        \brief given a buffer that contains a valid header, this static method can fill the filter_holder and set the sink
        
@@ -75,18 +84,13 @@ namespace sqeazy
        \retval 
        
     */
-    template <typename filter_factory_t = stage_factory<blank_filter>,
-	      typename sink_factory_t = stage_factory<blank_sink>
-	      >
-    static dynamic_pipeline bootstrap(const std::string &_config,
-				      filter_factory_t f = stage_factory<blank_filter>(),
-				      sink_factory_t s = stage_factory<blank_sink>())
+    static dynamic_pipeline bootstrap(const std::string &_config)
     {
 
       if(_config.empty())
 	return dynamic_pipeline();
       else
-	return bootstrap(_config.begin(), _config.end(),f,s);
+	return bootstrap(_config.begin(), _config.end());
     }
 
     /**
@@ -100,19 +104,16 @@ namespace sqeazy
        \retval 
        
     */
-    template <typename iterator_t,
-	      typename filter_factory_t = stage_factory<blank_filter>,
-	      typename sink_factory_t = stage_factory<blank_sink>
-	      >
-    static dynamic_pipeline bootstrap(iterator_t _begin, iterator_t _end,
-				      filter_factory_t f = stage_factory<blank_filter>(),
-				      sink_factory_t s = stage_factory<blank_sink>())
+    template <
+      typename iterator_t
+      >
+    static dynamic_pipeline bootstrap(iterator_t _begin, iterator_t _end)
     {
       sqeazy::image_header hdr(_begin,_end);
 
       std::string pipeline = hdr.pipeline();
       
-      return from_string(pipeline,f,s);
+      return from_string(pipeline);
     }
     
     /**
@@ -126,16 +127,13 @@ namespace sqeazy
        \retval 
        
     */
-    template <typename head_filter_factory_t = stage_factory<blank_filter>,
-	      typename sink_factory_t = stage_factory<blank_sink>,
-	      typename tail_filter_factory_t = stage_factory<blank_filter>
-	      >
-    static dynamic_pipeline from_string(const std::string &_config,
-					head_filter_factory_t head_f = stage_factory<blank_filter>(),
-					sink_factory_t s = stage_factory<blank_sink>(),
-					tail_filter_factory_t tail_f = stage_factory<blank_filter>())
+    static dynamic_pipeline from_string(const char* _config_str)
     {
 
+      using head_filter_factory_t = filter_factory_t<incoming_t>;
+      using tail_filter_factory_t = filter_factory_t<outgoing_t>;
+
+      std::string _config = _config_str;
       sqeazy::vec_of_pairs_t steps_n_args = sqeazy::parse_by(_config.begin(),
 							     _config.end(),
 							     "->");
@@ -179,16 +177,9 @@ namespace sqeazy
        \retval 
        
     */
-    template <typename filter_factory_t = stage_factory<blank_filter>,
-	      typename sink_factory_t = stage_factory<blank_sink>
-	      >
-    static dynamic_pipeline from_string(const char *_config,
-				 filter_factory_t f = stage_factory<blank_filter>(),
-				 sink_factory_t s = stage_factory<blank_sink>())
+    static dynamic_pipeline from_string(const std::string& _config)
     {
-      std::string config = _config;
-
-      return from_string(config, f, s);
+      return from_string(_config.c_str());
     }
 
 

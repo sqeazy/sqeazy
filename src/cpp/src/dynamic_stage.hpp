@@ -152,8 +152,8 @@ namespace sqeazy{
       return nullptr;
   }
 
-  
-  struct blank_filter : public  filter<void>
+  template <typename T = void>
+  struct blank_filter : public  filter<T>
   {
 
     typedef void raw_t;
@@ -172,8 +172,8 @@ namespace sqeazy{
     
   };
   
-  
-  struct blank_sink : public  sink<void>
+  template <typename T = void>
+  struct blank_sink : public  sink<void,void>
   {
 
     typedef void raw_t;
