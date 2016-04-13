@@ -593,5 +593,48 @@ BOOST_AUTO_TEST_CASE (sink_decode_from_bootstrap) {
   BOOST_CHECK_EQUAL(output.front(),4);
 }
 
+BOOST_AUTO_TEST_CASE (roundtrip_central_hibit_sink) {
+
+  std::vector<int> input(10,0);
+  //41073741824 = 4 << 28 
+  auto sink_pipe = sqy::dynamic_pipeline<int>::from_string("set_to(value=1073741824)->high_bits->square",
+							   filter_factory<int>(),
+							   sink_factory<int>(),
+							   filter_factory<char>());
+
+  BOOST_REQUIRE_EQUAL(sink_pipe.size(),3);
+  BOOST_REQUIRE_EQUAL(sink_pipe.valid_filters(),true);
+  
+  int max_encoded_size = sink_pipe.max_encoded_size(input.size()*sizeof(int));
+  BOOST_CHECK_NE(max_encoded_size,0);
+  BOOST_CHECK_GT(max_encoded_size,8);
+
+  std::vector<char> intermediate(max_encoded_size,0);
+
+  auto encoded_end = sink_pipe.encode(input.data(),
+				      intermediate.data(),
+				      input.size());
+    
+  BOOST_CHECK_NE(intermediate.front(),0);
+  BOOST_CHECK(encoded_end!=nullptr);
+
+  std::uint32_t compressed_size = encoded_end - intermediate.data();
+  const int expected = 4*4;
+  int received = *(encoded_end-1);
+
+  BOOST_REQUIRE_EQUAL(received,expected);
+
+  std::vector<int> output(10,42);
+
+  int err_code = sink_pipe.decode(intermediate.data(),
+				  output.data(),
+				  compressed_size);
+
+  BOOST_CHECK_EQUAL(err_code,0);
+  BOOST_CHECK_EQUAL(output.front(),input.front());
+  BOOST_CHECK_EQUAL(output.back(),input.back());
+  
+}
+
 // 
 BOOST_AUTO_TEST_SUITE_END()
