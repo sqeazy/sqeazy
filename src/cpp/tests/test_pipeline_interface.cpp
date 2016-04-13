@@ -13,7 +13,7 @@ extern "C" {
 #include "sqeazy.h"
 }
 
-static const std::string default_filter_name = "bswap1_lz4";
+static const std::string default_filter_name = "bswap1->lz4";
 
 typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 

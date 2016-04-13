@@ -2,12 +2,49 @@
 #include "sqeazy.h"
 
 #include "sqeazy_header.hpp"
-#include "deprecated/static_pipeline_select.hpp"
+//#include "deprecated/static_pipeline_select.hpp"
 #include "sqeazy_hdf5_impl.hpp"
 #include "hdf5_utils.hpp"
-#include "pipeline.hpp"
+//#include "pipeline.hpp"
 
+#include "dynamic_pipeline.hpp"
+
+//import native filters/sinks
 #include "encoders/sqeazy_impl.hpp"
+#include "encoders/quantiser_scheme_impl.hpp"
+
+//import external filters/sinks
+#include "encoders/lz4.hpp"
+#include "encoders/ffmpeg_video_encode_impl.hpp"
+
+
+#include "dynamic_stage_factory.hpp"
+
+namespace sqeazy {
+
+  
+  template <typename T>
+  using filters_factory = stage_factory<
+    pass_through<T,T>,
+    diff_scheme<T>,
+    bitswap_scheme<T>,
+    remove_background_scheme<T>,
+    flatten_to_neighborhood_scheme<T>,
+    remove_estimated_background_scheme<T>,
+    quantiser_scheme<T>
+    >;
+
+  template <typename T>
+  using encoders_factory = stage_factory<
+    lz4_scheme<T,T>,
+    hevc_scheme<T>,
+    h264_scheme<T>
+    >;
+  
+  template <typename T>
+  using pipeline = dynamic_pipeline<T, filters_factory, encoders_factory<T> >;
+
+}
 
 /*
 *	Sqeazy - Fast and flexible volume compression library
@@ -244,15 +281,21 @@ int SQY_RmBackground_Estimated_UI16(int width, int height, int depth, char* src,
 #endif
 
 typedef sqeazy::bmpl::vector< sqeazy::lz4_scheme<char> > lz4_;
-typedef sqeazy::pipeline<lz4_> lz4_pipe;
+//typedef sqeazy::pipeline<lz4_> lz4_pipe;
 
 
 int SQY_LZ4Encode(const char* src, long srclength, char* dst, long* dstlength){
 
-  auto local_dst = reinterpret_cast<sqeazy::lz4_scheme<char>::compressed_type*>(dst);
-  int retvalue = lz4_pipe::compress(src,local_dst,srclength,*dstlength);
+  // auto local_dst = reinterpret_cast<sqeazy::lz4_scheme<char>::compressed_type*>(dst);
+
+  char* encoded_end = lz4_scheme<char>::encode(src,local_dst,srclength);
+
+  if(encoded_end)
+    *dstlength = encoded_end - dst;
+  else
+    return 1; // error!
   
-  return retvalue;
+  return 0;
 }
 
 
@@ -260,9 +303,12 @@ int SQY_LZ4_Max_Compressed_Length(long* length){
   
   std::vector<unsigned> shape(1);
   shape[0] = *length;
-  sqeazy::image_header hdr(char(),shape, lz4_pipe::static_name());
+
+  lz4_scheme<char> lz4_encoder;
   
-  long value = lz4_pipe::static_max_bytes_encoded(*length, hdr.size());//compression size + one long to encode size of
+  sqeazy::image_header hdr(char(),shape, lz4_encoder.name());
+  
+  long value = (*length, hdr.size());//compression size + one long to encode size of
   *length = value;
   return 0;
 
