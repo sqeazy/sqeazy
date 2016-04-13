@@ -100,6 +100,8 @@ namespace sqeazy {
       size_type local_index = 0;
       const sum_type n_traversed_pixels = sqeazy::num_traversed_pixels<Neighborhood>();
 
+      out_type* signed_out = reinterpret_cast<out_type*>(_out);
+	
       typename std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
       for(; offsetsItr!=offsets.end(); ++offsetsItr) {
 	for(unsigned long index = 0; index < (unsigned long)halo_size_x; ++index) {
@@ -109,7 +111,7 @@ namespace sqeazy {
 					      _shape[row_major::w],
 					      _shape[row_major::h],
 					      _shape[row_major::d]);
-	  _out[local_index] = _in[local_index] - local_sum/n_traversed_pixels;
+	  signed_out[local_index] = _in[local_index] - local_sum/n_traversed_pixels;
 
 	}
       }
@@ -141,7 +143,8 @@ namespace sqeazy {
         }
       sum_type local_sum = 0;
       const sum_type n_traversed_pixels = sqeazy::num_traversed_pixels<Neighborhood>();
-
+      const out_type* signed_in = reinterpret_cast<const out_type*>(_in);
+      
       for(; offsetsItr!=offsets.end(); ++offsetsItr) {
 	for(unsigned long index = 0; index < (unsigned long)halo_size_x; ++index) {
 
@@ -150,7 +153,7 @@ namespace sqeazy {
 					      _shape[row_major::w],
 					      _shape[row_major::h],
 					      _shape[row_major::d]);
-	  _out[local_index] = _in[local_index] + local_sum/n_traversed_pixels;
+	  _out[local_index] = signed_in[local_index] + local_sum/n_traversed_pixels;
 
 	}
       }
