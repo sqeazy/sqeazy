@@ -238,8 +238,8 @@ namespace sqeazy
        \retval
 
     */
-    template <typename T>
-    dynamic_pipeline(const dynamic_pipeline<T>& _rhs):
+    template <template<typename> class T, typename U>
+    dynamic_pipeline(const dynamic_pipeline<incoming_t, T, U>& _rhs):
       head_filters_(_rhs.head_filters_),
       tail_filters_(_rhs.tail_filters_),
       sink_        (_rhs.sink_        )
@@ -255,7 +255,8 @@ namespace sqeazy
        \retval
 
     */
-    dynamic_pipeline &operator=(dynamic_pipeline _rhs)
+    template <template<typename> class T, typename U>
+    dynamic_pipeline &operator=(dynamic_pipeline<incoming_t, T, U> _rhs)
     {
 
       swap(*this, _rhs);

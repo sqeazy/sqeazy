@@ -12,9 +12,11 @@
 #include "test_dynamic_pipeline_impl.hpp"
 
 namespace sqy = sqeazy;
-template <typename T>
-using dynamic_pipeline = sqy::dynamic_pipeline<T,filter_factory, sink_factory<T> >;
 
+namespace sqeazy_testing {
+  template <typename T>
+  using dynamic_pipeline = sqy::dynamic_pipeline<T,filter_factory, sink_factory<T> >;
+}
 
 BOOST_AUTO_TEST_SUITE( access_test_suite )
 
@@ -68,9 +70,10 @@ BOOST_AUTO_TEST_CASE (copy_construct) {
   BOOST_CHECK_NE(sink_pipe.empty(), true);
   BOOST_CHECK(sink_pipe.is_compressor());
 
-  // sqy::dynamic_pipeline<short> copied_pipe_to_short(filled_pipe);
-  // BOOST_CHECK_EQUAL(copied_pipe.size(), 2);
-  // BOOST_CHECK_NE(copied_pipe.empty(), true);
+  sqeazy_testing::dynamic_pipeline<int> rhs = {adder_sptr,square_sptr};
+  sqy::dynamic_pipeline<int> copied_from_rhs(rhs);
+  BOOST_CHECK_EQUAL(copied_from_rhs.size(), 2);
+  BOOST_CHECK_NE(copied_from_rhs.empty(), true);
 
 }
 
@@ -93,6 +96,11 @@ BOOST_AUTO_TEST_CASE (assign_construct) {
   BOOST_CHECK_EQUAL(sink_pipe.size(), 3);
   BOOST_CHECK_NE(sink_pipe.empty(), true);
   BOOST_CHECK(sink_pipe.is_compressor());
+
+  sqeazy_testing::dynamic_pipeline<int> rhs = {adder_sptr,square_sptr};
+  sqy::dynamic_pipeline<int> copied_from_rhs = rhs;
+  BOOST_CHECK_EQUAL(copied_from_rhs.size(), 2);
+  BOOST_CHECK_NE(copied_from_rhs.empty(), true);
 }
 
 
@@ -167,25 +175,25 @@ BOOST_AUTO_TEST_CASE (add) {
 
 BOOST_AUTO_TEST_CASE (bootstrap) {
 
-  dynamic_pipeline<int> filter_pipe;
+  sqeazy_testing::dynamic_pipeline<int> filter_pipe;
   BOOST_CHECK_EQUAL(filter_pipe.output_type(),"");
 
-  filter_pipe = dynamic_pipeline<int>::from_string("add_one->square");
+  filter_pipe = sqeazy_testing::dynamic_pipeline<int>::from_string("add_one->square");
   BOOST_CHECK_NE(filter_pipe.empty(),true);
   BOOST_CHECK_EQUAL(filter_pipe.size(),2);
   
 
-  dynamic_pipeline<int> sink_pipe;
+  sqeazy_testing::dynamic_pipeline<int> sink_pipe;
   BOOST_CHECK_EQUAL(sink_pipe.output_type(),"");
 
-  sink_pipe = dynamic_pipeline<int>::from_string("add_one->sum_up");
+  sink_pipe = sqeazy_testing::dynamic_pipeline<int>::from_string("add_one->sum_up");
   BOOST_CHECK_NE(sink_pipe.empty(),true);
   BOOST_CHECK_EQUAL(sink_pipe.size(),2);
   BOOST_CHECK_EQUAL(sink_pipe.is_compressor(),true);
   BOOST_CHECK_EQUAL(sink_pipe.name(),"add_one->sum_up");
 
   // sqy::dynamic_pipeline<int> empty_pipe;
-  // empty_pipe = dynamic_pipeline<int>::from_string("add_one->square");
+  // empty_pipe = sqeazy_testing::dynamic_pipeline<int>::from_string("add_one->square");
   // BOOST_CHECK_EQUAL(empty_pipe.empty(),true);
 }
 
@@ -196,7 +204,7 @@ BOOST_AUTO_TEST_CASE (encode_with_filters) {
   BOOST_CHECK_EQUAL(input.front(),0);
   BOOST_CHECK_EQUAL(input.back(),9);
 
-  auto filters_pipe = dynamic_pipeline<int>::from_string("square");
+  auto filters_pipe = sqeazy_testing::dynamic_pipeline<int>::from_string("square");
 
   std::size_t max_encoded_size_byte = filters_pipe.max_encoded_size(input.size()*sizeof(int));
   std::vector<int> intermediate(max_encoded_size_byte/sizeof(int),0);
@@ -221,7 +229,7 @@ BOOST_AUTO_TEST_CASE (decode_with_filters) {
   std::vector<int> input(10,16);
   std::vector<int> output(input.size(),0);
 
-  auto filters_pipe = dynamic_pipeline<int>::from_string("square");
+  auto filters_pipe = sqeazy_testing::dynamic_pipeline<int>::from_string("square");
 
   std::size_t max_encoded_size_byte = filters_pipe.max_encoded_size(input.size()*sizeof(int));
   std::vector<char> intermediate(max_encoded_size_byte);
@@ -249,7 +257,7 @@ BOOST_AUTO_TEST_CASE (encode_with_sink) {
   BOOST_CHECK_EQUAL(input.front(),0);
   BOOST_CHECK_EQUAL(input.back(),9);
 
-  auto sink_pipe = dynamic_pipeline<int>::from_string("square->sum_up");
+  auto sink_pipe = sqeazy_testing::dynamic_pipeline<int>::from_string("square->sum_up");
 
   int max_encoded_size = sink_pipe.max_encoded_size(input.size()*sizeof(int));
   BOOST_CHECK_NE(max_encoded_size,0);
@@ -273,7 +281,7 @@ BOOST_AUTO_TEST_CASE (encode_with_hibit_sink) {
   BOOST_CHECK_EQUAL(input.front(),start_value);
   BOOST_CHECK_EQUAL(input.back(),start_value+9);
 
-  auto sink_pipe = dynamic_pipeline<int>::from_string("add_one->high_bits");
+  auto sink_pipe = sqeazy_testing::dynamic_pipeline<int>::from_string("add_one->high_bits");
 
   int max_encoded_size = sink_pipe.max_encoded_size(input.size()*sizeof(int));
   BOOST_CHECK_NE(max_encoded_size,0);
@@ -297,7 +305,7 @@ BOOST_AUTO_TEST_CASE (encode_central_hibit_sink) {
   BOOST_CHECK_EQUAL(input.front(),start_value);
   BOOST_CHECK_EQUAL(input.back(),(start_value+9)<<28);
 
-  auto sink_pipe = dynamic_pipeline<int>::from_string("high_bits->square");
+  auto sink_pipe = sqeazy_testing::dynamic_pipeline<int>::from_string("high_bits->square");
 
   BOOST_REQUIRE_EQUAL(sink_pipe.size(),2);
   BOOST_REQUIRE_EQUAL(sink_pipe.valid_filters(),true);
@@ -332,7 +340,7 @@ BOOST_AUTO_TEST_CASE (encode_with_sink_header) {
   BOOST_CHECK_EQUAL(input.front(),0);
   BOOST_CHECK_EQUAL(input.back(),9);
 
-  auto sink_pipe = dynamic_pipeline<int>::from_string("square->sum_up");
+  auto sink_pipe = sqeazy_testing::dynamic_pipeline<int>::from_string("square->sum_up");
 
   int max_encoded_size = sink_pipe.max_encoded_size(input.size()*sizeof(int));
   BOOST_CHECK_NE(max_encoded_size,0);
@@ -358,7 +366,7 @@ BOOST_AUTO_TEST_CASE (decode_with_sink) {
   std::vector<int> input(8,4);
   std::vector<int> output(input.size(),0);
   
-  auto sink_pipe = dynamic_pipeline<int>::from_string("square->sum_up");
+  auto sink_pipe = sqeazy_testing::dynamic_pipeline<int>::from_string("square->sum_up");
   int max_encoded_size = sink_pipe.max_encoded_size(input.size()*sizeof(int));
 
   std::vector<char> intermediate(max_encoded_size,0);
@@ -384,7 +392,7 @@ BOOST_AUTO_TEST_CASE (decode_with_hibit_sink) {
   
   std::vector<int> output(input.size(),0);
   
-  auto sink_pipe = dynamic_pipeline<int>::from_string("high_bits");
+  auto sink_pipe = sqeazy_testing::dynamic_pipeline<int>::from_string("high_bits");
   int max_encoded_size = sink_pipe.max_encoded_size(input.size()*sizeof(int));
 
   std::vector<char> intermediate(max_encoded_size,0);
@@ -410,7 +418,7 @@ BOOST_AUTO_TEST_CASE (set_all_to_42) {
   std::vector<int> input(8,4);
   std::vector<int> output(input.size(),1);
   
-  auto filters_pipe = dynamic_pipeline<int>::from_string("set_to(value=42)");
+  auto filters_pipe = sqeazy_testing::dynamic_pipeline<int>::from_string("set_to(value=42)");
 
   BOOST_CHECK_EQUAL(filters_pipe.empty(),false);
   
@@ -435,7 +443,7 @@ BOOST_AUTO_TEST_CASE (set_all_to_42_and_sum) {
   std::vector<int> input(8,4);
   std::vector<int> output(input.size(),0);
   
-  auto sink_pipe = dynamic_pipeline<int>::from_string("set_to(value=42)->sum_up");
+  auto sink_pipe = sqeazy_testing::dynamic_pipeline<int>::from_string("set_to(value=42)->sum_up");
 
   BOOST_CHECK_EQUAL(sink_pipe.empty(),false);
   
@@ -461,7 +469,7 @@ BOOST_AUTO_TEST_CASE (set_all_to_42_and_decode_to_first_value) {
   std::vector<int> input(8,4);
   std::vector<int> output(8,0);
   
-  auto filters_pipe = dynamic_pipeline<int>::from_string("set_to(value=42)");
+  auto filters_pipe = sqeazy_testing::dynamic_pipeline<int>::from_string("set_to(value=42)");
   BOOST_CHECK_EQUAL(filters_pipe.empty(),false);
   
   std::size_t max_encoded_size_byte = filters_pipe.max_encoded_size(input.size()*sizeof(int));
@@ -487,7 +495,7 @@ BOOST_AUTO_TEST_CASE (filters_only_same_name) {
   std::vector<int> input(8,4);
   std::vector<int> output(8,0);
   
-  auto filters_pipe = dynamic_pipeline<int>::from_string("set_to(value=42)");
+  auto filters_pipe = sqeazy_testing::dynamic_pipeline<int>::from_string("set_to(value=42)");
   BOOST_CHECK_EQUAL(filters_pipe.empty(),false);
   
   std::size_t max_encoded_size_byte = filters_pipe.max_encoded_size(input.size()*sizeof(int));
@@ -499,7 +507,7 @@ BOOST_AUTO_TEST_CASE (filters_only_same_name) {
   //extract header
   std::string buffer(intermediate.data(),
 		     encoded_end);
-  auto bootstrapped = dynamic_pipeline<int>::bootstrap(buffer);
+  auto bootstrapped = sqeazy_testing::dynamic_pipeline<int>::bootstrap(buffer);
 
   BOOST_CHECK_EQUAL(bootstrapped.empty(),false);
   BOOST_CHECK_EQUAL(filters_pipe.name(),bootstrapped.name());
@@ -510,7 +518,7 @@ BOOST_AUTO_TEST_CASE (decode_from_bootstrap) {
   std::vector<int> input(8,4);
   std::vector<int> output(8,0);
   
-  auto filters_pipe = dynamic_pipeline<int>::from_string("set_to(value=42)");
+  auto filters_pipe = sqeazy_testing::dynamic_pipeline<int>::from_string("set_to(value=42)");
   BOOST_CHECK_EQUAL(filters_pipe.empty(),false);
   
   std::size_t max_encoded_size_byte = filters_pipe.max_encoded_size(input.size()*sizeof(int));
@@ -522,7 +530,7 @@ BOOST_AUTO_TEST_CASE (decode_from_bootstrap) {
   //extract header
   std::string buffer(intermediate.data(),
 		     encoded_end);
-  auto bootstrapped = dynamic_pipeline<int>::bootstrap(buffer);
+  auto bootstrapped = sqeazy_testing::dynamic_pipeline<int>::bootstrap(buffer);
 
   std::size_t intermediate_size = encoded_end - intermediate.data();
   int err_code = bootstrapped.decode(intermediate.data(),output.data(),intermediate_size);
@@ -536,7 +544,7 @@ BOOST_AUTO_TEST_CASE (sink_only_same_name) {
   std::vector<int> input(8,4);
   std::vector<int> output(8,0);
   
-  auto sink_pipe = dynamic_pipeline<int>::from_string("set_to(value=42)->sum_up");
+  auto sink_pipe = sqeazy_testing::dynamic_pipeline<int>::from_string("set_to(value=42)->sum_up");
   BOOST_CHECK_EQUAL(sink_pipe.empty(),false);
   
   std::size_t max_encoded_size_byte = sink_pipe.max_encoded_size(input.size()*sizeof(int));
@@ -549,7 +557,7 @@ BOOST_AUTO_TEST_CASE (sink_only_same_name) {
   //extract header
   std::string buffer(intermediate.data(),
 		     encoded_end);
-  auto bootstrapped = dynamic_pipeline<int>::bootstrap(buffer);
+  auto bootstrapped = sqeazy_testing::dynamic_pipeline<int>::bootstrap(buffer);
 
   BOOST_CHECK_EQUAL(bootstrapped.empty(),false);
   BOOST_CHECK_EQUAL(sink_pipe.name(),bootstrapped.name());
@@ -560,7 +568,7 @@ BOOST_AUTO_TEST_CASE (sink_decode_from_bootstrap) {
   std::vector<int> input(8,4);
   std::vector<int> output(8,0);
   
-  auto sink_pipe = dynamic_pipeline<int>::from_string("set_to(value=42)->sum_up");
+  auto sink_pipe = sqeazy_testing::dynamic_pipeline<int>::from_string("set_to(value=42)->sum_up");
   BOOST_CHECK_EQUAL(sink_pipe.empty(),false);
   
   std::size_t max_encoded_size_byte = sink_pipe.max_encoded_size(input.size()*sizeof(int));
@@ -573,7 +581,7 @@ BOOST_AUTO_TEST_CASE (sink_decode_from_bootstrap) {
   //extract header
   std::string buffer(intermediate.data(),
 		     encoded_end);
-  auto bootstrapped = dynamic_pipeline<int>::bootstrap(buffer);
+  auto bootstrapped = sqeazy_testing::dynamic_pipeline<int>::bootstrap(buffer);
 
   std::size_t intermediate_size = encoded_end - intermediate.data();
   int err_code = bootstrapped.decode(intermediate.data(),output.data(),intermediate_size);
@@ -586,7 +594,7 @@ BOOST_AUTO_TEST_CASE (roundtrip_central_hibit_sink) {
 
   std::vector<int> input(10,0);
   //41073741824 = 4 << 28 
-  auto sink_pipe = dynamic_pipeline<int>::from_string("set_to(value=1073741824)->high_bits->square");
+  auto sink_pipe = sqeazy_testing::dynamic_pipeline<int>::from_string("set_to(value=1073741824)->high_bits->square");
 
   BOOST_REQUIRE_EQUAL(sink_pipe.size(),3);
   BOOST_REQUIRE_EQUAL(sink_pipe.valid_filters(),true);
