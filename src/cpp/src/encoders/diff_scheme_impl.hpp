@@ -14,11 +14,11 @@ namespace sqeazy {
 	    typename Neighborhood = last_plane_neighborhood<3>,
 	    typename out_type =  typename remove_unsigned<in_type>::type
 	    >
-  struct diff_scheme : public sink<in_type,out_type> {
+  struct diff_scheme : public filter<in_type> {
   
-    typedef sink<in_type,out_type> base_type;
+    typedef filter<in_type> base_type;
     typedef in_type raw_type;
-    typedef out_type compressed_type;
+    typedef typename base_type::out_type compressed_type;
 
 
     static_assert(std::is_arithmetic<raw_type>::value==true,"[diff_scheme] input type is non-arithmetic");
