@@ -434,6 +434,17 @@ SQY_FUNCTION_PREFIX int SQY_Pipeline_Decompressed_Length(const char* data, long 
 */
 SQY_FUNCTION_PREFIX int SQY_PipelineDecode_UI16(const char* src, long srclength, char* dst);
 
+/*
+	SQY_Pipeline_Possible - check if pipeline string can be used to build pipeline from
+
+	By default 16-bit input data is assumed.
+
+	pipeline_string				: string that describes the pipeline ('->' delimited)
+
+	Returns true if success, false if not!
+
+*/
+SQY_FUNCTION_PREFIX bool SQY_Pipeline_Possible(const char* pipeline_string);
 
 ///////////////////////////////////////////////////////////////////////////////////
 // HDF5 filter definition
