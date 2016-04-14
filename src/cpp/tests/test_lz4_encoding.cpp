@@ -80,24 +80,23 @@ BOOST_AUTO_TEST_CASE( decode_length )
 
   int retcode = SQY_LZ4_Max_Compressed_Length(&expected_size);
 
-  char* compressed = new char[expected_size];
+  std::vector<char> compressed(expected_size);
   long output_length = size_in_byte;
   retcode += SQY_LZ4Encode(input,
-			      uint16_cube_of_8::size*sizeof(value_type),
-			      compressed,
-			      &output_length
-			      );
+			   uint16_cube_of_8::size*sizeof(value_type),
+			   compressed.data(),
+			   &output_length
+			   );
 
   BOOST_CHECK_NE(output_length,input_in_bytes);
     
-  retcode = SQY_LZ4_Decompressed_Length(compressed,&output_length);
+  retcode = SQY_LZ4_Decompressed_Length(compressed.data(),&output_length);
   BOOST_CHECK_EQUAL(retcode,0);
   unsigned expected = uint16_cube_of_8::size_in_byte;
   
   BOOST_CHECK_EQUAL(output_length, expected);
 
   
-  delete [] compressed;
 }
 
 BOOST_AUTO_TEST_CASE( decode_encoded )
