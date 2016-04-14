@@ -44,7 +44,8 @@ namespace sqeazy
   template <
     typename raw_t,
     template<typename = raw_t> class filter_factory_t = default_filter_factory,
-    typename sink_factory_t = default_sink_factory<raw_t>
+    typename sink_factory_t = default_sink_factory<raw_t>,
+    typename optional_tail_factory_t = void
     >
   struct dynamic_pipeline : public sink<raw_t>
   {
@@ -66,7 +67,13 @@ namespace sqeazy
     typedef sqeazy::stage_chain<head_filter_t> head_chain_t;
     typedef sqeazy::stage_chain<tail_filter_t> tail_chain_t;
 
-    
+    using head_filter_factory_t = filter_factory_t<incoming_t>;
+    using tail_filter_factory_t = typename binary_select_type<
+      filter_factory_t<outgoing_t>,//true
+      optional_tail_factory_t,//false
+      std::is_same<void,optional_tail_factory_t>::value
+      >::type;
+
     head_chain_t head_filters_;
     tail_chain_t tail_filters_;
     sink_ptr_t sink_;
@@ -130,8 +137,6 @@ namespace sqeazy
     static dynamic_pipeline from_string(const char* _config_str)
     {
 
-      using head_filter_factory_t = filter_factory_t<incoming_t>;
-      using tail_filter_factory_t = filter_factory_t<outgoing_t>;
 
       std::string _config = _config_str;
       sqeazy::vec_of_pairs_t steps_n_args = sqeazy::parse_by(_config.begin(),
