@@ -55,7 +55,7 @@ namespace sqeazy
 
     static_assert(std::is_arithmetic<incoming_t>::value==true, "[dynamic_pipeline.hpp:56] received non-arithmetic type for input");
     static_assert(std::is_arithmetic<outgoing_t>::value==true, "[dynamic_pipeline.hpp:57] received non-arithmetic type for output");
-    static_assert(std::is_same<outgoing_t,incoming_t>::value==false, "[dynamic_pipeline.hpp:58] incoming and outgoing types equal!");
+    //static_assert(std::is_same<outgoing_t,incoming_t>::value==false, "[dynamic_pipeline.hpp:58] incoming and outgoing types equal!");
             
     typedef sink<incoming_t> sink_t;
     typedef std::shared_ptr< sink<incoming_t> > sink_ptr_t;
