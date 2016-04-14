@@ -25,7 +25,7 @@ namespace sqeazy {
 
   //all is public for now
   template<typename in_type,
-	   typename out_type,
+	   typename out_type = char,
 	   typename weight_functor_t = noWeighter>
   struct quantiser_scheme : public sink<in_type,out_type> {
 

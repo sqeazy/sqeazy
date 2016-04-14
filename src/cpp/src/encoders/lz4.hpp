@@ -19,7 +19,7 @@ namespace sqeazy {
  
 
   template < typename T , typename S = std::size_t>
-  struct lz4_scheme :  public sink<T,char> {
+  struct lz4_scheme :  public sink<T> {
 
     typedef sink<T,char> sink_type;
     typedef T raw_type;
@@ -65,13 +65,25 @@ namespace sqeazy {
       return lz4_bound;
     }
 
+    /**
+     * @brief encode input raw_type buffer and write to output (not owned, not allocated)
+     *
+     * @param _input input raw_type buffer
+     * @param _output output char buffer (not owned, not allocated)
+     * @param _length number of char items in _in
+     * @return sqeazy::error_code
+     */
+    compressed_type* encode( const raw_type* _in, compressed_type* _out, std::size_t _length) override final {
+      std::vector<std::size_t> shape = {_length};
+      return encode(_in,_out,shape);
+    }
     
     /**
      * @brief encode input raw_type buffer and write to output (not owned, not allocated)
      *
      * @param _input input raw_type buffer
      * @param _output output char buffer (not owned, not allocated)
-     * @param _length mutable std::vector<size_type>, contains the length of _input at [0] and the number of written bytes at [1]
+     * @param _shape mutable std::vector<size_type>, contains the length of _input at [0] and the number of written bytes at [1]
      * @return sqeazy::error_code
      */
     compressed_type* encode( const raw_type* _in, compressed_type* _out, std::vector<std::size_t> _shape) override final {
