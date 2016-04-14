@@ -311,14 +311,16 @@ int SQY_LZ4Encode(const char* src, long srclength, char* dst, long* dstlength){
 
 int SQY_LZ4_Max_Compressed_Length(long* length){
   
-  std::vector<unsigned> shape(1);
-  shape[0] = *length;
+  // std::vector<unsigned> shape(1);
+  // shape[0] = *length;
 
-  sqy::lz4_scheme<char> lz4_encoder;
+  // sqy::lz4_scheme<char> lz4_encoder;
   
-  sqy::image_header hdr(char(),shape, lz4_encoder.name());
+  // sqy::image_header hdr(char(),shape, lz4_encoder.name());
+  // long value = hdr.size() + lz4.max_encoded_size(*length);
+  auto lz4 = sqy::dypeline_from_char::from_string("lz4");
   
-  long value = hdr.size() + lz4_encoder.max_encoded_size(*length);
+  long value = lz4.max_encoded_size(*length);
   
   *length = value;
   return 0;
@@ -339,9 +341,13 @@ int SQY_LZ4_Decompressed_Length(const char* data, long *length){
 
 
 int SQY_LZ4Decode(const char* src, long srclength, char* dst){
+
+  auto lz4 = sqy::dypeline_from_char::from_string("lz4");
   
-  auto local_src = reinterpret_cast<const sqy::lz4_scheme<char>::compressed_type*>(src);
-  int retcode = lz4_pipe::decompress(local_src,dst,srclength);
+  // auto local_src = reinterpret_cast<const sqy::lz4_scheme<char>::compressed_type*>(src);
+  // int retcode = lz4_pipe::decompress(local_src,dst,srclength);
+
+  int retcode = lz4.decode(src,dst,srclength);
   
   return retcode;
 }
