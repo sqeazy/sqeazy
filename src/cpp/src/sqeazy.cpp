@@ -37,13 +37,23 @@ namespace sqeazy {
   template <typename T>
   using encoders_factory = stage_factory<
     quantiser_scheme<T>,
-    lz4_scheme<T>,
-    hevc_scheme<T>,
-    h264_scheme<T>
+    lz4_scheme<T>
+    >;
+
+  template <typename T>
+  using tail_filters_factory = stage_factory<
+    pass_through<T,T>,
+    diff_scheme<T>,
+    bitswap_scheme<T>,
+    remove_background_scheme<T>,
+    flatten_to_neighborhood_scheme<T>,
+    remove_estimated_background_scheme<T>,
+    h264_scheme<T>,
+    hevc_scheme<T>
     >;
   
   template <typename T>
-  using dypeline = dynamic_pipeline<T, filters_factory, encoders_factory<T> >;
+  using dypeline = dynamic_pipeline<T, filters_factory, encoders_factory<T>, tail_filters_factory<char> >;
 
   using dypeline_from_char = dynamic_pipeline<char,
 					    filters_factory,
@@ -483,6 +493,15 @@ int SQY_PipelineDecode_UI16(const char* src, long srclength, char* dst){
   return value;
 }
 
+bool SQY_Pipeline_Possible(const char* pipeline_string){
+
+  bool value = false;
+
+  value = sqy::dypeline<std::uint16_t>::can_be_built_from(pipeline_string);
+
+  return value;
+
+}
 
 int SQY_h5_query_sizeof(const char* fname,
 			const char* dname,
