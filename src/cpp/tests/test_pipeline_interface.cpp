@@ -18,6 +18,17 @@ static const std::string deprecated_filter_name = "bswap1_lz4";
 
 typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 
+BOOST_AUTO_TEST_SUITE( pipeline )
+
+BOOST_AUTO_TEST_CASE( does_this_validate ){
+
+  bool answer = SQY_Pipeline_Possible(default_filter_name.c_str());
+    
+  BOOST_CHECK_EQUAL(answer, true);
+  
+}
+
+BOOST_AUTO_TEST_SUITE_END()
 
 
 BOOST_FIXTURE_TEST_SUITE( hdf5_inference_queries, uint16_cube_of_8 )
