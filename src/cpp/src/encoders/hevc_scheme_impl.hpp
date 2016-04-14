@@ -59,7 +59,7 @@ namespace sqeazy {
     template <typename raw_type, AVCodecID codec_id =  AV_CODEC_ID_HEVC>
     static uint32_t hevc_encode_stack(const raw_type* _volume,
 				      const std::vector<uint32_t>& _shape,
-				      std::vector<uint8_t>& _buffer ,
+				      std::vector<char>& _buffer ,
 				      const std::map<std::string,std::string>& _config = default_hevc_config,
 				      const std::string& _debug_filename = ""){
 
@@ -151,7 +151,7 @@ namespace sqeazy {
 
 	    
 	sws_scale(scale_ctx.get(),
-		  (const uint8_t* const*)gray_frame.get()->data, gray_frame.get()->linesize, 0,
+		  (const char* const*)gray_frame.get()->data, gray_frame.get()->linesize, 0,
 		  frame.get()->height, frame.get()->data, frame.get()->linesize);
 
 	frame.get()->pts = z;
@@ -217,8 +217,8 @@ namespace sqeazy {
        \retval number of bytes that were written to _volume
    
     */
-    template <typename raw_type>
-    static uint32_t hevc_decode_stack(const uint8_t* _buffer,
+    template <typename raw_type, typename in_type = char>
+    static uint32_t hevc_decode_stack(const in_type* _buffer,
 				      const uint32_t& _buffer_len,
 				      raw_type* _volume,
 				      const uint32_t& _volume_len// ,
@@ -335,7 +335,7 @@ namespace sqeazy {
 		  shape[0]++;
 
 		  sws_scale((*sws_ctx).get(),
-			    (const uint8_t * const*)frame.get()->data, frame.get()->linesize, 0, frame.get()->height,
+			    (const char * const*)frame.get()->data, frame.get()->linesize, 0, frame.get()->height,
 			    gray_frame.get()->data, gray_frame.get()->linesize);
 
 		  for(uint32_t y=0;y<shape[1];++y){
@@ -369,7 +369,7 @@ namespace sqeazy {
 	    shape[0]++;
 
 	    sws_scale((*sws_ctx).get(),
-		      (const uint8_t * const*)frame.get()->data, frame.get()->linesize, 0, frame.get()->height,
+		      (const char * const*)frame.get()->data, frame.get()->linesize, 0, frame.get()->height,
 		      gray_frame.get()->data, gray_frame.get()->linesize);
 
 	    for(uint32_t y=0;y<shape[1];++y){

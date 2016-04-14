@@ -6,11 +6,12 @@
 
 namespace sqeazy {
 
-static uint32_t write_encoded(const std::string& _filename, std::vector<uint8_t>& _video ){
+  template <typename T>
+  static uint32_t write_encoded(const std::string& _filename, std::vector<T>& _video ){
   
     std::ofstream ofile(_filename, std::ios::binary | std::ios::out );
   
-    for ( const uint8_t& c : _video )
+    for ( const T& c : _video )
       ofile << c;
 
     ofile.close();

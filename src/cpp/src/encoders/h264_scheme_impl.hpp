@@ -45,7 +45,7 @@ namespace sqeazy {
   template <typename raw_type, AVCodecID codec_id =  AV_CODEC_ID_H264>
   static uint32_t h264_encode_stack(const raw_type* _volume,
 				    const std::vector<std::size_t>& _shape,
-				    std::vector<uint8_t>& _buffer ,
+				    std::vector<char>& _buffer ,
 				    const std::map<std::string,std::string>& _config = default_h264_config,
 				    const std::string& _debug_filename = ""){
 
@@ -115,7 +115,7 @@ namespace sqeazy {
       // fflush(stdout);
       idx = z*frame_size;
 
-      // avpicture_fill((AVPicture *)gray_frame.get(), (const uint8_t*)&_volume[idx],
+      // avpicture_fill((AVPicture *)gray_frame.get(), (const char*)&_volume[idx],
       // 		     av_pixel_type<raw_type>::value,
       // 		     gray_frame.get()->width,
       // 		     gray_frame.get()->height);
@@ -129,7 +129,7 @@ namespace sqeazy {
 
 	    
       sws_scale(scale_ctx.get(),
-		(const uint8_t* const*)gray_frame.get()->data, gray_frame.get()->linesize, 0,
+		(const char* const*)gray_frame.get()->data, gray_frame.get()->linesize, 0,
 		frame.get()->height, frame.get()->data, frame.get()->linesize);
 
       frame.get()->pts = z;
@@ -195,25 +195,25 @@ namespace sqeazy {
      \retval number of bytes that were written to _volume
    
   */
-template <typename raw_type>
-static uint32_t h264_decode_stack(const uint8_t* _buffer,
+  template <typename raw_type, typename intype = char>
+static uint32_t h264_decode_stack(const intype* _buffer,
 				  const uint32_t& _buffer_len,
 				  raw_type* _volume,
 				  const uint32_t& _volume_len// ,
 				  // std::vector<uint32_t>& _shape
 				  ){
 
-  
+    static_assert(sizeof(intype)==1,"only byte-size buffer elements are supported");
   uint32_t rcode = 0;
     
     
 
   // AVIOContext *avio_ctx = NULL;
-  // uint8_t *avio_ctx_buffer = NULL;
+  // char *avio_ctx_buffer = NULL;
   // size_t avio_ctx_buffer_size = 4096;
 
           
-  // avio_ctx_buffer = (uint8_t *)av_malloc(avio_ctx_buffer_size);
+  // avio_ctx_buffer = (char *)av_malloc(avio_ctx_buffer_size);
   // if (!avio_ctx_buffer) {
   //   std::cerr << "failed to allocated avio_ctx_buffer\n";
   //   //handle deallocation
@@ -355,7 +355,7 @@ static uint32_t h264_decode_stack(const uint8_t* _buffer,
 	      shape[row_major::d]++;
 
 	      sws_scale((*sws_ctx).get(),
-			(const uint8_t * const*)frame.get()->data, frame.get()->linesize, 0, frame.get()->height,
+			(const intype * const*)frame.get()->data, frame.get()->linesize, 0, frame.get()->height,
 			gray_frame.get()->data, gray_frame.get()->linesize);
 
 	      for(uint32_t y=0;y<shape[row_major::h];++y){
@@ -389,7 +389,7 @@ static uint32_t h264_decode_stack(const uint8_t* _buffer,
 	shape[row_major::d]++;
 
 	sws_scale((*sws_ctx).get(),
-		  (const uint8_t * const*)frame.get()->data, frame.get()->linesize, 0, frame.get()->height,
+		  (const intype * const*)frame.get()->data, frame.get()->linesize, 0, frame.get()->height,
 		  gray_frame.get()->data, gray_frame.get()->linesize);
 
 	for(uint32_t y=0;y<shape[row_major::h];++y){

@@ -64,7 +64,7 @@ namespace sqeazy {
   
   template <typename raw_type, AVCodecID codec_id =  AV_CODEC_ID_HEVC>
   static uint32_t ffmpeg_encode_stack(const stack_cref<raw_type>& _stack,
-				      std::vector<uint8_t>& _buffer ,
+				      std::vector<char>& _buffer ,
 				      const std::map<std::string,std::string>& _config = *default_config<codec_id>::current,
 				      const std::string& _debug_filename = ""){
 
@@ -132,7 +132,7 @@ namespace sqeazy {
   template <typename raw_type>
   static uint32_t encode_stack_with_context(sqeazy::av_codec_context_t& _ctx,
 					    const stack_cref<raw_type>& _stack,
-					    std::vector<uint8_t>& _buffer,
+					    std::vector<char>& _buffer,
 					    const std::string& _debug_filename = ""){
 
 
@@ -179,7 +179,7 @@ namespace sqeazy {
 
 	    
       sws_scale(scale_ctx.get(),
-		(const uint8_t* const*)gray_frame.get()->data, gray_frame.get()->linesize, 0,
+		(const std::uint8_t* const*)gray_frame.get()->data, gray_frame.get()->linesize, 0,
 		frame.get()->height, frame.get()->data, frame.get()->linesize);
 
       frame.get()->pts = z;
@@ -246,7 +246,7 @@ namespace sqeazy {
    
   */
 template <typename raw_type>
-static uint32_t decode_stack(const uint8_t* _buffer,
+static uint32_t decode_stack(const char* _buffer,
 			     const uint32_t& _buffer_len,
 			     raw_type* _volume,
 			     const uint32_t& _volume_len// ,
@@ -363,7 +363,7 @@ static uint32_t decode_stack(const uint8_t* _buffer,
 	      shape[row_major::d]++;
 
 	      sws_scale((*sws_ctx).get(),
-			(const uint8_t * const*)frame.get()->data, frame.get()->linesize, 0, frame.get()->height,
+			(const std::uint8_t * const*)frame.get()->data, frame.get()->linesize, 0, frame.get()->height,
 			gray_frame.get()->data, gray_frame.get()->linesize);
 
 	      for(uint32_t y=0;y<shape[row_major::h];++y){
@@ -398,7 +398,7 @@ static uint32_t decode_stack(const uint8_t* _buffer,
 
 
 	sws_scale((*sws_ctx).get(),
-		  (const uint8_t * const*)frame.get()->data, frame.get()->linesize, 0, frame.get()->height,
+		  (const std::uint8_t * const*)frame.get()->data, frame.get()->linesize, 0, frame.get()->height,
 		  gray_frame.get()->data, gray_frame.get()->linesize);
 
 	for(uint32_t y=0;y<shape[row_major::h];++y){

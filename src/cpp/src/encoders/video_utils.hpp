@@ -16,7 +16,7 @@ namespace sqeazy {
 
       
   template <typename T> struct av_pixel_type {};
-  template <> struct av_pixel_type<uint8_t> { static const AVPixelFormat value = AV_PIX_FMT_GRAY8;};
+  template <> struct av_pixel_type<char> { static const AVPixelFormat value = AV_PIX_FMT_GRAY8;};
   template <> struct av_pixel_type<uint16_t> { static const AVPixelFormat value = AV_PIX_FMT_GRAY16;};
 
     struct av_codec_t {
@@ -307,11 +307,11 @@ namespace sqeazy {
     /* required for reading encoded video from buffer */
 //https://ffmpeg.org/doxygen/trunk/avio_reading_8c-example.html#a18
 struct avio_buffer_data {
-    const uint8_t *ptr;
+    const char *ptr;
     size_t size; ///< size left in the buffer
 };
 
-static int read_packet(void *opaque, uint8_t *buf, int buf_size)
+  static int read_packet(void *opaque, std::uint8_t *buf, int buf_size)
 {
   avio_buffer_data *bd = (avio_buffer_data *)opaque;
   buf_size = std::min((decltype(bd->size))buf_size, bd->size);
@@ -331,8 +331,8 @@ static int read_packet(void *opaque, uint8_t *buf, int buf_size)
     
     std::shared_ptr<contained_type> ptr_;
     
-    // std::vector<uint8_t,boost::alignment::aligned_allocator<char, 32> > buffer_;
-    uint8_t* buffer_;
+    // std::vector<char,boost::alignment::aligned_allocator<char, 32> > buffer_;
+    char* buffer_;
     static const uint32_t buffer_size_ = 4096;//given by ffmpeg examples
 
     avio_buffer_data data_2_read_;
@@ -346,13 +346,19 @@ static int read_packet(void *opaque, uint8_t *buf, int buf_size)
 
     avio_context_t(const avio_buffer_data& _read_data):
       ptr_(nullptr),
-      buffer_(new uint8_t[buffer_size_]),
+      buffer_(new char[buffer_size_]),//FIXME: is this a memleak?
       data_2_read_(_read_data)
     {
 
       
-      ptr_ = std::shared_ptr<contained_type>(avio_alloc_context(&buffer_[0], buffer_size_,
-								0, &data_2_read_, &read_packet, NULL, NULL),how_to_delete_me);
+      ptr_ = std::shared_ptr<contained_type>(avio_alloc_context(reinterpret_cast<std::uint8_t*>(&buffer_[0]),
+								buffer_size_,
+								0,
+								&data_2_read_,
+								&read_packet,
+								NULL,
+								NULL),
+					     how_to_delete_me);
 
     }
 

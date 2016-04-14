@@ -38,9 +38,9 @@ namespace sqeazy {
 
   
   template < typename T , typename S = std::size_t>
-  struct hevc_scheme :  public sink<T,std::uint8_t> {
+  struct hevc_scheme :  public sink<T> {
 
-    typedef sink<T,std::uint8_t> sink_type;
+    typedef sink<T> sink_type;
     typedef T raw_type;
     typedef typename sink_type::out_type compressed_type;
 
@@ -169,9 +169,12 @@ namespace sqeazy {
       size_t _len_in = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<size_t>());
       size_t _len_out = max_encoded_size(_len_in);
 	
-      const uint8_t* input = reinterpret_cast<const uint8_t*>(_in);
+      const char* input = reinterpret_cast<const char*>(_in);
       
-      std::size_t num_bytes_decoded = decode_stack(input, _len_in, _out, _len_out);
+      std::size_t num_bytes_decoded = decode_stack(input,
+						   _len_in,
+						   _out,
+						   _len_out);
       
       return ( num_bytes_decoded > 0 && num_bytes_decoded <= _len_out ) ? SUCCESS : FAILURE;
       
@@ -316,7 +319,7 @@ namespace sqeazy {
                                    const size_type& _len_out
                                   ) {
       
-      const uint8_t* input = reinterpret_cast<const uint8_t*>(_input);
+      const char* input = reinterpret_cast<const char*>(_input);
       
       size_type num_bytes_decoded = detail::hevc_decode_stack(input, _len_in, _output, _len_out);
 

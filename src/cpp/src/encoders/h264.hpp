@@ -43,10 +43,10 @@ extern "C" {
 namespace sqeazy {
 
   
-  template < typename in_type , typename out_type = std::uint8_t, typename S = std::size_t>
-  struct h264_scheme :  public sink<in_type,out_type> {
+  template < typename in_type , typename S = std::size_t>
+  struct h264_scheme :  public sink<in_type> {
 
-    typedef sink<in_type,out_type> sink_type;
+    typedef sink<in_type> sink_type;
     typedef in_type raw_type;
     typedef typename sink_type::out_type compressed_type;
 
@@ -176,7 +176,7 @@ namespace sqeazy {
       size_t _len_in = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<size_t>());
       size_t _len_out = max_encoded_size(_len_in);
 	
-      const uint8_t* input = reinterpret_cast<const uint8_t*>(_in);
+      const char* input = reinterpret_cast<const char*>(_in);
       
       std::size_t num_bytes_decoded = decode_stack(input, _len_in, _out, _len_out);
       
@@ -204,7 +204,7 @@ namespace sqeazy {
     // DEPRECATED API
 
     // typedef T raw_type;
-    // typedef uint8_t compressed_type;
+    // typedef char compressed_type;
     typedef S size_type;
   
     static S last_num_encoded_bytes;
@@ -217,7 +217,7 @@ namespace sqeazy {
 	
     }
 
-    //static_assert(std::is_same<raw_type,uint8_t>::value, "[h264_scheme] other types than uint8_t are not supported (yet)");
+    //static_assert(std::is_same<raw_type,char>::value, "[h264_scheme] other types than char are not supported (yet)");
 
     
     /**
@@ -324,7 +324,7 @@ namespace sqeazy {
                                    const size_type& _len_out
                                   ) {
       
-      const uint8_t* input = reinterpret_cast<const uint8_t*>(_input);
+      const char* input = reinterpret_cast<const char*>(_input);
       
       size_type num_bytes_decoded = h264_decode_stack(input, _len_in, _output, _len_out);
 
@@ -346,8 +346,8 @@ namespace sqeazy {
     
   };
 
-  template < typename T, typename O , typename S>
-  S h264_scheme<T,O,S>::last_num_encoded_bytes = 0;
+  template < typename T , typename S>
+  S h264_scheme<T,S>::last_num_encoded_bytes = 0;
 
   
 };//sqy namespace
