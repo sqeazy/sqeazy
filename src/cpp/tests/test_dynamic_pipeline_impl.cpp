@@ -630,4 +630,30 @@ BOOST_AUTO_TEST_CASE (roundtrip_central_hibit_sink) {
   
 }
 
+BOOST_AUTO_TEST_CASE (string_validates) {
+
+  bool string_passes = sqeazy_testing::dynamic_pipeline<int>::can_be_built_from("high_bits");
+  BOOST_CHECK(string_passes);
+
+  string_passes = sqeazy_testing::dynamic_pipeline<int>::can_be_built_from("add_one->high_bits");
+  BOOST_CHECK(string_passes);
+
+  string_passes = sqeazy_testing::dynamic_pipeline<int>::can_be_built_from("add_one->high_bits->sum_up");
+  BOOST_CHECK(string_passes);
+
+  string_passes = sqeazy_testing::dynamic_pipeline<int>::can_be_built_from("add_one->high_bits->sum_upper");
+  BOOST_CHECK(!string_passes);
+
+}
+
+BOOST_AUTO_TEST_CASE (string_validates_fixed_bugs) {
+  
+  bool string_passes = sqeazy_testing::dynamic_pipeline<int>::can_be_built_from("add_one->high_bits!!sum_upper");
+  BOOST_CHECK(!string_passes);
+
+  string_passes = sqeazy_testing::dynamic_pipeline<int>::can_be_built_from("add_one!!high_bits");
+  BOOST_CHECK(!string_passes);
+
+}
+  
 BOOST_AUTO_TEST_SUITE_END()

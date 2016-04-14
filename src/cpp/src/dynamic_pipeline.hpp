@@ -166,6 +166,48 @@ namespace sqeazy
       return value;
     }
 
+    static bool can_be_built_from(const char* _config_str, std::string _sep = "->")
+    {
+
+      using head_filter_factory_t = filter_factory_t<incoming_t>;
+      using tail_filter_factory_t = filter_factory_t<outgoing_t>;
+
+      std::string _config = _config_str;
+      sqeazy::vec_of_pairs_t steps_n_args = sqeazy::parse_by(_config.begin(),
+							     _config.end(),
+							     _sep);
+
+      bool value = false;
+      std::uint32_t found = 0;
+      
+      for(const auto &pair : steps_n_args)
+      {
+	
+	  if(head_filter_factory_t::has(pair.first)){
+	    found++;
+	    continue;
+	  }
+	
+	  if(sink_factory_t::has(pair.first)){
+	    found++;
+	    continue;
+	  }
+	  
+	  if(tail_filter_factory_t::has(pair.first)){
+	    found++;
+	  }
+	
+      }
+
+      value = found == steps_n_args.size();
+      int rebuild_size = _sep.size()*(steps_n_args.size()-1);
+      for( const auto& item : steps_n_args )
+	rebuild_size += item.first.size();
+
+      value = value && rebuild_size == _config.size();
+      return value;
+    }
+    
     /**
        \brief given a char buffer, this static method can fill the filter_holder and set the sink
        
