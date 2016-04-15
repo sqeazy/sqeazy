@@ -655,5 +655,28 @@ BOOST_AUTO_TEST_CASE (string_validates_fixed_bugs) {
   BOOST_CHECK(!string_passes);
 
 }
+
+BOOST_AUTO_TEST_CASE (test_factory_template_args) {
+
+  bool string_passes = sqy::dynamic_pipeline<int,
+					     filter_factory,
+					     sink_factory<int>,
+					     my_tail_factory<char>
+					     >::can_be_built_from("add_one->high_bits->square");
+  BOOST_CHECK(!string_passes);
+
+  //FIXME: should not compile or not pass
+  // string_passes = sqy::dynamic_pipeline<int,
+  // 					filter_factory,
+  // 					sink_factory<int>,
+  // 					filter_factory<int>
+  // 					>::can_be_built_from("add_one->high_bits->square");
+  // BOOST_CHECK(!string_passes);
   
+  string_passes = sqy::dynamic_pipeline<int,
+					filter_factory,
+					sink_factory<int>>::can_be_built_from("add_one->high_bits->square");
+  BOOST_CHECK(string_passes);
+
+}
 BOOST_AUTO_TEST_SUITE_END()
