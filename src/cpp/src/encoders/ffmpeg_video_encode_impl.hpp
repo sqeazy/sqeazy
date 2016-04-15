@@ -85,7 +85,7 @@ namespace sqeazy {
 
       //http://x265.readthedocs.org/en/default/lossless.html#lossless-encoding
       std::stringstream params("");
-      int count = 0;
+      size_t count = 0;
       for( const auto & kv : _config )
 	{
 	  if(kv.first == "preset" || kv.first == "profile"){
