@@ -138,6 +138,7 @@ target_link_libraries(deprecated_pipeline_impl ${Boost_LIBRARIES} ext_lz4)
 add_executable(test_dynamic_pipeline_impl test_dynamic_pipeline_impl.cpp)
 target_link_libraries(test_dynamic_pipeline_impl ${Boost_LIBRARIES} ext_lz4)
 
+
 add_executable(test_dynamic_stage_impl test_dynamic_stage_impl.cpp)
 target_link_libraries(test_dynamic_stage_impl ${Boost_LIBRARIES})
 
@@ -208,7 +209,9 @@ IF(FFMPEG_FOUND)
   target_link_libraries(test_hevc_scheme_utils ${Boost_LIBRARIES} ext_tiff ext_avcodec ext_avutil ext_avformat ext_swscale m)
 #  set_target_properties(test_hevc_scheme_utils PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")  
 
-  
+  add_executable(test_sqeazy_pipelines_impl test_sqeazy_pipelines_impl.cpp)
+  target_link_libraries(test_sqeazy_pipelines_impl ${Boost_LIBRARIES} ext_tiff ext_avcodec ext_avutil ext_avformat ext_swscale m ext_lz4)
+
   
 ELSE(FFMPEG_FOUND)
   MESSAGE(">> [tests] libavcodec not found. skipping test_avcodec_sandbox ...")

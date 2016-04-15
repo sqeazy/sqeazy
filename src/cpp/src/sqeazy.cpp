@@ -2,69 +2,15 @@
 #include "sqeazy.h"
 
 #include "sqeazy_header.hpp"
+#include "sqeazy_pipelines.hpp"
+
 #include "sqeazy_hdf5_impl.hpp"
 #include "hdf5_utils.hpp"
 
 //to be deprecated
-#include "pipeline.hpp"
-#include "deprecated/static_pipeline_select.hpp"
+//#include "pipeline.hpp"
+//#include "deprecated/static_pipeline_select.hpp"
 
-//import native filters/sinks
-#include "encoders/sqeazy_impl.hpp"
-#include "encoders/quantiser_scheme_impl.hpp"
-
-//import external filters/sinks
-#include "encoders/lz4.hpp"
-#include "encoders/h264.hpp"
-#include "encoders/hevc.hpp"
-
-#include "dynamic_pipeline.hpp"
-#include "dynamic_stage_factory.hpp"
-
-namespace sqeazy {
-
-  
-  template <typename T>
-  using filters_factory = stage_factory<
-    pass_through<T,T>,
-    diff_scheme<T>,
-    bitswap_scheme<T>,
-    remove_background_scheme<T>,
-    flatten_to_neighborhood_scheme<T>,
-    remove_estimated_background_scheme<T>
-    >;
-
-  template <typename T>
-  using encoders_factory = stage_factory<
-    quantiser_scheme<T>,
-    lz4_scheme<T>
-    >;
-
-  template <typename T>
-  using tail_filters_factory = stage_factory<
-    pass_through<T,T>,
-    diff_scheme<T>,
-    bitswap_scheme<T>,
-    remove_background_scheme<T>,
-    flatten_to_neighborhood_scheme<T>,
-    remove_estimated_background_scheme<T>,
-    h264_scheme<T>,
-    hevc_scheme<T>
-    >;
-  
-  template <typename T>
-  using dypeline = dynamic_pipeline<T, filters_factory, encoders_factory<T>, tail_filters_factory<char> >;
-
-  using dypeline_from_char = dynamic_pipeline<char,
-					    filters_factory,
-					    stage_factory<
-					      lz4_scheme<char>,
-					      hevc_scheme<char>,
-					      h264_scheme<char>
-					      >
-					    >;
-
-}
 
 namespace sqy = sqeazy;
 
@@ -301,9 +247,6 @@ int SQY_RmBackground_Estimated_UI16(int width, int height, int depth, char* src,
 #include "encoders/external_encoders.hpp"
 #endif
 
-typedef sqy::bmpl::vector< sqy::lz4_scheme<char> > lz4_;
-typedef sqy::pipeline<lz4_> lz4_pipe;
-
 
 int SQY_LZ4Encode(const char* src, long srclength, char* dst, long* dstlength){
 
@@ -354,9 +297,6 @@ int SQY_LZ4Decode(const char* src, long srclength, char* dst){
 
   auto lz4 = sqy::dypeline_from_char::from_string("lz4");
   
-  // auto local_src = reinterpret_cast<const sqy::lz4_scheme<char>::compressed_type*>(src);
-  // int retcode = lz4_pipe::decompress(local_src,dst,srclength);
-
   int retcode = lz4.decode(src,dst,srclength);
   
   return retcode;
@@ -407,88 +347,77 @@ int SQY_PipelineEncode_UI16(const char* pipeline,
 			    long* dstlength){
 
   int value =1;
-  std::vector<unsigned> shape_(shape, shape+shape_size);
-  
-  std::string filter_name = prepend_type_id<uint16_t>(pipeline);
-
-  
-  sqy::image_header hdr(uint16_t(),
-			   shape_,
-			   filter_name);
-
-  sqy::pipeline_select<> selected(16,filter_name);
-  if(selected.empty())
+  if(!sqy::dypeline<std::uint16_t>::can_be_built_from(pipeline))
     return value;
 
-  unsigned long num_bytes_written = 0;
-  value = selected.compress(src,dst,shape_,num_bytes_written);
-  *dstlength = num_bytes_written;
+  
+  std::vector<size_t> shape_(shape, shape+shape_size);
+  auto pipe = sqy::dypeline<std::uint16_t>::from_string(pipeline);
+
+  char* encoded_end = pipe.encode(reinterpret_cast<const std::uint16_t*>(src),
+				  dst,
+				  shape_);
+
+  if(!encoded_end)
+    return value;
+  else
+    value = 0;
+  
+  *dstlength = encoded_end - dst;
   return value;
 }
 
 //NOT IMPLEMENTED YET
 int SQY_Pipeline_Max_Compressed_Length_UI16(const char* pipeline,long* length){
-  int value =1;
-  std::string filter_name = prepend_type_id<uint16_t>(pipeline);
-  sqy::pipeline_select<> selected(16,filter_name);
-  if(selected.empty())
-    return value;
 
-  std::vector<unsigned long> assumed_shape(1,*length);
-  sqy::image_header hdr(uint16_t(),
-			   assumed_shape,
-			   filter_name);
+  int value =1;
+
+  if(!sqy::dypeline<std::uint16_t>::can_be_built_from(pipeline))
+    return value;
   
-  *length = selected.max_compressed_size(*length,hdr.size());
+  auto received_pipeline = sqy::dypeline<std::uint16_t>::from_string(pipeline);
+
+  *length = received_pipeline.max_encoded_size(*length);
   return 0;
 
 }
 
-int SQY_Pipeline_Max_Compressed_Length_3D_UI16(const char* pipeline,long* shape, unsigned shape_size, long* length){
+int SQY_Pipeline_Max_Compressed_Length_3D_UI16(const char* pipeline,
+					       long* shape,
+					       unsigned shape_size,
+					       long* length){
 
-  int value =1;
-  std::string filter_name = prepend_type_id<uint16_t>(pipeline);
-  sqy::pipeline_select<> selected(16,filter_name);
-  if(selected.empty())
-    return value;
-
-  std::vector<unsigned long> lshape(shape,shape+shape_size);
-  sqy::image_header hdr(uint16_t(),
-			   lshape,
-			   filter_name);
-  
-  *length = selected.max_compressed_size(*length,hdr.size());
-  return 0;
-
+  return SQY_Pipeline_Max_Compressed_Length_UI16(pipeline,length);
 
 }
 
-int SQY_Pipeline_Decompressed_Length(const char* data, long *length){
+int SQY_Pipeline_Decompressed_Length(const char* data,
+				     long *length){
   
   int value =1;
 
   sqy::image_header hdr(data,data+(*length));
-  sqy::pipeline_select<> selected(hdr);
-  if(selected.empty())
-    return value;
-
-  *length = selected.decoded_size_byte(data,*length);
+  
+  *length = hdr.raw_size_byte();
   return 0;
 }
 
 int SQY_PipelineDecode_UI16(const char* src, long srclength, char* dst){
   int value =1;
- 
-  sqy::image_header hdr(src,src+srclength);
-  if(hdr.empty())
-    return value;
+
+  sqy::image_header hdr(src,src+(srclength));
   
-  sqy::pipeline_select<> selected(hdr);
-  if(selected.empty())
+  if(!sqy::dypeline<std::uint16_t>::can_be_built_from(hdr.pipeline()))
     return value;
 
-  unsigned long long size = srclength;
-  value = selected.decompress(src,dst,size);
+  // std::vector<size_t> shape_(shape, shape+shape_size);
+  auto pipe = sqy::dypeline<std::uint16_t>::from_string(hdr.pipeline());
+  
+  std::vector<size_t> shape_(hdr.shape()->begin(),hdr.shape()->end());
+    
+  value = pipe.decode(src,
+		      reinterpret_cast<std::uint16_t*>(dst),
+		      shape_);
 
   return value;
 }
