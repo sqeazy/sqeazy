@@ -56,8 +56,8 @@ namespace sqeazy
 
     static_assert(std::is_arithmetic<incoming_t>::value==true, "[dynamic_pipeline.hpp:56] received non-arithmetic type for input");
     static_assert(std::is_arithmetic<outgoing_t>::value==true, "[dynamic_pipeline.hpp:57] received non-arithmetic type for output");
-    //static_assert(std::is_same<outgoing_t,incoming_t>::value==false, "[dynamic_pipeline.hpp:58] incoming and outgoing types equal!");
-            
+
+           
     typedef sink<incoming_t> sink_t;
     typedef std::shared_ptr< sink<incoming_t> > sink_ptr_t;
     
@@ -74,6 +74,9 @@ namespace sqeazy
       std::is_same<void,optional_tail_factory_t>::value
       >::type;
 
+    //FIXME: check that incoming type of tail_filter_factory is equal to     
+    // static_assert(std::is_same<tail_filter_factory_t>::value==true, "[dynamic_pipeline.hpp:57] received non-arithmetic type for output");
+    
     head_chain_t head_filters_;
     tail_chain_t tail_filters_;
     sink_ptr_t sink_;
@@ -171,11 +174,14 @@ namespace sqeazy
       return value;
     }
 
+    static bool can_be_built_from(const std::string& _config_str, std::string _sep = "->")
+    {
+      return can_be_built_from(_config_str.c_str(),_sep);
+    }
+    
     static bool can_be_built_from(const char* _config_str, std::string _sep = "->")
     {
 
-      using head_filter_factory_t = filter_factory_t<incoming_t>;
-      using tail_filter_factory_t = filter_factory_t<outgoing_t>;
 
       std::string _config = _config_str;
       sqeazy::vec_of_pairs_t steps_n_args = sqeazy::parse_by(_config.begin(),
@@ -184,17 +190,19 @@ namespace sqeazy
 
       bool value = false;
       std::uint32_t found = 0;
+      bool sink_matched = false;
       
       for(const auto &pair : steps_n_args)
       {
 	
-	  if(head_filter_factory_t::has(pair.first)){
+	  if(!sink_matched && head_filter_factory_t::has(pair.first)){
 	    found++;
 	    continue;
 	  }
 	
 	  if(sink_factory_t::has(pair.first)){
 	    found++;
+	    sink_matched = true;
 	    continue;
 	  }
 	  
@@ -205,9 +213,12 @@ namespace sqeazy
       }
 
       value = found == steps_n_args.size();
-      int rebuild_size = _sep.size()*(steps_n_args.size()-1);
-      for( const auto& item : steps_n_args )
+      size_t rebuild_size = _sep.size()*(steps_n_args.size()-1);
+      for( const auto& item : steps_n_args ){
 	rebuild_size += item.first.size();
+	if(!item.second.empty())
+	  rebuild_size += 2 + item.second.size();
+      }
 
       value = value && rebuild_size == _config.size();
       return value;

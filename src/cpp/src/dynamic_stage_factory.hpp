@@ -91,6 +91,8 @@ namespace sqeazy {
   {
     static_assert(sizeof...(available_types) > 0, "[dynamic_stage.hpp::stage_factory] Need at least one type for factory");
 
+    
+    
     template <typename pointee_t>
     static const std::shared_ptr<pointee_t> create(const std::string &_name,
 					    const std::string &_payload = "")
