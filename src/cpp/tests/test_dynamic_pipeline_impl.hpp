@@ -489,6 +489,9 @@ using filter_factory = sqy::stage_factory<add_one<T>, square<T>, set_to<T> >;
 template <typename T>
 using sink_factory = sqy::stage_factory<sum_up<T>, high_bits<T> >;
 
+template <typename T>
+using my_tail_factory = sqy::stage_factory<add_one<T> >;
+
 static auto adder_sptr = std::make_shared<add_one<int>>(add_one<int>());
 static auto square_sptr = std::make_shared<square<int>>(square<int>());
 static auto summer_sptr = std::make_shared<sum_up<int>>(sum_up<int>());
