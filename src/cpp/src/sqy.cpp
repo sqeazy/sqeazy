@@ -89,6 +89,8 @@ int main(int argc, char *argv[])
   descriptions["decompress"].add_options()
     ("help", "produce help message")
     ("verbose,v", "enable verbose output")
+    ("output_name,o", po::value<std::string>(), "file location to write output to (if only 1 is given)")
+    ("output_suffix,e", po::value<std::string>()->default_value(".tif"), "file extension to be used (must include period)")
     ;
 
   descriptions["scan"].add_options()

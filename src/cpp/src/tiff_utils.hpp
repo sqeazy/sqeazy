@@ -385,25 +385,13 @@ namespace sqeazy {
     TIFFClose(output_image);
   }
 
-
-
-
-
-
-
-
-
-
-
-
-
   
   struct tiff_facet {
     
     boost::filesystem::path location_;
     TIFF* handle_;
     unsigned long n_pixels_;
-    std::vector<unsigned> shape_;
+    std::vector<size_t> shape_;
     std::vector<char> buffer_;
     
     tiff_facet(const std::string& _path = "", bool _all_errors = false):
@@ -427,7 +415,7 @@ namespace sqeazy {
       location_(""),
       handle_(0),
       n_pixels_(_end - _begin),
-      shape_(_shape),
+      shape_(_shape.begin(),_shape.end()),
       buffer_()
     {
       
@@ -441,6 +429,8 @@ namespace sqeazy {
       return !handle_;
     }
 
+    
+    
     ~tiff_facet(){
       
       if(handle_)
