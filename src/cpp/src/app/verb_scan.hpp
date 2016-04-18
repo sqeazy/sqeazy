@@ -22,7 +22,8 @@
 namespace po = boost::program_options;
 namespace bfs = boost::filesystem;
 
-struct info{
+struct info
+{
 
 
   static void header(const int& _space_left = 30) {

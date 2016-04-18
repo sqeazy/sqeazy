@@ -10,7 +10,7 @@
 #include <unordered_map>
 #include <regex>
 
-#include "sqy/verbs.hpp"
+#include "app/verbs.hpp"
 #include "deprecated/static_predef_pipelines.hpp"
 
 #include "sqeazy_pipelines.hpp"
