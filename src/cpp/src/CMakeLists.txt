@@ -1,5 +1,5 @@
 INCLUDE_DIRECTORIES(.)
-
+INCLUDE_DIRECTORIES(sqy)
 
 #SET(HDF5_USE_STATIC_LIBRARIES TRUE)#only works on Unix and requires static lib to be compiled with -fPIC
 #needed for FindHDF5 as it expects an ENVIRONMENT variable called HDF5_ROOT as hint to the HDF5 path
