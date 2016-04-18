@@ -18,6 +18,21 @@ find_package(FFMPEG REQUIRED)
 IF(FFMPEG_FOUND)
   INCLUDE_DIRECTORIES(${FFMPEG_INCLUDE_DIRS})
   LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
+
+  add_library(ext_avcodec SHARED IMPORTED)
+  set_target_properties(ext_avcodec PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVCODEC_LIBRARIES}")
+  
+
+  add_library(ext_avutil SHARED IMPORTED)
+  set_target_properties(ext_avutil PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVUTIL_LIBRARIES}")
+
+  add_library(ext_avformat SHARED IMPORTED)
+  set_target_properties(ext_avformat PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVFORMAT_LIBRARIES}")
+
+  add_library(ext_swscale SHARED IMPORTED)
+  set_target_properties(ext_swscale PROPERTIES IMPORTED_LOCATION "${FFMPEG_SWSCALE_LIBRARIES}")
+
+  SET(SQY_FFMPEG_Libraries ext_avcodec ext_avutil ext_avformat ext_swscale m)
 ENDIF()
 
 
@@ -58,9 +73,9 @@ IF(TIFF_FOUND)
   #TODO:
   add_executable(bench bench.cpp)
   IF(EXISTS ${TIFF_STATIC_LIB})
-    target_link_libraries(bench ext_static_tiff ext_lz4 ${Boost_LIBRARIES})
+    target_link_libraries(bench ext_static_tiff ext_lz4 ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries})
   ELSE()
-    target_link_libraries(bench ext_dyn_tiff ext_lz4 ${Boost_LIBRARIES})
+    target_link_libraries(bench ext_dyn_tiff ext_lz4 ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries})
   ENDIF()
 
   # IF(NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
