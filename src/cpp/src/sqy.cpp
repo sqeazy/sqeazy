@@ -1,4 +1,4 @@
-#define __SQY_BENCH_CPP__
+#define __SQY_CPP__
 #include <iostream>
 #include <functional>
 #include <algorithm>
@@ -10,43 +10,59 @@
 #include <unordered_map>
 #include <regex>
 
-#include "app_algs.hpp"
+#include "sqy_verbs.hpp"
 #include "deprecated/static_predef_pipelines.hpp"
+
+#include "sqeazy_pipelines.hpp"
 
 #include "boost/filesystem.hpp"
 #include <boost/program_options.hpp>
+
 namespace po = boost::program_options;
+namespace sqy = sqeazy;
 
 
-template <typename ModesContainer, typename ModesMap>
-int print_help(const ModesContainer& _av_pipelines ,
-	       const ModesMap& _modes_args
+template <typename modes_map_t, typename map_type >
+int print_help(
+	       const modes_map_t& _modes_args,
+	       const map_type& _verb_aliases 
 	       ) {
 
   std::string me = "sqy";
-  std::cout << "usage: " << me << " <-h|optional> <target> <files|..>\n"
+  std::cout << "usage: " << me << " <-h|optional> <verb> <files|..>\n"
 	    << "\n"
-	    << "available targets:\n"
+	    << "available verbs:\n"
 	    << "<help>" << "\n";
 
 
   if(_modes_args.size()){
       
     for( auto args : _modes_args ){
-	
-      std::cout << "<" << args.first << ">\n" << args.second << "\n";
+
+      auto fitr = _verb_aliases.find(args.first);
+      if(fitr!=_verb_aliases.end())
+	std::cout << "<" << fitr->second << ">\n" << args.second << "\n";
+      else
+	std::cout << "<" << args.first << ">\n" << args.second << "\n";
     }
   }
 
-  std::cout << "available pipelines:\n";
-  std::set<std::string> pipeline_names;
-  for( auto it : _av_pipelines )
-    pipeline_names.insert(it);
+  std::cout << "pipeline builder\n"
+	    << "	- pipelines may consist of any number of filters\n"
+	    << "          (i.e. a function that ingests data of type T and emits it of type T again)\n"
+	    << "	- each pipeline may have no or at least 1 sink\n"
+    	    << "	  (i.e. a function that ingests data of type T and emits it of a type with smaller width than T,\n"
+    	    << "	  for example quantiser or lz4)\n\n";
 
-  for(const std::string& pipeline : pipeline_names ) {
-    std::cout << "\t" << pipeline << "\n";
-  }
-
+  std::cout << "available filters (before sink):\n";
+  sqy::dypeline<std::uint16_t>::head_filter_factory_t::print_names("\t");
+  
+  std::cout << "\navailable sinks:\n";
+  sqy::dypeline<std::uint16_t>::sink_factory_t::print_names("\t");
+  
+  std::cout << "\navailable filters (after sink):\n";
+  sqy::dypeline<std::uint16_t>::tail_filter_factory_t::print_names("\t");
+  
   std::cout << "\n";
 
   return 1;
@@ -59,11 +75,9 @@ int main(int argc, char *argv[])
 
   typedef std::function<void(const std::vector<std::string>&,const po::variables_map&) > func_t;
     
-  //FIXME:: just a placeholder to make the whole thing compile
-
-  static std::vector<std::string> modes{sqeazy::bswap1_lz4_pipe::static_name(),
-      sqeazy::rmbkg_bswap1_lz4_pipe::static_name()};
-  const static std::string default_compression = sqeazy::bswap1_lz4_pipe::static_name();
+  // static std::vector<std::string> modes{sqeazy::bswap1_lz4_pipe::static_name(),
+  //     sqeazy::rmbkg_bswap1_lz4_pipe::static_name()};
+  const static std::string default_compression = "bitswap1->lz4";
 
   static std::unordered_map<std::string,po::options_description> descriptions(4);
 
@@ -98,12 +112,20 @@ int main(int argc, char *argv[])
     ("metrics,m", po::value<std::string>()->default_value("nrmse"), "comma-separated list of metrics (possible values: mse, psnr)")
     ;
 
-  static     std::unordered_map<std::string, std::regex> aliases(4);
-  aliases["compress"] = std::regex("(compress|enc|encode|comp)");
-  aliases["decompress"] = std::regex("(decompress|dec|decode|rec)");
-  aliases["scan"] = std::regex      ("(scan|info)");                
-  aliases["convert"] = std::regex   ("(convert|transform|trf)");
-  aliases["compare"] = std::regex("(compare|cmp)");
+  static     std::unordered_map<std::string, std::string> verb_aliases;
+  verb_aliases["compress"] = std::string("compress|enc|encode|comp");
+  verb_aliases["decompress"] = std::string("decompress|dec|decode|rec");
+  verb_aliases["scan"] = std::string      ("scan|info");                
+  verb_aliases["convert"] = std::string   ("convert|transform|trf");
+  verb_aliases["compare"] = std::string("compare|cmp");
+
+  
+  static     std::unordered_map<std::string, std::regex> verb_aliases_rex(verb_aliases.size());
+  for ( auto& pair : verb_aliases ){
+    std::ostringstream rex;
+    rex << "(" << pair.second << ")";
+    verb_aliases_rex[pair.first] = std::regex(rex.str());
+  }
     
   // std::vector<std::string> args(argv+1, argv+argc);
   std::string joint_args;
@@ -113,7 +135,8 @@ int main(int argc, char *argv[])
     
   int retcode = 0;
   if(argc<2 || joint_args.find("-h")!=std::string::npos || joint_args.find("help")!=std::string::npos) {
-    retcode = print_help(modes,descriptions);
+    retcode = print_help(descriptions,verb_aliases
+			 );
   }
   else{
         
@@ -133,19 +156,19 @@ int main(int argc, char *argv[])
 
     ///////////////////////////////////////////
     //REFACTOR THIS!
-    if(std::regex_match(target,aliases["compress"]))
+    if(std::regex_match(target,verb_aliases_rex["compress"]))
       prog_flow = compress_files;
 
-    if(std::regex_match(target,aliases["decompress"]))
+    if(std::regex_match(target,verb_aliases_rex["decompress"]))
       prog_flow = decompress_files;
 
-    if(std::regex_match(target,aliases["scan"]))
+    if(std::regex_match(target,verb_aliases_rex["scan"]))
       prog_flow = scan_files;
 
-    if(std::regex_match(target,aliases["convert"]))
+    if(std::regex_match(target,verb_aliases_rex["convert"]))
       prog_flow = convert_files;
 
-    if(std::regex_match(target,aliases["compare"]))
+    if(std::regex_match(target,verb_aliases_rex["compare"]))
       prog_flow = compare_files;
 
     

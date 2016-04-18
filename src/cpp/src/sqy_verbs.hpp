@@ -1,5 +1,5 @@
-#ifndef _APP_ALGS_H_
-#define _APP_ALGS_H_
+#ifndef _SQY_VERBS_H_
+#define _SQY_VERBS_H_
 
 #include <fstream>
 #include <vector>
@@ -10,9 +10,6 @@
 #include "boost/filesystem.hpp"
 #include <boost/program_options.hpp>
 
-//#include "bench_fixtures.hpp"
-//#include "bench_utils.hpp"
-//#include "bench_common.hpp"
 #include "tiff_utils.hpp"
 #include "deprecated/static_pipeline_select.hpp"
 #include "sqeazy_algorithms.hpp"
@@ -628,4 +625,4 @@ void scan_files(const std::vector<std::string>& _files,
 
 }
 
-#endif /* _APP_ALGS_H_ */
+#endif /* _SQY_VERBS_H_ */
