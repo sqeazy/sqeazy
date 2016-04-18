@@ -2,6 +2,7 @@
 #define _VIDEO_UTILS_H_
 
 #include <memory>
+#include <cstdint>
 
 #include "boost/align/aligned_allocator.hpp"
 
@@ -17,9 +18,30 @@ namespace sqeazy {
       
   template <typename T> struct av_pixel_type {};
   template <> struct av_pixel_type<char> { static const AVPixelFormat value = AV_PIX_FMT_GRAY8;};
-  template <> struct av_pixel_type<uint16_t> { static const AVPixelFormat value = AV_PIX_FMT_GRAY16;};
+  template <> struct av_pixel_type<std::uint8_t> { static const AVPixelFormat value = AV_PIX_FMT_GRAY8;};
+  template <> struct av_pixel_type<std::int8_t> { static const AVPixelFormat value = AV_PIX_FMT_GRAY8;};
+  
+  template <> struct av_pixel_type<std::uint16_t> { static const AVPixelFormat value = AV_PIX_FMT_GRAY16;};
+  template <> struct av_pixel_type<std::int16_t> { static const AVPixelFormat value = AV_PIX_FMT_GRAY16;};
+  // template <> struct av_pixel_type<short> { static const AVPixelFormat value = AV_PIX_FMT_GRAY16;};
+  // template <> struct av_pixel_type<unsigned shortte> { static const AVPixelFormat value = AV_PIX_FMT_GRAY16;};
 
-    struct av_codec_t {
+  void av_free_packet(AVPacket* pkt){
+
+    //FIXME: inserted due to deprecation error, needs to be replaced
+    //       with something maintainable as this is hardcoded and might changed upstream
+    if (pkt) {
+      if (pkt->buf)
+	av_buffer_unref(&pkt->buf);
+      pkt->data            = NULL;
+      pkt->size            = 0;
+ 
+      av_packet_free_side_data(pkt);
+    }
+    
+  }
+  
+  struct av_codec_t {
 
     typedef AVCodec contained_type;
     
@@ -166,9 +188,9 @@ namespace sqeazy {
     };
     
     av_frame_t_any(    uint32_t _width = 0, 
-		 uint32_t _height= 0,
-		 int32_t  _format = -1
-		 ):
+		       uint32_t _height= 0,
+		       int32_t  _format = -1
+		       ):
       ptr_(av_frame_alloc(), how_to_delete_me){
 
       ptr_->format = _format;
@@ -216,8 +238,8 @@ namespace sqeazy {
       ptr_(nullptr){
       
       contained_type * temp = sws_getContext(_from.get()->width,_from.get()->height,(AVPixelFormat)_from.get()->format,
-						_to.get()->width,_to.get()->height,(AVPixelFormat)_to.get()->format,
-						_method, NULL, NULL, NULL);
+					     _to.get()->width,_to.get()->height,(AVPixelFormat)_to.get()->format,
+					     _method, NULL, NULL, NULL);
       if (!temp) {
 	fprintf(stderr,
 		"Impossible to create scale context for the conversion "
@@ -304,25 +326,25 @@ namespace sqeazy {
     
   };
 
-    /* required for reading encoded video from buffer */
-//https://ffmpeg.org/doxygen/trunk/avio_reading_8c-example.html#a18
-struct avio_buffer_data {
+  /* required for reading encoded video from buffer */
+  //https://ffmpeg.org/doxygen/trunk/avio_reading_8c-example.html#a18
+  struct avio_buffer_data {
     const char *ptr;
     size_t size; ///< size left in the buffer
-};
+  };
 
   static int read_packet(void *opaque, std::uint8_t *buf, int buf_size)
-{
-  avio_buffer_data *bd = (avio_buffer_data *)opaque;
-  buf_size = std::min((decltype(bd->size))buf_size, bd->size);
+  {
+    avio_buffer_data *bd = (avio_buffer_data *)opaque;
+    buf_size = std::min((decltype(bd->size))buf_size, bd->size);
   
-  /* copy internal buffer data to buf */
-  std::copy(bd->ptr, bd->ptr + buf_size,buf);
-  // memcpy(buf, bd->ptr, buf_size);
-  bd->ptr  += buf_size;
-  bd->size -= buf_size;
-  return buf_size;
-}
+    /* copy internal buffer data to buf */
+    std::copy(bd->ptr, bd->ptr + buf_size,buf);
+    // memcpy(buf, bd->ptr, buf_size);
+    bd->ptr  += buf_size;
+    bd->size -= buf_size;
+    return buf_size;
+  }
 
   //taken from https://ffmpeg.org/doxygen/trunk/avio_reading_8c-example.html#a18
   struct avio_context_t {
