@@ -53,8 +53,6 @@ void compare_files(const std::vector<std::string>& _files,
 
   std::map<std::string,float> results;
   
-  int enc_ret = 0;
-
   if(!bfs::exists(src_file)){
     std::cerr << "[sqy-compare]\tunable to open " << src_file << "\tExiting.\n";
     return;
@@ -350,11 +348,12 @@ void convert_files(const std::vector<std::string>& _files,
 
 
 
-    if(_config.count("verbose"))
+    if(_config.count("verbose")){
       if(bfs::exists(target_file))
 	std::cout << target_file << " written successfully.\n";
       else
 	std::cerr << target_file << " written with errors of unknown cause!.\n";
+    }
   }
 
 }

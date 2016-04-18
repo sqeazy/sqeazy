@@ -322,7 +322,7 @@ namespace sqeazy {
 
       _stream.seekg(0,_stream.beg);
       const size_t frame_size = _shape[_shape.size()-1]*_shape[_shape.size()-2];
-      const size_t frame_size_bytes = frame_size*sizeof(value_t);
+      // const size_t frame_size_bytes = frame_size*sizeof(value_t);
 
       std::vector<uint16_t> raw_frame(frame_size,0);
       std::vector<char> chroma_values(frame_size,0);

@@ -31,7 +31,7 @@ namespace sqeazy {
 
       if(config_map.size()){
 	auto f_itr = config_map.find("threshold");
-	std::uint32_t found_num_bits_per_plane = 0;
+
 	if(f_itr!=config_map.end())
 	  threshold = std::stoi(f_itr->second);
       }
