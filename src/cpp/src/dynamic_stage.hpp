@@ -173,10 +173,10 @@ namespace sqeazy{
   };
   
   template <typename T = void>
-  struct blank_sink : public  sink<void,void>
+  struct blank_sink : public  sink<T,void>
   {
 
-    typedef void raw_t;
+    typedef T raw_t;
     typedef typename sink<void>::out_type compressed_t;
     ~blank_sink() {}
     blank_sink(const std::string& _params="") {}
