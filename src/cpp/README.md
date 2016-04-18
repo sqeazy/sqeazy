@@ -30,6 +30,8 @@ Sqeazy is currently undergoing constant development. If you want to test-drive i
 
 ## Build instructions
 
+### Building on Linux and OSX
+
 In order to build sqeazy, use the following (tested on Linux and OSX):
 
 ```bash
@@ -46,6 +48,12 @@ The are some cmake build flags that are supported/required:
 * (required if not in environment) `BOOST_ROOT` the location of the boost libraries
 * (required if not in environment) `TIFF_LIBRARY` the location of tiff library file
 * (required if not found in `TIFF_LIBRARY`) `TIFF_INCLUDE_PATH` the path that contains the tiff header files (`tiff.h` etc)
+
+If all dependencies are in non-standard paths (especially true on OSX), use the following:
+
+```
+$ cmake -DCMAKE_INSTALL_PREFIX=/tmp/sqy -DHDF5_ROOT=/usr/local/ -DBOOST_ROOT=/usr/local -DLZ4_ROOT=/usr/local -DTIFF_INCLUDE_DIR=/usr/local/include -DTIFF_LIBRARY=/usr/local/lib/libtiff.so -DFFMPEG_ROOT_DIR=/usr/local -DCMAKE_BUILD_TYPE=Release ..
+```
 
 ### Building on Windows 7
 
