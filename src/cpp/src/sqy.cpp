@@ -10,13 +10,12 @@
 #include <unordered_map>
 #include <regex>
 
-#include "app/verbs.hpp"
-#include "deprecated/static_predef_pipelines.hpp"
+#include "boost/filesystem.hpp"
+#include "boost/program_options.hpp"
 
+#include "app/verbs.hpp"
 #include "sqeazy_pipelines.hpp"
 
-#include "boost/filesystem.hpp"
-#include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
 namespace sqy = sqeazy;
