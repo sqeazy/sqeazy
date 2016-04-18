@@ -20,21 +20,21 @@
 namespace sqy = sqeazy;
 
 
-BOOST_FIXTURE_TEST_SUITE( avcodec_8bit, sqeazy::volume_fixture<uint8_t> )
+BOOST_FIXTURE_TEST_SUITE( avcodec_8bit, sqeazy::volume_fixture<std::uint8_t> )
 
 BOOST_AUTO_TEST_CASE( encode_to_something_different ){
 
   av_register_all();
   
-  std::vector<uint8_t> results(embryo_.num_elements(),0);
+  std::vector<char> results(embryo_.num_elements(),0);
   std::vector<std::size_t> shape = {static_cast<uint32_t>(embryo_.shape()[sqy::row_major::z]),
 				    static_cast<uint32_t>(embryo_.shape()[sqy::row_major::y]),
 				    static_cast<uint32_t>(embryo_.shape()[sqy::row_major::x])};
 
-  sqeazy::h264_scheme<uint8_t> scheme;
-  uint8_t* results_end = scheme.encode(embryo_.data(),
-				       &results[0],
-				       shape);
+  sqeazy::h264_scheme<std::uint8_t> scheme;
+  char* results_end = scheme.encode(embryo_.data(),
+				    results.data(),
+				    shape);
   std::size_t bytes_written = results_end - &results[0];
   results.resize(bytes_written);
   
@@ -52,13 +52,13 @@ BOOST_AUTO_TEST_CASE( lossy_roundtrip ){
 
   av_register_all();
   
-  std::vector<uint8_t> encoded(embryo_.num_elements(),0);
+  std::vector<char> encoded(embryo_.num_elements(),0);
   std::vector<std::size_t> shape = {static_cast<uint32_t>(embryo_.shape()[sqy::row_major::z]),
 				    static_cast<uint32_t>(embryo_.shape()[sqy::row_major::y]),
 				    static_cast<uint32_t>(embryo_.shape()[sqy::row_major::x])};
 
   sqeazy::h264_scheme<uint8_t> scheme("preset=ultrafast");
-  uint8_t* encoded_end = scheme.encode(embryo_.data(),
+  char* encoded_end = scheme.encode(embryo_.data(),
 				       &encoded[0],
 				       shape);
   std::size_t bytes_written = encoded_end - &encoded[0];
@@ -104,13 +104,13 @@ BOOST_AUTO_TEST_CASE( lossless_roundtrip ){
 
   av_register_all();
   
-  std::vector<uint8_t> encoded(embryo_.num_elements(),0);
+  std::vector<char> encoded(embryo_.num_elements(),0);
   std::vector<std::size_t> shape = {static_cast<uint32_t>(embryo_.shape()[sqy::row_major::z]),
 				    static_cast<uint32_t>(embryo_.shape()[sqy::row_major::y]),
 				    static_cast<uint32_t>(embryo_.shape()[sqy::row_major::x])};
 
   sqeazy::h264_scheme<uint8_t> scheme("preset=ultrafast,qp=0");
-  uint8_t* encoded_end = scheme.encode(embryo_.data(),
+  char* encoded_end = scheme.encode(embryo_.data(),
 				       &encoded[0],
 				       shape);
   std::size_t bytes_written = encoded_end - &encoded[0];
@@ -164,11 +164,11 @@ BOOST_AUTO_TEST_CASE( lossy_vs_lossless ){
   sqeazy::h264_scheme<uint8_t> lossy_scheme("preset=ultrafast,tune=ssim");
   sqeazy::h264_scheme<uint8_t> lossless_scheme("preset=ultrafast,qp=0");
 
-  std::vector<uint8_t> lossy_encoded(embryo_.num_elements(),0);
-  std::vector<uint8_t> lossless_encoded(embryo_.num_elements(),0);
+  std::vector<char> lossy_encoded(embryo_.num_elements(),0);
+  std::vector<char> lossless_encoded(embryo_.num_elements(),0);
 
 
-  uint8_t* encoded_end = lossy_scheme.encode(embryo_.data(),
+  char* encoded_end = lossy_scheme.encode(embryo_.data(),
 					     &lossy_encoded[0],
 					     shape);
   

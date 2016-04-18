@@ -198,7 +198,7 @@ namespace sqeazy {
       if (got_output) {
 	frames_encoded++;
 	std::copy(pkt.data,pkt.data+pkt.size,std::back_inserter(_buffer));
-	av_free_packet(&pkt);
+	sqeazy::av_free_packet(&pkt);
       }
 
     }
@@ -217,7 +217,7 @@ namespace sqeazy {
       if (got_output) {
 	frames_encoded++;
 	std::copy(pkt.data,pkt.data+pkt.size,std::back_inserter(_buffer));
-	av_free_packet(&pkt);
+	sqeazy::av_free_packet(&pkt);
       }
     }
 
@@ -227,7 +227,7 @@ namespace sqeazy {
     if(!_debug_filename.empty())
       write_encoded(_debug_filename,_buffer);
 
-    av_free_packet(&pkt);
+    sqeazy::av_free_packet(&pkt);
     
     return bytes_written;
   }
@@ -413,7 +413,7 @@ static uint32_t decode_stack(const char* _buffer,
   if(temp.size() <= _volume_len)
     std::copy(temp.begin(), temp.end(),_volume);
     
-  av_free_packet(&packet);
+  sqeazy::av_free_packet(&packet);
   
   return temp.size()*sizeof(raw_type);
 
