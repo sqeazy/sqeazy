@@ -240,7 +240,8 @@ namespace sqeazy{
 
     const std::size_t size() const { return chain_.size(); }
     const bool empty() const { return chain_.empty(); }
-
+    void clear() { chain_.clear(); };
+    
     template <typename pointee_t>
     void push_back(const std::shared_ptr<pointee_t>& _new){
 

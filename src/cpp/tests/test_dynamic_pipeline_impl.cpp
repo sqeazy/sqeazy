@@ -172,6 +172,14 @@ BOOST_AUTO_TEST_CASE (add) {
 
 }
 
+BOOST_AUTO_TEST_CASE (clear) {
+
+  sqy::dynamic_pipeline<int> pipe = {adder_sptr,square_sptr};
+  pipe.clear();
+  BOOST_CHECK_EQUAL(pipe.empty(),true);
+  BOOST_CHECK_EQUAL(pipe.size(),0);
+
+}
 
 BOOST_AUTO_TEST_CASE (bootstrap) {
 
