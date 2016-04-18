@@ -334,6 +334,12 @@ namespace sqeazy
 
     const bool empty() const { return (head_filters_.empty() && !sink_ && tail_filters_.empty()); }
 
+    void clear() {
+      head_filters_.clear();
+      sink_.reset();
+      tail_filters_.clear();
+    }
+    
     template <typename pointee_t>
     typename std::enable_if<!std::is_base_of<sink_t,pointee_t>::value>::type
     add(const std::shared_ptr<pointee_t>& _new_filter)
