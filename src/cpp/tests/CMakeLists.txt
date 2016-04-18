@@ -132,9 +132,6 @@ set_target_properties(test_hdf5_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURC
 target_link_libraries(test_hdf5_impl ${HDF5_LIBRARIES} ${Boost_LIBRARIES} ext_lz4)
 
 
-add_executable(deprecated_pipeline_impl deprecated_pipeline_impl.cpp)
-target_link_libraries(deprecated_pipeline_impl ${Boost_LIBRARIES} ext_lz4)
-
 add_executable(test_dynamic_pipeline_impl test_dynamic_pipeline_impl.cpp)
 target_link_libraries(test_dynamic_pipeline_impl ${Boost_LIBRARIES} ext_lz4)
 
@@ -160,9 +157,7 @@ add_executable(test_tiff_fixture test_tiff_fixture.cpp)
 target_link_libraries(test_tiff_fixture ${Boost_LIBRARIES} ext_tiff)
 set_target_properties(test_tiff_fixture PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/bench")
 
-add_executable(deprecated_pipeline_select_impl deprecated_pipeline_select_impl.cpp)
-target_link_libraries(deprecated_pipeline_select_impl ${Boost_LIBRARIES} ext_tiff ext_lz4)
-set_target_properties(deprecated_pipeline_select_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src ")
+
 
 
 add_executable(test_huffman_utils_impl test_huffman_utils_impl.cpp)
@@ -183,7 +178,6 @@ IF(FFMPEG_FOUND)
     
   add_library(ext_avcodec SHARED IMPORTED)
   set_target_properties(ext_avcodec PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVCODEC_LIBRARIES}")
-  
 
   add_library(ext_avutil SHARED IMPORTED)
   set_target_properties(ext_avutil PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVUTIL_LIBRARIES}")
@@ -197,6 +191,12 @@ IF(FFMPEG_FOUND)
   add_executable(test_avcodec_sandbox test_avcodec_sandbox.cpp)
   target_link_libraries(test_avcodec_sandbox ${Boost_LIBRARIES} ext_tiff ext_avcodec ext_avutil ext_avformat ext_swscale m)
 
+  add_executable(deprecated_pipeline_select_impl deprecated_pipeline_select_impl.cpp)
+  target_link_libraries(deprecated_pipeline_select_impl ${Boost_LIBRARIES} ext_tiff ext_lz4 ext_avcodec ext_avutil ext_avformat ext_swscale m)
+#  set_target_properties(deprecated_pipeline_select_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src ")
+
+  add_executable(deprecated_pipeline_impl deprecated_pipeline_impl.cpp)
+  target_link_libraries(deprecated_pipeline_impl ${Boost_LIBRARIES} ext_lz4 ext_avcodec ext_avutil ext_avformat ext_swscale m)
 
   add_executable(test_hevc_scheme_impl test_hevc_scheme_impl.cpp)
   target_link_libraries(test_hevc_scheme_impl ${Boost_LIBRARIES} ext_tiff ext_avcodec ext_avutil ext_avformat ext_swscale m)
