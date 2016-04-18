@@ -112,12 +112,19 @@ int main(int argc, char *argv[])
     ;
 
   static     std::unordered_map<std::string, std::string> verb_aliases;
-  verb_aliases["compress"] = std::string("compress|enc|encode|comp");
-  verb_aliases["decompress"] = std::string("decompress|dec|decode|rec");
-  verb_aliases["scan"] = std::string      ("scan|info");                
-  verb_aliases["convert"] = std::string   ("convert|transform|trf");
-  verb_aliases["compare"] = std::string("compare|cmp");
+  verb_aliases["compress"] 	= std::string("compress|enc|encode|comp");
+  verb_aliases["decompress"] 	= std::string("decompress|dec|decode|rec");
+  verb_aliases["scan"]		= std::string("scan|info");                
+  verb_aliases["convert"] 	= std::string("convert|transform|trf");
+  verb_aliases["compare"] 	= std::string("compare|cmp");
 
+  static     std::unordered_map<std::string, func_t> verb_functors;
+  verb_functors["compress"]	= compress_files;      
+  verb_functors["decompress"]	= decompress_files;    
+  verb_functors["scan"]		= scan_files;          
+  verb_functors["convert"]	= convert_files;       
+  verb_functors["compare"]	= compare_files;       
+  
   
   static     std::unordered_map<std::string, std::regex> verb_aliases_rex(verb_aliases.size());
   for ( auto& pair : verb_aliases ){
@@ -144,32 +151,26 @@ int main(int argc, char *argv[])
     func_t prog_flow;
 
     std::string target(argv[1]);
-
+    std::string verb;
+    
     std::vector<char*> new_argv(argv,argv+argc);
     new_argv.erase(new_argv.begin()+1);
-      
-    if(descriptions.find(target)!=descriptions.end()){
-      options_to_parse.add(descriptions[target]);
-    }
 
 
     ///////////////////////////////////////////
     //REFACTOR THIS!
-    if(std::regex_match(target,verb_aliases_rex["compress"]))
-      prog_flow = compress_files;
+    for( auto& pair: verb_aliases_rex){
+      if(std::regex_match(target,pair.second))
+	{
+	  prog_flow = verb_functors[pair.first];
+	  verb = pair.first;
+	  break;
+	}
+    }
 
-    if(std::regex_match(target,verb_aliases_rex["decompress"]))
-      prog_flow = decompress_files;
-
-    if(std::regex_match(target,verb_aliases_rex["scan"]))
-      prog_flow = scan_files;
-
-    if(std::regex_match(target,verb_aliases_rex["convert"]))
-      prog_flow = convert_files;
-
-    if(std::regex_match(target,verb_aliases_rex["compare"]))
-      prog_flow = compare_files;
-
+    if(descriptions.find(verb)!=descriptions.end()){
+      options_to_parse.add(descriptions[verb]);
+    }
     
     po::variables_map vm;
 
