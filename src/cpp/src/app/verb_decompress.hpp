@@ -111,7 +111,7 @@ void decompress_files(const std::vector<std::string>& _files,
 	
       pipe16 = sqy::dypeline<std::uint16_t>::from_string(sqy_header.pipeline());
       
-      dec_ret = pipe16.decode(reinterpret_cast<const char*>(&file_content_buffer[0]),
+      dec_ret = pipe16.decode(file_ptr,
 			      reinterpret_cast<std::uint16_t*>(&tiff.buffer_[0]),
 			      tiff.shape_);
     }
@@ -124,7 +124,7 @@ void decompress_files(const std::vector<std::string>& _files,
 	
       pipe8 = sqy::dypeline_from_uint8::from_string(sqy_header.pipeline());
       
-      dec_ret = pipe8.decode(reinterpret_cast<const char*>(&file_content_buffer[0]),
+      dec_ret = pipe8.decode(file_ptr,
 			     reinterpret_cast<std::uint8_t*>(&tiff.buffer_[0]),
 			     tiff.shape_);
     } 

@@ -469,7 +469,9 @@ namespace sqeazy
 
       if(is_compressor())
       {
-        value << "->";
+	if(head_filters_.size())
+	  value << "->";
+	
         value << const_stage_view(sink_)->name();
 	std::string cfg = const_stage_view(sink_)->config();
 
