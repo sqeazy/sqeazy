@@ -1,6 +1,7 @@
 #define BOOST_TEST_MODULE TEST_HEVC_SCHEME_IMPL
 #include "boost/test/unit_test.hpp"
 #include <climits>
+#include <cstdint>
 #include <vector>
 #include <iostream>
 #include <bitset>
@@ -25,18 +26,22 @@ BOOST_AUTO_TEST_CASE( encode ){
 
   av_register_all();
   
-  std::vector<uint8_t> results(embryo_.num_elements(),0);
-  std::vector<uint32_t> shape = {static_cast<uint32_t>(embryo_.shape()[sqy::row_major::z]),
+  std::vector<char> results(embryo_.num_elements(),0);
+  std::vector<std::size_t> shape = {static_cast<uint32_t>(embryo_.shape()[sqy::row_major::z]),
 				 static_cast<uint32_t>(embryo_.shape()[sqy::row_major::y]),
 				 static_cast<uint32_t>(embryo_.shape()[sqy::row_major::x])};
   std::size_t bytes_written = 0;
-  uint32_t err = sqeazy::hevc_scheme<uint8_t>::static_encode(embryo_.data(),
-							     &results[0],
-							     shape,
-							     bytes_written);
+  sqeazy::hevc_scheme<uint8_t> scheme;
+  char* encoded_end = scheme.encode(embryo_.data(),
+				    results.data(),
+				    shape);
+
+  BOOST_REQUIRE(encoded_end!=nullptr);
+  bytes_written = encoded_end - results.data();
+  
   results.resize(bytes_written);
   
-  BOOST_CHECK_EQUAL(err,0u);
+
   BOOST_CHECK_NE(bytes_written,0u);
   BOOST_CHECK_LT(bytes_written,embryo_.num_elements());
 
@@ -47,31 +52,30 @@ BOOST_AUTO_TEST_CASE( encode ){
 
 BOOST_AUTO_TEST_CASE( roundtrip ){
 
-
-  av_register_all();
-  
-  std::vector<std::uint8_t> encoded(embryo_.num_elements(),0);
-  std::vector<uint32_t> shape = {static_cast<uint32_t>(embryo_.shape()[sqy::row_major::z]),
+  std::vector<char> encoded(embryo_.num_elements(),0);
+  std::vector<std::size_t> shape = {static_cast<uint32_t>(embryo_.shape()[sqy::row_major::z]),
 				 static_cast<uint32_t>(embryo_.shape()[sqy::row_major::y]),
 				 static_cast<uint32_t>(embryo_.shape()[sqy::row_major::x])};
   std::size_t bytes_written = 0;
-  uint32_t err = sqeazy::hevc_scheme<uint8_t>::static_encode(embryo_.data(),
-							     &encoded[0],
-							     shape,
-							     bytes_written);
+  sqeazy::hevc_scheme<uint8_t> scheme;
+  char* encoded_end = scheme.encode(embryo_.data(),
+				    encoded.data(),
+				    shape);
+
+  BOOST_REQUIRE(encoded_end!=nullptr);
+  bytes_written = encoded_end - encoded.data();
+  
   encoded.resize(bytes_written);
   
-  BOOST_CHECK_EQUAL(err,0u);
-  BOOST_CHECK_GT(bytes_written,0u);
+
+  BOOST_CHECK_NE(bytes_written,0u);
   BOOST_CHECK_LT(bytes_written,embryo_.num_elements());
 
 
-
   std::vector<std::uint8_t> retrieved(embryo_.num_elements(),0);
-  err = sqeazy::hevc_scheme<std::uint8_t>::static_decode(&encoded[0],
-							 &retrieved[0],
-							 encoded.size(),
-							 embryo_.num_elements());
+  int err = scheme.decode(encoded.data(),
+			  retrieved.data(),
+			  shape);
 
   BOOST_CHECK_EQUAL(err,0u);
 
@@ -102,23 +106,26 @@ BOOST_AUTO_TEST_CASE( noisy_roundtrip ){
 
   av_register_all();
   
-  std::vector<std::uint8_t> encoded(noisy_embryo_.num_elements(),0);
-  std::vector<uint32_t> shape = {static_cast<uint32_t>(noisy_embryo_.shape()[0]),
+  std::vector<char> encoded(noisy_embryo_.num_elements(),0);
+  std::vector<std::size_t> shape = {static_cast<uint32_t>(noisy_embryo_.shape()[0]),
 				 static_cast<uint32_t>(noisy_embryo_.shape()[1]),
 				 static_cast<uint32_t>(noisy_embryo_.shape()[2])};
+
   std::size_t bytes_written = 0;
-  uint32_t err = sqeazy::hevc_scheme<uint8_t>::static_encode(noisy_embryo_.data(),&encoded[0],shape, bytes_written);
-  encoded.resize(bytes_written);
+  sqeazy::hevc_scheme<uint8_t> scheme;
+  char* encoded_end = scheme.encode(noisy_embryo_.data(),encoded.data(),shape);
+  BOOST_REQUIRE(encoded_end!=nullptr);
+  bytes_written = encoded_end - encoded.data();
   
-  BOOST_CHECK_EQUAL(err,0u);
-  BOOST_CHECK_GT(bytes_written,0u);
-  BOOST_CHECK_LT(bytes_written,noisy_embryo_.num_elements());
+  encoded.resize(bytes_written);
+
+  BOOST_CHECK_NE(bytes_written,0u);
+  BOOST_CHECK_LT(bytes_written,embryo_.num_elements());
 
   std::vector<std::uint8_t> retrieved(noisy_embryo_.num_elements(),0);
-  err = sqeazy::hevc_scheme<uint8_t>::static_decode(&encoded[0],
-					     &retrieved[0],
-					     encoded.size(),
-					     noisy_embryo_.num_elements());
+  int err = scheme.decode(encoded.data(),
+			  retrieved.data(),
+			  shape);
 
   BOOST_CHECK_EQUAL(err,0u);
 
