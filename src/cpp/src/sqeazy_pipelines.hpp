@@ -48,6 +48,7 @@ namespace sqeazy {
   template <typename T>
   using dypeline = dynamic_pipeline<T, filters_factory, encoders_factory<T>, tail_filters_factory<char> >;
 
+  //meant for lz4 only pipeline
   using dypeline_from_char = dynamic_pipeline<char,
 					    filters_factory,
 					    stage_factory<
@@ -56,6 +57,16 @@ namespace sqeazy {
 					      h264_scheme<char>
 					      >
 					    >;
+  
+  //FIXME: required as quantiser will emit compilation error if incoming_type == outcoming_type
+  using dypeline_from_uint8 = dynamic_pipeline<std::uint8_t,
+					      filters_factory,
+					      stage_factory<
+						lz4_scheme<std::uint8_t>,
+						hevc_scheme<std::uint8_t>,
+						h264_scheme<std::uint8_t>
+						>
+					      >;
 
 }
 
