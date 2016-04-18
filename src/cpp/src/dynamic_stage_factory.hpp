@@ -77,6 +77,35 @@ namespace sqeazy {
     }
   }
 
+  
+  /**
+     \brief method to check if list of types contains type given by runtime string name
+     
+     \param[in] _name string to match type by
+     
+     \return 
+     \retval 
+     
+  */
+  template <class Head>
+  void print_name(const std::string & _line_prefix="\n\t")
+  {
+
+    Head instance;
+    std::cout << _line_prefix << instance.name() << "\n";
+    return ;
+    
+  }
+
+
+  template <class Head, class Second, class... Tail>
+  void print_name(const std::string & _line_prefix="\n\t")
+  {
+    Head instance;
+    std::cout << _line_prefix << instance.name() << "\n";
+    return print_name<Second, Tail...>(_line_prefix);
+  }
+  
   /**
      \brief factory object that will create a stage defined by a runtime string
      
@@ -104,6 +133,8 @@ namespace sqeazy {
     }
 
     static const bool has(const std::string &_name) { return type_matches<available_types...>(_name); }
+
+    static const void print_names(const std::string & _line_prefix="\n\t") { return print_name<available_types...>(_line_prefix); }
   };
 
 
