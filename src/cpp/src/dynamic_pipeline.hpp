@@ -44,7 +44,7 @@ namespace sqeazy
   template <
     typename raw_t,
     template<typename = raw_t> class filter_factory_t = default_filter_factory,
-    typename sink_factory_t = default_sink_factory<raw_t>,
+    typename inbound_sink_factory_t = default_sink_factory<raw_t>,
     typename optional_tail_factory_t = void
     >
   struct dynamic_pipeline : public sink<raw_t>
@@ -73,7 +73,8 @@ namespace sqeazy
       optional_tail_factory_t,//false
       std::is_same<void,optional_tail_factory_t>::value
       >::type;
-
+    using sink_factory_t = inbound_sink_factory_t;
+    
     //FIXME: check that incoming type of tail_filter_factory is equal to     
     // static_assert(std::is_same<tail_filter_factory_t>::value==true, "[dynamic_pipeline.hpp:57] received non-arithmetic type for output");
     
