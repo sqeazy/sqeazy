@@ -168,9 +168,9 @@ IF(TIFF_FOUND)
 
   add_executable(sqy sqy.cpp)
   IF(EXISTS ${TIFF_STATIC_LIB})
-    target_link_libraries(sqy ext_static_tiff ext_lz4 ${Boost_LIBRARIES})
+    target_link_libraries(sqy ext_static_tiff ext_lz4 ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries})
   ELSE()
-    target_link_libraries(sqy ext_dyn_tiff ext_lz4 ${Boost_LIBRARIES})
+    target_link_libraries(sqy ext_dyn_tiff ext_lz4 ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries})
   ENDIF()
   set_target_properties(sqy PROPERTIES COMPILE_FLAGS "${ADDITIONAL_COMPILE_FLAGS}")
 
