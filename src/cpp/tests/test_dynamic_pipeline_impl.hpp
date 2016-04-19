@@ -368,9 +368,16 @@ struct sum_up :  public sqy::sink<T> {
     return _out+(sizeof(result_type)/sizeof(compressed_type));
   }
 
-  int decode( const compressed_type* _in, raw_type* _out, std::vector<std::size_t> _shape) const override final {
+  int decode( const compressed_type* _in,
+	      raw_type* _out,
+	      std::vector<std::size_t> _inshape,
+	      std::vector<std::size_t> _outshape = std::vector<std::size_t>()
+	      ) const override final {
 
-    std::size_t size = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
+    if(_outshape.empty())
+      _outshape = _inshape;
+    
+    std::size_t size = std::accumulate(_outshape.begin(), _outshape.end(),1,std::multiplies<std::size_t>());
     
     raw_type* begin = _out;
     raw_type* end = begin + size;
@@ -454,13 +461,23 @@ struct high_bits :  public sqy::sink<T> {
     return _out + size;
   }
 
-  int decode( const compressed_type* _in, raw_type* _out, std::vector<std::size_t> _shape) const override final {
+  int decode( const compressed_type* _in, raw_type* _out,
+	      std::vector<std::size_t> _inshape,
+	      std::vector<std::size_t> _outshape = std::vector<std::size_t>()
+	      ) const override final {
 
-    std::size_t size = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
+    if(_outshape.empty())
+	_outshape = _inshape;
+    
+    std::size_t insize = std::accumulate(_inshape.begin(), _inshape.end(),1,std::multiplies<std::size_t>());
+    std::size_t outsize = std::accumulate(_outshape.begin(), _outshape.end(),1,std::multiplies<std::size_t>());
 
+    if(insize!=outsize)
+      return 1;
+    
     const int shift_left_by = (sizeof(raw_type)*CHAR_BIT) - 4;
 
-    for(std::size_t i = 0;i < size;++i){
+    for(std::size_t i = 0;i < insize;++i){
       _out[i] = _in[i] << shift_left_by;
     }
     return 0;

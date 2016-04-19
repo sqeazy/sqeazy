@@ -494,16 +494,17 @@ namespace sqeazy
     /**
        \brief encode one-dimensional array _in and write results to _out
        
-       \param[in] 
+       \param[in] _in input buffer
+       \param[out] _out output buffer must be at least of size max_encoded_size
+       \param[in] _in_len number of elements in _in
        
        \return 
        \retval 
        
     */
-    
-    outgoing_t * encode(const incoming_t *_in, outgoing_t *_out, std::size_t _len) override final {
+    outgoing_t * encode(const incoming_t *_in, outgoing_t *_out, std::size_t _in_len) override final {
 
-      std::vector<std::size_t> shape(1,_len);
+      std::vector<std::size_t> shape(1,_in_len);
       return encode(_in,_out,shape);
 
     }
@@ -513,23 +514,23 @@ namespace sqeazy
        
        \param[in] _in input buffer
        \param[out] _out output buffer must be at least of size max_encoded_size
-       \param[in] _shape shape in input buffer in nDim
+       \param[in] _in_shape shape in input buffer in nDim
 
        \return 
        \retval 
        
     */
     
-    outgoing_t* encode(const incoming_t *_in, outgoing_t *_out, std::vector<std::size_t> _shape) override final {
+    outgoing_t* encode(const incoming_t *_in, outgoing_t *_out, std::vector<std::size_t> _in_shape) override final {
 
       outgoing_t* value = nullptr;
-      std::size_t len = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
+      std::size_t len = std::accumulate(_in_shape.begin(), _in_shape.end(),1,std::multiplies<std::size_t>());
       // std::size_t max_len_byte = len*sizeof(incoming_t);
 
       ////////////////////// HEADER RELATED //////////////////
       //insert header
       sqeazy::image_header hdr(incoming_t(),
-			       _shape,
+			       _in_shape,
 			       name(),
 			       len*sizeof(incoming_t));
 
@@ -539,7 +540,7 @@ namespace sqeazy
       outgoing_t* first_output = reinterpret_cast<outgoing_t*>(output_buffer+hdr_shift);
 
       ////////////////////// ENCODING //////////////////
-      value = detail_encode(_in,first_output,_shape);
+      value = detail_encode(_in,first_output,_in_shape);
       
       ////////////////////// HEADER RELATED //////////////////
       //update header
@@ -634,6 +635,87 @@ namespace sqeazy
 
 
 
+
+
+
+
+    
+      /**
+       \brief decode one-dimensional array _in and write results to _out
+       
+       \param[in] 
+       
+       \return 
+       \retval 
+       
+    */
+    
+    int decode(const outgoing_t *_in,
+	       incoming_t *_out,
+	       std::size_t _ilen,
+	       std::size_t _olen = 0
+	       ) const override final {
+
+      if(!_olen)
+	_olen = _ilen;
+      
+      std::vector<std::size_t> ishape = {_ilen};
+      std::vector<std::size_t> oshape = {_olen};
+      
+      return decode(_in,_out,ishape,oshape);
+
+    }
+    
+     /**
+       \brief decode one-dimensional array _in and write results to _out
+       
+       \param[in] _in input buffer
+       \param[out] _out output buffer //NOTE: might be larger than _in for sink type pipelines
+       \param[in] _shape of input buffer size in units of its type, aka outgoing_t
+       
+       \return error code encoded as 3-digit decimal number
+		0   .. filter error code before sink
+		10  .. sink error code
+		100 .. filter error code after sink
+       \retval 
+       
+    */
+    
+    int decode(const outgoing_t *_in, incoming_t *_out,
+	       std::vector<std::size_t> _inshape,
+	       std::vector<std::size_t> _outshape = std::vector<std::size_t>()) const override final {
+      
+      if(_outshape.empty())
+	_outshape = _inshape;
+      
+      //FIXME: strange, we receive an n-dim array with _in that spans across the payload AND the header
+      //       this would imply that almost always, _shape is 1D?
+      std::size_t len = std::accumulate(_inshape.begin(), _inshape.end(),1,std::multiplies<std::size_t>());
+
+      ////////////////////// HEADER RELATED //////////////////
+      //load header
+      const char* _in_char_begin = (const char*)_in;
+
+      //FIXME: works only if len is greater than hdr.size()
+      const char* _in_char_end = _in_char_begin + (len*sizeof(outgoing_t));
+      
+      image_header hdr(_in_char_begin,_in_char_end);
+      std::vector<std::size_t> output_shape(hdr.shape()->begin(),
+					    hdr.shape()->end());
+      // std::intmax_t output_len = std::accumulate(output_shape.begin(),
+      // 						 output_shape.end(),
+      // 						 1,
+      // 						 std::multiplies<std::intmax_t>());
+      const outgoing_t* payload_begin = reinterpret_cast<const outgoing_t*>(_in_char_begin + hdr.size());
+      size_t in_size_bytes = (len*sizeof(outgoing_t)) - hdr.size();
+      
+      int value = detail_decode(payload_begin, _out,
+				in_size_bytes,
+				output_shape);
+      
+      return value;
+    }
+
     int detail_decode(const outgoing_t *_in, incoming_t *_out,
 		      std::size_t in_size_bytes,
 		      std::vector<std::size_t> out_shape) const {
@@ -670,8 +752,8 @@ namespace sqeazy
 
 	err_code = sink_->decode(compressor_begin,
 				 &temp[0],
-				 in_size_bytes
-				 );
+				 in_size_bytes,
+				 temp.size());
 	value += err_code ? err_code+10 : 0 ;
       }
       else{
@@ -694,75 +776,6 @@ namespace sqeazy
       return value;
 
     }
-
-
-
-
-    
-      /**
-       \brief decode one-dimensional array _in and write results to _out
-       
-       \param[in] 
-       
-       \return 
-       \retval 
-       
-    */
-    
-    int decode(const outgoing_t *_in, incoming_t *_out, std::size_t _len) const override final {
-
-      std::vector<std::size_t> shape = {_len};
-      
-      return decode(_in,_out,shape);
-
-    }
-    
-     /**
-       \brief decode one-dimensional array _in and write results to _out
-       
-       \param[in] _in input buffer
-       \param[out] _out output buffer //NOTE: might be larger than _in for sink type pipelines
-       \param[in] _shape of input buffer size in units of its type, aka outgoing_t
-       
-       \return error code encoded as 3-digit decimal number
-		0   .. filter error code before sink
-		10  .. sink error code
-		100 .. filter error code after sink
-       \retval 
-       
-    */
-    
-    int decode(const outgoing_t *_in, incoming_t *_out, std::vector<std::size_t> _shape) const override final {
-      
-
-      //FIXME: strange, we receive an n-dim array with _in that spans across the payload AND the header
-      //       this would imply that almost always, _shape is 1D?
-      std::size_t len = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
-
-      ////////////////////// HEADER RELATED //////////////////
-      //load header
-      const char* _in_char_begin = (const char*)_in;
-
-      //FIXME: works only if len is greater than hdr.size()
-      const char* _in_char_end = _in_char_begin + (len*sizeof(outgoing_t));
-      
-      image_header hdr(_in_char_begin,_in_char_end);
-      std::vector<std::size_t> output_shape(hdr.shape()->begin(),
-					    hdr.shape()->end());
-      // std::intmax_t output_len = std::accumulate(output_shape.begin(),
-      // 						 output_shape.end(),
-      // 						 1,
-      // 						 std::multiplies<std::intmax_t>());
-      const outgoing_t* payload_begin = reinterpret_cast<const outgoing_t*>(_in_char_begin + hdr.size());
-      size_t in_size_bytes = (len*sizeof(outgoing_t)) - hdr.size();
-      
-      int value = detail_decode(payload_begin, _out,
-				in_size_bytes,
-				output_shape);
-      
-      return value;
-    }
-
 
     std::intmax_t max_encoded_size(std::intmax_t _incoming_size_byte){
       

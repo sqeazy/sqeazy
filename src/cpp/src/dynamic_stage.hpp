@@ -110,13 +110,19 @@ namespace sqeazy{
     };
     virtual out_type* encode(const raw_t*, out_type*,std::vector<std::size_t>) {return nullptr;};
 
-    virtual int decode(const out_type* _in, raw_t* _out,std::size_t len) const {
+    virtual int decode(const out_type* _in,
+		       raw_t* _out,
+		       std::size_t inlen,
+		       std::size_t outlen = 0) const {
 
-      std::vector<std::size_t> shape(1,len);
-      return decode(_in,_out,shape);
+      std::vector<std::size_t> inshape(1,inlen);
+      std::vector<std::size_t> outshape(1,outlen);
+      return decode(_in,_out,inshape,outshape);
 
     };
-    virtual int decode(const out_type*, raw_t*,std::vector<std::size_t>) const {return 1;};
+    virtual int decode(const out_type* _in, raw_t* _out,
+		       std::vector<std::size_t> _inshape,
+		       std::vector<std::size_t> _outshape = std::vector<std::size_t>()) const {return 1;};
 
     virtual std::intmax_t max_encoded_size(std::intmax_t _incoming_size_byte) const { return 0; };
   };    
@@ -189,7 +195,10 @@ namespace sqeazy{
     bool is_compressor() const {return false;}
 
     compressed_t* encode(const raw_t* _in, compressed_t* _out,std::vector<std::size_t> _shape) override final { return nullptr; };
-    int decode(const compressed_t* _in, raw_t* _out,std::vector<std::size_t> _shape) const override final { return 1; };
+    int decode(const compressed_t* _in,
+	       raw_t* _out,
+	       std::vector<std::size_t> _inshape,
+	       std::vector<std::size_t> _outshape = std::vector<std::size_t>()) const override final { return 1; };
     
   };
 
