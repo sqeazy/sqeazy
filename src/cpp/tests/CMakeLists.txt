@@ -79,17 +79,13 @@ add_executable(test_bitswap_scheme_impl test_bitswap_scheme_impl.cpp)
 target_link_libraries(test_bitswap_scheme_impl ${Boost_LIBRARIES})
 
 add_executable(test_bitplane_reorder_impl test_bitplane_reorder_impl.cpp)
-
 target_link_libraries(test_bitplane_reorder_impl ${Boost_LIBRARIES})
-# set_target_properties(test_bitplane_reorder_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src -march=native")
 
 add_executable(test_shift_by_intrinsics test_shift_by_intrinsics.cpp)
 target_link_libraries(test_shift_by_intrinsics ${Boost_LIBRARIES})
-# set_target_properties(test_shift_by_intrinsics PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src -march=native")
 
 add_executable(test_rotate_by_intrinsics test_rotate_by_intrinsics.cpp)
 target_link_libraries(test_rotate_by_intrinsics ${Boost_LIBRARIES})
-# set_target_properties(test_rotate_by_intrinsics PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src -march=native")
 
 add_executable(test_sqeazy_utils_impl test_sqeazy_utils_impl.cpp)
 target_link_libraries(test_sqeazy_utils_impl ${Boost_LIBRARIES} )
@@ -111,9 +107,10 @@ add_executable(test_bench_utils_impl test_bench_utils_impl.cpp)
 
 add_executable(test_lz4_encoding test_lz4_encoding.cpp)
 add_executable(test_hdf5_interface test_hdf5_interface.cpp)
-set_target_properties(test_hdf5_interface PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src ")
+#set_target_properties(test_hdf5_interface PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src ")
+
 add_executable(test_pipeline_interface test_pipeline_interface.cpp)
-set_target_properties(test_pipeline_interface PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src ")
+#set_target_properties(test_pipeline_interface PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src ")
 
 
 if(EXISTS ${LZ4_STATIC_LIB})
@@ -127,9 +124,6 @@ else()
   target_link_libraries(test_pipeline_interface ${PROJECT_NAME} ${Boost_LIBRARIES} ext_lz4)
 endif()
 
-add_executable(test_hdf5_impl test_hdf5_impl.cpp)
-set_target_properties(test_hdf5_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src ")
-target_link_libraries(test_hdf5_impl ${HDF5_LIBRARIES} ${Boost_LIBRARIES} ext_lz4)
 
 
 add_executable(test_dynamic_pipeline_impl test_dynamic_pipeline_impl.cpp)
@@ -144,18 +138,18 @@ target_link_libraries(test_dynamic_stage_factory_impl ${Boost_LIBRARIES})
 
 add_executable(test_quantiser_impl test_quantiser_impl.cpp)
 target_link_libraries(test_quantiser_impl ${Boost_LIBRARIES})
-set_target_properties(test_quantiser_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")  
+#set_target_properties(test_quantiser_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")  
 
 add_executable(test_yuv_utils test_yuv_utils.cpp)
 target_link_libraries(test_yuv_utils ${Boost_LIBRARIES})
-set_target_properties(test_yuv_utils PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")  
+#set_target_properties(test_yuv_utils PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")  
 
 
 IF(TIFF_FOUND)
 
 add_executable(test_tiff_fixture test_tiff_fixture.cpp)
 target_link_libraries(test_tiff_fixture ${Boost_LIBRARIES} ext_tiff)
-set_target_properties(test_tiff_fixture PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/bench")
+#set_target_properties(test_tiff_fixture PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/bench")
 
 
 
@@ -187,32 +181,37 @@ IF(FFMPEG_FOUND)
 
   add_library(ext_swscale SHARED IMPORTED)
   set_target_properties(ext_swscale PROPERTIES IMPORTED_LOCATION "${FFMPEG_SWSCALE_LIBRARIES}")
+  SET(SQY_FFMPEG_Libraries ext_avcodec ext_avutil ext_avformat ext_swscale m)
 
+  
   add_executable(test_avcodec_sandbox test_avcodec_sandbox.cpp)
-  target_link_libraries(test_avcodec_sandbox ${Boost_LIBRARIES} ext_tiff ext_avcodec ext_avutil ext_avformat ext_swscale m)
+  target_link_libraries(test_avcodec_sandbox ${Boost_LIBRARIES} ext_tiff ${SQY_FFMPEG_Libraries})
 
   add_executable(deprecated_pipeline_select_impl deprecated_pipeline_select_impl.cpp)
-  target_link_libraries(deprecated_pipeline_select_impl ${Boost_LIBRARIES} ext_tiff ext_lz4 ext_avcodec ext_avutil ext_avformat ext_swscale m)
+  target_link_libraries(deprecated_pipeline_select_impl ${Boost_LIBRARIES} ext_tiff ext_lz4 ${SQY_FFMPEG_Libraries})
 #  set_target_properties(deprecated_pipeline_select_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src ")
 
   add_executable(deprecated_pipeline_impl deprecated_pipeline_impl.cpp)
-  target_link_libraries(deprecated_pipeline_impl ${Boost_LIBRARIES} ext_lz4 ext_avcodec ext_avutil ext_avformat ext_swscale m)
+  target_link_libraries(deprecated_pipeline_impl ${Boost_LIBRARIES} ext_lz4 ${SQY_FFMPEG_Libraries})
 
   add_executable(test_hevc_scheme_impl test_hevc_scheme_impl.cpp)
-  target_link_libraries(test_hevc_scheme_impl ${Boost_LIBRARIES} ext_tiff ext_avcodec ext_avutil ext_avformat ext_swscale m)
+  target_link_libraries(test_hevc_scheme_impl ${Boost_LIBRARIES} ext_tiff ${SQY_FFMPEG_Libraries})
 
   add_executable(test_h264_scheme_impl test_h264_scheme_impl.cpp)
-  target_link_libraries(test_h264_scheme_impl ${Boost_LIBRARIES} ext_tiff ext_avcodec ext_avutil ext_avformat ext_swscale m)
+  target_link_libraries(test_h264_scheme_impl ${Boost_LIBRARIES} ext_tiff ${SQY_FFMPEG_Libraries})
 #  set_target_properties(test_hevc_scheme_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")  
 
   add_executable(test_hevc_scheme_utils test_hevc_scheme_utils.cpp)
-  target_link_libraries(test_hevc_scheme_utils ${Boost_LIBRARIES} ext_tiff ext_avcodec ext_avutil ext_avformat ext_swscale m)
+  target_link_libraries(test_hevc_scheme_utils ${Boost_LIBRARIES} ext_tiff ${SQY_FFMPEG_Libraries})
 #  set_target_properties(test_hevc_scheme_utils PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")  
 
   add_executable(test_sqeazy_pipelines_impl test_sqeazy_pipelines_impl.cpp)
-  target_link_libraries(test_sqeazy_pipelines_impl ${Boost_LIBRARIES} ext_tiff ext_avcodec ext_avutil ext_avformat ext_swscale m ext_lz4)
+  target_link_libraries(test_sqeazy_pipelines_impl ${Boost_LIBRARIES} ext_tiff ${SQY_FFMPEG_Libraries} ext_lz4)
 
-  
+  add_executable(test_hdf5_impl test_hdf5_impl.cpp)
+#  set_target_properties(test_hdf5_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src ")
+  target_link_libraries(test_hdf5_impl ${HDF5_LIBRARIES} ${Boost_LIBRARIES} ext_lz4 ${SQY_FFMPEG_Libraries})
+
 ELSE(FFMPEG_FOUND)
   MESSAGE(">> [tests] libavcodec not found. skipping test_avcodec_sandbox ...")
 ENDIF(FFMPEG_FOUND)
