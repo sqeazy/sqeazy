@@ -2,12 +2,13 @@
 #define _SQEAZY_H5_FILTER_HPP_
 
 #include "hdf5.h"
-//#include "H5PLextern.h"
+
 #include "sqeazy_definitions.hpp"
-#include "deprecated/static_pipeline_select.hpp"
+#include "sqeazy_pipelines.hpp"
 
 
-
+namespace sqy = sqeazy;
+  
 /* declare a hdf5 filter function */
 SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
 					  size_t _cd_nelmts,
@@ -21,13 +22,6 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
   size_t value = 0;
 
 
-
-  /* extract header from cd_values */
-  const char* cd_values_bytes = reinterpret_cast<const char*>(_cd_values);
-  unsigned long cd_values_bytes_size = _cd_nelmts*sizeof(unsigned);
-  const char* cd_values_bytes_end = cd_values_bytes+cd_values_bytes_size;
-  sqeazy::image_header cd_val_hdr(cd_values_bytes, cd_values_bytes_end);
-  
   const char* c_input = reinterpret_cast<char*>(*_buf);
 
 
@@ -46,21 +40,45 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
     /* extract the header from the payload */
     unsigned long long c_input_size = *_buf_size;
     sqeazy::image_header hdr(c_input,  c_input + c_input_size);
-
+    size_t found_num_bits = hdr.sizeof_header_type()*CHAR_BIT;
+    std::vector<size_t> shape(hdr.shape()->begin(), hdr.shape()->end());
+    
     if(hdr.empty()){
       ret = 100;
     }
     else{
       c_input_size = hdr.size() + hdr.compressed_size_byte();
-      /* setup pipeline */
-      sqeazy::pipeline_select<> pipe_found(hdr);
-
+      
       /* setup output data */
-      outbuflen = pipe_found.decoded_size_byte(c_input, _nbytes);//TODO: maybe computed from the header
+      outbuflen = hdr.raw_size_byte();
       outbuf = new char[outbuflen];
 
       /* Start decompression. */
-      ret = pipe_found.decompress((const char*)c_input, outbuf, c_input_size);
+      if(found_num_bits == 16){
+	if(!sqy::dypeline<std::uint16_t>::can_be_built_from(hdr.pipeline())){
+	  std::cerr << "unable to build pipeline from " << hdr.pipeline() << "\n";
+	}
+	else{
+	  auto pipe = sqy::dypeline<std::uint16_t>::from_string(hdr.pipeline());
+      
+	  ret = pipe.decode(c_input,
+			    reinterpret_cast<std::uint16_t*>(outbuf),
+			    shape);
+	}
+      }
+
+      if(found_num_bits == 8){
+	if(!sqy::dypeline_from_uint8::can_be_built_from(hdr.pipeline())){
+	  std::cerr << "unable to build pipeline from " << hdr.pipeline() << "\n";
+	}
+	else{
+	auto pipe = sqy::dypeline_from_uint8::from_string(hdr.pipeline());
+      
+	ret = pipe.decode(c_input,
+			  reinterpret_cast<std::uint8_t*>(outbuf),
+			  shape);
+	}
+      }
     }
 
   } else {
@@ -72,13 +90,20 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
      ** data.  This allows us to use the simplified one-shot interface to
      ** compression.
      **/
+    
+    /* extract header from cd_values */
+    const char* cd_values_bytes = reinterpret_cast<const char*>(_cd_values);
+    unsigned long cd_values_bytes_size = _cd_nelmts*sizeof(unsigned);
+    const char* cd_values_bytes_end = cd_values_bytes+cd_values_bytes_size;
+    sqeazy::image_header cd_val_hdr(cd_values_bytes, cd_values_bytes_end);
+
     unsigned long c_input_shift = (2*cd_values_bytes_size > _nbytes) ? _nbytes : 2*cd_values_bytes_size;
     
     if(sqeazy::image_header::contained(c_input,  c_input + c_input_shift)){
 
       //data is already compressed
       sqeazy::image_header hdr(c_input,  c_input + c_input_shift);
-
+      
       //headers mismatch
       if(hdr!=cd_val_hdr){
 	ret = 1;
@@ -92,35 +117,50 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
     else{
 
       //data must be compressed
+      bool pipe_possible = sqy::dypeline<std::uint16_t>::can_be_built_from(cd_val_hdr.pipeline());
+      size_t found_num_bits = cd_val_hdr.sizeof_header_type()*CHAR_BIT;
       
-      sqeazy::image_header header(cd_values_bytes, cd_values_bytes_end);
-      sqeazy::pipeline_select<> pipe_found(header);
-
-      if(pipe_found.empty()){
+      if(!pipe_possible){
 	ret = 1 ;
       }
       else{
 
-	unsigned header_size_byte = header.size();
-	outbuflen = pipe_found.max_compressed_size(_nbytes,
-						   header_size_byte
-						   );
-	std::vector<char> payload(outbuflen);
-	unsigned long bytes_written = 0;
+	std::vector<size_t> shape(cd_val_hdr.shape()->begin(), cd_val_hdr.shape()->end());
+	// unsigned header_size_byte = hdr.size();
+	std::vector<char> payload;
+	char* encoded_end = nullptr;
+
+	if(found_num_bits == 16){
+	  auto pipe = sqy::dypeline<std::uint16_t>::from_string(cd_val_hdr.pipeline());
+	  outbuflen = pipe.max_encoded_size(_nbytes);
+	  payload.resize(outbuflen);
+	  
+	  encoded_end = pipe.encode(reinterpret_cast<const std::uint16_t*>(c_input),
+				    payload.data(),
+				    shape);
+	}
+
 	
-
-	std::vector<unsigned int> shape(header.shape()->begin(), header.shape()->end());
-	ret = pipe_found.compress(c_input, &payload[0], shape ,bytes_written);
-	//payload.resize(bytes_written);
-
-
-	if(!ret){
-	  outbuflen = bytes_written;
+	if(found_num_bits == 8){
+	  auto pipe = sqy::dypeline_from_uint8::from_string(cd_val_hdr.pipeline());
+	  outbuflen = pipe.max_encoded_size(_nbytes);
+	  payload.resize(outbuflen);
+	  
+	  encoded_end = pipe.encode(reinterpret_cast<const std::uint8_t*>(c_input),
+				    payload.data(),
+				    shape);
+	}
+	
+	if(encoded_end!=nullptr){
+	  outbuflen = encoded_end - payload.data();
 	  outbuf = new char[outbuflen];
-	  std::copy(payload.begin(), payload.begin()+outbuflen, outbuf);
+	  std::copy(payload.data(), payload.data()+outbuflen, outbuf);
+	  ret = 0;//success
+	} else {
+	  ret = 1; // failure
 	}
 	  
-      
+	
       }
     }
   }

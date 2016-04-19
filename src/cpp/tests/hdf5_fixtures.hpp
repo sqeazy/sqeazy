@@ -12,6 +12,8 @@ typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 
 struct helpers_fixture {
 
+  typedef unsigned short value_type;
+  
   std::string     tfile_basename;
   std::string		tfile;
   std::string	dname;
@@ -19,7 +21,7 @@ struct helpers_fixture {
   bfs::path	test_output_path;
 
   std::vector<unsigned short> retrieved;
-  std::vector<unsigned int> dims;
+  std::vector<size_t> dims;
 
   
   helpers_fixture():

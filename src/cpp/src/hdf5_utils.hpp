@@ -788,10 +788,10 @@ namespace sqeazy {
     int write_nd_dataset(const std::string& _dname,
 			 const std::vector<T>& _payload,
 			 const std::vector<U>& _shape,
-			 pipe_type
+			 pipe_type& _pipe
 			 ){
 
-      return write_nd_dataset(_dname, &_payload[0], &_shape[0], _shape.size(), pipe_type());
+      return write_nd_dataset(_dname, &_payload[0], &_shape[0], _shape.size(), _pipe);
     }
 
     /**
@@ -808,10 +808,10 @@ namespace sqeazy {
 			 const T* _payload,
 			 U* _shape,
 			 const unsigned _shape_size,
-			 pipe_type
+			 pipe_type& _pipe
 			 ){
 
-      static const std::string filter_name = pipe_type::static_name();
+      const std::string filter_name = _pipe.name();
       if(filter_name.empty())
 	return write_nd_dataset(_dname, _payload, _shape, _shape_size);
 	
@@ -944,7 +944,7 @@ namespace sqeazy {
 	       const std::string& _dname,
 	       const data_type* _payload,
 	       const std::vector<size_type>& _shape,
-	       pipe_type _pipe){
+	       pipe_type& _pipe){
 
     std::vector<hsize_t> dims(_shape.begin(), _shape.end());
     std::vector<hsize_t> chunk_shape(dims);
@@ -1046,9 +1046,10 @@ namespace sqeazy {
 	       const data_type* _payload,
 	       const std::vector<size_type>& _shape){
 
-    static const sqeazy::uint16_passthrough_pipe default_pipe;
+    //static const sqeazy::uint16_passthrough_pipe default_pipe;
+    static const auto pipe = sqy::dypeline<data_type>::from_string("pass_through");
     
-    return write_h5(_fname, _dname, _payload, _shape, default_pipe);
+    return write_h5(_fname, _dname, _payload, _shape, pipe);
   }
 
   /**
