@@ -57,5 +57,19 @@ BOOST_AUTO_TEST_CASE( factory_size )
     
 }
 
+BOOST_AUTO_TEST_CASE( factory_name_list )
+{
+
+  std::vector<std::string> names = sink_factory<int>::name_list();
+  
+  BOOST_CHECK_EQUAL(names.size(),sink_factory<int>::size());
+
+  sum_up<int> sum_up_local;
+  BOOST_CHECK_EQUAL(names.front(),sum_up_local.name());
+
+  high_bits<int> high_bits_local;
+  BOOST_CHECK_EQUAL(names.back(),high_bits_local.name());
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()

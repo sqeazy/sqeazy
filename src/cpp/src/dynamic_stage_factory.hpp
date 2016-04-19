@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <memory>
+#include <vector>
 
 namespace sqeazy {
 
@@ -110,6 +111,31 @@ namespace sqeazy {
     return print_name<Second, Tail...>(_line_prefix);
   }
 
+  /**
+     \brief method to add template parameter name to vector
+     
+     \return string vector with the return values of T::name of each member of the template parameter pack
+     \retval 
+     
+  */
+  template <class Head>
+  void add_name(std::vector<std::string>& _names)
+  {
+    Head instance;
+    _names.push_back(instance.name());
+    return ;
+    
+  }
+
+
+  template <class Head, class Second, class... Tail>
+  void add_name(std::vector<std::string>& _names)
+  {
+
+    Head instance;
+    _names.push_back(instance.name());
+    return add_name<Second, Tail...>(_names);
+  }
   
   /**
      \brief method to count the number of templates in the template parameter pack
@@ -171,6 +197,15 @@ namespace sqeazy {
       return count_templates<available_types...>(value);
 
     }
+
+    static const std::vector<std::string> name_list() {
+
+      std::vector<std::string> value;
+      value.reserve(size());
+      add_name<available_types...>(value);
+      return value;
+    }
+    
   };
 
 
