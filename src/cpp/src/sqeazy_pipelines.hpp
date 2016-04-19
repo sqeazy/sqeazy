@@ -19,7 +19,6 @@ namespace sqeazy {
   
   template <typename T>
   using filters_factory = stage_factory<
-    pass_through<T,T>,
     diff_scheme<T>,
     bitswap_scheme<T>,
     remove_background_scheme<T>,
@@ -29,13 +28,13 @@ namespace sqeazy {
 
   template <typename T>
   using encoders_factory = stage_factory<
+    pass_through<T>,
     quantiser_scheme<T>,
     lz4_scheme<T>
     >;
 
   template <typename T>
   using tail_filters_factory = stage_factory<
-    // pass_through<T,T>,
     diff_scheme<T>,
     bitswap_scheme<T>,
     // remove_background_scheme<T>,
