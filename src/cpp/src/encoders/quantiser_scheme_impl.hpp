@@ -155,22 +155,34 @@ namespace sqeazy {
     }
 
 
-    int decode( const compressed_type* _in, raw_type* _out, std::vector<std::size_t> _shape) const override final {
+    int decode( const compressed_type* _in,
+		raw_type* _out,
+		std::vector<std::size_t> _inshape,
+		std::vector<std::size_t> _outshape = std::vector<std::size_t>()
+		) const override final {
 
-      std::size_t length = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
+      if(_outshape.empty())
+	_outshape = _inshape;
+      
+      std::size_t inlength = std::accumulate(_inshape.begin(), _inshape.end(),1,std::multiplies<std::size_t>());
+      std::size_t outlength = std::accumulate(_outshape.begin(), _outshape.end(),1,std::multiplies<std::size_t>());
 
-      return decode(_in,_out,length);
+      return decode(_in,_out,inlength,outlength);
       
     }
 
-    int decode( const compressed_type* _in, raw_type* _out, std::size_t _length) const override final {
+    int decode( const compressed_type* _in, raw_type* _out,
+		std::size_t _inlength,
+		std::size_t _outlength = 0) const override final {
 
-     
+      
+      if(!_outlength)
+	_outlength = _inlength;
       
       applyLUT<compressed_type, raw_type> lutApplyer(shrinker.lut_decode_);
-      auto end_ptr = std::transform(_in,_in+_length,_out,lutApplyer);
+      auto end_ptr = std::transform(_in,_in+_inlength,_out,lutApplyer);
       
-      return (end_ptr - _out) - _length;
+      return (end_ptr - _out) - _inlength;
     }
 
     

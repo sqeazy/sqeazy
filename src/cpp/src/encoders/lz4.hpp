@@ -107,16 +107,29 @@ namespace sqeazy {
 
 
 
-    int decode( const compressed_type* _in, raw_type* _out, std::vector<std::size_t> _shape) const override final {
+    int decode( const compressed_type* _in, raw_type* _out,
+		std::vector<std::size_t> _inshape,
+		std::vector<std::size_t> _outshape) const override final {
 
-      compressed_type* output = reinterpret_cast<compressed_type*>(_out);
-      size_type _len_out = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<size_type>());
+      size_type _len_in = std::accumulate(_inshape.begin(), _inshape.end(),1,std::multiplies<size_type>());
+      size_type _len_out = std::accumulate(_outshape.begin(), _outshape.end(),1,std::multiplies<size_type>());
+
+      return decode(_in,_out,_len_in,_len_out);
+    }
+
+      int decode( const compressed_type* _in, raw_type* _out,
+		std::size_t _inlen,
+		std::size_t _outlen) const {
+
       
-      int num_bytes_decoded = LZ4_decompress_fast(_in,
+      compressed_type* output = reinterpret_cast<compressed_type*>(_out);
+      
+      int num_bytes_decoded = LZ4_decompress_safe(_in,
 						  output,
-						  _len_in);
+						  _inlen*sizeof(compressed_type),
+						  _outlen*sizeof(raw_type));
 
-      if(num_bytes_decoded == _len_in)
+      if(num_bytes_decoded == (_inlen*sizeof(compressed_type)))
 	return 0;
       else
 	return 1;

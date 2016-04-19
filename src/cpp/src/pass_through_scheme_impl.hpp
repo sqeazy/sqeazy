@@ -79,9 +79,14 @@ namespace sqeazy {
 
 
 
-    int decode( const compressed_type* _in, raw_type* _out, std::vector<std::size_t> _shape) const override final {
+    int decode( const compressed_type* _in, raw_type* _out,
+		std::vector<std::size_t> _inshape,
+		std::vector<std::size_t> _outshape = std::vector<std::size_t>()) const override final {
 
-      std::size_t in_elements = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
+      if(_outshape.empty())
+	_outshape = _inshape;
+      
+      std::size_t in_elements = std::accumulate(_inshape.begin(), _inshape.end(),1,std::multiplies<std::size_t>());
       compressed_type* out_begin = reinterpret_cast<compressed_type*>(_out);
       std::copy(_in,_in+in_elements,out_begin);
       
