@@ -1,6 +1,10 @@
 #ifndef __DYNAMIC_STAGE_FACTORY_HPP__
 #define __DYNAMIC_STAGE_FACTORY_HPP__
 
+#include <iostream>
+#include <string>
+#include <memory>
+
 namespace sqeazy {
 
   /**
@@ -105,6 +109,31 @@ namespace sqeazy {
     std::cout << _line_prefix << instance.name() << "\n";
     return print_name<Second, Tail...>(_line_prefix);
   }
+
+  
+  /**
+     \brief method to count the number of templates in the template parameter pack
+     
+     \return number of template parameters
+     \retval 
+     
+  */
+  template <class Head>
+  size_t count_templates(size_t& _count)
+  {
+
+    return _count+1;
+    
+  }
+
+
+  template <class Head, class Second, class... Tail>
+  size_t count_templates(size_t& _count)
+  {
+    _count+=1;
+    return count_templates<Second, Tail...>(_count);
+  }
+
   
   /**
      \brief factory object that will create a stage defined by a runtime string
@@ -135,6 +164,13 @@ namespace sqeazy {
     static const bool has(const std::string &_name) { return type_matches<available_types...>(_name); }
 
     static const void print_names(const std::string & _line_prefix="\n\t") { return print_name<available_types...>(_line_prefix); }
+
+    static const size_t size() {
+
+      size_t value = 0;
+      return count_templates<available_types...>(value);
+
+    }
   };
 
 

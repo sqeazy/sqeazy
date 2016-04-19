@@ -48,4 +48,14 @@ BOOST_AUTO_TEST_CASE( factory_finds_nothing )
     
 }
 
+BOOST_AUTO_TEST_CASE( factory_size )
+{
+
+  BOOST_CHECK_EQUAL(my_tail_factory<char>::size(),1);
+  BOOST_CHECK_EQUAL(sink_factory<int>::size(),2);
+  BOOST_CHECK_EQUAL(filter_factory<int>::size(),3);
+    
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()
