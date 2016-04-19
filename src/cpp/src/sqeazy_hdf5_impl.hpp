@@ -3,10 +3,8 @@
 
 #include "H5Cpp.h"
 
-//#include "sqeazy.h"
 #include "sqeazy_h5_filter.hpp"
 #include "sqeazy_header.hpp"
-#include "deprecated/static_predef_pipelines.hpp"
 
 
 namespace sqeazy {

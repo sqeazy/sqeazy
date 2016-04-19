@@ -7,7 +7,6 @@
 
 #include "boost/filesystem.hpp"
 #include "array_fixtures.hpp"
-//#include "sqeazy_predef_pipelines.hpp"
 
 extern "C" {
 #include "sqeazy.h"
