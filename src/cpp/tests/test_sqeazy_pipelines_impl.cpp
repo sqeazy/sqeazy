@@ -19,7 +19,7 @@ typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 
 BOOST_FIXTURE_TEST_SUITE( sqeazy_pipelines, uint16_cube_of_8 )
 
-BOOST_AUTO_TEST_CASE( roundtrip_part1 ){
+BOOST_AUTO_TEST_CASE( roundtrip_bitswap1 ){
 
   const unsigned long data_bytes = size_in_byte;
   long length = data_bytes;
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE( roundtrip_part1 ){
 
 }
 
-BOOST_AUTO_TEST_CASE( roundtrip_part2 ){
+BOOST_AUTO_TEST_CASE( roundtrip_lz4 ){
 
   const unsigned long data_bytes = size_in_byte;
   long length = data_bytes;
@@ -70,12 +70,6 @@ BOOST_AUTO_TEST_CASE( roundtrip_part2 ){
   char* encoded_end = pipe.encode(constant_cube.data(),
 				  intermediate.data(),
 				  shape);
-    // SQY_PipelineEncode_UI16(default_filter_name.c_str(),
-		      // 			      (const char*)&constant_cube[0],
-		      // 			      &ldims[0],
-		      // 			      dims.size(),
-		      // 			      (char*)&compressed[0],
-		      // 			      &length);
     
   BOOST_REQUIRE(encoded_end!=nullptr);
   length = encoded_end - intermediate.data();

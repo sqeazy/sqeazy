@@ -319,25 +319,25 @@ int SQY_Version_Triple(int* version){
   return 0;
 }
 
-template <typename T>
-inline static std::string prepend_type_id(const std::string& _in){
+// template <typename T>
+// inline static std::string prepend_type_id(const std::string& _in){
 
-  static std::string type_name = sqy::type_to_name_match<unsigned short>::id();
-  std::string pipeline = _in;
-  std::stringstream filter_name_;
-  if(pipeline.find(type_name)==std::string::npos)
-    filter_name_ << type_name << "_";
-  filter_name_ << pipeline;
+//   static std::string type_name = sqy::type_to_name_match<unsigned short>::id();
+//   std::string pipeline = _in;
+//   std::stringstream filter_name_;
+//   if(pipeline.find(type_name)==std::string::npos)
+//     filter_name_ << type_name << "_";
+//   filter_name_ << pipeline;
 
-  return filter_name_.str();
-}
+//   return filter_name_.str();
+// }
 
-template <typename T>
-inline static std::string prepend_type_id(const char* _in){
+// template <typename T>
+// inline static std::string prepend_type_id(const char* _in){
 
-  std::string pipeline = _in;
-  return prepend_type_id<T>(pipeline);
-}
+//   std::string pipeline = _in;
+//   return prepend_type_id<T>(pipeline);
+// }
 
 int SQY_PipelineEncode_UI16(const char* pipeline,
 			    const char* src,
@@ -541,11 +541,8 @@ int SQY_h5_write_UI16(const char* fname,
 				       shape,
 				       shape_size);
     else{
-      std::stringstream filter_name_;
-      filter_name_ << sqy::type_to_name_match<unsigned short>::id() << "_" << in_filter;
-      std::string filter_name = filter_name_.str();
       rvalue = loaded.write_nd_dataset(dname,
-				       filter_name.c_str(),
+				       in_filter.c_str(),
     				       data,
     				       shape,
     				       shape_size

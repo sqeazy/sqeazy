@@ -84,7 +84,7 @@ namespace sqeazy {
      * @param _input input raw_type buffer
      * @param _output output char buffer (not owned, not allocated)
      * @param _shape mutable std::vector<size_type>, contains the length of _input at [0] and the number of written bytes at [1]
-     * @return sqeazy::error_code
+     * @return pointer to end of payload
      */
     compressed_type* encode( const raw_type* _in, compressed_type* _out, std::vector<std::size_t> _shape) override final {
 
@@ -110,15 +110,16 @@ namespace sqeazy {
     int decode( const compressed_type* _in, raw_type* _out, std::vector<std::size_t> _shape) const override final {
 
       compressed_type* output = reinterpret_cast<compressed_type*>(_out);
-      size_type _len_in = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<size_type>());
-      size_type _len_out = max_encoded_size(_len_in);
+      size_type _len_out = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<size_type>());
       
-      size_type num_bytes_decoded = LZ4_decompress_safe(_in,
-							output,
-							_len_in,
-							_len_out);
+      int num_bytes_decoded = LZ4_decompress_fast(_in,
+						  output,
+						  _len_in);
 
-      return !num_bytes_decoded;
+      if(num_bytes_decoded == _len_in)
+	return 0;
+      else
+	return 1;
       
     }
     
