@@ -137,6 +137,15 @@ namespace sqeazy {
       return sqeazy::detail::scalar_bitplane_reorder_decode<static_num_bits_per_plane>(_input, _output, max_size);
     }
     
+    int decode( const compressed_type* _input, raw_type* _output, std::size_t _length) const // override final
+    {
+
+      typedef typename sqeazy::twice_as_wide<std::size_t>::type size_type;
+      size_type max_size = _length - (_length % num_planes);
+      if(max_size < _length)
+	std::copy(_input+max_size,_input+_length,_output+max_size);
+      return sqeazy::detail::scalar_bitplane_reorder_decode<static_num_bits_per_plane>(_input, _output, max_size);
+    }
     
 
     ~bitswap_scheme(){};
