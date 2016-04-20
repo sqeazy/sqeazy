@@ -122,7 +122,7 @@ namespace sqeazy {
 
     int decode( const compressed_type* _in, raw_type* _out,
 		std::size_t _inlen,
-		std::size_t _outlen=0) const {
+		std::size_t _outlen=0)  const override final {
 
       if(!_outlen)
 	_outlen = _inlen;
