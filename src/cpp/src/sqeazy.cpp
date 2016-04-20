@@ -410,14 +410,15 @@ int SQY_PipelineDecode_UI16(const char* src, long srclength, char* dst){
   if(!sqy::dypeline<std::uint16_t>::can_be_built_from(hdr.pipeline()))
     return value;
 
-  // std::vector<size_t> shape_(shape, shape+shape_size);
   auto pipe = sqy::dypeline<std::uint16_t>::from_string(hdr.pipeline());
-  
-  std::vector<size_t> shape_(hdr.shape()->begin(),hdr.shape()->end());
-    
+
+  std::vector<size_t> inshape_  = {srclength};
+  std::vector<size_t> outshape_(hdr.shape()->begin(),hdr.shape()->end());
+
   value = pipe.decode(src,
 		      reinterpret_cast<std::uint16_t*>(dst),
-		      shape_);
+		      inshape_,
+		      outshape_);
 
   return value;
 }
