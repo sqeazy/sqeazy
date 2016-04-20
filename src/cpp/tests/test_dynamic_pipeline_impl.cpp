@@ -221,7 +221,9 @@ BOOST_AUTO_TEST_CASE (encode_with_filters) {
 				       (char*)intermediate.data(),
 				       input.size());
 
-  BOOST_CHECK(char_end!=nullptr);
+  BOOST_REQUIRE(char_end!=nullptr);
+  size_t bytes_encoded = char_end - (char*)intermediate.data();
+  intermediate.resize(bytes_encoded/sizeof(int));
   
   int* encoded_end = reinterpret_cast<int*>(char_end);
   
