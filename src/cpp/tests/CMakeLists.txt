@@ -138,11 +138,11 @@ target_link_libraries(test_dynamic_stage_factory_impl ${Boost_LIBRARIES})
 
 add_executable(test_quantiser_impl test_quantiser_impl.cpp)
 target_link_libraries(test_quantiser_impl ${Boost_LIBRARIES})
-#set_target_properties(test_quantiser_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")  
+
 
 add_executable(test_yuv_utils test_yuv_utils.cpp)
 target_link_libraries(test_yuv_utils ${Boost_LIBRARIES})
-#set_target_properties(test_yuv_utils PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")  
+
 
 
 IF(TIFF_FOUND)
