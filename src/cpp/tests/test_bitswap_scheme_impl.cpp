@@ -1,6 +1,6 @@
 #define BOOST_TEST_MODULE TEST_BITSWAP_SCHEMES
 #include "boost/test/unit_test.hpp"
-
+#include <cstdint>
 #include <numeric>
 #include <vector>
 #include <iostream>
@@ -9,10 +9,12 @@
 #include "array_fixtures.hpp"
 #include "encoders/bitswap_scheme_impl.hpp"
 
-typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
-typedef sqeazy::bitswap_scheme<unsigned short> bswap1_scheme;
-typedef sqeazy::bitswap_scheme<unsigned short,2> bswap2_scheme;
-typedef sqeazy::bitswap_scheme<unsigned short,4> bswap4_scheme;
+typedef sqeazy::array_fixture<std::uint16_t> uint16_cube_of_8;
+typedef sqeazy::array_fixture<std::uint8_t> uint8_cube_of_8;
+
+typedef sqeazy::bitswap_scheme<std::uint16_t> bswap1_scheme;
+typedef sqeazy::bitswap_scheme<std::uint16_t,2> bswap2_scheme;
+typedef sqeazy::bitswap_scheme<std::uint16_t,4> bswap4_scheme;
 
 BOOST_FIXTURE_TEST_SUITE( shift_signed_bits, uint16_cube_of_8 )
 
@@ -22,8 +24,8 @@ BOOST_AUTO_TEST_CASE( rotate_left )
   unsigned char result_char = sqeazy::rotate_left<1>(test_unsigned_char);
   BOOST_CHECK_EQUAL(46,result_char);
 
-  unsigned short test_unsigned_short = 23;
-  unsigned short result = sqeazy::rotate_left<1>(test_unsigned_short);
+  std::uint16_t test_unsigned_short = 23;
+  std::uint16_t result = sqeazy::rotate_left<1>(test_unsigned_short);
   BOOST_CHECK_EQUAL(46,result);
 
   short test_signed_short = 23;
@@ -38,14 +40,14 @@ BOOST_AUTO_TEST_CASE( rotate_right )
   unsigned char result_char = sqeazy::rotate_right<1>(test_unsigned_char);
   BOOST_CHECK_EQUAL(139,result_char);
 
-  unsigned short test_unsigned_short = 23;
-  unsigned short result = sqeazy::rotate_right<1>(test_unsigned_short);
+  std::uint16_t test_unsigned_short = 23;
+  std::uint16_t result = sqeazy::rotate_right<1>(test_unsigned_short);
   BOOST_CHECK_EQUAL(32779,result);
 
   short test_signed_short = 23;
   short result_signed = sqeazy::rotate_right<1>(test_signed_short);
   BOOST_CHECK_EQUAL(-32757,result_signed);
-  unsigned short result_casted = static_cast<unsigned short>(result_signed);
+  std::uint16_t result_casted = static_cast<std::uint16_t>(result_signed);
   BOOST_CHECK_EQUAL(result_casted,result);
 }
 
@@ -59,8 +61,8 @@ sqeazy::rotate_left<1>(sqeazy::rotate_right<1>(test_unsigned_char));
 sqeazy::rotate_right<1>(sqeazy::rotate_left<1>(test_unsigned_char));
   BOOST_CHECK_EQUAL(test_unsigned_char,result_unsigned_char);
 
-  unsigned short test_unsigned_short = 23;
-  unsigned short result_unsigned_short = 
+  std::uint16_t test_unsigned_short = 23;
+  std::uint16_t result_unsigned_short = 
 sqeazy::rotate_left<1>(sqeazy::rotate_right<1>(test_unsigned_short));
   BOOST_CHECK_EQUAL(test_unsigned_short,result_unsigned_short);
   result_unsigned_short = 
@@ -94,10 +96,10 @@ test_short)));
 
 BOOST_AUTO_TEST_CASE( offset_called )
 {
-  unsigned short test_unsigned = 42;
+  std::uint16_t test_unsigned = 42;
   short test_signed = -42;
 
-  unsigned short result_unsigned = sqeazy::xor_if_signed(test_unsigned);
+  std::uint16_t result_unsigned = sqeazy::xor_if_signed(test_unsigned);
   short result_signed = sqeazy::xor_if_signed(test_signed);
   
   BOOST_CHECK_EQUAL(result_unsigned,test_unsigned);
@@ -144,14 +146,14 @@ BOOST_AUTO_TEST_CASE( encoding_decoding_injective_on_unsigned )
 {
   using namespace sqeazy;
 
-  const unsigned short test_signed[8] = {42,16,11,4,1,0,3,5};
+  const std::uint16_t test_signed[8] = {42,16,11,4,1,0,3,5};
 
   for(int i = 0;i<8;++i){
     
-    unsigned short intermediate =  
+    std::uint16_t intermediate =  
 sqeazy::rotate_left<1>(xor_if_signed(test_signed[i]));
 
-    unsigned short result =  
+    std::uint16_t result =  
       xor_if_signed(sqeazy::rotate_right<1>(intermediate));
 
     BOOST_CHECK_EQUAL(test_signed[i], result);
@@ -170,17 +172,17 @@ BOOST_AUTO_TEST_CASE( roundtrip_ramp )
   shape[2] = 11;
 
   const unsigned long flat_size = std::accumulate(shape.begin(), shape.end(),1,std::multiplies<unsigned>());
-  std::vector<unsigned short> expected(flat_size);
+  std::vector<std::uint16_t> expected(flat_size);
   for(unsigned i = 0;i<flat_size;++i)
-    expected[i] = static_cast<unsigned short>(i);
+    expected[i] = static_cast<std::uint16_t>(i);
 
-  std::vector<unsigned short> compressed(expected);
+  std::vector<std::uint16_t> compressed(expected);
   
   int res = bswap1_scheme::static_encode(&expected[0], &compressed[0],flat_size);
 
   BOOST_CHECK(!res);
 
-  std::vector<unsigned short> decoded(flat_size,0);
+  std::vector<std::uint16_t> decoded(flat_size,0);
 
   res = bswap1_scheme::static_decode(&compressed[0], &decoded[0] ,flat_size);
 
@@ -308,11 +310,11 @@ BOOST_AUTO_TEST_SUITE_END()
 
 struct incrementing_array
 {
-  std::vector<unsigned short> input;
-  std::vector<unsigned short> plane1_encoded_by_hand;
-  std::vector<unsigned short> plane2_encoded_by_hand;
-  std::vector<unsigned short> plane4_encoded_by_hand;
-  std::vector<unsigned short> output;
+  std::vector<std::uint16_t> input;
+  std::vector<std::uint16_t> plane1_encoded_by_hand;
+  std::vector<std::uint16_t> plane2_encoded_by_hand;
+  std::vector<std::uint16_t> plane4_encoded_by_hand;
+  std::vector<std::uint16_t> output;
 
   incrementing_array():
     input(16,0),
@@ -501,16 +503,16 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_CASE( setbits_on_integertype )
 {
-  unsigned short zero = 0;
-  unsigned short one = 1;
+  std::uint16_t zero = 0;
+  std::uint16_t one = 1;
   BOOST_CHECK(sqeazy::setbits_of_integertype(zero, one, 5u, 1u) == 1 << 5);
 
-  unsigned short max_char = 0xff;
+  std::uint16_t max_char = 0xff;
   BOOST_CHECK(sqeazy::setbits_of_integertype(max_char, one, 10u, 1u) == (max_char + (1 << 10)));
 
   BOOST_CHECK(sqeazy::setbits_of_integertype(max_char, zero, 4u, 4u) == 0xf);
   
-  unsigned short three = 3;
+  std::uint16_t three = 3;
   //three is truncated if it maps to more than 16 bits (here)
   BOOST_CHECK(sqeazy::setbits_of_integertype(zero, three, 15u, 2u) == 0x8000);
 }
