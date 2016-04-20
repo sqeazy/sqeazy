@@ -26,6 +26,42 @@ BOOST_AUTO_TEST_CASE( roundtrip_bitswap1 ){
   
   std::vector<size_t> shape(dims.begin(), dims.end());
 
+  auto pipe = sqeazy::dypeline<std::uint16_t>::from_string(default_filter_name_part1);
+  
+  int max_encoded_size = pipe.max_encoded_size(data_bytes);
+  std::vector<char> intermediate(max_encoded_size,0);
+  
+  char* encoded_end = pipe.encode(constant_cube.data(),
+				  intermediate.data(),
+				  shape);
+    
+  BOOST_REQUIRE(encoded_end!=nullptr);
+  length = encoded_end - intermediate.data();
+  
+  BOOST_CHECK_LT(length,max_encoded_size);
+  
+  int rvalue = pipe.decode(intermediate.data(),
+			   incrementing_cube.data(),
+			   length
+			   );
+  
+  BOOST_CHECK_EQUAL(rvalue, 0);
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(constant_cube.data(), constant_cube.data()+10,
+  				incrementing_cube.data(), incrementing_cube.data()+10); 
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(constant_cube.data()+size-10, constant_cube.data()+size,
+				  incrementing_cube.data()+size-10, incrementing_cube.data()+size);
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(constant_cube.data(), constant_cube.data()+size,
+				  incrementing_cube.data(), incrementing_cube.data()+size);
+
+}
+
+BOOST_AUTO_TEST_CASE( roundtrip_bitswap1_from_casted ){
+
+  const unsigned long data_bytes = size_in_byte;
+  long length = data_bytes;
+  
+  std::vector<size_t> shape(dims.begin(), dims.end());
+
   auto pipe = sqeazy::dypeline_from_char::from_string(default_filter_name_part1);
   
   int max_encoded_size = pipe.max_encoded_size(data_bytes);
@@ -51,7 +87,7 @@ BOOST_AUTO_TEST_CASE( roundtrip_bitswap1 ){
   BOOST_REQUIRE_EQUAL_COLLECTIONS(constant_cube.data()+size-10, constant_cube.data()+size,
 				  incrementing_cube.data()+size-10, incrementing_cube.data()+size);
   BOOST_REQUIRE_EQUAL_COLLECTIONS(constant_cube.data(), constant_cube.data()+size,
-				  incrementing_cube.data()+size, incrementing_cube.data());
+				  incrementing_cube.data(), incrementing_cube.data()+size);
 
 }
 
