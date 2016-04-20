@@ -132,7 +132,7 @@ BOOST_AUTO_TEST_CASE( avio_context_constructs ){
 
   std::vector<uint8_t> dummy(100,42);
   sqeazy::avio_buffer_data buffer;
-  buffer.ptr = &dummy[0];
+  buffer.ptr =  reinterpret_cast<decltype(buffer.ptr)>(dummy.data());
   buffer.size = dummy.size();
   
   sqeazy::avio_context_t local(buffer);

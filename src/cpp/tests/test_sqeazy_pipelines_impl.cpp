@@ -67,10 +67,6 @@ BOOST_AUTO_TEST_CASE( roundtrip_bitswap1_from_casted ){
   int max_encoded_size = pipe.max_encoded_size(data_bytes);
   std::vector<char> intermediate(max_encoded_size,0);
 
-  //need to adapt shape to 8-bit types
-  // std::vector<size_t> shape(dims.begin(), dims.end());
-  // shape[0] *= 2;
-  
   char* encoded_end = pipe.encode((const char*)constant_cube.data(),
 				  intermediate.data(),
 				  length);

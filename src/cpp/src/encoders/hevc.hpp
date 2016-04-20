@@ -166,8 +166,11 @@ namespace sqeazy {
     //FIXME: the output buffer will most likely be larger than the input buffer
     int decode( const compressed_type* _in, raw_type* _out,
 		std::vector<std::size_t> _inshape,
-		std::vector<std::size_t> _outshape) const override final {
+		std::vector<std::size_t> _outshape = std::vector<std::size_t>()) const override final {
 
+      if(_outshape.empty())
+	_outshape = _inshape;
+      
       size_t _len_in = std::accumulate(_inshape.begin(), _inshape.end(),1,std::multiplies<size_t>());
       size_t _len_out = std::accumulate(_outshape.begin(), _outshape.end(),1,std::multiplies<size_t>());
 	

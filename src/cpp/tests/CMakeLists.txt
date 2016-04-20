@@ -149,7 +149,7 @@ IF(TIFF_FOUND)
 
 add_executable(test_tiff_fixture test_tiff_fixture.cpp)
 target_link_libraries(test_tiff_fixture ${Boost_LIBRARIES} ext_tiff)
-#set_target_properties(test_tiff_fixture PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/bench")
+set_target_properties(test_tiff_fixture PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/bench")
 
 
 
