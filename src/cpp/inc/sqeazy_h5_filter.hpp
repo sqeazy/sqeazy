@@ -41,13 +41,14 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
     unsigned long long c_input_size = *_buf_size;
     sqeazy::image_header hdr(c_input,  c_input + c_input_size);
     size_t found_num_bits = hdr.sizeof_header_type()*CHAR_BIT;
-    std::vector<size_t> shape(hdr.shape()->begin(), hdr.shape()->end());
+    std::vector<size_t> out_shape(hdr.shape()->begin(), hdr.shape()->end());
     
     if(hdr.empty()){
       ret = 100;
     }
     else{
       c_input_size = hdr.size() + hdr.compressed_size_byte();
+      std::vector<size_t> in_shape = {c_input_size};
       
       /* setup output data */
       outbuflen = hdr.raw_size_byte();
@@ -63,7 +64,9 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
       
 	  ret = pipe.decode(c_input,
 			    reinterpret_cast<std::uint16_t*>(outbuf),
-			    shape);
+			    in_shape,
+			    out_shape
+			    );
 	}
       }
 
@@ -76,7 +79,8 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
       
 	ret = pipe.decode(c_input,
 			  reinterpret_cast<std::uint8_t*>(outbuf),
-			  shape);
+			  in_shape,
+			  out_shape);
 	}
       }
     }
