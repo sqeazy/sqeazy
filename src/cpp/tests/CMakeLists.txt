@@ -225,7 +225,11 @@ target_link_libraries(test_bench_utils_impl ${Boost_LIBRARIES} ext_tiff)
 
 ENDIF(TIFF_FOUND)
 
+#http://stackoverflow.com/questions/14474659/cmake-how-to-have-a-target-for-copying-files
+#required by the yuv_utils
 FILE(COPY ${PROJECT_SOURCE_DIR}/tests/mini_example_w92_h128.yuv DESTINATION ${PROJECT_BINARY_DIR}/tests/)
 FILE(COPY ${PROJECT_SOURCE_DIR}/tests/mini_example.y4m DESTINATION ${PROJECT_BINARY_DIR}/tests/)
+
+#required by the hdf5 tests
 FILE(COPY ${PROJECT_SOURCE_DIR}/tests/hdf5_create_sample.h5 DESTINATION ${PROJECT_BINARY_DIR}/tests/)
 FILE(RENAME ${PROJECT_BINARY_DIR}/tests/hdf5_create_sample.h5 ${PROJECT_BINARY_DIR}/tests/sample.h5)

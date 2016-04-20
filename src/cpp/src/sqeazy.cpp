@@ -438,8 +438,11 @@ int SQY_h5_query_sizeof(const char* fname,
 			unsigned* _sizeof){
 
   int rvalue = 1;
+
+#ifdef NDEBUG
+  H5::Exception::dontPrint();
+#endif
   
-  H5::Exception::dontPrint();  
   sqy::h5_file loaded(fname);
   if(!loaded.ready())
     return rvalue;
@@ -456,7 +459,10 @@ int SQY_h5_query_dtype(const char* fname,
 			const char* dname,
 			unsigned* dtype){
 
+#ifdef NDEBUG
   H5::Exception::dontPrint();
+#endif
+
   sqy::h5_file loaded(fname);
   if(!loaded.ready())
     return 1;
@@ -478,7 +484,9 @@ int SQY_h5_query_ndims(const char* fname,
 		      unsigned* ndims){
 
   int rvalue = 1;
+  #ifdef NDEBUG
   H5::Exception::dontPrint();
+#endif
   sqy::h5_file loaded(fname);
   if(!loaded.ready())
     return rvalue;
@@ -501,7 +509,9 @@ int SQY_h5_query_shape(const char* fname,
 
   
   int rvalue = 1;
+  #ifdef NDEBUG
   H5::Exception::dontPrint();
+#endif
   sqy::h5_file loaded(fname);
   if(!loaded.ready())
     return rvalue;
@@ -525,7 +535,9 @@ int SQY_h5_write_UI16(const char* fname,
 		      const char* filter){
 
   int rvalue = 1;
+  #ifdef NDEBUG
   H5::Exception::dontPrint();
+#endif
   
   bfs::path src_p = fname;
   sqy::h5_file loaded(fname, bfs::exists(src_p) ? H5F_ACC_RDWR : H5F_ACC_TRUNC);
@@ -561,7 +573,9 @@ int SQY_h5_write(const char* fname,
 		 unsigned long data_size){
 
   int rvalue = 1;
+  #ifdef NDEBUG
   H5::Exception::dontPrint();
+#endif
 
   bfs::path src_p = fname;
   sqy::h5_file loaded(fname, bfs::exists(src_p) ? H5F_ACC_RDWR : H5F_ACC_TRUNC);
@@ -583,7 +597,9 @@ int SQY_h5_read_UI16(const char* fname,
 		      const char* dname,
 		      unsigned short* data){
   int rvalue = 1;
+#ifdef NDEBUG
   H5::Exception::dontPrint();
+#endif
   sqy::h5_file loaded(fname);
   if(!loaded.ready())
     return rvalue;
