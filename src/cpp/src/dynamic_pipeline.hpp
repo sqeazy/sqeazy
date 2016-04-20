@@ -569,14 +569,13 @@ namespace sqeazy
       
       std::size_t len = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
       // std::vector<incoming_t> temp_in(_in, _in+len);
-      std::vector<incoming_t> temp;
+       
 
       std::size_t max_len_byte = sink_ ? sink_->max_encoded_size(len*sizeof(incoming_t)) : 0;
-      temp.resize(std::max(
-			   std::ceil(max_len_byte/sizeof(incoming_t)),
-			   double(len)
-			   )
-		  );
+      const size_t temp_size = std::max(std::ceil(max_len_byte/sizeof(incoming_t)),
+					double(len)
+					);
+      std::vector<incoming_t> temp(temp_size,0);
 
       incoming_t* head_filters_end = nullptr;
       if(head_filters_.size()){
@@ -685,8 +684,7 @@ namespace sqeazy
 	       std::vector<std::size_t> _inshape,
 	       std::vector<std::size_t> _outshape = std::vector<std::size_t>()) const override final {
       
-      if(_outshape.empty())
-	_outshape = _inshape;
+      
       
       //FIXME: strange, we receive an n-dim array with _in that spans across the payload AND the header
       //       this would imply that almost always, _shape is 1D?
@@ -702,6 +700,9 @@ namespace sqeazy
       image_header hdr(_in_char_begin,_in_char_end);
       std::vector<std::size_t> output_shape(hdr.shape()->begin(),
 					    hdr.shape()->end());
+
+      if(_outshape.empty())
+	_outshape = output_shape;
       // std::intmax_t output_len = std::accumulate(output_shape.begin(),
       // 						 output_shape.end(),
       // 						 1,
@@ -784,7 +785,7 @@ namespace sqeazy
 		       name()
 		       );
 
-      std::intmax_t value = hdr.size()+2;
+      std::intmax_t value = hdr.size()*2;
       
       if(!is_compressor())
 	return value+_incoming_size_byte;
