@@ -104,7 +104,7 @@ namespace sqeazy {
       }
 
       if(!err)
-	return _output+max_size;
+	return _output+(_length);
       else
 	return nullptr;
 
