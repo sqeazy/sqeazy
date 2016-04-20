@@ -60,16 +60,20 @@ BOOST_AUTO_TEST_CASE( roundtrip_bitswap1_from_casted ){
   const unsigned long data_bytes = size_in_byte;
   long length = data_bytes;
   
-  std::vector<size_t> shape(dims.begin(), dims.end());
+
 
   auto pipe = sqeazy::dypeline_from_char::from_string(default_filter_name_part1);
   
   int max_encoded_size = pipe.max_encoded_size(data_bytes);
   std::vector<char> intermediate(max_encoded_size,0);
+
+  //need to adapt shape to 8-bit types
+  // std::vector<size_t> shape(dims.begin(), dims.end());
+  // shape[0] *= 2;
   
   char* encoded_end = pipe.encode((const char*)constant_cube.data(),
 				  intermediate.data(),
-				  shape);
+				  length);
     
   BOOST_REQUIRE(encoded_end!=nullptr);
   length = encoded_end - intermediate.data();

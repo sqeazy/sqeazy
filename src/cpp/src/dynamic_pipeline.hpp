@@ -685,9 +685,6 @@ namespace sqeazy
 	       std::vector<std::size_t> _outshape = std::vector<std::size_t>()) const override final {
       
       
-      
-      //FIXME: strange, we receive an n-dim array with _in that spans across the payload AND the header
-      //       this would imply that almost always, _shape is 1D?
       std::size_t len = std::accumulate(_inshape.begin(), _inshape.end(),1,std::multiplies<std::size_t>());
 
       ////////////////////// HEADER RELATED //////////////////
@@ -703,10 +700,7 @@ namespace sqeazy
 
       if(_outshape.empty())
 	_outshape = output_shape;
-      // std::intmax_t output_len = std::accumulate(output_shape.begin(),
-      // 						 output_shape.end(),
-      // 						 1,
-      // 						 std::multiplies<std::intmax_t>());
+
       const outgoing_t* payload_begin = reinterpret_cast<const outgoing_t*>(_in_char_begin + hdr.size());
       size_t in_size_bytes = (len*sizeof(outgoing_t)) - hdr.size();
       
