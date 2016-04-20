@@ -12,6 +12,7 @@
 typedef sqeazy::array_fixture<std::uint16_t> uint16_cube_of_8;
 typedef sqeazy::array_fixture<std::uint8_t> uint8_cube_of_8;
 
+typedef sqeazy::bitswap_scheme<std::uint8_t> bswap1_scheme_uint8;
 typedef sqeazy::bitswap_scheme<std::uint16_t> bswap1_scheme;
 typedef sqeazy::bitswap_scheme<std::uint16_t,2> bswap2_scheme;
 typedef sqeazy::bitswap_scheme<std::uint16_t,4> bswap4_scheme;
@@ -518,3 +519,37 @@ BOOST_AUTO_TEST_CASE( setbits_on_integertype )
 }
 
 
+BOOST_AUTO_TEST_CASE( roundtrip_ramp_8bit )
+{
+  using namespace sqeazy;
+
+  std::vector<unsigned> shape(3);
+  shape[0] = 7;
+  shape[1] = 9;
+  shape[2] = 11;
+
+  const unsigned long flat_size = std::accumulate(shape.begin(), shape.end(),1,std::multiplies<unsigned>());
+  std::vector<std::uint8_t> expected(flat_size);
+  for(unsigned i = 0;i<flat_size;++i)
+    expected[i] = static_cast<std::uint8_t>(i);
+
+  std::vector<std::uint8_t> compressed(expected);
+
+  bswap1_scheme_uint8 encoder;
+  std::uint8_t* end = encoder.encode(expected.data(),
+				     compressed.data(),
+				     flat_size);
+
+  BOOST_CHECK(end!=nullptr);
+  size_t n_elements_encoded = end - compressed.data();
+  BOOST_CHECK_EQUAL(n_elements_encoded,expected.size());
+
+  std::vector<std::uint8_t> decoded(flat_size,0);
+
+  int err = encoder.decode(&compressed[0],
+			   &decoded[0] ,
+			   flat_size);
+
+  BOOST_CHECK(!err);
+  BOOST_CHECK_EQUAL_COLLECTIONS(decoded.begin(), decoded.end(), expected.begin(), expected.end());
+}
