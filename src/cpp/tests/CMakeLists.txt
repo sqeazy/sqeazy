@@ -22,7 +22,51 @@ ENDIF()
 
 FIND_PACKAGE(TIFF REQUIRED)
 IF(TIFF_FOUND)
-INCLUDE_DIRECTORIES(${TIFF_INCLUDE_DIR})
+  INCLUDE_DIRECTORIES(${TIFF_INCLUDE_DIR})
+
+  SET(TIFF_DYN_LIB ${TIFF_LIBRARIES})
+  SET(TIFF_STATIC_LIB "")
+  
+  IF(WIN32)
+    add_library(ext_static_tiff STATIC IMPORTED)
+    IF("${TIFF_LIBRARIES}" MATCHES ".*.dll$")
+      STRING(REPLACE .dll .lib TIFF_STATIC_LIB ${TIFF_LIBRARIES})
+    ELSE()
+      SET(TIFF_STATIC_LIB ${TIFF_LIBRARIES})
+    ENDIF()
+    set_target_properties(ext_static_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_STATIC_LIB}") 
+
+    add_library(ext_dyn_tiff SHARED IMPORTED)
+    IF("${TIFF_LIBRARIES}" MATCHES ".*.dll$")
+      STRING(REPLACE .dll _i.lib TIFF_IMP_LIB ${TIFF_LIBRARIES})
+      set_target_properties(ext_dyn_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIBRARIES}") 
+      set_target_properties(ext_dyn_tiff PROPERTIES IMPORTED_IMPLIB "${TIFF_IMP_LIB}") 
+    ENDIF()
+
+  ELSE(WIN32)
+
+    IF(APPLE)
+      IF("${TIFF_LIBRARIES}" MATCHES ".*.so$")
+	STRING(REPLACE .so .dylib TIFF_DYN_LIB ${TIFF_LIBRARIES})
+	#Homebrew ships a static library that fails to contain important symbols
+	#STRING(REPLACE .dylib .a TIFF_STATIC_LIB ${TIFF_DYN_LIB})
+      ENDIF()
+    ELSE()
+      STRING(REPLACE .so .a TIFF_STATIC_LIB ${TIFF_DYN_LIB})
+    ENDIF()
+
+    IF(EXISTS ${TIFF_DYN_LIB})
+      add_library(ext_tiff SHARED IMPORTED)
+      set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_DYN_LIB}")
+    ENDIF()
+
+    IF(EXISTS ${TIFF_STATIC_LIB})
+      add_library(ext_tiff STATIC IMPORTED)
+      set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_STATIC_LIB}")
+    ENDIF()
+    
+  ENDIF(WIN32)
+  
 ENDIF(TIFF_FOUND)
 
 ##LZ4, HDF5. TIFF
@@ -35,7 +79,7 @@ IF(WIN32)
   add_library(ext_hdf5 SHARED IMPORTED)
   set_target_properties(ext_hdf5 PROPERTIES IMPORTED_LOCATION "${HDF5_LIBRARIES}")
 
-  add_library(ext_tiff STATIC IMPORTED)
+  # add_library(ext_tiff STATIC IMPORTED)
 
   set(SQY_LIB ${PROJECT_NAME}_static)
   
@@ -47,7 +91,7 @@ ELSE(WIN32)
   add_library(ext_hdf5 SHARED IMPORTED)
   set_target_properties(ext_hdf5 PROPERTIES IMPORTED_LOCATION "${HDF5_LIBRARIES}") 
 
-  add_library(ext_tiff SHARED IMPORTED)
+  # add_library(ext_tiff SHARED IMPORTED)
   add_definitions(-DBOOST_TEST_DYN_LINK)
 
   set(SQY_LIB ${PROJECT_NAME})
@@ -55,7 +99,7 @@ ENDIF(WIN32)
 
 
 
-set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIBRARIES}") 
+# set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIBRARIES}") 
 
 FIND_PACKAGE (Boost 1.42 QUIET COMPONENTS regex system filesystem unit_test_framework REQUIRED)
 IF(Boost_FOUND)
