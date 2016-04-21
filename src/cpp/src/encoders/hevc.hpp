@@ -121,9 +121,6 @@ namespace sqeazy {
       typedef typename sqeazy::twice_as_wide<size_t>::type local_size_type;
       
       local_size_type total_length = std::accumulate(_shape.begin(), _shape.end(), 1, std::multiplies<size_t>());
-      local_size_type total_length_in_byte = total_length*sizeof(raw_type);
-      local_size_type max_payload_length_in_byte = static_max_encoded_size(total_length_in_byte);
-
 	
       int drange = sizeof(raw_type)*CHAR_BIT;
 
@@ -237,9 +234,6 @@ namespace sqeazy {
       
         typedef typename sqeazy::twice_as_wide<SizeType>::type local_size_type;
         local_size_type total_length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<SizeType>());
-        local_size_type total_length_in_byte = total_length*sizeof(raw_type);
-	local_size_type max_payload_length_in_byte = static_max_encoded_size(total_length_in_byte);
-
 	
 	int drange = sizeof(raw_type)*CHAR_BIT;
 	std::vector<compressed_type> temp_out;	
