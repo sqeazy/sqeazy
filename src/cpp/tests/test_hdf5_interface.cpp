@@ -24,7 +24,7 @@ using namespace H5;
 
 
 
-static const std::string default_filter_name = "bswap1_lz4";
+static const std::string default_filter_name = "bitswap1->lz4";
 
 // static sqeazy::loaded_hdf5_plugin always_load;
 /*
