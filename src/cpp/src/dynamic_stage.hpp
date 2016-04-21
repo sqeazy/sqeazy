@@ -4,6 +4,7 @@
 #include <typeinfo>
 #include <memory>
 #include <vector>
+#include <numeric>
 
 namespace sqeazy{
 
