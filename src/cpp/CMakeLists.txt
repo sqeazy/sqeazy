@@ -76,24 +76,24 @@ IF(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
 ENDIF(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
 MESSAGE(STATUS ">> Setting up ${CMAKE_BUILD_TYPE} build")
 
+check_cxx_compiler_flag(-ftree-vectorize HAS_GCC_TREE_VECTORIZE_COMPILERFLAG)
+check_cxx_compiler_flag(-march=native HAS_MARCH_COMPILERFLAG)
+check_cxx_compiler_flag(-ffast-math HAS_FAST_MATH_COMPILERFLAG)
+check_cxx_compiler_flag("-Xclang -march=native" HAS_XCLANG_COMPILERFLAG)
+check_cxx_compiler_flag(-fvectorize HAS_CLANG_VECTORIZE_COMPILERFLAG)
+check_cxx_compiler_flag(-ffast-math HAS_FAST_MATH_COMPILERFLAG)
+
 #C/C++ specific flags
 #for GCC
 IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
   SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -ggdb3 -Wno-overflow")
   SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -ggdb3 -Wno-overflow")
-  check_cxx_compiler_flag(-ftree-vectorize HAS_GCC_TREE_VECTORIZE_COMPILERFLAG)
-  check_cxx_compiler_flag(-march=native HAS_MARCH_COMPILERFLAG)
-  check_cxx_compiler_flag(-ffast-math HAS_FAST_MATH_COMPILERFLAG)
-  check_cxx_compiler_flag("-Xclang -march=native" HAS_XCLANG_COMPILERFLAG)
 ENDIF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
  
  #for clang
 IF("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
    SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -ggdb3 -Wno-overflow")
    SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -ggdb3 -Wno-overflow")
-   check_cxx_compiler_flag(-fvectorize HAS_CLANG_VECTORIZE_COMPILERFLAG)
-   check_cxx_compiler_flag(-march=native HAS_MARCH_COMPILERFLAG)
-   check_cxx_compiler_flag(-ffast-math HAS_FAST_MATH_COMPILERFLAG)
 ENDIF()
 
 #TODO: think about support parallel studio as well
@@ -136,9 +136,9 @@ ENDIF()
 
 IF(UNIX OR APPLE)
 IF(HAS_MARCH_COMPILERFLAG)
-  # SET(HOST_COMPILER_RELEASE_FLAGS "${HOST_COMPILER_RELEASE_FLAGS} -march=native")
-  # SET(HOST_COMPILER_DEBUG_FLAGS "${HOST_COMPILER_DEBUG_FLAGS} -march=native")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+ELSE()
+  MESSAGE(WARNING "Compiler does not support -march=native!")
 ENDIF()
 ENDIF()
 
