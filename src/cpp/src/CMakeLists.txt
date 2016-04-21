@@ -151,6 +151,9 @@ ENDIF()
 FIND_PACKAGE(TIFF REQUIRED)
 IF(TIFF_FOUND)
   INCLUDE_DIRECTORIES(${TIFF_INCLUDE_DIR})
+  SET(TIFF_DYN_LIB ${TIFF_LIBRARIES})
+  SET(TIFF_STATIC_LIB "")
+  
   IF(WIN32)
     add_library(ext_static_tiff STATIC IMPORTED)
     IF("${TIFF_LIBRARIES}" MATCHES ".*.dll$")
@@ -168,26 +171,44 @@ IF(TIFF_FOUND)
     ENDIF()
 
   ELSE(WIN32)
-    add_library(ext_dyn_tiff SHARED IMPORTED)
-    set_target_properties(ext_dyn_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIBRARIES}") 
 
+
+    IF(APPLE)
+      IF("${TIFF_LIBRARIES}" MATCHES ".*.so$")
+	STRING(REPLACE .so .dylib TIFF_DYN_LIB ${TIFF_LIBRARIES})
+	#Homebrew ships a static library that fails to contain important symbols
+	#STRING(REPLACE .dylib .a TIFF_STATIC_LIB ${TIFF_DYN_LIB})
+      ENDIF()
+    ELSE()
+      STRING(REPLACE .so .a TIFF_STATIC_LIB ${TIFF_DYN_LIB})
+    ENDIF()
+
+    IF(EXISTS ${TIFF_DYN_LIB})
+      add_library(ext_dyn_tiff SHARED IMPORTED)
+      set_target_properties(ext_dyn_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_DYN_LIB}")
+    ENDIF()
+
+    IF(EXISTS ${TIFF_STATIC_LIB})
+      add_library(ext_static_tiff STATIC IMPORTED)
+      set_target_properties(ext_static_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_STATIC_LIB}")
+    ENDIF()
+    
   ENDIF(WIN32)
 
-  
-
-  
 
   add_executable(sqy sqy.cpp)
   IF(EXISTS ${TIFF_STATIC_LIB})
+    MESSAGE(">> Using static library ${TIFF_STATIC_LIB}")
     target_link_libraries(sqy ext_static_tiff ext_lz4 ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries})
   ELSE()
+    MESSAGE(">> Using shared library ${TIFF_DYN_LIB}")
     target_link_libraries(sqy ext_dyn_tiff ext_lz4 ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries})
   ENDIF()
 
   INSTALL(TARGETS sqy
     EXPORT sqeazy-targets 
     RUNTIME DESTINATION "${INSTALL_BIN_DIR}" 
-    COMPONENT bin)
+    COMPONENT bin) 
 
 ELSE()
   WARNING("[src/cpp/src] Skipping sqy app, libtiff not found (but required for build)\!")

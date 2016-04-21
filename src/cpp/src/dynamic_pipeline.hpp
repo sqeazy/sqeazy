@@ -772,7 +772,7 @@ namespace sqeazy
 
     }
 
-    std::intmax_t max_encoded_size(std::intmax_t _incoming_size_byte){
+    std::intmax_t max_encoded_size(std::intmax_t _incoming_size_byte) const override final {
       
       image_header hdr(incoming_t(),
 		       _incoming_size_byte,

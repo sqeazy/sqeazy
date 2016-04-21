@@ -327,7 +327,7 @@ namespace sqeazy {
       std::vector<uint16_t> raw_frame(frame_size,0);
       std::vector<char> chroma_values(frame_size,0);
       std::vector<char> lumi_values(frame_size,0);
-      const value_t lumi_mask = 0xff;
+
       const value_t cb_mask = (0xf) << 8;
       const value_t cr_mask = (0xf) << 12;
       

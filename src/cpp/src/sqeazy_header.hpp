@@ -2,6 +2,7 @@
 #define _SQEAZY_HEADER_H_
 
 #include <cctype>
+#include <numeric>
 #include <algorithm>
 #include <vector>
 #include <iostream>

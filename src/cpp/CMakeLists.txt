@@ -197,42 +197,43 @@ ENDIF()
 ADD_SUBDIRECTORY(src) # source code of the library
 
 # bench
-IF(UNIX OR APPLE)
-IF(HAS_CPP11_COMPILERFLAG)
-ADD_SUBDIRECTORY(bench) # source code of the benchmark suite
-export(TARGETS bench ${PROJECT_NAME} FILE "${PROJECT_BINARY_DIR}/sqeazy-targets.cmake")
-ELSE()
-MESSAGE(WARNING ">> unable to build benchmark suite due to missing C++11 support")
-ENDIF()
-ELSE()
-ADD_SUBDIRECTORY(bench) # source code of the benchmark suite
-export(TARGETS bench ${PROJECT_NAME} FILE "${PROJECT_BINARY_DIR}/sqeazy-targets.cmake")
-ENDIF()
+# IF(UNIX OR APPLE)
+#   IF(HAS_CPP11_COMPILERFLAG)
+#     ADD_SUBDIRECTORY(bench) # source code of the benchmark suite
+#     export(TARGETS bench ${PROJECT_NAME} FILE "${PROJECT_BINARY_DIR}/sqeazy-targets.cmake")
+#   ELSE()
+#     MESSAGE(WARNING ">> unable to build benchmark suite due to missing C++11 support")
+#   ENDIF()
+# ELSE()
+#   ADD_SUBDIRECTORY(bench) # source code of the benchmark suite
+#   export(TARGETS bench ${PROJECT_NAME} FILE "${PROJECT_BINARY_DIR}/sqeazy-targets.cmake")
+# ENDIF()
+
 # test
 IF(WIN32)
-SET(Boost_USE_STATIC_LIBS ON)
-SET(Boost_USE_MULTITHREADED ON)
+  SET(Boost_USE_STATIC_LIBS ON)
+  SET(Boost_USE_MULTITHREADED ON)
 ENDIF()
 FIND_PACKAGE (Boost 1.55 COMPONENTS system filesystem unit_test_framework thread REQUIRED)
 IF(Boost_FOUND)
-MESSAGE(STATUS "Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES}")
-ADD_SUBDIRECTORY(tests)
-enable_testing()
-include("CTestLists.txt")
+  MESSAGE(STATUS "Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES}")
+  ADD_SUBDIRECTORY(tests)
+  enable_testing()
+  include("CTestLists.txt")
 ELSE()
-MESSAGE(WARNING ">> Boost libraries not found, unable to compile tests (skipping)")
+  MESSAGE(WARNING ">> Boost libraries not found, unable to compile tests (skipping)")
 ENDIF()
 
 #needed for FindHDF5 as it expects an ENVIRONMENT variable called HDF5_ROOT as hint to the HDF5 path
 IF(EXISTS ${HDF5_ROOT})
-	SET(ENV{HDF5_ROOT} ${HDF5_ROOT})
+  SET(ENV{HDF5_ROOT} ${HDF5_ROOT})
 ENDIF(EXISTS ${HDF5_ROOT})
 
 # export stuff
 export(PACKAGE ${PROJECT_NAME})
 # Create the sqeazy-config.cmake and sqeazy-config-version files
 file(RELATIVE_PATH REL_INCLUDE_DIR "${INSTALL_SHARE_DIR}"
-   "${INSTALL_INCLUDE_DIR}")
+  "${INSTALL_INCLUDE_DIR}")
 # ... for the build tree
 set(CONF_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}" "${PROJECT_BINARY_DIR}")
 configure_file(sqeazy-config.cmake.in
