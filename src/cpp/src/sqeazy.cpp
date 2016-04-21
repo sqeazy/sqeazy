@@ -439,7 +439,7 @@ int SQY_h5_query_sizeof(const char* fname,
 
   int rvalue = 1;
 
-#ifdef NDEBUG
+#ifndef _SQY_DEBUG_
   H5::Exception::dontPrint();
 #endif
   
@@ -459,7 +459,7 @@ int SQY_h5_query_dtype(const char* fname,
 			const char* dname,
 			unsigned* dtype){
 
-#ifdef NDEBUG
+#ifndef _SQY_DEBUG_
   H5::Exception::dontPrint();
 #endif
 
@@ -484,7 +484,7 @@ int SQY_h5_query_ndims(const char* fname,
 		      unsigned* ndims){
 
   int rvalue = 1;
-  #ifdef NDEBUG
+  #ifndef _SQY_DEBUG_
   H5::Exception::dontPrint();
 #endif
   sqy::h5_file loaded(fname);
@@ -509,7 +509,7 @@ int SQY_h5_query_shape(const char* fname,
 
   
   int rvalue = 1;
-  #ifdef NDEBUG
+  #ifndef _SQY_DEBUG_
   H5::Exception::dontPrint();
 #endif
   sqy::h5_file loaded(fname);
@@ -535,7 +535,7 @@ int SQY_h5_write_UI16(const char* fname,
 		      const char* filter){
 
   int rvalue = 1;
-  #ifdef NDEBUG
+  #ifndef _SQY_DEBUG_
   H5::Exception::dontPrint();
 #endif
   
@@ -573,7 +573,7 @@ int SQY_h5_write(const char* fname,
 		 unsigned long data_size){
 
   int rvalue = 1;
-  #ifdef NDEBUG
+  #ifndef _SQY_DEBUG_
   H5::Exception::dontPrint();
 #endif
 
@@ -597,7 +597,7 @@ int SQY_h5_read_UI16(const char* fname,
 		      const char* dname,
 		      unsigned short* data){
   int rvalue = 1;
-#ifdef NDEBUG
+#ifndef _SQY_DEBUG_
   H5::Exception::dontPrint();
 #endif
   sqy::h5_file loaded(fname);

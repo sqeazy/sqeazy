@@ -4,7 +4,7 @@ INCLUDE_DIRECTORIES(app)
 #SET(HDF5_USE_STATIC_LIBRARIES TRUE)#only works on Unix and requires static lib to be compiled with -fPIC
 #needed for FindHDF5 as it expects an ENVIRONMENT variable called HDF5_ROOT as hint to the HDF5 path
 IF(EXISTS ${HDF5_ROOT})
-	SET(ENV{HDF5_ROOT} ${HDF5_ROOT})
+  SET(ENV{HDF5_ROOT} ${HDF5_ROOT})
 ENDIF(EXISTS ${HDF5_ROOT})
 
 FIND_PACKAGE(HDF5 1.8 QUIET REQUIRED CXX)
@@ -35,41 +35,57 @@ IF(FFMPEG_FOUND)
   set_target_properties(ext_swscale PROPERTIES IMPORTED_LOCATION "${FFMPEG_SWSCALE_LIBRARIES}")
 
   SET(SQY_FFMPEG_Libraries ext_avcodec ext_avutil ext_avformat ext_swscale m)
- ELSE()
+ELSE()
   MESSAGE(WARNING "[src/cpp/src] FFMPEG not found!")
 ENDIF()
 
 #needed for MPL include path
 IF(WIN32)
-SET(Boost_USE_STATIC_LIBS ON)
-SET(Boost_USE_MULTITHREADED ON)
+  SET(Boost_USE_STATIC_LIBS ON)
+  SET(Boost_USE_MULTITHREADED ON)
 ENDIF()
 FIND_PACKAGE (Boost 1.55 QUIET COMPONENTS filesystem system REQUIRED)
 IF(Boost_FOUND)
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+  INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 ELSE()
   MESSAGE(WARNING "[src/cpp/src] BOOST not found!")
 ENDIF()
 
 FIND_PACKAGE(LZ4 REQUIRED)
 IF(LZ4_FOUND)
-INCLUDE_DIRECTORIES(${LZ4_INCLUDE_DIRS})
-LINK_DIRECTORIES(${LZ4_LIBRARY_DIRS}) 
-MESSAGE(STATUS "[src/cpp/src] LZ4 found !! shared: ${LZ4_SHARED_LIB} static: ${LZ4_STATIC_LIB}")
+  INCLUDE_DIRECTORIES(${LZ4_INCLUDE_DIRS})
+  LINK_DIRECTORIES(${LZ4_LIBRARY_DIRS}) 
+  MESSAGE(STATUS "[src/cpp/src] LZ4 found !! shared: ${LZ4_SHARED_LIB} static: ${LZ4_STATIC_LIB}")
 
-IF(EXISTS ${LZ4_SHARED_LIB})
-add_library(ext_lz4 SHARED IMPORTED )
-set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}")
+  IF(EXISTS ${LZ4_SHARED_LIB})
+    add_library(ext_lz4 SHARED IMPORTED )
+    set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}")
 
-IF(WIN32)
-	STRING(REPLACE dll lib LZ4_SHARED_IMPLIB ${LZ4_SHARED_LIB})
-	set_target_properties(ext_lz4 PROPERTIES IMPORTED_IMPLIB "${LZ4_SHARED_LIB}")
-	#TODO: #add HDF5_cxx_libraries in a similar fashion
-ENDIF(WIN32)
+    IF(WIN32)
+      STRING(REPLACE dll lib LZ4_SHARED_IMPLIB ${LZ4_SHARED_LIB})
+      set_target_properties(ext_lz4 PROPERTIES IMPORTED_IMPLIB "${LZ4_SHARED_LIB}")
+      #TODO: #add HDF5_cxx_libraries in a similar fashion
+    ENDIF(WIN32)
+
+  ENDIF()
+
 
 ENDIF()
 
+########################################### GLOBAL DEFINES ######################################################
+#SET(LIST_ADDITIONAL_COMPILE_FLAGS "")
+if(SQY_VERBOSE)
+  MESSAGE("ADDING -D_SQY_VERBOSE=1")
+  ADD_DEFINITIONS(-D_SQY_VERBOSE_=1)
+endif(SQY_VERBOSE)
 
+if(${CMAKE_BUILD_TYPE} MATCHES Debug)# OR ${CMAKE_BUILD_TYPE} MATCHES RELWITHDEBINFO
+  MESSAGE("ADDING -D_SQY_DEBUG_=1")
+  ADD_DEFINITIONS(-D_SQY_DEBUG_=1)
+endif()
+
+if(DEFINED LIST_ADDITIONAL_COMPILE_FLAGS )
+  STRING(REPLACE ";" " " ADDITIONAL_COMPILE_FLAGS ${LIST_ADDITIONAL_COMPILE_FLAGS})
 ENDIF()
 
 ########################################### LIBSQY ######################################################
@@ -157,14 +173,9 @@ IF(TIFF_FOUND)
 
   ENDIF(WIN32)
 
-  SET(LIST_ADDITIONAL_COMPILE_FLAGS "")
-  if(SQY_VERBOSE)
-    list(APPEND LIST_ADDITIONAL_COMPILE_FLAGS " -D_SQY_VERBOSE_=1")
-  endif(SQY_VERBOSE)
+  
 
-  if(${LIST_ADDITIONAL_COMPILE_FLAGS})
-    STRING(REPLACE ";" " " ADDITIONAL_COMPILE_FLAGS ${LIST_ADDITIONAL_COMPILE_FLAGS})
-    ENDIF()
+  
 
   add_executable(sqy sqy.cpp)
   IF(EXISTS ${TIFF_STATIC_LIB})
@@ -172,7 +183,6 @@ IF(TIFF_FOUND)
   ELSE()
     target_link_libraries(sqy ext_dyn_tiff ext_lz4 ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries})
   ENDIF()
-  set_target_properties(sqy PROPERTIES COMPILE_FLAGS "${ADDITIONAL_COMPILE_FLAGS}")
 
   INSTALL(TARGETS sqy
     EXPORT sqeazy-targets 
