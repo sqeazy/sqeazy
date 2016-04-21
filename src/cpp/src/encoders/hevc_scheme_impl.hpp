@@ -3,6 +3,7 @@
 
 #include <sstream>
 #include <cmath>
+#include <cstdint>
 #include <map>
 #include <string>
 
@@ -151,8 +152,12 @@ namespace sqeazy {
 
 	    
 	sws_scale(scale_ctx.get(),
-		  (const char* const*)gray_frame.get()->data, gray_frame.get()->linesize, 0,
-		  frame.get()->height, frame.get()->data, frame.get()->linesize);
+		  reinterpret_cast<const std::uint8_t* const*>(gray_frame.get()->data),//cast to sws_scale type
+		  gray_frame.get()->linesize,
+		  0,
+		  frame.get()->height,
+		  frame.get()->data,
+		  frame.get()->linesize);
 
 	frame.get()->pts = z;
 
@@ -335,8 +340,12 @@ namespace sqeazy {
 		  shape[0]++;
 
 		  sws_scale((*sws_ctx).get(),
-			    (const char * const*)frame.get()->data, frame.get()->linesize, 0, frame.get()->height,
-			    gray_frame.get()->data, gray_frame.get()->linesize);
+			    reinterpret_cast<const std::uint8_t* const*>(frame.get()->data),//cast to sws_scale type
+			    frame.get()->linesize,
+			    0,
+			    frame.get()->height,
+			    gray_frame.get()->data,
+			    gray_frame.get()->linesize);
 
 		  for(uint32_t y=0;y<shape[1];++y){
 		    auto begin = gray_frame.get()->data[0] + y*gray_frame.get()->linesize[0];
@@ -369,8 +378,12 @@ namespace sqeazy {
 	    shape[0]++;
 
 	    sws_scale((*sws_ctx).get(),
-		      (const char * const*)frame.get()->data, frame.get()->linesize, 0, frame.get()->height,
-		      gray_frame.get()->data, gray_frame.get()->linesize);
+		      frame.get()->data,
+		      frame.get()->linesize,
+		      0,
+		      frame.get()->height,
+		      gray_frame.get()->data,
+		      gray_frame.get()->linesize);
 
 	    for(uint32_t y=0;y<shape[1];++y){
 	      auto begin = gray_frame.get()->data[0] + y*frame.get()->linesize[0];
