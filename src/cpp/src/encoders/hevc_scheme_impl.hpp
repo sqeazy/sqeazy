@@ -152,7 +152,7 @@ namespace sqeazy {
 
 	    
 	sws_scale(scale_ctx.get(),
-		  reinterpret_cast<const std::uint8_t* const*>(gray_frame.get()->data),//cast to sws_scale type
+		  gray_frame.get()->data,
 		  gray_frame.get()->linesize,
 		  0,
 		  frame.get()->height,
@@ -340,7 +340,7 @@ namespace sqeazy {
 		  shape[0]++;
 
 		  sws_scale((*sws_ctx).get(),
-			    reinterpret_cast<const std::uint8_t* const*>(frame.get()->data),//cast to sws_scale type
+			    frame.get()->data,//cast to sws_scale type
 			    frame.get()->linesize,
 			    0,
 			    frame.get()->height,
