@@ -190,9 +190,16 @@ int main(int argc, char *argv[])
     std::vector<std::string> inputFiles = po::collect_unrecognized(parsed.options, po::include_positional);
 
     if(inputFiles.empty()){
-      std::cout << "[sqy] no input files given, exiting ...\n";
+      std::cerr << "[sqy] no input files given, exiting ...\n";
+      return 1;
     } else {
-      prog_flow(inputFiles, vm);
+      if(!verb.empty())
+	prog_flow(inputFiles, vm);
+      else{
+	std::cerr << "unable to find matching verb for " << target << "\n";
+	print_help(descriptions,verb_aliases);
+	return 1;
+      }
     }
   }
 
