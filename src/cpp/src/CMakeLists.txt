@@ -188,6 +188,7 @@ IF(TIFF_FOUND)
       set_target_properties(ext_dyn_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_DYN_LIB}")
     ENDIF()
 
+    #FIXME: static includes of libtiff showed missing symbols (mostly deflate, there must be a depenency to libz or something which maybe not included in libtiff.a)
     IF(EXISTS ${TIFF_STATIC_LIB})
       add_library(ext_static_tiff STATIC IMPORTED)
       set_target_properties(ext_static_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_STATIC_LIB}")
@@ -197,13 +198,8 @@ IF(TIFF_FOUND)
 
 
   add_executable(sqy sqy.cpp)
-  IF(EXISTS ${TIFF_STATIC_LIB})
-    MESSAGE(">> Using static library ${TIFF_STATIC_LIB}")
-    target_link_libraries(sqy ext_static_tiff ext_lz4 ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries})
-  ELSE()
-    MESSAGE(">> Using shared library ${TIFF_DYN_LIB}")
-    target_link_libraries(sqy ext_dyn_tiff ext_lz4 ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries})
-  ENDIF()
+  target_link_libraries(sqy ext_dyn_tiff ext_lz4 ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries})
+
 
   INSTALL(TARGETS sqy
     EXPORT sqeazy-targets 
