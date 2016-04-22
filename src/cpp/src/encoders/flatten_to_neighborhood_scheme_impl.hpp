@@ -37,14 +37,15 @@ namespace sqeazy {
     raw_type threshold;
     float fraction;
 
-    flatten_to_neighborhood_scheme(raw_type _threshold=1, float _frac = percentage_below/100.f):
+    flatten_to_neighborhood_scheme(raw_type _threshold, float _frac = percentage_below/100.f):
       threshold(_threshold),
       fraction(_frac){
     }
 
     
     flatten_to_neighborhood_scheme(const std::string& _payload=""):
-      fraction(percentage_below/100.f){
+      fraction(percentage_below/100.f),
+      threshold(1){
 
       auto config_map = parse_string_by(_payload);
 
