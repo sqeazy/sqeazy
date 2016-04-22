@@ -480,6 +480,18 @@ public class SqeazyLibrary {
 	}
 	protected native static int SQY_PipelineDecode_UI16(@Ptr long src, @org.bridj.ann.CLong long srclength, @Ptr long dst);
 	/**
+	 * SQY_Pipeline_Possible - check if pipeline string can be used to build pipeline from<br>
+	 * By default 16-bit input data is assumed.<br>
+	 * pipeline_string				: string that describes the pipeline ('->' delimited)<br>
+	 * Returns true if success, false if not!<br>
+	 * Original signature : <code>bool SQY_Pipeline_Possible(const char*)</code><br>
+	 * <i>native declaration : src/cpp/inc/sqeazy.h:447</i>
+	 */
+	public static boolean SQY_Pipeline_Possible(Pointer<Byte > pipeline_string) {
+		return SQY_Pipeline_Possible(Pointer.getPeer(pipeline_string));
+	}
+	protected native static boolean SQY_Pipeline_Possible(@Ptr long pipeline_string);
+	/**
 	 * SQY_h5_query_sizeof - query the size of the datatype stored in an hdf5 file (in byte)<br>
 	 * fname 					: hdf5 file to store data in<br>
 	 * dname 					: dataset name inside hdf5 file <br>
@@ -487,7 +499,7 @@ public class SqeazyLibrary {
 	 * (filled with 0 if dataset is not found)<br>
 	 * Returns 0 if success, another code if there was an error<br>
 	 * Original signature : <code>int SQY_h5_query_sizeof(const char*, const char*, unsigned*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:468</i>
+	 * <i>native declaration : src/cpp/inc/sqeazy.h:479</i>
 	 */
 	public static int SQY_h5_query_sizeof(Pointer<Byte > fname, Pointer<Byte > dname, Pointer<Integer > _sizeof) {
 		return SQY_h5_query_sizeof(Pointer.getPeer(fname), Pointer.getPeer(dname), Pointer.getPeer(_sizeof));
@@ -503,7 +515,7 @@ public class SqeazyLibrary {
 	 * dtype = 2			: unsigned integer<br>
 	 * Returns 0 if success, another code if there was an error<br>
 	 * Original signature : <code>int SQY_h5_query_dtype(const char*, const char*, unsigned*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:485</i>
+	 * <i>native declaration : src/cpp/inc/sqeazy.h:496</i>
 	 */
 	public static int SQY_h5_query_dtype(Pointer<Byte > fname, Pointer<Byte > dname, Pointer<Integer > dtype) {
 		return SQY_h5_query_dtype(Pointer.getPeer(fname), Pointer.getPeer(dname), Pointer.getPeer(dtype));
@@ -516,7 +528,7 @@ public class SqeazyLibrary {
 	 * dtype					: rank of the stored data<br>
 	 * Returns 0 if success, another code if there was an error<br>
 	 * Original signature : <code>int SQY_h5_query_ndims(const char*, const char*, unsigned*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:499</i>
+	 * <i>native declaration : src/cpp/inc/sqeazy.h:510</i>
 	 */
 	public static int SQY_h5_query_ndims(Pointer<Byte > fname, Pointer<Byte > dname, Pointer<Integer > rank) {
 		return SQY_h5_query_ndims(Pointer.getPeer(fname), Pointer.getPeer(dname), Pointer.getPeer(rank));
@@ -529,7 +541,7 @@ public class SqeazyLibrary {
 	 * shape					: shape of the stored data (in row-wise ordering a la C), externally allocated<br>
 	 * Returns 0 if success, another code if there was an error<br>
 	 * Original signature : <code>int SQY_h5_query_shape(const char*, const char*, unsigned*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:513</i>
+	 * <i>native declaration : src/cpp/inc/sqeazy.h:524</i>
 	 */
 	public static int SQY_h5_query_shape(Pointer<Byte > fname, Pointer<Byte > dname, Pointer<Integer > shape) {
 		return SQY_h5_query_shape(Pointer.getPeer(fname), Pointer.getPeer(dname), Pointer.getPeer(shape));
@@ -542,7 +554,7 @@ public class SqeazyLibrary {
 	 * data					: data buffer (externally allocated)<br>
 	 * Returns 0 if success, another code if there was an error<br>
 	 * Original signature : <code>int SQY_h5_read_UI16(const char*, const char*, unsigned short*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:527</i>
+	 * <i>native declaration : src/cpp/inc/sqeazy.h:538</i>
 	 */
 	public static int SQY_h5_read_UI16(Pointer<Byte > fname, Pointer<Byte > dname, Pointer<Short > data) {
 		return SQY_h5_read_UI16(Pointer.getPeer(fname), Pointer.getPeer(dname), Pointer.getPeer(data));
@@ -558,7 +570,7 @@ public class SqeazyLibrary {
 	 * filter					: filter to use<br>
 	 * Returns 0 if success, another code if there was an error<br>
 	 * Original signature : <code>int SQY_h5_write_UI16(const char*, const char*, const unsigned short*, unsigned, const unsigned*, const char*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:544</i>
+	 * <i>native declaration : src/cpp/inc/sqeazy.h:555</i>
 	 */
 	public static int SQY_h5_write_UI16(Pointer<Byte > fname, Pointer<Byte > dname, Pointer<Short > data, int shape_size, Pointer<Integer > shape, Pointer<Byte > filter) {
 		return SQY_h5_write_UI16(Pointer.getPeer(fname), Pointer.getPeer(dname), Pointer.getPeer(data), shape_size, Pointer.getPeer(shape), Pointer.getPeer(filter));
@@ -572,7 +584,7 @@ public class SqeazyLibrary {
 	 * data_size				: size of data in byte<br>
 	 * Returns 0 if success, another code if there was an error<br>
 	 * Original signature : <code>int SQY_h5_write(const char*, const char*, const char*, unsigned long)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:562</i>
+	 * <i>native declaration : src/cpp/inc/sqeazy.h:573</i>
 	 */
 	public static int SQY_h5_write(Pointer<Byte > fname, Pointer<Byte > dname, Pointer<Byte > data, @org.bridj.ann.CLong long data_size) {
 		return SQY_h5_write(Pointer.getPeer(fname), Pointer.getPeer(dname), Pointer.getPeer(data), data_size);
@@ -588,7 +600,7 @@ public class SqeazyLibrary {
 	 * pDestDatasetName			: name of dataset inside pDestFileName<br>
 	 * Returns 0 if success, another code if there was an error<br>
 	 * Original signature : <code>int SQY_h5_link(const char*, const char*, const char*, const char*, const char*, const char*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:581</i>
+	 * <i>native declaration : src/cpp/inc/sqeazy.h:592</i>
 	 */
 	public static int SQY_h5_link(Pointer<Byte > pSrcFileName, Pointer<Byte > pSrcLinkPath, Pointer<Byte > pSrcLinkName, Pointer<Byte > pTargetFile, Pointer<Byte > pTargetDatasetPath, Pointer<Byte > pTargetDatasetName) {
 		return SQY_h5_link(Pointer.getPeer(pSrcFileName), Pointer.getPeer(pSrcLinkPath), Pointer.getPeer(pSrcLinkName), Pointer.getPeer(pTargetFile), Pointer.getPeer(pTargetDatasetPath), Pointer.getPeer(pTargetDatasetName));

@@ -71,5 +71,14 @@ BOOST_AUTO_TEST_CASE( factory_name_list )
   BOOST_CHECK_EQUAL(names.back(),high_bits_local.name());
 }
 
+BOOST_AUTO_TEST_CASE( factory_description )
+{
+
+  auto desc = sink_factory<int>::descriptions();
+  
+  BOOST_CHECK_EQUAL(desc.size(),sink_factory<int>::size());
+
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -19,6 +19,8 @@ struct set_to :  public sqy::filter<T> {
   
   static_assert(std::is_arithmetic<raw_type>::value==true,"[set_to] input type is non-arithmetic");
 
+  static const std::string description() { return std::string("sets all items to <value>, e.g. set_to(value=42)"); };
+
   template <typename U>
   set_to(const set_to<U>& _rhs):
     sqy::filter<T>::filter(),
@@ -139,7 +141,9 @@ struct add_one :  public sqy::filter<T> {
   typedef T raw_type;
   typedef T compressed_type;
   
-  
+
+  static const std::string description() { return std::string("adds 1 to all items"); };
+
   std::string name() const {
 
     return std::string("add_one");
@@ -222,6 +226,10 @@ struct square :  public sqy::filter<T> {
   typedef T raw_type;
   typedef T compressed_type;
 
+
+  static const std::string description() { return std::string("squares all items"); };
+
+  
   bool is_compressor() const final override {
     
     return sqy::filter<T>::is_compressor;
@@ -309,6 +317,8 @@ struct sum_up :  public sqy::sink<T> {
   typedef T raw_type;
   typedef typename sqy::sink<T>::out_type compressed_type;
   typedef std::uint64_t result_type;
+
+  static const std::string description() { return std::string("sums all items and stores result in .front()"); };
 
   std::intmax_t max_encoded_size(std::intmax_t _incoming_size_byte) const override final {
     return sizeof(result_type);
@@ -405,6 +415,8 @@ struct high_bits :  public sqy::sink<T> {
   typedef typename sqy::sink<T>::out_type compressed_type;
   typedef std::uint64_t result_type;
 
+  static const std::string description() { return std::string("extracts highest 4 bits from input and stores them in char buffer"); };
+  
   std::intmax_t max_encoded_size(std::intmax_t _incoming_size_byte) const override final {
 
     auto scale = sizeof(compressed_type)/float(sizeof(raw_type));

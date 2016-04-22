@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 
+
 namespace sqeazy {
 
   /**
@@ -136,6 +137,31 @@ namespace sqeazy {
     _names.push_back(instance.name());
     return add_name<Second, Tail...>(_names);
   }
+
+  /**
+     \brief method to add template parameter name and description to inbound map
+     
+     \return string vector with the return values of T::name and the return values of T::description of each member of the template parameter pack
+     \retval 
+     
+  */
+  template <class Head>
+  void add_name_and_description(std::vector<std::string>& _vector)
+  {
+   
+    _vector.push_back(Head::description());
+    return ;
+    
+  }
+
+
+  template <class Head, class Second, class... Tail>
+  void add_name_and_description(std::vector<std::string>& _vector)
+  {
+
+    _vector.push_back(Head::description());
+    return add_name_and_description<Second, Tail...>(_vector);
+  }
   
   /**
      \brief method to count the number of templates in the template parameter pack
@@ -203,6 +229,14 @@ namespace sqeazy {
       std::vector<std::string> value;
       value.reserve(size());
       add_name<available_types...>(value);
+      return value;
+    }
+
+    static const std::vector<std::string> descriptions() {
+
+      std::vector<std::string> value;
+      value.reserve(size());
+      add_name_and_description<available_types...>(value);
       return value;
     }
     

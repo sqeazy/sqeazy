@@ -55,7 +55,7 @@ int print_help(
 
   std::vector<std::string> head_filter_factory_names = sqy::dypeline<std::uint16_t>::head_filter_factory_t::name_list();
   std::vector<std::string> tail_filter_factory_names = sqy::dypeline<std::uint16_t>::tail_filter_factory_t::name_list();
-  std::vector<std::string> sink_factory_names = sqy::dypeline<std::uint16_t>::sink_factory_t::name_list();
+  std::vector<std::string> sink_factory_names        = sqy::dypeline<std::uint16_t>::sink_factory_t::name_list()       ;
   std::cout << "available filters (before sink):\n";
   for( const std::string& name : head_filter_factory_names)
     std::cout << "\t" << name << "\n";
