@@ -2,6 +2,7 @@ plugins { id "com.jfrog.bintray" version "1.2" }
 
 import org.apache.tools.ant.taskdefs.condition.Os
 
+
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'maven'
@@ -65,6 +66,8 @@ task cmake(type:Exec) {
   if(path_to_tiff){
     //TODO: see if path exists
     cmake_args.add("-DTIFF_ROOT=" + path_to_tiff + " ")
+    cmake_args.add("-DTIFF_INCLUDE_DIR="+ path_to_tiff +"/include")
+    cmake_args.add("-DTIFF_LIBRARY="+ path_to_tiff +"/lib/libtiff.so")
   }
 
   if(path_to_boost){
@@ -110,7 +113,10 @@ task make(type:Exec) {
   else if (Os.isFamily(Os.FAMILY_MAC))
   {
     outputs.file './build/cpp/src/libsqeazy.dylib'
-    executable 'make'
+    def build_command = 'make'
+    // if (org.gradle.workers.max > 1)
+    //   build_command = 'make -j'+org.gradle.workers.max
+    executable build_command
   } 
   else if (Os.isFamily(Os.FAMILY_UNIX))
   {
