@@ -74,7 +74,7 @@ public class SqeazyLibraryTests
 	@Test
 	public void testH5_RoundTRIP() throws IOException
 	{
-		final String lPipeline = "bswap1_lz4";
+		final String lPipeline = "bitswap1->lz4";
 		final int lWidth = 7;
 		final int lHeight = 9;
 		final int lDepth = 11;
