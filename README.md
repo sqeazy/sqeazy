@@ -38,7 +38,7 @@ where in the above all required libraries by sqeazy are installed under /opt/loc
 * hdf5 (>1.8)
 * ffmpeg (>= 2.5.8) with libx256 (>= 1.7)
 
-For further information on building native sqeazy on the supported platforms, see [src/cpp/README.md].
+For further information on building native sqeazy on the supported platforms, see the [FAQ](FAQ.md) or the [cmake documentation](src/cpp/README.md).
 
 ## java bindings
 
