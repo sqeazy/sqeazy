@@ -7,6 +7,7 @@
 #include "sqeazy_common.hpp"
 #include "traits.hpp"
 
+#include "string_parsers.hpp"
 #include "dynamic_stage.hpp"
 
 //TODO: what if lz4 is not available??
@@ -35,6 +36,7 @@ namespace sqeazy {
     lz4_scheme(const std::string& _payload=""):
       lz4_config(_payload),
       acceleration(1){
+
 
       auto config_map = parse_string_by(_payload);
 
