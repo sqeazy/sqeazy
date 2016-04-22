@@ -50,11 +50,12 @@ namespace sqeazy {
     av_codec_t(const AVCodecID& _id, bool is_encoder = true):
       ptr_(nullptr){
 
-      if(is_encoder)
-	ptr_ = avcodec_find_encoder(_id);
-      else
-	ptr_ = avcodec_find_decoder(_id);
-      
+      if(_id){
+	if(is_encoder)
+	  ptr_ = avcodec_find_encoder(_id);
+	else
+	  ptr_ = avcodec_find_decoder(_id);
+      }      
       if (!ptr_) {
 	std::cerr << "[av_codec_t] Could not allocate video codec context\n";
       }
@@ -64,11 +65,12 @@ namespace sqeazy {
     av_codec_t(AVCodecID* _id, bool is_encoder = true):
       ptr_(nullptr){
 
-      if(is_encoder)
-	ptr_ = avcodec_find_encoder(*_id);
-      else
-	ptr_ = avcodec_find_decoder(*_id);
-      
+      if(_id){
+	if(is_encoder)
+	  ptr_ = avcodec_find_encoder(*_id);
+	else
+	  ptr_ = avcodec_find_decoder(*_id);
+      }
       if (!ptr_) {
 	std::cerr << "[av_codec_t] Could not allocate video codec context\n";
       }
