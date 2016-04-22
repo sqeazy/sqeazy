@@ -2,7 +2,7 @@
 
 **Sqeazy** - Fast and Flexible Volume Compression Library
 
-A fast and flexible compression library for 2D/3D/ND volume data.
+A fast and flexible compression library for 2D/3D/ND volume data (currently only 3D is supported).
 The core library is written in C++ with bindings for C, Java (to be implemented), and Python (to be implemented). Binaries are provided for Win (working for the native library), OSX (working for the native library, but not all tests pass), and Linux (works, native library and java bindings).
 
 # Building it
@@ -16,7 +16,7 @@ or use the shipped script ```let_me_build_that_for_you.sh``` (click ```let_me_bu
 If any of the dependencies listed below are not available through your environment, please call gradle like:
 
 ```
-gradle build -Phdf5_path=/opt/local/ -Plz4_path=/opt/local/ -Pboost_path=/opt/local/
+gradle build -Phdf5_path=/usr/local/ -Plz4_path=/usr/local/ -Pboost_path=/usr/local/ -Pffmpeg_path=/usr/local/ -Ptiff_path=/usr/local
 ```
 
 where in the above all required libraries by sqeazy are installed under /opt/local. Adapt this path according to your system.
