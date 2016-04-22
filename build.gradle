@@ -59,7 +59,7 @@ task cmake(type:Exec) {
   
   if(path_to_hdf5){
     //TODO: see if path exists
-    cmake_args.add("-DHDF5_DIR=" + path_to_hdf5 + " ")
+    cmake_args.add("-DHDF5_ROOT=" + path_to_hdf5 + " ")
   }
 
   if(path_to_tiff){
