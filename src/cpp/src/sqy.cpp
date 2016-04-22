@@ -21,6 +21,54 @@ namespace po = boost::program_options;
 namespace sqy = sqeazy;
 
 
+int print_pairs(const std::vector<std::string>& _keys,
+		const std::vector<std::string>& _values,
+		const std::string& _prefix="  ",
+		int max_value_width = 70){
+
+  std::vector<int> key_sizes(_keys.size());
+  std::vector<int> value_sizes(_values.size());
+  auto sizes = [](const std::string& _str){
+    return _str.size();
+  };
+  std::transform(_keys.begin(), _keys.end(),
+		 key_sizes.begin(),
+		 sizes);
+  std::transform(_values.begin(), _values.end(),
+		 value_sizes.begin(),
+		 sizes);
+
+  int max_str_size = *std::max_element(key_sizes.begin(), key_sizes.end());
+
+  auto value_itr = _values.cbegin();
+  auto value_sizes_itr = value_sizes.cbegin();
+  for( const std::string& key : _keys ){
+    std::cout << _prefix
+	      << std::setw(max_str_size) << key
+	      << "\t";
+    auto current = (value_itr++);
+
+    if(current->size()<max_value_width)
+      std::cout << *(current) << "\n";
+    else{
+      int size = *value_sizes_itr;
+      int chunks = (size + max_value_width -1)/max_value_width;
+      std::cout << current->substr(0,max_value_width) << "\n";
+      //FIXME: better would be to only split/substr if boundary is a space!
+      for(int c = 1;c<chunks;++c){
+	std::cout << _prefix
+		  << std::setw(max_str_size) << " "
+		  << "\t"
+		  << current->substr(c*max_value_width,max_value_width)
+		  << "\n";
+	
+      }
+	
+    }
+    ++value_sizes_itr;
+  }
+}
+
 template <typename modes_map_t, typename map_type >
 int print_help(
 	       const modes_map_t& _modes_args,
@@ -54,19 +102,22 @@ int print_help(
     	    << "	  for example quantiser or lz4)\n\n";
 
   std::vector<std::string> head_filter_factory_names = sqy::dypeline<std::uint16_t>::head_filter_factory_t::name_list();
+  std::vector<std::string> head_filter_factory_descr = sqy::dypeline<std::uint16_t>::head_filter_factory_t::descriptions();
+  
   std::vector<std::string> tail_filter_factory_names = sqy::dypeline<std::uint16_t>::tail_filter_factory_t::name_list();
-  std::vector<std::string> sink_factory_names        = sqy::dypeline<std::uint16_t>::sink_factory_t::name_list()       ;
+  std::vector<std::string> tail_filter_factory_descr = sqy::dypeline<std::uint16_t>::tail_filter_factory_t::descriptions();
+  
+  std::vector<std::string> sink_factory_names        = sqy::dypeline<std::uint16_t>::sink_factory_t::name_list()   ;
+  std::vector<std::string> sink_factory_descr	     = sqy::dypeline<std::uint16_t>::sink_factory_t::descriptions();
+
   std::cout << "available filters (before sink):\n";
-  for( const std::string& name : head_filter_factory_names)
-    std::cout << "\t" << name << "\n";
+  print_pairs(head_filter_factory_names,head_filter_factory_descr);
   
   std::cout << "\navailable sinks:\n";
-  for( const std::string& name : sink_factory_names)
-    std::cout << "\t" << name << "\n";
+  print_pairs(sink_factory_names,sink_factory_descr);
   
   std::cout << "\navailable filters (after sink):\n";
-  for( const std::string& name : tail_filter_factory_names)
-    std::cout << "\t" << name << "\n";
+  print_pairs(tail_filter_factory_names,tail_filter_factory_descr);
   
   std::cout << "\n";
 
