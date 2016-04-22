@@ -33,10 +33,11 @@ namespace sqeazy {
     typedef in_type raw_type;
     typedef in_type compressed_type;
 
+    static const std::string description() { return std::string("shot noise removal scheme, if <faction|default = 50%> of pixels in neighborhood (default: 5x5x5) fall below <threshold|default = 1>, set pixel to 0"); };
     raw_type threshold;
     float fraction;
 
-    flatten_to_neighborhood_scheme(raw_type _threshold, float _frac = percentage_below/100.f):
+    flatten_to_neighborhood_scheme(raw_type _threshold=1, float _frac = percentage_below/100.f):
       threshold(_threshold),
       fraction(_frac){
     }

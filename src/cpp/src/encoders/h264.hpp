@@ -74,6 +74,8 @@ namespace sqeazy {
       
     }
 
+    static const std::string description() { return std::string("h264 encode gray8 buffer with h264, args can be anything that libavcodec can understand, see ffmpeg -h encoder=h264"); };
+    
     std::string name() const override final {
 
       return std::string("h264");

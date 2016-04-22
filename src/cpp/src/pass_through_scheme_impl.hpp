@@ -22,6 +22,8 @@ namespace sqeazy {
 
     static_assert(std::is_arithmetic<raw_type>::value==true,"[pass_through] input type is non-arithmetic");
 
+    static const std::string description() { return std::string("pass/copy content to next stage"); };
+    
     //TODO: check syntax of lz4 configuration at runtime
     pass_through(const std::string& _payload="")
     {

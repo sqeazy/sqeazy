@@ -37,7 +37,8 @@ namespace sqeazy {
     parsed_map_t  config_map;
 
     quantiser<raw_type, compressed_type, weight_functor_t> shrinker;
-
+    static const std::string description() { return std::string("quantisation that cuts raw bitwidth by 2, uint16->uint8; if <decode_lut_path> is given, the lut will be taken from there (decoding) or written there (encoding); if <decode_lut_string> is given, it'll be taken from the argument value (decoding) or written there (encoding)"); };
+    
     quantiser_scheme(const std::string& _payload = ""):
       quantiser_config(_payload),
       config_map(),

@@ -22,7 +22,8 @@ namespace sqeazy {
 
 
     static_assert(std::is_arithmetic<raw_type>::value==true,"[diff_scheme] input type is non-arithmetic");
-
+    static const std::string description() { return std::string("store difference to mean of neighboring items"); };
+    
     //TODO: check syntax of lz4 configuration at runtime
     diff_scheme(const std::string& _payload="")
     {

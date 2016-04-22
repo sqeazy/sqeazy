@@ -21,7 +21,8 @@ namespace sqeazy {
     in_type threshold;
     
     static_assert(std::is_arithmetic<raw_type>::value==true,"[remove_background_scheme] input type is non-arithmetic");
-
+    static const std::string description() { return std::string("set all items to 0 that are below <threshold>, reduce any other item by threshold"); };
+    
     //TODO: check syntax of lz4 configuration at runtime
     remove_background_scheme(const std::string& _payload=""):
       threshold(0)

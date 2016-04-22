@@ -67,13 +67,15 @@ namespace sqeazy {
 #endif
     }
 
+    static const std::string description() { return std::string("hevc encode gray8 buffer with hevc, args can be anything that libavcodec can understand, see ffmpeg -h encoder=hevc"); };
+    
     std::string name() const override final {
 
       return std::string("hevc");
 	
     }
 
-
+    
     /**
        \brief serialize the parameters of this filter
      

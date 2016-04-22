@@ -22,7 +22,8 @@ namespace sqeazy {
     std::uint32_t num_planes;
     
     static_assert(std::is_arithmetic<raw_type>::value==true,"[bitswap_scheme] input type is non-arithmetic");
-
+    static const std::string description() { return std::string("rewrite bitplanes of item as chunks of buffer, use <num_bits_per_plane|default = 1> to control how many bits each plane has"); };
+    
     //TODO: check syntax of lz4 configuration at runtime
     bitswap_scheme(const std::string& _payload=""):
       num_bits_per_plane(static_num_bits_per_plane),

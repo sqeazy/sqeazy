@@ -26,13 +26,24 @@ namespace sqeazy {
     typedef typename sink_type::out_type compressed_type;
 
     static_assert(std::is_arithmetic<raw_type>::value==true,"[lz4_scheme] input type is non-arithmetic");
-
+    static const std::string description() { return std::string("compress input with lz4, <accel|default = 1> improves compression speed at the price of compression ratio"); };
+    
     std::string lz4_config;
-
+    int acceleration;
+    
     //TODO: check syntax of lz4 configuration at runtime
     lz4_scheme(const std::string& _payload=""):
-      lz4_config(_payload){
+      lz4_config(_payload),
+      acceleration(1){
 
+      auto config_map = parse_string_by(_payload);
+
+      if(config_map.size()){
+	auto f_itr = config_map.find("accel");
+	if(f_itr!=config_map.end())
+	  acceleration = std::stof(f_itr->second);
+      }
+      
     }
 
 
@@ -97,10 +108,15 @@ namespace sqeazy {
 
       const compressed_type* input = reinterpret_cast<const compressed_type*>(_in);
 
-      size_type num_written_bytes = LZ4_compress_limitedOutput(input,
-							       _out,
-							       total_length_in_byte,
-							       max_payload_length_in_byte);
+      // size_type num_written_bytes = LZ4_compress_limitedOutput(input,
+      // 							       _out,
+      // 							       total_length_in_byte,
+      // 							       max_payload_length_in_byte);
+      size_type num_written_bytes = LZ4_compress_fast(input,
+						      _out,
+						      total_length_in_byte,
+						      max_payload_length_in_byte,
+						      acceleration);
 
       return _out+num_written_bytes;
     }
