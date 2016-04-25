@@ -31,7 +31,9 @@ void decompress_files(const std::vector<std::string>& _files,
 
 
   std::string file_content_buffer;
-
+  std::vector<char> intermediate_buffer;
+  std::vector<size_t> shape;
+  
   unsigned long long file_size_byte = 0;
   unsigned long long expected_size_byte = 0;
   bfs::path current_file;
@@ -44,7 +46,7 @@ void decompress_files(const std::vector<std::string>& _files,
   // sqeazy::pipeline_select<> dynamic;
   
   std::istringstream buf;
-
+  size_t found_num_bits;
 
   for(const std::string& _file : _files) {
 
@@ -60,30 +62,115 @@ void decompress_files(const std::vector<std::string>& _files,
 
     ////////////////////////INPUT I/O///////////////////////////////
     file_size_byte = bfs::file_size(current_file);
-    sqyfile.open(_file, std::ios_base::binary | std::ios_base::in );
 
-    file_content_buffer = std::string((std::istreambuf_iterator<char>(sqyfile)), 
-			    std::istreambuf_iterator<char>());
+    if(current_file.extension()==".sqy"){
+      sqyfile.open(_file, std::ios_base::binary | std::ios_base::in );
+
+      file_content_buffer = std::string((std::istreambuf_iterator<char>(sqyfile)), 
+					std::istreambuf_iterator<char>());
 
 
-    ////////////////////////EXTRACT HEADER///////////////////////////////
-    const char* file_ptr = &file_content_buffer[0];
+      
 
-    sqeazy::image_header sqy_header(file_ptr,
-				    file_ptr+file_size_byte
-				    );
+      ////////////////////////EXTRACT HEADER///////////////////////////////
+      const char* file_ptr = &file_content_buffer[0];
 
-    std::string found_pipeline = sqy_header.pipeline();
-    size_t found_num_bits = sqy_header.sizeof_header_type()*CHAR_BIT;
-    if(!(found_num_bits==16 || found_num_bits==8))
-      {
-	std::cerr << "only 8 or 16-bit encoding support yet, skipping "<< _file<<"\n";
+      sqeazy::image_header sqy_header(file_ptr,
+				      file_ptr+file_size_byte
+				      );
+
+      std::string found_pipeline = sqy_header.pipeline();
+      found_num_bits = sqy_header.sizeof_header_type()*CHAR_BIT;
+      if(!(found_num_bits==16 || found_num_bits==8))
+	{
+	  std::cerr << "only 8 or 16-bit encoding support yet, skipping "<< _file<<"\n";
+	  continue;
+	}
+
+      //prepare for tiff output
+      expected_size_byte = sqy_header.raw_size_byte();
+
+    
+      if(intermediate_buffer.size()<expected_size_byte)
+	intermediate_buffer.resize(expected_size_byte);
+      ////////////////////////DECODE///////////////////////////////
+      shape = *sqy_header.shape();
+    
+      int dec_ret = 1;
+      if(found_num_bits == 16){
+	if(!sqy::dypeline<std::uint16_t>::can_be_built_from(sqy_header.pipeline())){
+	  std::cerr << "unable to build pipeline from " << sqy_header.pipeline() << "\nDoing nothing on "<< _file <<".\n";
+	  continue;
+	}
+	
+	pipe16 = sqy::dypeline<std::uint16_t>::from_string(sqy_header.pipeline());
+      
+	dec_ret = pipe16.decode(file_ptr,
+				reinterpret_cast<std::uint16_t*>(intermediate_buffer.data()),
+				*sqy_header.shape());
+      }
+
+      if(found_num_bits == 8){
+	if(!sqy::dypeline_from_uint8::can_be_built_from(sqy_header.pipeline())){
+	  std::cerr << "unable to build pipeline from " << sqy_header.pipeline() << "\nDoing nothing on "<< _file <<".\n";
+	  continue;
+	}
+	
+	pipe8 = sqy::dypeline_from_uint8::from_string(sqy_header.pipeline());
+      
+	dec_ret = pipe8.decode(file_ptr,
+			       reinterpret_cast<std::uint8_t*>(intermediate_buffer.data()),
+			       *sqy_header.shape());
+      } 
+
+
+      
+      if(dec_ret && _config.count("verbose")) {
+	std::cerr << "decompressing "<< _file<<" failed! Nothing to write to disk...\n";
 	continue;
       }
 
-    //prepare for tiff output
-    expected_size_byte = sqy_header.raw_size_byte();
+      sqyfile.close();
+      
+    } else {
+      
+      sqy::h5_file loaded(current_file.c_str());
+      if(!loaded.ready()){
+	std::cerr << "unable to load " << _file << "\n";
+	continue;
+      }
+      
+      std::string dname = current_file.stem().string();
 
+      //FIXME: add flag for dataset name
+      if(!loaded.has_h5_item(dname)){
+	std::cerr << "unable to load " << _file << ":"<< dname <<"\n";
+	continue;
+      }
+
+      
+      loaded.shape(shape, dname);
+
+      int sizeoftype = loaded.type_size_in_byte(dname);
+      found_num_bits = sizeoftype*CHAR_BIT;
+      expected_size_byte = std::accumulate(shape.begin(), shape.end(),
+					   sizeoftype,
+					   std::multiplies<size_t>());
+
+      if(intermediate_buffer.size()<expected_size_byte)
+	intermediate_buffer.resize(expected_size_byte);
+      
+      int rvalue = loaded.read_nd_dataset(dname,
+					  intermediate_buffer.data(),
+					  shape);
+      
+      if(!rvalue && _config.count("verbose")) {
+	std::cerr << "decompressing "<< _file<<" failed! Nothing to write to disk...\n";
+	continue;
+      }
+    }
+      
+    
     if(_config.count("output_suffix")){
       auto new_suffix = _config["output_suffix"].as<std::string>();
 
@@ -100,56 +187,21 @@ void decompress_files(const std::vector<std::string>& _files,
     if(_config.count("output_name") && _files.size()==1)
       output_file = _config["output_name"].as<std::string>();
 
-    
     sqeazy::tiff_facet	tiff(output_file.string());
-    tiff.shape_.resize(sqy_header.shape()->size());
-    std::copy(sqy_header.shape()->begin(), sqy_header.shape()->end(),tiff.shape_.begin());
+    tiff.shape_.resize(shape.size());
+    std::copy(shape.begin(), shape.end(),
+	      tiff.shape_.begin());
     
     if(expected_size_byte>tiff.buffer_.size())
       tiff.buffer_.resize(expected_size_byte);
     
-    std::fill(tiff.buffer_.begin(), tiff.buffer_.end(),0);
-
-    ////////////////////////DECODE///////////////////////////////
+    std::copy(intermediate_buffer.begin(),intermediate_buffer.end(),tiff.buffer_.begin());
     
-    int dec_ret = 1;
-    if(found_num_bits == 16){
-      if(!sqy::dypeline<std::uint16_t>::can_be_built_from(sqy_header.pipeline())){
-	std::cerr << "unable to build pipeline from " << sqy_header.pipeline() << "\nDoing nothing on "<< _file <<".\n";
-	continue;
-      }
-	
-      pipe16 = sqy::dypeline<std::uint16_t>::from_string(sqy_header.pipeline());
-      
-      dec_ret = pipe16.decode(file_ptr,
-			      reinterpret_cast<std::uint16_t*>(&tiff.buffer_[0]),
-			      tiff.shape_);
-    }
-
-    if(found_num_bits == 8){
-      if(!sqy::dypeline_from_uint8::can_be_built_from(sqy_header.pipeline())){
-	std::cerr << "unable to build pipeline from " << sqy_header.pipeline() << "\nDoing nothing on "<< _file <<".\n";
-	continue;
-      }
-	
-      pipe8 = sqy::dypeline_from_uint8::from_string(sqy_header.pipeline());
-      
-      dec_ret = pipe8.decode(file_ptr,
-			     reinterpret_cast<std::uint8_t*>(&tiff.buffer_[0]),
-			     tiff.shape_);
-    } 
-
-
-    
-    if(dec_ret && _config.count("verbose")) {
-      std::cerr << "decompression failed! Nothing to write to disk...\n";
-      continue;
-    }
-
     ////////////////////////OUTPUT I/O///////////////////////////////
-    tiff.write(output_file.generic_string(), found_num_bits);
+    tiff.write(output_file.generic_string(),
+	       found_num_bits);
 
-    sqyfile.close();
+    
   }
 
 }
