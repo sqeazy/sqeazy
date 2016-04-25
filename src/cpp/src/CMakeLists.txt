@@ -18,22 +18,27 @@ ENDIF()
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 find_package(FFMPEG REQUIRED)
 IF(FFMPEG_FOUND)
-  INCLUDE_DIRECTORIES(${FFMPEG_INCLUDE_DIRS})
-  LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
+	INCLUDE_DIRECTORIES(${FFMPEG_INCLUDE_DIRS})
+	LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
 
-  add_library(ext_avcodec SHARED IMPORTED)
-  set_target_properties(ext_avcodec PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVCODEC_LIBRARIES}")
+	add_library(ext_avcodec SHARED IMPORTED)
+	add_library(ext_avutil SHARED IMPORTED)
+	add_library(ext_avformat SHARED IMPORTED)
+	add_library(ext_swscale SHARED IMPORTED)	
+	
+	IF(WIN32)
+		set_target_properties(ext_avcodec  PROPERTIES IMPORTED_IMPLIB "${FFMPEG_AVCODEC_LIBRARIES}")
+		set_target_properties(ext_avutil   PROPERTIES IMPORTED_IMPLIB "${FFMPEG_AVUTIL_LIBRARIES}")
+		set_target_properties(ext_avformat PROPERTIES IMPORTED_IMPLIB "${FFMPEG_AVFORMAT_LIBRARIES}")
+		set_target_properties(ext_swscale PROPERTIES IMPORTED_IMPLIB "${FFMPEG_SWSCALE_LIBRARIES}")
+	ELSE(WIN32)
+		set_target_properties(ext_avcodec  PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVCODEC_LIBRARIES}")
+		set_target_properties(ext_avutil   PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVUTIL_LIBRARIES}")
+		set_target_properties(ext_avformat PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVFORMAT_LIBRARIES}")
+		set_target_properties(ext_swscale PROPERTIES IMPORTED_LOCATION "${FFMPEG_SWSCALE_LIBRARIES}")
+	ENDIF(WIN32)
+
   
-
-  add_library(ext_avutil SHARED IMPORTED)
-  set_target_properties(ext_avutil PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVUTIL_LIBRARIES}")
-
-  add_library(ext_avformat SHARED IMPORTED)
-  set_target_properties(ext_avformat PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVFORMAT_LIBRARIES}")
-
-  add_library(ext_swscale SHARED IMPORTED)
-  set_target_properties(ext_swscale PROPERTIES IMPORTED_LOCATION "${FFMPEG_SWSCALE_LIBRARIES}")
-
   SET(SQY_FFMPEG_Libraries ext_avcodec ext_avutil ext_avformat ext_swscale m)
 ELSE()
   MESSAGE(WARNING "[src/cpp/src] FFMPEG not found!")
