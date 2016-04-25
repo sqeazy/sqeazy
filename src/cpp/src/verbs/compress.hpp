@@ -139,7 +139,7 @@ void compress_files(const std::vector<std::string>& _files,
   sqy::dypeline_from_uint8	pipe8;
 
   std::vector<char>		output;
-  unsigned long			expected_size_byte = 0;
+
 
   const std::string pipeline_string = _config["pipeline"].as<std::string>();
   
@@ -151,12 +151,12 @@ void compress_files(const std::vector<std::string>& _files,
   pipe16 = sqy::dypeline<std::uint16_t>::from_string(pipeline_string);
   pipe8 = sqy::dypeline_from_uint8::from_string(pipeline_string);
   
-  unsigned long compressed_length_byte = 0;
-  char* enc_end = nullptr;
+size_t bytes_written = 0;
+
   
   for(const std::string& _file : _files) {
 
-    enc_end = nullptr;
+
     current_file = _file;
     if(!bfs::exists(current_file)){
       std::cerr << "[SQY]\tunable to open " << _file << "\t skipping it\n";
@@ -166,8 +166,8 @@ void compress_files(const std::vector<std::string>& _files,
     ////////////////////////INPUT I/O///////////////////////////////
     //load tiff & extract the dimensions
     input.load(_file);
-    size_t bytes_written = 0;
     
+    bytes_written = 0;
     output_file = current_file.replace_extension(".sqy");
 
     ////////////////////////PRODUCE TARGET FILE NAME///////////////////////////////
