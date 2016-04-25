@@ -273,7 +273,7 @@ int SQY_LZ4_Max_Compressed_Length(long* length){
   // long value = hdr.size() + lz4.max_encoded_size(*length);
   auto lz4 = sqy::dypeline_from_char::from_string("lz4");
   
-  long value = lz4.max_encoded_size(*length);
+  long value = (long)lz4.max_encoded_size(*length);
   
   *length = value;
   return 0;

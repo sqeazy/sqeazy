@@ -38,7 +38,7 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
      **/
     
     /* extract the header from the payload */
-    unsigned long long c_input_size = *_buf_size;
+    std::size_t c_input_size = *_buf_size;
     sqeazy::image_header hdr(c_input,  c_input + c_input_size);
     size_t found_num_bits = hdr.sizeof_header_type()*CHAR_BIT;
     std::vector<size_t> out_shape(hdr.shape()->begin(), hdr.shape()->end());

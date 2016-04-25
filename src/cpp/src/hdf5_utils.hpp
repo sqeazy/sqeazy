@@ -402,7 +402,8 @@ namespace sqeazy {
 	value = H5::DataSet(this->file_->openDataSet( _dname ));
       }
       catch(H5::DataSetIException & error){
-	return value;
+		  error;
+		return value;
       }
       catch(H5::Exception & error){
 	return value;

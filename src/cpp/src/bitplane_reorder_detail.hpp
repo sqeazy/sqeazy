@@ -497,11 +497,21 @@ void reorder_bitplanes(const __m128i& _block,
     T result = _mm_movemask_ps (first_part); 
     result <<= (n_items_per_m128i_half*plane_size);
 
+#ifdef WIN32
+	__m128 input_casted = _mm_castsi128_ps(input);
+#else
     __m128 input_casted = reinterpret_cast<__m128>(input);
-    
-    __m128i swapped_second_first = reinterpret_cast<__m128i>(//swap second with first half of 128bits
+#endif
+
+#ifdef WIN32
+	__m128i swapped_second_first = _mm_castps_si128(//swap second with first half of 128bits
+		_mm_movehl_ps(input_casted, input_casted)
+		);
+#else
+	    __m128i swapped_second_first = reinterpret_cast<__m128i>(//swap second with first half of 128bits
 							  _mm_movehl_ps(input_casted,input_casted)
 							  );
+#endif
     
     __m128i v_second_items = _mm_slli_si128(//convert to 32bits in order to get only the first (items 0,1,2,3 in _block) half of m128i
 					    to_32bit_field<T>::conversion(swapped_second_first),
@@ -514,7 +524,11 @@ void reorder_bitplanes(const __m128i& _block,
     v_second_items = _mm_shuffle_epi32(v_second_items, _MM_SHUFFLE(0,1,2,3));
 
     //collect the msb per 32bit item into result
-    result += _mm_movemask_ps (reinterpret_cast<__m128>(v_second_items)) ; 
+#ifdef WIN32
+	result += _mm_movemask_ps(_mm_castsi128_ps(v_second_items));
+#else
+	result += _mm_movemask_ps (reinterpret_cast<__m128>(v_second_items)) ; 
+#endif
 
     unsigned reordered_index = planes_per_output_item > 1 ? plane/planes_per_output_item : plane;
     

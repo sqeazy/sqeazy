@@ -482,7 +482,7 @@ header_ = "";
 
     }
 
-    unsigned long compressed_size_byte() const {
+	std::intmax_t compressed_size_byte() const {
 
       return this->compressed_size_byte_;
 
