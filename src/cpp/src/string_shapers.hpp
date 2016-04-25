@@ -10,12 +10,12 @@ namespace sqeazy {
   template <typename char_itr_t>
   std::vector<std::string> break_lines(char_itr_t _begin,
 				       char_itr_t _end,
-				       int _target_line_size,
+				       std::size_t _target_line_size,
 				       const std::string& _sep = " "
 				       ){
 
     
-    const size_t string_length = _end - _begin;
+    const std::size_t string_length = _end - _begin;
     
     std::vector<std::string> value;
     

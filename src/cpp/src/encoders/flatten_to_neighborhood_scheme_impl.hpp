@@ -44,8 +44,8 @@ namespace sqeazy {
 
     
     flatten_to_neighborhood_scheme(const std::string& _payload=""):
-      fraction(percentage_below/100.f),
-      threshold(1){
+      threshold(1),
+      fraction(percentage_below/100.f){
 
       auto config_map = parse_string_by(_payload);
 

@@ -15,16 +15,16 @@
 
 #include "app/verbs.hpp"
 #include "sqeazy_pipelines.hpp"
-
+#include "string_shapers.hpp"
 
 namespace po = boost::program_options;
 namespace sqy = sqeazy;
 
 
-int print_pairs(const std::vector<std::string>& _keys,
-		const std::vector<std::string>& _values,
-		const std::string& _prefix="  ",
-		int max_value_width = 70){
+void print_pairs(const std::vector<std::string>& _keys,
+		 const std::vector<std::string>& _values,
+		 const std::string& _prefix="  ",
+		 std::size_t max_value_width = 70){
 
   std::vector<int> key_sizes(_keys.size());
   std::vector<int> value_sizes(_values.size());
@@ -38,7 +38,7 @@ int print_pairs(const std::vector<std::string>& _keys,
 		 value_sizes.begin(),
 		 sizes);
 
-  int max_str_size = *std::max_element(key_sizes.begin(), key_sizes.end());
+  std::size_t max_str_size = *std::max_element(key_sizes.begin(), key_sizes.end());
 
   auto value_itr = _values.cbegin();
   auto value_sizes_itr = value_sizes.cbegin();
@@ -51,15 +51,14 @@ int print_pairs(const std::vector<std::string>& _keys,
     if(current->size()<max_value_width)
       std::cout << *(current) << "\n";
     else{
-      int size = *value_sizes_itr;
-      int chunks = (size + max_value_width -1)/max_value_width;
-      std::cout << current->substr(0,max_value_width) << "\n";
-      //FIXME: better would be to only split/substr if boundary is a space!
-      for(int c = 1;c<chunks;++c){
+      auto lines_to_print = sqy::break_lines(current->cbegin(),current->cend(),max_value_width);
+      std::cout << lines_to_print.front() << "\n";
+      
+      for(size_t i =1;i<lines_to_print.size();i++){
 	std::cout << _prefix
 		  << std::setw(max_str_size) << " "
 		  << "\t"
-		  << current->substr(c*max_value_width,max_value_width)
+		  << lines_to_print[i]
 		  << "\n";
 	
       }
@@ -95,6 +94,7 @@ int print_help(
   }
 
   std::cout << "pipeline builder\n"
+	    << "----------------\n"
 	    << "	- pipelines may consist of any number of filters\n"
 	    << "          (i.e. a function that ingests data of type T and emits it of type T again)\n"
 	    << "	- each pipeline may have no or at least 1 sink\n"
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
   descriptions["compress"].add_options()
     ("help", "produce help message")
     ("verbose,v", "enable verbose output")
-    ("pipeline,p", po::value<std::string>()->default_value(default_compression), "compression pipeline to be used")
+    ("pipeline,p", po::value<std::string>()->default_value(default_compression), "compression pipeline to be used (see 'pipeline builder' documentation below)")
     ;
 
   descriptions["decompress"].add_options()
