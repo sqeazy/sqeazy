@@ -199,7 +199,7 @@ IF(TIFF_FOUND)
 
 
   add_executable(sqy sqy.cpp)
-  target_link_libraries(sqy ext_dyn_tiff ext_lz4 ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries})
+  target_link_libraries(sqy ext_dyn_tiff ext_lz4 ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries} ${HDF5_LIBRARIES})
 
 
   INSTALL(TARGETS sqy

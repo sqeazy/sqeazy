@@ -19,16 +19,115 @@
 #include "image_stack.hpp"
 #include "encoders/quantiser_scheme_impl.hpp"
 #include "sqeazy_algorithms.hpp"
+#include "hdf5_utils.hpp"
 
 namespace po = boost::program_options;
 namespace bfs = boost::filesystem;
 namespace sqy = sqeazy;
 
+template <typename pipe_t>
+size_t native_compress_write(const sqeazy::tiff_facet& _input,
+			  pipe_t& _pipeline,
+			  bfs::path& _output_file,
+			  bool _verbose = false){
+
+  typedef typename pipe_t::incoming_t raw_t;
+
+  std::vector<size_t>	input_shape;
+  std::vector<char>	output;
+  size_t		expected_size_byte = _pipeline.max_encoded_size(_input.size_in_byte());
+  size_t                output_file_size = bfs::exists(_output_file) ? bfs::file_size(_output_file) : 0;
+  size_t		bytes_written =0;
+    
+  //create clean output buffer
+  if(expected_size_byte!=output.size())
+    output.resize(expected_size_byte);
+  
+  std::fill(output.begin(), output.end(),0);
+
+  //retrieve the size of the loaded buffer
+  _input.dimensions(input_shape);
+
+  //compress  
+  char* enc_end = _pipeline.encode(reinterpret_cast<const raw_t*>(_input.data()),
+				   output.data(),
+				   input_shape);
+
+  if(enc_end == nullptr && _verbose) {
+    std::cerr << "native compression failed! Nothing to write to disk...\n";
+    return 1;
+  }
+
+  ////////////////////////OUTPUT I/O///////////////////////////////
+  const size_t compressed_length_byte = enc_end - output.data();
+      
+  std::fstream sqyfile;
+  sqyfile.open(_output_file.generic_string(), std::ios_base::binary | std::ios_base::out );
+  if(!sqyfile.is_open())
+    {
+      std::cerr << "[SQY]\tunable to open " << _output_file << "as output file. Skipping it!\n";
+      sqyfile.clear();
+      return 0;
+    }
+  
+    
+  sqyfile.write(output.data(),compressed_length_byte);
+  sqyfile.close();
+
+  bytes_written = bfs::file_size(_output_file) - output_file_size;
+
+  if(bfs::file_size(_output_file)==output_file_size)
+    return output_file_size;
+  else
+    return bytes_written;
+}
+
+template <typename pipe_t>
+size_t h5_compress_write(const sqeazy::tiff_facet& _input,
+			  pipe_t& _pipeline,
+			  bfs::path& _output_file,
+			  bool _verbose = false){
+
+  typedef typename pipe_t::incoming_t raw_t;
+
+  std::vector<size_t>	input_shape;
+  std::vector<char>	output;
+  size_t		expected_size_byte = _pipeline.max_encoded_size(_input.size_in_byte());
+  size_t                output_file_size = bfs::exists(_output_file) ? bfs::file_size(_output_file) : 0;
+  size_t		bytes_written =0;
+
+  //retrieve the size of the loaded buffer
+  _input.dimensions(input_shape);
+  sqy::h5_file loaded(_output_file.generic_string(), bfs::exists(_output_file) ? H5F_ACC_RDWR : H5F_ACC_TRUNC);
+  std::string dname = _output_file.stem().generic_string();
+  
+  int rvalue = 0;
+  if(!loaded.ready())
+    return rvalue;
+  else{
+    rvalue = loaded.write_nd_dataset(dname,
+				     reinterpret_cast<const raw_t*>(_input.data()),
+				     input_shape.data(),
+				     input_shape.size(),
+				     _pipeline);
+      
+  }
+
+  if(!rvalue)
+    return 0;
+  
+  bytes_written = bfs::file_size(_output_file) - output_file_size;//applies if created from scratch or appended
+
+  if(bfs::file_size(_output_file)==output_file_size)
+    return output_file_size;//rewrite
+  else
+    return bytes_written;
+}
+
 void compress_files(const std::vector<std::string>& _files,
 		    const po::variables_map& _config) {
 
 
-  
   
   bfs::path			current_file;
   bfs::path			output_file;
@@ -67,60 +166,65 @@ void compress_files(const std::vector<std::string>& _files,
     ////////////////////////INPUT I/O///////////////////////////////
     //load tiff & extract the dimensions
     input.load(_file);
-       
-    //compute the maximum size of the output buffer
-    input.dimensions(input_shape);
-
-    if(input.bits_per_sample()==16)
-      expected_size_byte = pipe16.max_encoded_size(input.size_in_byte());
-    else{
-      if(input.bits_per_sample()==8)
-	expected_size_byte = pipe8.max_encoded_size( input.size_in_byte());
-      else{
-	std::cerr << "only 8 or 16-bit encoding support yet, skipping "<< _file<<"\n";
-	continue;
-      }
-    }
+    size_t bytes_written = 0;
     
-    //create clean output buffer
-    if(expected_size_byte!=output.size())
-      output.resize(expected_size_byte);
-    
-    std::fill(output.begin(), output.end(),0);
-
-    ////////////////////////COMPRESS///////////////////////////////
-    //compress
-    if(input.bits_per_sample()==16)
-      enc_end = pipe16.encode(reinterpret_cast<const std::uint16_t*>(input.data()),
-			      output.data(),
-			      input_shape);
-
-    if(input.bits_per_sample()==8)
-      enc_end = pipe8.encode(reinterpret_cast<const std::uint8_t*>(input.data()),
-			     output.data(),
-			     input_shape);
-
-    
-    if(enc_end == nullptr && _config.count("verbose")) {
-      std::cerr << "compression failed! Nothing to write to disk...\n";
-      continue;
-    }
-
-    ////////////////////////OUTPUT I/O///////////////////////////////
-    compressed_length_byte = enc_end - output.data();
-      
     output_file = current_file.replace_extension(".sqy");
-    sqyfile.open(output_file.generic_string(), std::ios_base::binary | std::ios_base::out );
-    if(!sqyfile.is_open())
-      {
-	std::cerr << "[SQY]\tunable to open " << _file << "\t skipping it\n";
-	sqyfile.clear();
-	continue;
+
+    ////////////////////////PRODUCE TARGET FILE NAME///////////////////////////////
+    if(_config.count("output_suffix")){
+      auto new_suffix = _config["output_suffix"].as<std::string>();
+
+      if(new_suffix.front() == '.')
+	output_file = current_file.replace_extension(_config["output_suffix"].as<std::string>());
+      else{
+	output_file = current_file.stem();
+	output_file += new_suffix;
       }
+	
+
+    }
+
+    if(_config.count("output_name") && _files.size()==1)
+      output_file = _config["output_name"].as<std::string>();
+
+
+    ////////////////////////COMPRESS & WRITE///////////////////////////////
+    if(output_file.extension()==".sqy"){
+      if(input.bits_per_sample()==16){
+	bytes_written = native_compress_write(input,
+					      pipe16,
+					      output_file,
+					      _config.count("verbose"));
+      }
+      else{
+	bytes_written = native_compress_write(input,
+					      pipe8,
+					      output_file,
+					      _config.count("verbose"));
     
+      }
+    }
+
+    if(output_file.extension()==".h5"){
+      
+	if(input.bits_per_sample()==16){
+	  bytes_written = h5_compress_write(input,
+					    pipe16,
+					    output_file,
+					    _config.count("verbose"));
+	}
+	else{
+	  bytes_written = h5_compress_write(input,
+					    pipe8,
+					    output_file,
+					    _config.count("verbose"));
+	  
+	}
+    }
     
-    sqyfile.write(output.data(),compressed_length_byte);
-    sqyfile.close();
+    if(!bytes_written){
+      std::cerr << "[SQY]\terrors occurred while processing " << _file << "\n";
+    }
 
   }
 

@@ -279,6 +279,9 @@ namespace sqeazy {
       flag_(0),
       ready_(false)
     {
+#ifndef _SQY_DEBUG_
+      H5::Exception::dontPrint();
+#endif
       static sqeazy::loaded_hdf5_plugin now;
     }
     
@@ -288,6 +291,9 @@ namespace sqeazy {
       flag_(_flag),
       ready_(false)
     {
+#ifndef _SQY_DEBUG_
+      H5::Exception::dontPrint();
+#endif
 
       open(_fname, _flag);
       static sqeazy::loaded_hdf5_plugin now;
@@ -300,11 +306,18 @@ namespace sqeazy {
       flag_(_rhs.flag_),
       ready_(_rhs.ready_)
     {
+#ifndef _SQY_DEBUG_
+      H5::Exception::dontPrint();
+#endif
+
       open(path_.string(), flag_);
       static sqeazy::loaded_hdf5_plugin now;
     }
 
     h5_file& operator=(h5_file _rhs){
+#ifndef _SQY_DEBUG_
+      H5::Exception::dontPrint();
+#endif
 
       swap(*this, _rhs);
 
@@ -794,6 +807,8 @@ namespace sqeazy {
       return write_nd_dataset(_dname, &_payload[0], &_shape[0], _shape.size(), _pipe);
     }
 
+
+    
     /**
        \brief write given data set through sqy pipeline given by pipeline type
    
