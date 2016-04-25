@@ -76,7 +76,9 @@ namespace sqeazy {
     ctx.get()->height = _stack.shape()[row_major::h];
 
     /* frames per second */
-    ctx.get()->time_base = (AVRational){1,25};
+	AVRational ratio = { 1,25 };
+
+    ctx.get()->time_base = ratio;
 
     ctx.get()->pix_fmt = AV_PIX_FMT_YUV420P;
     

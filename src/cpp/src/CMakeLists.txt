@@ -57,17 +57,32 @@ IF(LZ4_FOUND)
   LINK_DIRECTORIES(${LZ4_LIBRARY_DIRS}) 
   MESSAGE(STATUS "[src/cpp/src] LZ4 found !! shared: ${LZ4_SHARED_LIB} static: ${LZ4_STATIC_LIB}")
 
-  IF(EXISTS ${LZ4_SHARED_LIB})
-    add_library(ext_lz4 SHARED IMPORTED )
-    set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}")
+	IF(WIN32)
+		IF(EXISTS ${LZ4_STATIC_LIB})
+			add_library(ext_lz4 STATIC IMPORTED )
+			set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_STATIC_LIB}")
+		ELSE()
+		IF(EXISTS ${LZ4_SHARED_LIB})
+			add_library(ext_lz4 SHARED IMPORTED )
+			set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}")
+			STRING(REPLACE dll lib LZ4_SHARED_IMPLIB ${LZ4_SHARED_LIB})
+			set_target_properties(ext_lz4 PROPERTIES IMPORTED_IMPLIB "${LZ4_SHARED_IMPLIB}")
+		#TODO: #add HDF5_cxx_libraries in a similar fashion
+		ENDIF(EXISTS ${LZ4_SHARED_LIB})
+		ENDIF()
+	ELSE(WIN32)
+		IF(EXISTS ${LZ4_STATIC_LIB})
+			add_library(ext_lz4 STATIC IMPORTED )
+			set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}")
+		ELSE()
+			IF(EXISTS ${LZ4_SHARED_LIB})
+				add_library(ext_lz4 SHARED IMPORTED )
+				set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}")
+			ENDIF()
+		ENDIF()
+	ENDIF(WIN32)
 
-    IF(WIN32)
-      STRING(REPLACE dll lib LZ4_SHARED_IMPLIB ${LZ4_SHARED_LIB})
-      set_target_properties(ext_lz4 PROPERTIES IMPORTED_IMPLIB "${LZ4_SHARED_LIB}")
-      #TODO: #add HDF5_cxx_libraries in a similar fashion
-    ENDIF(WIN32)
-
-  ENDIF()
+  
 
 
 ENDIF()
