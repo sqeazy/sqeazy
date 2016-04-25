@@ -84,8 +84,18 @@ void decompress_files(const std::vector<std::string>& _files,
     //prepare for tiff output
     expected_size_byte = sqy_header.raw_size_byte();
 
-    if(_config.count("output_suffix"))
-      output_file = current_file.replace_extension(_config["output_suffix"].as<std::string>());
+    if(_config.count("output_suffix")){
+      auto new_suffix = _config["output_suffix"].as<std::string>();
+
+      if(new_suffix.front() == '.')
+	output_file = current_file.replace_extension(_config["output_suffix"].as<std::string>());
+      else{
+	output_file = current_file.stem();
+	output_file += new_suffix;
+      }
+	
+
+    }
 
     if(_config.count("output_name") && _files.size()==1)
       output_file = _config["output_name"].as<std::string>();
