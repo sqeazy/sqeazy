@@ -54,7 +54,7 @@ size_t native_compress_write(const sqeazy::tiff_facet& _input,
 				   input_shape);
 
   if(enc_end == nullptr && _verbose) {
-    std::cerr << "native compression failed! Nothing to write to disk...\n";
+    std::cerr << "[SQY]\tnative compression failed! Nothing to write to disk...\n";
     return 1;
   }
 
@@ -86,34 +86,41 @@ template <typename pipe_t>
 size_t h5_compress_write(const sqeazy::tiff_facet& _input,
 			  pipe_t& _pipeline,
 			  bfs::path& _output_file,
+			 const std::string& _dname,
 			  bool _verbose = false){
 
   typedef typename pipe_t::incoming_t raw_t;
 
   std::vector<size_t>	input_shape;
   std::vector<char>	output;
-  size_t		expected_size_byte = _pipeline.max_encoded_size(_input.size_in_byte());
-  size_t                output_file_size = bfs::exists(_output_file) ? bfs::file_size(_output_file) : 0;
+  const bool		output_already_exists = bfs::exists(_output_file);
+  size_t                output_file_size = output_already_exists ? bfs::file_size(_output_file) : 0;
   size_t		bytes_written =0;
 
   //retrieve the size of the loaded buffer
   _input.dimensions(input_shape);
-  sqy::h5_file loaded(_output_file.generic_string(), bfs::exists(_output_file) ? H5F_ACC_RDWR : H5F_ACC_TRUNC);
-  std::string dname = _output_file.stem().generic_string();
+  sqy::h5_file loaded(_output_file.generic_string(), output_already_exists ? H5F_ACC_RDWR : H5F_ACC_TRUNC);
+
   
   int rvalue = 0;
   if(!loaded.ready())
     return rvalue;
   else{
-    rvalue = loaded.write_nd_dataset(dname,
-				     reinterpret_cast<const raw_t*>(_input.data()),
-				     input_shape.data(),
-				     input_shape.size(),
-				     _pipeline);
+
+    if(output_already_exists && loaded.has_h5_item(_dname)){
+      std::cerr << "[SQY]\toverwriting existing " << _output_file.generic_string() << ":" << _dname << " not supported!\n";
+      rvalue = 1;
+    }
+    else
+      rvalue = loaded.write_nd_dataset(_dname,
+				       reinterpret_cast<const raw_t*>(_input.data()),
+				       input_shape.data(),
+				       input_shape.size(),
+				       _pipeline);
       
   }
 
-  if(!rvalue)
+  if(rvalue)
     return 0;
   
   bytes_written = bfs::file_size(_output_file) - output_file_size;//applies if created from scratch or appended
@@ -144,15 +151,17 @@ void compress_files(const std::vector<std::string>& _files,
   const std::string pipeline_string = _config["pipeline"].as<std::string>();
   
   if(!sqy::dypeline<std::uint16_t>::can_be_built_from(pipeline_string)){
-    std::cerr << "unable to build pipeline from " << pipeline_string << "\nDoing nothing.\n";
+    std::cerr << "[SQY]\tunable to build pipeline from " << pipeline_string << "\nDoing nothing.\n";
     return;
   }
 
   pipe16 = sqy::dypeline<std::uint16_t>::from_string(pipeline_string);
   pipe8 = sqy::dypeline_from_uint8::from_string(pipeline_string);
   
-size_t bytes_written = 0;
+  size_t bytes_written = 0;
 
+  if(_files.size()>1)
+    std::cout << "[SQY]\tmultiple input files detected, ignoring --output_name flag\n";
   
   for(const std::string& _file : _files) {
 
@@ -211,12 +220,14 @@ size_t bytes_written = 0;
 	  bytes_written = h5_compress_write(input,
 					    pipe16,
 					    output_file,
+					    _config["dataset_name"].as<std::string>(),
 					    _config.count("verbose"));
 	}
 	else{
 	  bytes_written = h5_compress_write(input,
 					    pipe8,
 					    output_file,
+					    _config["dataset_name"].as<std::string>(),
 					    _config.count("verbose"));
 	  
 	}

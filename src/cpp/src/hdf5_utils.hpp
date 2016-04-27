@@ -354,7 +354,7 @@ namespace sqeazy {
 
     void close(){
       if(file_){
-	flush();
+	flush();//force disk write
 	file_->close();
 	delete file_;
       }
@@ -402,8 +402,8 @@ namespace sqeazy {
 	value = H5::DataSet(this->file_->openDataSet( _dname ));
       }
       catch(H5::DataSetIException & error){
-		  error;
-		return value;
+	error;//placeholder
+	return value;
       }
       catch(H5::Exception & error){
 	return value;
@@ -725,13 +725,16 @@ namespace sqeazy {
       H5::PredType type_to_store = hdf5_runtime_dtype::instance(hdr.raw_type());
 
       std::string grp_path = extract_group_path(_dname);
-      bool open_group = has_h5_item(grp_path) || (grp_path[0] == '/' && grp_path.size() == 1);
+      const bool ds_exists = has_h5_item(grp_path);
+      bool open_group = ds_exists || (grp_path[0] == '/' && grp_path.size() == 1);
       H5::Group grp(open_group ? file_->openGroup(grp_path) : file_->createGroup(grp_path));
 
-      H5::DataSet dataset_(grp.createDataSet( _dname, 
-					      type_to_store,
-					      dataspace_, 
-					      plist) );
+
+      H5::DataSet dataset_(ds_exists ? grp.openDataSet( _dname.c_str() ) : grp.createDataSet( _dname, 
+											      type_to_store,
+											      dataspace_, 
+											      plist) );
+	  
       unsigned long raw_size_byte = std::accumulate(dims.begin(),dims.end(),type_to_store.getSize(),std::multiplies<hsize_t>() );
       std::vector<char> temp(raw_size_byte);
       std::copy(_payload,_payload + _payload_size,temp.begin());
@@ -740,7 +743,7 @@ namespace sqeazy {
 		     );
       
       grp.close();
-      flush();
+      flush();//force disk write
       rvalue = 0;
       return rvalue;
       
@@ -772,21 +775,22 @@ namespace sqeazy {
 
       std::vector<unsigned> cd_values;
       
-      std::string grp_path = extract_group_path(_dname);      
-      bool open_group = has_h5_item(grp_path) || (grp_path[0] == '/' && grp_path.size() == 1);
+      std::string grp_path = extract_group_path(_dname);
+      const bool ds_exists = has_h5_item(grp_path);
+      bool open_group = ds_exists || (grp_path[0] == '/' && grp_path.size() == 1);
       H5::Group grp(open_group ? file_->openGroup(grp_path) : file_->createGroup(grp_path));
       
-      H5::DataSet dataset_(grp.createDataSet( _dname, 
-					      hdf5_compiletime_dtype<T>::instance(),
-					      dataspace_, 
-					      plist) );
+      H5::DataSet dataset_(ds_exists ? grp.openDataSet( _dname.c_str() )  : grp.createDataSet( _dname, 
+											       hdf5_compiletime_dtype<T>::instance(),
+											       dataspace_, 
+											       plist) );
 
       dataset_.write(_payload,
 		     hdf5_compiletime_dtype<T>::instance()
 		     );
 
       grp.close();
-      flush();
+      flush();//force disk write
 
       rvalue = 0;
       return rvalue;
@@ -853,15 +857,16 @@ namespace sqeazy {
 			&cd_values[0]);
       }
 
-      std::string grp_path = extract_group_path(_dname);      
-      bool open_group = has_h5_item(grp_path) || (grp_path[0] == '/' && grp_path.size() == 1);
+      std::string grp_path = extract_group_path(_dname);
+      const bool ds_exists = has_h5_item(grp_path);
+      bool open_group = ds_exists || (grp_path[0] == '/' && grp_path.size() == 1);
       H5::Group grp(open_group ? file_->openGroup(grp_path) : file_->createGroup(grp_path));
 
-  
-      H5::DataSet dataset_(grp.createDataSet( _dname, 
-					      hdf5_compiletime_dtype<T>::instance(),
-					      dataspace_, 
-					      plist) );
+      //FIXME: what if _dname exists?
+      H5::DataSet dataset_(ds_exists ? grp.openDataSet( _dname.c_str() )  : grp.createDataSet( _dname, 
+											       hdf5_compiletime_dtype<T>::instance(),
+											       dataspace_, 
+											       plist) );
 
       dataset_.write(_payload,
 		     hdf5_compiletime_dtype<T>::instance()
@@ -869,7 +874,7 @@ namespace sqeazy {
 
       
       grp.close();
-      flush();
+      flush();//force disk write
       rvalue = 0;
       return rvalue;
       
@@ -933,7 +938,7 @@ namespace sqeazy {
 	       );
 
       grp.close();
-      flush();
+      flush();//force disk write
       rvalue = 0;
       return rvalue;
       

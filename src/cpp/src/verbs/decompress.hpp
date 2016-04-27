@@ -83,7 +83,7 @@ void decompress_files(const std::vector<std::string>& _files,
       found_num_bits = sqy_header.sizeof_header_type()*CHAR_BIT;
       if(!(found_num_bits==16 || found_num_bits==8))
 	{
-	  std::cerr << "only 8 or 16-bit encoding support yet, skipping "<< _file<<"\n";
+	  std::cerr << "[SQY]\tonly 8 or 16-bit encoding support yet, skipping "<< _file<<"\n";
 	  continue;
 	}
 
@@ -99,7 +99,7 @@ void decompress_files(const std::vector<std::string>& _files,
       int dec_ret = 1;
       if(found_num_bits == 16){
 	if(!sqy::dypeline<std::uint16_t>::can_be_built_from(sqy_header.pipeline())){
-	  std::cerr << "unable to build pipeline from " << sqy_header.pipeline() << "\nDoing nothing on "<< _file <<".\n";
+	  std::cerr << "[SQY]\tunable to build pipeline from " << sqy_header.pipeline() << "\nDoing nothing on "<< _file <<".\n";
 	  continue;
 	}
 	
@@ -112,7 +112,7 @@ void decompress_files(const std::vector<std::string>& _files,
 
       if(found_num_bits == 8){
 	if(!sqy::dypeline_from_uint8::can_be_built_from(sqy_header.pipeline())){
-	  std::cerr << "unable to build pipeline from " << sqy_header.pipeline() << "\nDoing nothing on "<< _file <<".\n";
+	  std::cerr << "[SQY]\tunable to build pipeline from " << sqy_header.pipeline() << "\nDoing nothing on "<< _file <<".\n";
 	  continue;
 	}
 	
@@ -125,8 +125,8 @@ void decompress_files(const std::vector<std::string>& _files,
 
 
       
-      if(dec_ret && _config.count("verbose")) {
-	std::cerr << "decompressing "<< _file<<" failed! Nothing to write to disk...\n";
+      if(dec_ret) {
+	std::cerr << "[SQY]\tdecompressing "<< _file<<" failed! Nothing to write to disk...\n";
 	continue;
       }
 
@@ -136,15 +136,15 @@ void decompress_files(const std::vector<std::string>& _files,
       
       sqy::h5_file loaded(current_file.c_str());
       if(!loaded.ready()){
-	std::cerr << "unable to load " << _file << "\n";
+	std::cerr << "[SQY]\tunable to load " << _file << "\n";
 	continue;
       }
       
-      std::string dname = current_file.stem().string();
+      const std::string dname = _config["dataset_name"].as<std::string>();
 
       //FIXME: add flag for dataset name
       if(!loaded.has_h5_item(dname)){
-	std::cerr << "unable to load " << _file << ":"<< dname <<"\n";
+	std::cerr << "[SQY]\tunable to load " << _file << ":"<< dname <<"\n";
 	continue;
       }
 
@@ -160,12 +160,21 @@ void decompress_files(const std::vector<std::string>& _files,
       if(intermediate_buffer.size()<expected_size_byte)
 	intermediate_buffer.resize(expected_size_byte);
       
-      int rvalue = loaded.read_nd_dataset(dname,
-					  intermediate_buffer.data(),
-					  shape);
+      int rvalue = 1;
+
+      if(found_num_bits == 8)
+	rvalue = loaded.read_nd_dataset(dname,
+					intermediate_buffer.data(),
+					shape);
+      else if(found_num_bits == 16){
+	rvalue = loaded.read_nd_dataset(dname,
+					reinterpret_cast<std::uint16_t*>(intermediate_buffer.data()),
+					shape);
+      }
+	
       
-      if(!rvalue && _config.count("verbose")) {
-	std::cerr << "decompressing "<< _file<<" failed! Nothing to write to disk...\n";
+      if(rvalue) {
+	std::cerr << "[SQY]\tdecompressing "<< _file<<" failed! Nothing to write to disk...\n";
 	continue;
       }
     }
