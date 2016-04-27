@@ -8,42 +8,65 @@ IF(EXISTS ${HDF5_ROOT})
   SET(ENV{HDF5_ROOT} ${HDF5_ROOT})
 ENDIF(EXISTS ${HDF5_ROOT})
 
-FIND_PACKAGE(HDF5 1.8 QUIET REQUIRED CXX)
+
+FIND_PACKAGE(HDF5 1.8 QUIET REQUIRED CXX HL)
 IF(HDF5_FOUND)
   INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIRS})
   ADD_DEFINITIONS(${HDF5_DEFINITIONS})
-  LINK_DIRECTORIES(${HDF5_LIBRARY_DIRS}) 
+  IF(DEFINED HDF5_LIBRARY_DIRS)
+	LINK_DIRECTORIES(${HDF5_LIBRARY_DIRS}) 
+  ENDIF()
+  IF(WIN32)
+	ADD_DEFINITIONS(-DH5_BUILT_AS_DYNAMIC_LIB)
+	MESSAGE("[src/cpp/src] -I${HDF5_INCLUDE_DIRS} -L${HDF5_LIBRARY_DIRS} : ${HDF5_LIBRARIES}")
+  ENDIF(WIN32)
+ELSE()
+MESSAGE(WARNING "[src/cpp/src] HDF5 not found!")
 ENDIF()
 
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 find_package(FFMPEG REQUIRED)
 IF(FFMPEG_FOUND)
-  INCLUDE_DIRECTORIES(${FFMPEG_INCLUDE_DIRS})
-  LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
+	INCLUDE_DIRECTORIES(${FFMPEG_INCLUDE_DIRS})
+	LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
 
-  add_library(ext_avcodec SHARED IMPORTED)
-  set_target_properties(ext_avcodec PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVCODEC_LIBRARIES}")
+	add_library(ext_avcodec SHARED IMPORTED)
+	add_library(ext_avutil SHARED IMPORTED)
+	add_library(ext_avformat SHARED IMPORTED)
+	add_library(ext_swscale SHARED IMPORTED)	
+	
+	IF(WIN32) 
+		set_target_properties(ext_avcodec  PROPERTIES IMPORTED_IMPLIB "${FFMPEG_AVCODEC_LIBRARIES}")
+		set_target_properties(ext_avutil   PROPERTIES IMPORTED_IMPLIB "${FFMPEG_AVUTIL_LIBRARIES}")
+		set_target_properties(ext_avformat PROPERTIES IMPORTED_IMPLIB "${FFMPEG_AVFORMAT_LIBRARIES}")
+		set_target_properties(ext_swscale PROPERTIES IMPORTED_IMPLIB "${FFMPEG_SWSCALE_LIBRARIES}")
+		SET(SQY_FFMPEG_Libraries ext_avcodec ext_avutil ext_avformat ext_swscale)
+	ELSE(WIN32)
+		set_target_properties(ext_avcodec  PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVCODEC_LIBRARIES}")
+		set_target_properties(ext_avutil   PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVUTIL_LIBRARIES}")
+		set_target_properties(ext_avformat PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVFORMAT_LIBRARIES}")
+		set_target_properties(ext_swscale PROPERTIES IMPORTED_LOCATION "${FFMPEG_SWSCALE_LIBRARIES}")
+		SET(SQY_FFMPEG_Libraries ext_avcodec ext_avutil ext_avformat ext_swscale m)
+	ENDIF(WIN32)
+
   
-
-  add_library(ext_avutil SHARED IMPORTED)
-  set_target_properties(ext_avutil PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVUTIL_LIBRARIES}")
-
-  add_library(ext_avformat SHARED IMPORTED)
-  set_target_properties(ext_avformat PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVFORMAT_LIBRARIES}")
-
-  add_library(ext_swscale SHARED IMPORTED)
-  set_target_properties(ext_swscale PROPERTIES IMPORTED_LOCATION "${FFMPEG_SWSCALE_LIBRARIES}")
-
-  SET(SQY_FFMPEG_Libraries ext_avcodec ext_avutil ext_avformat ext_swscale m)
+  
 ELSE()
   MESSAGE(WARNING "[src/cpp/src] FFMPEG not found!")
 ENDIF()
 
 #needed for MPL include path
 IF(WIN32)
-  SET(Boost_USE_STATIC_LIBS ON)
-  SET(Boost_USE_MULTITHREADED ON)
+
+#http://stackoverflow.com/a/25148990
+add_definitions(-DBOOST_ALL_NO_LIB)
+
+set(Boost_USE_STATIC_LIBS        ON)
+set(Boost_USE_MULTITHREADED      ON)
+set(Boost_USE_STATIC_RUNTIME    OFF)
+
+    
 ENDIF()
 FIND_PACKAGE (Boost 1.55 QUIET COMPONENTS filesystem system REQUIRED)
 IF(Boost_FOUND)
@@ -129,7 +152,7 @@ if(EXISTS ${LZ4_STATIC_LIB})
 
   #just here to reset ${Boost_LIBRARIES}
   #REMINDER: it would be nice to use Boost_USE_STATIC_LIBS for the shared lib as well (requires an fPIC enabled installed boost)
-  set(Boost_USE_STATIC_LIBS ON)
+  #set(Boost_USE_STATIC_LIBS ON)
   FIND_PACKAGE (Boost 1.42 QUIET COMPONENTS system REQUIRED)
   
   target_link_libraries(${PROJECT_NAME}_static ext_lz4_static ${HDF5_LIBRARIES} ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries}) 
