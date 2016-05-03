@@ -17,7 +17,7 @@
 
 namespace sqeazy {
 
- 
+  //FIXME: lz4 can also be a filter for char->char conversions
 
   template < typename T , typename S = std::size_t>
   struct lz4_scheme :  public sink<T> {
