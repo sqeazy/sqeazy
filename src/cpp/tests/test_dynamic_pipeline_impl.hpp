@@ -87,7 +87,7 @@ struct set_to :  public sqy::filter<T> {
     return value;
   }
 
-  compressed_type* encode( const raw_type* _in, compressed_type* _out, std::vector<std::size_t> _shape) override final {
+  compressed_type* encode( const raw_type* _in, compressed_type* _out, const std::vector<std::size_t>& _shape) override final {
 
     std::size_t size = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
     
@@ -102,7 +102,9 @@ struct set_to :  public sqy::filter<T> {
     return _out+size;
   }
 
-  int decode( const raw_type* _in, compressed_type* _out, std::vector<std::size_t> _shape) const override final {
+  int decode( const raw_type* _in, compressed_type* _out,
+	      const std::vector<std::size_t>& _shape,
+	      std::vector<std::size_t>) const override final {
 
     std::size_t size = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
     
@@ -168,7 +170,7 @@ struct add_one :  public sqy::filter<T> {
     return _in + 1;
   }
 
-  compressed_type* encode( const raw_type* _in, compressed_type* _out, std::vector<std::size_t> _shape) override final {
+  compressed_type* encode( const raw_type* _in, compressed_type* _out, const std::vector<std::size_t>& _shape) override final {
 
     std::size_t size = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
     
@@ -181,7 +183,9 @@ struct add_one :  public sqy::filter<T> {
     return _out+size;
   }
 
-  int decode( const raw_type* _in, compressed_type* _out, std::vector<std::size_t> _shape) const override final {
+  int decode( const raw_type* _in, compressed_type* _out,
+	      const std::vector<std::size_t>& _shape,
+	      std::vector<std::size_t>) const override final {
 
     std::size_t size = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
     
@@ -283,7 +287,7 @@ struct square :  public sqy::filter<T> {
     
   }
 
-   compressed_type*  encode( const raw_type* _in, compressed_type* _out, std::vector<std::size_t> _shape) override final {
+   compressed_type*  encode( const raw_type* _in, compressed_type* _out, const std::vector<std::size_t>& _shape) override final {
 
     std::size_t size = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
     
@@ -296,7 +300,9 @@ struct square :  public sqy::filter<T> {
     return (_out+size);
   }
 
-  int decode( const raw_type* _in, compressed_type* _out, std::vector<std::size_t> _shape) const override final {
+  int decode( const raw_type* _in, compressed_type* _out,
+	      const std::vector<std::size_t>& _shape,
+	      std::vector<std::size_t>) const override final {
 
     std::size_t size = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
     
@@ -361,7 +367,7 @@ struct sum_up :  public sqy::sink<T> {
     
   }
 
-  compressed_type* encode( const raw_type* _in, compressed_type* _out, std::vector<std::size_t> _shape) override final {
+  compressed_type* encode( const raw_type* _in, compressed_type* _out, const std::vector<std::size_t>& _shape) override final {
 
     std::size_t size = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
     
@@ -380,7 +386,7 @@ struct sum_up :  public sqy::sink<T> {
 
   int decode( const compressed_type* _in,
 	      raw_type* _out,
-	      std::vector<std::size_t> _inshape,
+	      const std::vector<std::size_t>& _inshape,
 	      std::vector<std::size_t> _outshape = std::vector<std::size_t>()
 	      ) const override final {
 
@@ -462,7 +468,7 @@ struct high_bits :  public sqy::sink<T> {
     
   }
 
-  compressed_type* encode( const raw_type* _in, compressed_type* _out, std::vector<std::size_t> _shape) override final {
+  compressed_type* encode( const raw_type* _in, compressed_type* _out, const std::vector<std::size_t>& _shape) override final {
 
     std::size_t size = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
     const int shift_right_by = (sizeof(raw_type)*CHAR_BIT) - 4;
@@ -474,7 +480,7 @@ struct high_bits :  public sqy::sink<T> {
   }
 
   int decode( const compressed_type* _in, raw_type* _out,
-	      std::vector<std::size_t> _inshape,
+	      const std::vector<std::size_t>& _inshape,
 	      std::vector<std::size_t> _outshape = std::vector<std::size_t>()
 	      ) const override final {
 

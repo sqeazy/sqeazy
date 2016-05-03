@@ -2,6 +2,7 @@
 #define _DYNAMIC_STAGE_H_
 
 #include <typeinfo>
+#include <iostream>
 #include <memory>
 #include <vector>
 #include <numeric>
