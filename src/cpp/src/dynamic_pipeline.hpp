@@ -469,6 +469,8 @@ namespace sqeazy
 	if(!cfg.empty())
 	  value << "(" << cfg << ")";
 
+	if(tail_filters_.size())
+	  value << "->";
       }
 
       if(tail_filters_.size())

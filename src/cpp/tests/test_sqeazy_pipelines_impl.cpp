@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_CASE( roundtrip ){
 }
 BOOST_AUTO_TEST_SUITE_END()
 
-BOOST_FIXTURE_TEST_SUITE( sqeazy_pipelines, uint16_cube_of_8 )
+BOOST_FIXTURE_TEST_SUITE( tricky_pipelines, uint16_cube_of_8 )
 
 BOOST_AUTO_TEST_CASE( roundtrip_quantiser_h264 ){
 
