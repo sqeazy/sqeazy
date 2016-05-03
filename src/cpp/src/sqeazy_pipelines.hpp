@@ -37,9 +37,6 @@ namespace sqeazy {
   using tail_filters_factory = stage_factory<
     diff_scheme<T>,
     bitswap_scheme<T>,
-    // remove_background_scheme<T>,
-    // flatten_to_neighborhood_scheme<T>,
-    // remove_estimated_background_scheme<T>,
     h264_scheme<T>,
     hevc_scheme<T>
     >;
