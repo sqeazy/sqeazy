@@ -14,7 +14,7 @@
 
 #include "string_parsers.hpp"
 #include "sqeazy_utils.hpp"
-
+#include "traits.hpp"
 #include "dynamic_stage.hpp"
 #include "dynamic_stage_factory.hpp"
 
@@ -29,15 +29,6 @@ namespace sqeazy
   template <typename T>
   using default_sink_factory = stage_factory<blank_sink<T> >;
   
-  template <typename head_t, typename tail_t, bool flag = true>
-  struct binary_select_type{
-    typedef head_t type;
-  };
-
-  template <typename head_t, typename tail_t>
-  struct binary_select_type<head_t,tail_t,false>{
-    typedef tail_t type;
-  };
 
 
   
@@ -521,7 +512,9 @@ namespace sqeazy
        
     */
     
-    outgoing_t* encode(const incoming_t *_in, outgoing_t *_out, std::vector<std::size_t> _in_shape) override final {
+    outgoing_t* encode(const incoming_t *_in,
+		       outgoing_t *_out,
+		       const std::vector<std::size_t>& _in_shape) override final {
 
       outgoing_t* value = nullptr;
       std::size_t len = std::accumulate(_in_shape.begin(), _in_shape.end(),1,std::multiplies<std::size_t>());
@@ -680,8 +673,9 @@ namespace sqeazy
        
     */
     
-    int decode(const outgoing_t *_in, incoming_t *_out,
-	       std::vector<std::size_t> _inshape,
+    int decode(const outgoing_t *_in,
+	       incoming_t *_out,
+	       const std::vector<std::size_t>& _inshape,
 	       std::vector<std::size_t> _outshape = std::vector<std::size_t>()) const override final {
       
       

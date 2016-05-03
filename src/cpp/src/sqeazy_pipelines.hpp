@@ -38,7 +38,8 @@ namespace sqeazy {
     diff_scheme<T>,
     bitswap_scheme<T>,
     h264_scheme<T>,
-    hevc_scheme<T>
+    hevc_scheme<T>,
+    lz4_scheme<T>
     >;
   
   template <typename T>
@@ -51,7 +52,10 @@ namespace sqeazy {
 					      lz4_scheme<char>,
 					      hevc_scheme<char>,
 					      h264_scheme<char>
-					      >
+					      >,
+					      stage_factory<
+						lz4_scheme<char>
+						>
 					    >;
   
   //FIXME: required as quantiser will emit compilation error if incoming_type == outcoming_type
@@ -61,7 +65,10 @@ namespace sqeazy {
 						lz4_scheme<std::uint8_t>,
 						hevc_scheme<std::uint8_t>,
 						h264_scheme<std::uint8_t>
-						>
+						>,
+					       stage_factory<
+						 lz4_scheme<char>
+						 >
 					      >;
 
 }

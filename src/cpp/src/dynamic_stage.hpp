@@ -54,7 +54,7 @@ namespace sqeazy{
     
     virtual ~filter() {}
 
-    virtual out_type* encode(const in_type*, out_type*,std::vector<std::size_t>) {return nullptr;};
+    virtual out_type* encode(const in_type*, out_type*,const std::vector<std::size_t>&) {return nullptr;};
     virtual out_type* encode(const in_type* _in, out_type* _out,std::size_t len) {
 
       std::vector<std::size_t> shape(1,len);
@@ -62,12 +62,18 @@ namespace sqeazy{
 
     };
 
-
-    virtual int decode(const in_type*, out_type*,std::vector<std::size_t>) const {return 1;};
-    virtual int decode(const in_type* _in, out_type* _out,std::size_t len) const {
+    
+    virtual int decode(const in_type*,
+		       out_type*,
+		       const std::vector<std::size_t>&,
+		       std::vector<std::size_t>) const {return 1;};
+    
+    virtual int decode(const in_type* _in, out_type* _out,
+		       std::size_t len,
+		       std::size_t) const {
 
       std::vector<std::size_t> shape(1,len);
-      return decode(_in,_out,shape);
+      return decode(_in,_out,shape,shape);
 
     };
     
@@ -109,7 +115,7 @@ namespace sqeazy{
       return encode(_in,_out,shape);
 
     };
-    virtual out_type* encode(const raw_t*, out_type*,std::vector<std::size_t>) {return nullptr;};
+    virtual out_type* encode(const raw_t*, out_type*,const std::vector<std::size_t>&) {return nullptr;};
 
     virtual int decode(const out_type* _in,
 		       raw_t* _out,
@@ -122,7 +128,7 @@ namespace sqeazy{
 
     };
     virtual int decode(const out_type* _in, raw_t* _out,
-		       std::vector<std::size_t> _inshape,
+		       const std::vector<std::size_t>& _inshape,
 		       std::vector<std::size_t> _outshape = std::vector<std::size_t>()) const {return 1;};
 
     virtual std::intmax_t max_encoded_size(std::intmax_t _incoming_size_byte) const { return 0; };
@@ -332,8 +338,15 @@ namespace sqeazy{
       //TODO: REFACTOR THIS!
       for(const auto& step : chain_)
 	{
-	  value << const_stage_view(step)->name();
-	  std::string cfg = const_stage_view(step)->config();
+	  auto cview = const_stage_view(step);
+
+	  if(!cview){
+	    std::cerr << "[src/cpp/src/dynamic_stage.hpp] \t unable to parse chain step\n";
+	    continue;
+	  }
+	    
+	  value << cview->name();
+	  std::string cfg = cview->config();
 
 	  if(!cfg.empty())
 	    value << "(" << cfg << ")";
@@ -380,7 +393,9 @@ namespace sqeazy{
        
     */
     
-    outgoing_t* encode(const incoming_t *_in, outgoing_t *_out, std::vector<std::size_t> _shape) /*override final*/ {
+    outgoing_t* encode(const incoming_t *_in,
+		       outgoing_t *_out,
+		       const std::vector<std::size_t>& _shape) /*override final*/ {
       outgoing_t* value = nullptr;
       std::size_t len = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
       //      std::size_t max_len_byte = len*sizeof(incoming_t);
@@ -424,10 +439,17 @@ namespace sqeazy{
        
     */
     
-    int decode(const outgoing_t *_in, incoming_t *_out, std::vector<std::size_t> _shape) const /*override final*/ {
+    int decode(const outgoing_t *_in,
+	       incoming_t *_out,
+	       const std::vector<std::size_t>& _ishape,
+	       std::vector<std::size_t> _oshape = std::vector<std::size_t>()) const /*override final*/ {
+      
       int value = 0;
       int err_code = 0;
-      std::size_t len = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
+      if(_oshape.empty())
+	_oshape = _ishape;
+      
+      std::size_t len = std::accumulate(_ishape.begin(), _ishape.end(),1,std::multiplies<std::size_t>());
       std::vector<incoming_t> temp(len,0);
       std::copy(_in,_in+len,temp.begin());
 
@@ -440,7 +462,8 @@ namespace sqeazy{
 	    
 	  err_code = (*rev_begin)->decode(temp.data(),
 					  _out,
-					  _shape);
+					  _ishape,
+					  _oshape);
 	  value += err_code ? (10*(fidx+1))+err_code : 0;
 	  std::copy(_out,
 		    _out+len,

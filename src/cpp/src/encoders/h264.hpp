@@ -42,13 +42,21 @@ extern "C" {
 
 namespace sqeazy {
 
+  template <typename in_type>
+  using h264_scheme_base_type = typename binary_select_type<filter<in_type>,//true
+							    sink<in_type>,
+							    sizeof(in_type)==1>::type;
   
   template < typename in_type , typename S = std::size_t>
-  struct h264_scheme :  public sink<in_type> {
+  struct h264_scheme :  public h264_scheme_base_type<in_type>
+  {
 
-    typedef sink<in_type> sink_type;
+    typedef typename binary_select_type<filter<in_type>,//true
+					sink<in_type>,
+					sizeof(in_type)==1>::type base_t;
+
     typedef in_type raw_type;
-    typedef typename sink_type::out_type compressed_type;
+    typedef typename base_t::out_type compressed_type;
 
     static_assert(std::is_arithmetic<raw_type>::value==true,"[h264_scheme] input type is non-arithmetic");
     static_assert(sizeof(raw_type)==1,"[h264_scheme] input type is not 1-byte wide (large bit-depths than 8 are not supported yet)");
@@ -116,6 +124,7 @@ namespace sqeazy {
 	return _size_bytes;
       
     }
+
     
     /**
      * @brief encode input raw_type buffer and write to output (not owned, not allocated)
@@ -125,7 +134,9 @@ namespace sqeazy {
      * @param _length mutable std::vector<size_type>, contains the length of _input at [0] and the number of written bytes at [1]
      * @return sqeazy::error_code
      */
-    compressed_type* encode( const raw_type* _in, compressed_type* _out, std::vector<std::size_t> _shape) override final {
+    compressed_type* encode( const raw_type* _in,
+			     compressed_type* _out,
+			     const std::vector<std::size_t>& _shape) override final {
 
       typedef typename sqeazy::twice_as_wide<size_t>::type local_size_type;
       
@@ -149,11 +160,9 @@ namespace sqeazy {
       } 
 
       if(drange<9)
-	num_written_bytes = ffmpeg_encode_stack<raw_type, AV_CODEC_ID_H264>(temp_in,temp_out,config_map);
-	// num_written_bytes = h264_encode_stack((uint8_t*)&temp_in[0],
-	// 				      _shape,
-	// 				      temp_out,
-	// 				      config_map);
+	num_written_bytes = ffmpeg_encode_stack<raw_type, AV_CODEC_ID_H264>(temp_in,
+									    temp_out,
+									    config_map);
       else {
 	//TODO: apply quantisation
 	std::cerr << "data with dynamic range > 8 found! Doing nothing\n";
@@ -171,7 +180,7 @@ namespace sqeazy {
 
     //FIXME: the output buffer will most likely be larger than the input buffer
     int decode( const compressed_type* _in, raw_type* _out,
-		std::vector<std::size_t> _inshape,
+		const std::vector<std::size_t>& _inshape,
 		std::vector<std::size_t> _outshape = std::vector<std::size_t>()) const override final {
 
       if(_outshape.empty())

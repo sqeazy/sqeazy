@@ -33,7 +33,25 @@ namespace sqeazy {
   template	<> struct twice_as_wide<float>	       { typedef double		type; };
   template	<> struct twice_as_wide<double>	       { typedef long double	type; };
 
-  
+  /**
+     \brief meta-function that selects head_t if flag is true and tail_t if flag is false
+     
+     \param[in] 
+     
+     \return 
+     \retval 
+     
+  */
+  template <typename head_t, typename tail_t, bool flag = true>
+  struct binary_select_type{
+    typedef head_t type;
+  };
+
+  template <typename head_t, typename tail_t>
+  struct binary_select_type<head_t,tail_t,false>{
+    typedef tail_t type;
+  };
+
   
   struct collapse {
 

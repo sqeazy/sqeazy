@@ -86,7 +86,7 @@ namespace sqeazy {
       
     }
     
-    compressed_type* encode( const raw_type* _input, compressed_type* _output, std::vector<std::size_t> _shape) override final {
+    compressed_type* encode( const raw_type* _input, compressed_type* _output, const std::vector<std::size_t>& _shape) override final {
 
       std::size_t length = std::accumulate(_shape.begin(), _shape.end(), 1, std::multiplies<std::size_t>());
       return encode(_input,_output,length);
@@ -94,14 +94,19 @@ namespace sqeazy {
     }
 
 
-    int decode( const compressed_type* _input, raw_type* _output, std::size_t _input_size) const override final {
+    int decode( const compressed_type* _input,
+		raw_type* _output,
+		std::size_t _input_size,
+		std::size_t _output_size = 0) const override final {
 
       std::copy(_input, _input + _input_size,_output);
       
       return 0;
     }
     
-    int decode( const compressed_type* _input, raw_type* _output, std::vector<std::size_t> _shape) const override final {
+    int decode( const compressed_type* _input, raw_type* _output,
+		const std::vector<std::size_t>& _shape,
+		std::vector<std::size_t>) const override final {
 
       std::size_t length = std::accumulate(_shape.begin(), _shape.end(), 1, std::multiplies<std::size_t>());
       return decode(_input,_output,length);

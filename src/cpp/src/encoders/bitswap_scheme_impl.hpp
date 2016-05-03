@@ -111,7 +111,7 @@ namespace sqeazy {
 
     }
    
-    compressed_type* encode( const raw_type* _input, compressed_type* _output, std::vector<std::size_t> _shape) override final {
+    compressed_type* encode( const raw_type* _input, compressed_type* _output, const std::vector<std::size_t>& _shape) override final {
 
       size_t _length = std::accumulate(_shape.begin(),
 				       _shape.end(),
@@ -125,11 +125,16 @@ namespace sqeazy {
 
 
 
-    int decode( const compressed_type* _input, raw_type* _output, std::vector<std::size_t> _shape) const override final {
+    int decode( const compressed_type* _input, raw_type* _output,
+		const std::vector<std::size_t>& _ishape,
+		std::vector<std::size_t> _oshape = std::vector<std::size_t>()) const override final {
 
+      if(_oshape.empty())
+	_oshape = _ishape;
+      
       typedef typename sqeazy::twice_as_wide<std::size_t>::type size_type;
-      size_type _length = std::accumulate(_shape.begin(),
-					  _shape.end(),
+      size_type _length = std::accumulate(_ishape.begin(),
+					  _ishape.end(),
 					  1,
 					  std::multiplies<std::size_t>());
       size_type max_size = _length - (_length % num_planes);
@@ -138,9 +143,15 @@ namespace sqeazy {
       return sqeazy::detail::scalar_bitplane_reorder_decode<static_num_bits_per_plane>(_input, _output, max_size);
     }
     
-    int decode( const compressed_type* _input, raw_type* _output, std::size_t _length) const // override final
+    int decode( const compressed_type* _input,
+		raw_type* _output,
+		std::size_t _length,
+		std::size_t _olength = 0) const override final
     {
 
+      if(!_olength)
+	_olength = _length;
+      
       typedef typename sqeazy::twice_as_wide<std::size_t>::type size_type;
       size_type max_size = _length - (_length % num_planes);
       if(max_size < _length)

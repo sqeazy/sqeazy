@@ -86,7 +86,9 @@ namespace sqeazy {
       return _size_bytes;
     }
 
-    compressed_type* encode( const raw_type* _input, compressed_type* _output, std::vector<std::size_t> _shape) override final {
+    compressed_type* encode( const raw_type* _input,
+			     compressed_type* _output,
+			     const std::vector<std::size_t>& _shape) override final {
 
       typedef std::size_t size_type;
         unsigned long length = std::accumulate(_shape.begin(), _shape.end(), 1, std::multiplies<size_type>());
@@ -148,7 +150,9 @@ namespace sqeazy {
       
     }
 
-    int decode( const compressed_type* _input, raw_type* _output, std::vector<std::size_t> _shape) const override final {
+    int decode( const compressed_type* _input, raw_type* _output,
+		const std::vector<std::size_t>& _shape,
+		std::vector<std::size_t>) const override final {
 
       return 1;
     }

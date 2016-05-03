@@ -14,6 +14,8 @@ static const std::string default_filter_name = "bitswap1->lz4";
 static const std::string default_filter_name_part1 = "bitswap1";
 static const std::string default_filter_name_part2 = "lz4";
 
+static const std::string tricky_filter_name = "quantiser->h264";
+
 typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 
 
@@ -169,5 +171,44 @@ BOOST_AUTO_TEST_CASE( roundtrip ){
 				  incrementing_cube.data()+size-10, incrementing_cube.data()+size);
 
   
+}
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE( sqeazy_pipelines, uint16_cube_of_8 )
+
+BOOST_AUTO_TEST_CASE( roundtrip_quantiser_h264 ){
+
+  const unsigned long data_bytes = size_in_byte;
+  long length = data_bytes;
+  
+  std::vector<size_t> shape(dims.begin(), dims.end());
+
+  auto pipe = sqeazy::dypeline<std::uint16_t>::from_string(tricky_filter_name);
+  
+  int max_encoded_size = pipe.max_encoded_size(data_bytes);
+  std::vector<char> intermediate(max_encoded_size,0);
+  
+  char* encoded_end = pipe.encode(constant_cube.data(),
+				  intermediate.data(),
+				  shape);
+    
+  BOOST_REQUIRE(encoded_end!=nullptr);
+  length = encoded_end - intermediate.data();
+  
+  BOOST_CHECK_LT(length,max_encoded_size);
+  
+  int rvalue = pipe.decode(intermediate.data(),
+			   incrementing_cube.data(),
+			   length
+			   );
+  
+  BOOST_CHECK_EQUAL(rvalue, 0);
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(constant_cube.data(), constant_cube.data()+10,
+  				incrementing_cube.data(), incrementing_cube.data()+10); 
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(constant_cube.data()+size-10, constant_cube.data()+size,
+				  incrementing_cube.data()+size-10, incrementing_cube.data()+size);
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(constant_cube.data(), constant_cube.data()+size,
+				  incrementing_cube.data(), incrementing_cube.data()+size);
+
 }
 BOOST_AUTO_TEST_SUITE_END()

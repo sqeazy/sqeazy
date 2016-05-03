@@ -36,13 +36,20 @@ extern "C" {
 
 namespace sqeazy {
 
+  template <typename in_type>
+  using hevc_scheme_base_type = typename binary_select_type<filter<in_type>,//true
+							    sink<in_type>,
+							    sizeof(in_type)==1>::type;
   
   template < typename T , typename S = std::size_t>
-  struct hevc_scheme :  public sink<T> {
+  struct hevc_scheme :  public hevc_scheme_base_type<T> {
 
-    typedef sink<T> sink_type;
+    typedef typename binary_select_type<filter<T>,//true
+					sink<T>,
+					sizeof(T)==1>::type base_t;
+
     typedef T raw_type;
-    typedef typename sink_type::out_type compressed_type;
+    typedef typename base_t::out_type compressed_type;
 
     static_assert(std::is_arithmetic<raw_type>::value==true,"[hevc_scheme] input type is non-arithmetic");
     static_assert(sizeof(raw_type)==1,"[hevc_scheme] input type is not 1-byte wide (large bit-depths than 8 are not supported yet)");
@@ -118,7 +125,9 @@ namespace sqeazy {
      * @param _length mutable std::vector<size_type>, contains the length of _input at [0] and the number of written bytes at [1]
      * @return sqeazy::error_code
      */
-    compressed_type* encode( const raw_type* _in, compressed_type* _out, std::vector<std::size_t> _shape) override final {
+    compressed_type* encode( const raw_type* _in,
+			     compressed_type* _out,
+			     const std::vector<std::size_t>& _shape) override final {
 
       typedef typename sqeazy::twice_as_wide<size_t>::type local_size_type;
       
@@ -164,7 +173,7 @@ namespace sqeazy {
 
     //FIXME: the output buffer will most likely be larger than the input buffer
     int decode( const compressed_type* _in, raw_type* _out,
-		std::vector<std::size_t> _inshape,
+		const std::vector<std::size_t>& _inshape,
 		std::vector<std::size_t> _outshape = std::vector<std::size_t>()) const override final {
 
       if(_outshape.empty())

@@ -118,7 +118,9 @@ namespace sqeazy {
      * @param _shape std::vector<size_type>, contains the shape of _input at [0] and the number of written bytes at [1]
      * @return sqeazy::error_code
      */
-    compressed_type* encode( const raw_type* _in, compressed_type* _out, std::vector<std::size_t> _shape) override final {
+    compressed_type* encode( const raw_type* _in,
+			     compressed_type* _out,
+			     const std::vector<std::size_t>& _shape) override final {
 
       std::intmax_t length = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
 
@@ -158,7 +160,7 @@ namespace sqeazy {
 
     int decode( const compressed_type* _in,
 		raw_type* _out,
-		std::vector<std::size_t> _inshape,
+		const std::vector<std::size_t>& _inshape,
 		std::vector<std::size_t> _outshape = std::vector<std::size_t>()
 		) const override final {
 

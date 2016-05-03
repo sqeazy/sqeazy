@@ -26,13 +26,13 @@ BOOST_AUTO_TEST_CASE( encode ){
 
   av_register_all();
   
-  std::vector<char> results(embryo_.num_elements(),0);
+  std::vector<std::uint8_t> results(embryo_.num_elements(),0);
   std::vector<std::size_t> shape = {static_cast<uint32_t>(embryo_.shape()[sqy::row_major::z]),
 				 static_cast<uint32_t>(embryo_.shape()[sqy::row_major::y]),
 				 static_cast<uint32_t>(embryo_.shape()[sqy::row_major::x])};
   std::size_t bytes_written = 0;
-  sqeazy::hevc_scheme<uint8_t> scheme;
-  char* encoded_end = scheme.encode(embryo_.data(),
+  sqeazy::hevc_scheme<std::uint8_t> scheme;
+  auto encoded_end = scheme.encode(embryo_.data(),
 				    results.data(),
 				    shape);
 
@@ -52,14 +52,14 @@ BOOST_AUTO_TEST_CASE( encode ){
 
 BOOST_AUTO_TEST_CASE( roundtrip ){
 
-  std::vector<char> encoded(embryo_.num_elements(),0);
+  std::vector<std::uint8_t> encoded(embryo_.num_elements(),0);
   std::vector<std::size_t> shape = {static_cast<uint32_t>(embryo_.shape()[sqy::row_major::z]),
 				 static_cast<uint32_t>(embryo_.shape()[sqy::row_major::y]),
 				 static_cast<uint32_t>(embryo_.shape()[sqy::row_major::x])};
   std::size_t bytes_written = 0;
 
   sqeazy::hevc_scheme<std::uint8_t> scheme;
-  char* encoded_end = scheme.encode(embryo_.data(),
+  auto encoded_end = scheme.encode(embryo_.data(),
 				    encoded.data(),
 				    shape);
 
@@ -110,14 +110,14 @@ BOOST_AUTO_TEST_CASE( noisy_roundtrip ){
 
   av_register_all();
   
-  std::vector<char> encoded(noisy_embryo_.num_elements(),0);
+  std::vector<std::uint8_t> encoded(noisy_embryo_.num_elements(),0);
   std::vector<std::size_t> shape = {static_cast<uint32_t>(noisy_embryo_.shape()[0]),
 				 static_cast<uint32_t>(noisy_embryo_.shape()[1]),
 				 static_cast<uint32_t>(noisy_embryo_.shape()[2])};
 
   std::size_t bytes_written = 0;
-  sqeazy::hevc_scheme<uint8_t> scheme;
-  char* encoded_end = scheme.encode(noisy_embryo_.data(),encoded.data(),shape);
+  sqeazy::hevc_scheme<std::uint8_t> scheme;
+  auto encoded_end = scheme.encode(noisy_embryo_.data(),encoded.data(),shape);
   BOOST_REQUIRE(encoded_end!=nullptr);
   bytes_written = encoded_end - encoded.data();
   std::vector<std::size_t> encoded_shape = {bytes_written};

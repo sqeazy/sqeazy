@@ -62,12 +62,16 @@ namespace sqeazy {
   
 
   
-  template <typename raw_type, AVCodecID codec_id =  AV_CODEC_ID_HEVC>
+  template <typename raw_type,
+	    AVCodecID codec_id =  AV_CODEC_ID_HEVC,
+	    typename buffer_type = char>
   static uint32_t ffmpeg_encode_stack(const stack_cref<raw_type>& _stack,
-				      std::vector<char>& _buffer ,
+				      std::vector<buffer_type>& _buffer ,
 				      const std::map<std::string,std::string>& _config = *default_config<codec_id>::current,
 				      const std::string& _debug_filename = ""){
 
+    static_assert(sizeof(buffer_type)==1,"ffmpeg only works on byte-size types");
+    
     sqeazy::av_codec_t codec(codec_id);
     sqeazy::av_codec_context_t ctx(codec);
 
@@ -131,13 +135,14 @@ namespace sqeazy {
      \retval number of bytes the encoded _buffer contains
    
   */
-  template <typename raw_type>
+  template <typename raw_type, typename buffer_type=char>
   static uint32_t encode_stack_with_context(sqeazy::av_codec_context_t& _ctx,
 					    const stack_cref<raw_type>& _stack,
-					    std::vector<char>& _buffer,
+					    std::vector<buffer_type>& _buffer,
 					    const std::string& _debug_filename = ""){
 
-
+    static_assert(sizeof(buffer_type)==1,"ffmpeg only works on byte-size types");
+    
     uint32_t bytes_written = 0;
 
     

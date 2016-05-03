@@ -99,7 +99,7 @@ namespace sqeazy {
      * @param _shape mutable std::vector<size_type>, contains the length of _input at [0] and the number of written bytes at [1]
      * @return pointer to end of payload
      */
-    compressed_type* encode( const raw_type* _in, compressed_type* _out, std::vector<std::size_t> _shape) override final {
+    compressed_type* encode( const raw_type* _in, compressed_type* _out, const std::vector<std::size_t>& _shape) override final {
 
       typedef typename sqeazy::twice_as_wide<size_t>::type local_size_type;
       
@@ -126,7 +126,7 @@ namespace sqeazy {
 
 
     int decode( const compressed_type* _in, raw_type* _out,
-		std::vector<std::size_t> _inshape,
+		const std::vector<std::size_t>& _inshape,
 		std::vector<std::size_t> _outshape = std::vector<std::size_t>()) const override final {
 
       if(_outshape.empty())
