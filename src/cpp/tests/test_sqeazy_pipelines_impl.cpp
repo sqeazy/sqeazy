@@ -183,6 +183,8 @@ BOOST_AUTO_TEST_CASE( roundtrip_quantiser_h264 ){
   
   std::vector<size_t> shape(dims.begin(), dims.end());
 
+  BOOST_REQUIRE_EQUAL(shape.size(),3);
+  
   auto pipe = sqeazy::dypeline<std::uint16_t>::from_string(tricky_filter_name);
   
   int max_encoded_size = pipe.max_encoded_size(data_bytes);
