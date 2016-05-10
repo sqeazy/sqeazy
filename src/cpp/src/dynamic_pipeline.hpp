@@ -597,14 +597,17 @@ namespace sqeazy
 				    _shape);
 	
 
-	std::intmax_t compressed_size = encoded_end-_out;
+	std::uintmax_t compressed_size = encoded_end-_out;
 	if(tail_filters_.size()){
 
 	  outgoing_t* casted_temp = reinterpret_cast<outgoing_t*>(temp.data());
 	  
 	  std::copy(_out, _out+compressed_size,casted_temp);
 
-	  std::vector<std::size_t> casted_shape(1,compressed_size);
+	  std::vector<std::size_t> casted_shape(_shape);
+	  
+	  if(compressed_size<(len*sizeof(outgoing_t)))
+	    casted_shape = {compressed_size};
 	  
 	  encoded_end = tail_filters_.encode(casted_temp,
 					     _out,
