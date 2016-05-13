@@ -283,10 +283,17 @@ namespace sqeazy {
     av_format_context_t():
       ptr_(nullptr){
       
-      ptr_ = std::shared_ptr<contained_type>(avformat_alloc_context(),how_to_delete_me);
+      ptr_ = std::shared_ptr<contained_type>(avformat_alloc_context(),
+					     how_to_delete_me);
 
     }
 
+    // ~av_format_context_t(){
+    //   if(ptr_ && ptr_.get())
+    // 	delete ptr_;
+    // }
+      
+    
     contained_type* get(){
       return ptr_.get();
     }

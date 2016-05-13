@@ -25,7 +25,7 @@ namespace sqeazy{
     virtual std::string config() const = 0;
     virtual bool is_compressor() const = 0;
 
-    
+    virtual std::intmax_t max_encoded_size(std::intmax_t _incoming_size_byte) const = 0;
     
   };
   
@@ -78,7 +78,7 @@ namespace sqeazy{
 
     };
     
-    virtual std::intmax_t max_encoded_size(std::intmax_t _incoming_size_byte) const { return 0; };
+    virtual std::intmax_t max_encoded_size(std::intmax_t _incoming_size_byte) const override { return 0; };
   };
 
   /**
@@ -132,7 +132,7 @@ namespace sqeazy{
 		       const std::vector<std::size_t>& _inshape,
 		       std::vector<std::size_t> _outshape = std::vector<std::size_t>()) const {return 1;};
 
-    virtual std::intmax_t max_encoded_size(std::intmax_t _incoming_size_byte) const { return 0; };
+    virtual std::intmax_t max_encoded_size(std::intmax_t _incoming_size_byte) const override { return 0; };
   };    
     
 
@@ -475,11 +475,22 @@ namespace sqeazy{
 
     }
 
-    std::intmax_t max_encoded_size(std::intmax_t _incoming_size_byte){
-      if(!is_compressor())
-	return _incoming_size_byte;
+    std::intmax_t max_encoded_size(std::intmax_t _incoming_size_byte) const { 
+
+      std::vector<std::intmax_t> values;
+      for( auto & f : chain_ )
+	values.push_back(f->max_encoded_size(_incoming_size_byte));
+
+      if(values.empty())
+	return 0;
       else
-	return chain_.front()->max_encoded_size(_incoming_size_byte);
+	return *std::max_element(values.begin(), values.end());
+
+	// if(!is_compressor())
+      // 	return _incoming_size_byte;
+      // else
+      // 	return chain_.front()->max_encoded_size(_incoming_size_byte);
+      
     }
   };
 

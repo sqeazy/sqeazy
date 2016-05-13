@@ -116,7 +116,7 @@ struct set_to :  public sqy::filter<T> {
     return 0;
   }
   
-  const unsigned long max_encoded_size(unsigned long _size_bytes)  {
+   std::intmax_t max_encoded_size(std::intmax_t _size_bytes) const override final {
     return _size_bytes;
   }
 
@@ -196,8 +196,8 @@ struct add_one :  public sqy::filter<T> {
 
     return 0;
   }
-  
-  const unsigned long max_encoded_size(unsigned long _size_bytes)  {
+
+  std::intmax_t max_encoded_size(std::intmax_t _size_bytes) const override final {
     return _size_bytes;
   }
 
@@ -266,8 +266,7 @@ struct square :  public sqy::filter<T> {
     return _in * _in;
   }
 
-
-  const unsigned long max_encoded_size(unsigned long _size_bytes){
+  std::intmax_t max_encoded_size(std::intmax_t _size_bytes) const override final {
     return _size_bytes;
   }
 

@@ -520,6 +520,7 @@ namespace sqeazy
 
       outgoing_t* value = nullptr;
       std::size_t len = std::accumulate(_in_shape.begin(), _in_shape.end(),1,std::multiplies<std::size_t>());
+      const std::size_t max_available_output_size = max_encoded_size(len*sizeof(incoming_t));
       // std::size_t max_len_byte = len*sizeof(incoming_t);
 
       ////////////////////// HEADER RELATED //////////////////
@@ -533,9 +534,13 @@ namespace sqeazy
       char* output_buffer = reinterpret_cast<char*>(_out);
       std::copy(hdr.begin(), hdr.end(), output_buffer);
       outgoing_t* first_output = reinterpret_cast<outgoing_t*>(output_buffer+hdr_shift);
-
+      std::size_t available_bytes_out_buffer = max_available_output_size - hdr_shift;
+      
       ////////////////////// ENCODING //////////////////
-      value = detail_encode(_in,first_output,_in_shape);
+      value = detail_encode(_in,
+			    first_output,
+			    _in_shape,
+			    available_bytes_out_buffer);
       
       ////////////////////// HEADER RELATED //////////////////
       //update header
@@ -560,14 +565,13 @@ namespace sqeazy
 
     outgoing_t* detail_encode(const incoming_t *_in,
 			      outgoing_t *_out,
-			      std::vector<std::size_t> _shape)  {
+			      std::vector<std::size_t> _shape,
+			      std::size_t available_output_bytes)  {
       
       std::size_t len = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
       // std::vector<incoming_t> temp_in(_in, _in+len);
-       
 
-      std::size_t max_len_byte = sink_ ? sink_->max_encoded_size(len*sizeof(incoming_t)) : 0;
-      const size_t temp_size = std::max(std::ceil(max_len_byte/sizeof(incoming_t)),
+      const size_t temp_size = std::max(std::ceil(available_output_bytes/sizeof(incoming_t)),
 					double(len)
 					);
       std::vector<incoming_t> temp(temp_size,0);
@@ -575,8 +579,8 @@ namespace sqeazy
       incoming_t* head_filters_end = nullptr;
       if(head_filters_.size()){
 	head_filters_end = head_filters_.encode(_in,
-						     temp.data(),
-						     _shape);
+						temp.data(),
+						_shape);
 
 	if(!head_filters_end){
 	  std::cerr << "[dynamic_pipeline::detail_encode] unable to process data with head_filters\n";
@@ -584,6 +588,8 @@ namespace sqeazy
 	}
 	
       } else {
+
+	
 	std::copy(_in,
 		  _in + len,
 		  temp.data());
@@ -606,8 +612,11 @@ namespace sqeazy
 
 	  std::vector<std::size_t> casted_shape(_shape);
 	  
-	  if(compressed_size<(len*sizeof(outgoing_t)))
-	    casted_shape = {compressed_size};
+	  if(compressed_size!=(len*sizeof(outgoing_t))){
+	    casted_shape.resize(_shape.size());
+	    std::fill(casted_shape.begin(), casted_shape.end(),1);
+	    casted_shape[0] = compressed_size;
+	  }
 	  
 	  encoded_end = tail_filters_.encode(casted_temp,
 					     _out,
@@ -722,7 +731,9 @@ namespace sqeazy
 					       std::multiplies<std::size_t>());
       std::size_t len = in_size_bytes/sizeof(outgoing_t);
       std::vector<incoming_t> temp(output_len,0);
-
+      std::vector<std::size_t> in_shape(out_shape.size(),1);
+      if(!in_shape.empty())
+	in_shape[0] = in_size_bytes/sizeof(outgoing_t);
       
       if(is_compressor()){
 	typedef typename sink_t::out_type sink_out_t;
@@ -737,13 +748,14 @@ namespace sqeazy
 	  
 	  err_code = tail_filters_.decode(tail_in,
 					  tail_out,
-					  in_size_bytes);
+					  in_shape,
+					  out_shape);
 	  value += err_code ;
 	  
 	  compressor_begin = reinterpret_cast<const outgoing_t*>(sink_in.data());
 	}
 		
-
+	//FIXME: provide shape vectors?
 	err_code = sink_->decode(compressor_begin,
 				 &temp[0],
 				 in_size_bytes,
@@ -771,6 +783,24 @@ namespace sqeazy
 
     }
 
+    /**
+       \brief function to estimate output buffer size for an input of _incoming_size_byte
+       this value is calculated by taking twice the header size as currently available and adding the maximum encoded_size_byte of any registered stages
+       
+       for example: assuming the integer based pipeline "square_all_values->store_only_sum" yields a header of size 100
+       * header_size = 100
+       * given an input buffer of 100 integers, i.e. 400 Bytes, the filters provide
+       square_all_values->max_encoded_size(400) = 400
+       store_only_sum->max_encoded_size(400) = 8
+       * the result would be: 2*100 + max(400,8) = 600 Bytes!
+
+       
+       \param[in] 
+       
+       \return 
+       \retval 
+       
+    */
     std::intmax_t max_encoded_size(std::intmax_t _incoming_size_byte) const override final {
       
       image_header hdr(incoming_t(),
@@ -779,11 +809,19 @@ namespace sqeazy
 		       );
 
       std::intmax_t value = hdr.size()*2;
+
+      std::vector<std::intmax_t> max_enc_size;
+      if(head_filters_.size())
+	max_enc_size.push_back(head_filters_.max_encoded_size(_incoming_size_byte));
+
+      if(sink_)
+	max_enc_size.push_back(sink_->max_encoded_size(_incoming_size_byte));
       
-      if(!is_compressor())
-	return value+_incoming_size_byte;
-      else
-	return value+sink_->max_encoded_size(_incoming_size_byte);
+      if(tail_filters_.size())
+	max_enc_size.push_back(tail_filters_.max_encoded_size(_incoming_size_byte));
+
+      return value + *std::max_element(max_enc_size.begin(), max_enc_size.end());
+      
     }
 
     template <typename T>

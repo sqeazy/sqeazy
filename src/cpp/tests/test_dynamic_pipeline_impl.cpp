@@ -205,6 +205,29 @@ BOOST_AUTO_TEST_CASE (bootstrap) {
   // BOOST_CHECK_EQUAL(empty_pipe.empty(),true);
 }
 
+BOOST_AUTO_TEST_CASE (max_encoded_size) {
+
+  const size_t artificial_size_bytes = 1000*sizeof(int);
+  auto filter_pipe = sqeazy_testing::dynamic_pipeline<int>::from_string("add_one->square");
+  size_t result = filter_pipe.max_encoded_size(artificial_size_bytes);
+
+  BOOST_CHECK_GT(result,artificial_size_bytes);
+
+  auto sink_pipe = sqeazy_testing::dynamic_pipeline<int>::from_string("add_one->sum_up");
+  result = sink_pipe.max_encoded_size(artificial_size_bytes);
+  BOOST_CHECK_GT(result,artificial_size_bytes);
+
+  sink_pipe = sqeazy_testing::dynamic_pipeline<int>::from_string("sum_up");
+  result = sink_pipe.max_encoded_size(artificial_size_bytes);
+  BOOST_CHECK_LT(result,artificial_size_bytes);
+}
+
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE( compression_related )
+
+
 BOOST_AUTO_TEST_CASE (encode_with_filters) {
 
   std::vector<int> input(10);

@@ -145,10 +145,10 @@ namespace sqeazy {
       int drange = sizeof(raw_type)*CHAR_BIT;
 
       std::vector<compressed_type> temp_out;
+
       stack<raw_type> temp_in(_shape);
+      
       std::copy(_in,_in+temp_in.num_elements(),temp_in.data());
-      // std::vector<compressed_type> temp_out;	
-      // std::vector<raw_type> temp_in(_in,_in + total_length);
       
       size_t num_written_bytes = 0;
 
@@ -159,10 +159,12 @@ namespace sqeazy {
 	drange = max_bit_set - min_bit_set;
       } 
 
-      if(drange<9)
-	num_written_bytes = ffmpeg_encode_stack<raw_type, AV_CODEC_ID_H264>(temp_in,
+      if(drange<9){
+	stack_cref<raw_type> temp_in_cref = temp_in;
+	num_written_bytes = ffmpeg_encode_stack<raw_type, AV_CODEC_ID_H264>(temp_in_cref,
 									    temp_out,
 									    config_map);
+      }
       else {
 	//TODO: apply quantisation
 	std::cerr << "data with dynamic range > 8 found! Doing nothing\n";
@@ -170,6 +172,10 @@ namespace sqeazy {
 	
       }
 
+      if(num_written_bytes>(temp_out.size()*sizeof(compressed_type))){
+	throw std::runtime_error("video codec has exceeded the alotted temp space, if this exception doesn't kill the process, a sigsegv will do");
+      }
+      
       if(num_written_bytes > 0) 
 	std::copy(temp_out.begin(), temp_out.end(),_out);
       

@@ -126,12 +126,10 @@ ENDIF()
 ########################################### GLOBAL DEFINES ######################################################
 #SET(LIST_ADDITIONAL_COMPILE_FLAGS "")
 if(SQY_VERBOSE)
-  MESSAGE("ADDING -D_SQY_VERBOSE=1")
   ADD_DEFINITIONS(-D_SQY_VERBOSE_=1)
 endif(SQY_VERBOSE)
 
 if(${CMAKE_BUILD_TYPE} MATCHES Debug)# OR ${CMAKE_BUILD_TYPE} MATCHES RELWITHDEBINFO
-  MESSAGE("ADDING -D_SQY_DEBUG_=1")
   ADD_DEFINITIONS(-D_SQY_DEBUG_=1)
 endif()
 

@@ -93,8 +93,10 @@ namespace sqeazy {
        
     */
     std::intmax_t max_encoded_size(std::intmax_t _size_bytes) const override final {
-    
-      return _size_bytes*sizeof(raw_type)/sizeof(compressed_type);
+
+      std::intmax_t payload_size = _size_bytes*sizeof(raw_type)/sizeof(compressed_type);
+      std::intmax_t lut_size = shrinker.lut_decode_.size()*sizeof(raw_type);
+      return payload_size+lut_size;
       
     }
 

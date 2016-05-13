@@ -83,6 +83,34 @@ namespace sqeazy {
     }
   }
 
+  /**
+     \brief method to check if list of types contains type given by runtime string name
+     
+     \param[in] _name string to match type by
+     
+     \return 
+     \retval 
+     
+  */
+  template <class Head>
+  void fill_max_encoded_size(std::intmax_t _size_byte, std::vector<std::intmax_t>& _output)
+  {
+
+    Head instance;
+    _output.push_back(instance.max_encoded_size(_size_byte));
+    return ;
+    
+  }
+
+
+  template <class Head, class Second, class... Tail>
+  void fill_max_encoded_size(std::intmax_t _size_byte, std::vector<std::intmax_t>& _output)
+  {
+    Head instance;
+    _output.push_back(instance.max_encoded_size(_size_byte));
+    return fill_max_encoded_size<Second, Tail...>(_size_byte,_output);
+  }
+
   
   /**
      \brief method to check if list of types contains type given by runtime string name
@@ -224,6 +252,15 @@ namespace sqeazy {
 
     }
 
+    static const std::intmax_t max_encoded_size(std::intmax_t _size_bytes) {
+
+      std::vector<std::intmax_t> values;
+      fill_max_encoded_size<available_types...>(_size_bytes, values);
+      
+      return *std::max_element(values.begin(), values.end());
+
+    }
+    
     static const std::vector<std::string> name_list() {
 
       std::vector<std::string> value;

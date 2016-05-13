@@ -4,6 +4,9 @@
 #include "test_dynamic_pipeline_impl.hpp"
 #include "dynamic_stage_factory.hpp"
 
+template <typename T>
+using only_sum_up_factory = sqy::stage_factory<sum_up<T> >;
+
 
 BOOST_AUTO_TEST_SUITE( factory_test_suite )
 
@@ -80,5 +83,14 @@ BOOST_AUTO_TEST_CASE( factory_description )
 
 }
 
+BOOST_AUTO_TEST_CASE( factory_max_encoded_size )
+{
+  
+  BOOST_CHECK_EQUAL(my_tail_factory<char>::max_encoded_size(2048),2048);
+  BOOST_CHECK_EQUAL(sink_factory<char>::max_encoded_size(2048),2048);
+  BOOST_CHECK_LT(only_sum_up_factory<char>::max_encoded_size(2048),2048);
+  BOOST_CHECK_EQUAL(only_sum_up_factory<char>::max_encoded_size(2048),sizeof(sum_up<char>::result_type));
+  
+}
 
 BOOST_AUTO_TEST_SUITE_END()
