@@ -394,12 +394,12 @@ int SQY_Pipeline_Max_Compressed_Length_3D_UI16(const char* pipeline,
 int SQY_Pipeline_Decompressed_Length(const char* data,
 				     long *length){
   
-  int value =1;
+  int value =0;
 
   sqy::image_header hdr(data,data+(*length));
   
   *length = hdr.raw_size_byte();
-  return 0;
+  return value;
 }
 
 int SQY_PipelineDecode_UI16(const char* src, long srclength, char* dst){
