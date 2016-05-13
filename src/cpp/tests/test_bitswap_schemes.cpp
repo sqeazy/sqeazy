@@ -34,7 +34,7 @@ T condense_constant(const T& _const){
   
   T condensed = 0;
 
-  for(int i = 0;i<(CHAR_BIT/plane_width);++i){
+  for(unsigned i = 0;i<(CHAR_BIT/plane_width);++i){
     T temp = _const << 1;//emulates rotate_left<1>
     
     condensed += (temp << i*plane_width);
