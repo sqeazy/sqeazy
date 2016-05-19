@@ -544,12 +544,12 @@ namespace sqeazy
       
       ////////////////////// HEADER RELATED //////////////////
       //update header
-      std::size_t compressed_size = value-first_output;
-      hdr.set_compressed_size_byte<incoming_t>(compressed_size*sizeof(outgoing_t));
+      std::size_t compressed_bytes = value-first_output;
+      hdr.set_compressed_size_byte<incoming_t>(compressed_bytes*sizeof(outgoing_t));
       hdr.set_pipeline<incoming_t>(name());
 
       if(hdr.size()!=hdr_shift){
-	std::copy(first_output, first_output + compressed_size,
+	std::copy(first_output, first_output + compressed_bytes,
 		  output_buffer+hdr.size()
 		  );
 	first_output = reinterpret_cast<outgoing_t*>(output_buffer+hdr.size());
@@ -557,7 +557,7 @@ namespace sqeazy
       
       std::copy(hdr.begin(), hdr.end(), output_buffer);
             
-      value = (outgoing_t*)(output_buffer+hdr.size()+(compressed_size*sizeof(outgoing_t)));
+      value = first_output+(compressed_bytes*sizeof(outgoing_t));
             
       return value;
 
@@ -756,9 +756,11 @@ namespace sqeazy
 	  value += err_code ;
 	  
 	  compressor_begin = reinterpret_cast<const outgoing_t*>(sink_in.data());
+	  in_size_bytes    = sink_in.size();
 	}
 		
 	//FIXME: provide shape vectors?
+	//produces a memory corruption, 2016/05/19
 	err_code = sink_->decode(compressor_begin,
 				 &temp[0],
 				 in_size_bytes,
