@@ -192,7 +192,7 @@ namespace sqeazy {
       if(_outshape.empty())
 	_outshape = _inshape;
       
-      size_t _len_in = std::accumulate(_inshape.begin(), _inshape.end(),1,std::multiplies<size_t>());
+      size_t _len_in = std::accumulate(_inshape.begin(), _inshape.end(),sizeof(compressed_type),std::multiplies<size_t>());
       size_t _len_out = std::accumulate(_outshape.begin(), _outshape.end(),1,std::multiplies<size_t>());
 	
       const char* input = reinterpret_cast<const char*>(_in);

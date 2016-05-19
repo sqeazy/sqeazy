@@ -743,7 +743,10 @@ namespace sqeazy
 	  
 	if(tail_filters_.size()){
 	  const outgoing_t* tail_in = reinterpret_cast<const outgoing_t*>(_in);
-	  sink_in.resize(in_size_bytes/sizeof(outgoing_t));
+
+	  //FIXME: filters may change the size of the buffer!
+	  sink_in.resize(output_len*sizeof(*_out));
+	  
 	  outgoing_t* tail_out = reinterpret_cast<outgoing_t*>(sink_in.data());
 	  
 	  err_code = tail_filters_.decode(tail_in,

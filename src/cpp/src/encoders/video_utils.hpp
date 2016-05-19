@@ -30,14 +30,16 @@ namespace sqeazy {
   void av_free_packet(AVPacket* pkt){
 
     //FIXME: inserted due to deprecation error, needs to be replaced
-    //       with something maintainable as this is hardcoded and might changed upstream
+    //       with something maintainable as this is hardcoded and might be changed upstream
     if (pkt) {
-      if (pkt->buf)
-	av_buffer_unref(&pkt->buf);
+      // if (pkt->buf)
+      // 	av_buffer_unref(&pkt->buf);
+      av_packet_unref(pkt);
       pkt->data            = NULL;
       pkt->size            = 0;
- 
-      av_packet_free_side_data(pkt);
+
+      // FIXME: I am unclear if this call is actually needed! (most examples live with just av_buffer_unref)
+      // av_packet_free_side_data(pkt);
     }
     
   }
@@ -163,7 +165,8 @@ namespace sqeazy {
     void clear(){
       if(ptr_){
 	avcodec_close(ptr_);
-	avcodec_free_context(&ptr_);
+	av_free(ptr_);
+	// avcodec_free_context(&ptr_);
 	ptr_ = 0;
       }
     }
@@ -274,8 +277,12 @@ namespace sqeazy {
     
     static void how_to_delete_me(contained_type* _ctx){
       if(_ctx){
+	// if(_ctx->pb)
+	//   avio_closep(&_ctx->pb);
+	//FIXME?
 	if(_ctx->iformat)
 	  avformat_close_input(&_ctx);
+
 	avformat_free_context(_ctx);
       }
     };
@@ -364,26 +371,27 @@ namespace sqeazy {
     std::shared_ptr<contained_type> ptr_;
     
     // std::vector<char,boost::alignment::aligned_allocator<char, 32> > buffer_;
-    char* buffer_;
-    static const uint32_t buffer_size_ = 4096;//given by ffmpeg examples
+    std::uint8_t* buffer_;
+    static const uint32_t buffer_size_ = 4096;//given by ffmpeg example avio_reading.c
 
     avio_buffer_data data_2_read_;
     
     static void how_to_delete_me(contained_type* _ctx){
       if(_ctx){
-	//av_freep(&avio_ctx->buffer);
+	if(_ctx->buffer)
+	  av_freep(&_ctx->buffer);
 	av_freep(&_ctx);
       }
     };
 
     avio_context_t(const avio_buffer_data& _read_data):
       ptr_(nullptr),
-      buffer_(new char[buffer_size_]),//FIXME: is this a memleak?
+      buffer_((std::uint8_t*)av_malloc(buffer_size_)),
       data_2_read_(_read_data)
     {
 
       
-      ptr_ = std::shared_ptr<contained_type>(avio_alloc_context(reinterpret_cast<std::uint8_t*>(&buffer_[0]),
+      ptr_ = std::shared_ptr<contained_type>(avio_alloc_context(buffer_,
 								buffer_size_,
 								0,
 								&data_2_read_,

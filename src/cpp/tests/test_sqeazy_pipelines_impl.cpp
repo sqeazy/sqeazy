@@ -185,7 +185,7 @@ BOOST_AUTO_TEST_CASE( roundtrip_quantiser ){
   av_register_all();
 
   std::vector<size_t> shape(3,128);
-  shape.back() *= 2;
+  shape.front() *= 2;
   
   const size_t len = std::accumulate(shape.begin(),
 				     shape.end(),
@@ -235,7 +235,7 @@ BOOST_AUTO_TEST_CASE( roundtrip_quantiser2file ){
   av_register_all();
 
   std::vector<size_t> shape(3,128);
-  shape.back() *= 2;
+  shape.front() *= 2;
   
   const size_t len = std::accumulate(shape.begin(),
 				     shape.end(),
@@ -295,7 +295,7 @@ BOOST_AUTO_TEST_CASE( roundtrip_quantiser_h264 ){
   const size_t data_bytes = len*sizeof(std::uint16_t);
   long length = data_bytes;
   
-  std::vector<std::uint16_t> inputdata(len,1);
+  std::vector<std::uint16_t> inputdata(len,42);
   std::vector<std::uint16_t> outputdata(len,0);
 
   BOOST_REQUIRE_EQUAL(shape.size(),3);
