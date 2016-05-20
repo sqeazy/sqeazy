@@ -72,6 +72,8 @@ namespace sqeazy {
 #else
       av_log_set_level(AV_LOG_DEBUG);
 #endif
+      
+      av_register_all();
     }
 
     static const std::string description() { return std::string("hevc encode gray8 buffer with hevc, args can be anything that libavcodec can understand, see ffmpeg -h encoder=hevc"); };

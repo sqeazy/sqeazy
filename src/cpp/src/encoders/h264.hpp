@@ -80,6 +80,7 @@ namespace sqeazy {
       av_log_set_level(AV_LOG_DEBUG);
 #endif
       
+      av_register_all();
     }
 
     static const std::string description() { return std::string("h264 encode gray8 buffer with h264, args can be anything that libavcodec can understand, see ffmpeg -h encoder=h264"); };
