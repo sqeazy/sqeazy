@@ -32,6 +32,7 @@ struct string_fixture
   std::string one_key = "ls";
   std::string one_value = "test=0";
   std::string one_command = "ls(test=0)";
+  std::string quantiser_bug_20160520 = "quantiser(decode_lut_string=254-766-1278-1790-2302-2814-3326-3838-4350-4862-5374)->h264(option=1)";
   
 };
 
@@ -102,6 +103,8 @@ BOOST_AUTO_TEST_CASE (parse_preserves_order_and_value) {
 				     "->");
   BOOST_REQUIRE_EQUAL(parsed_to_vec.empty(),
 		      false);
+  BOOST_REQUIRE_EQUAL(parsed_to_vec.size(),
+		      4);
 
 
   for( std::size_t i = 0;i<parsed_to_vec.size();++i ){
@@ -217,5 +220,14 @@ BOOST_AUTO_TEST_CASE (parse_to_map) {
 			<< v.second << " != " << multiple_kv[v.first]);
   
 }
+
+BOOST_AUTO_TEST_CASE (bug_20160520) {
+
+  
+  std::vector<std::string> pairs = sqy::split_string_by(quantiser_bug_20160520,"->");
+  BOOST_CHECK_EQUAL(pairs.size(),2);
+  
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
