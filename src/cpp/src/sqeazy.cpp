@@ -407,8 +407,10 @@ int SQY_PipelineDecode_UI16(const char* src, long srclength, char* dst){
 
   sqy::image_header hdr(src,src+(srclength));
   
-  if(!sqy::dypeline<std::uint16_t>::can_be_built_from(hdr.pipeline()))
+  if(!sqy::dypeline<std::uint16_t>::can_be_built_from(hdr.pipeline())){
+    std::cerr << "[sqeazy]\t" << hdr.pipeline() << " cannot be build with this version of sqeazy\n";
     return value;
+  }
 
   auto pipe = sqy::dypeline<std::uint16_t>::from_string(hdr.pipeline());
 
