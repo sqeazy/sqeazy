@@ -729,11 +729,11 @@ namespace sqeazy
       std::size_t output_len = std::accumulate(out_shape.begin(), out_shape.end(),
 					       1,
 					       std::multiplies<std::size_t>());
-      std::size_t len = in_size_bytes/sizeof(outgoing_t);
+      std::size_t in_nelems = in_size_bytes/sizeof(outgoing_t);
       std::vector<incoming_t> temp(output_len,0);
       std::vector<std::size_t> in_shape(out_shape.size(),1);
       if(!in_shape.empty())
-	in_shape[0] = in_size_bytes/sizeof(outgoing_t);
+	in_shape[0] = in_nelems;
       
       if(is_compressor()){
 	typedef typename sink_t::out_type sink_out_t;
@@ -746,6 +746,7 @@ namespace sqeazy
 
 	  //FIXME: filters may change the size of the buffer!
 	  sink_in.resize(output_len*sizeof(*_out));
+	  std::fill(sink_in.begin(), sink_in.end(),0);
 	  
 	  outgoing_t* tail_out = reinterpret_cast<outgoing_t*>(sink_in.data());
 	  
@@ -754,22 +755,24 @@ namespace sqeazy
 					  in_shape,
 					  out_shape);
 	  value += err_code ;
-	  
+
+	  //preparing for the sink
 	  compressor_begin = reinterpret_cast<const outgoing_t*>(sink_in.data());
-	  in_size_bytes    = sink_in.size();
+	  in_nelems    = sink_in.size();
+	  in_shape     = out_shape;
 	}
 		
 	//FIXME: provide shape vectors?
 	//produces a memory corruption, 2016/05/19
 	err_code = sink_->decode(compressor_begin,
-				 &temp[0],
-				 in_size_bytes,
+				 temp.data(),
+				 in_nelems,
 				 temp.size());
 	value += err_code ? err_code+10 : 0 ;
       }
       else{
 	std::copy(_in,
-		  _in+len,
+		  _in+in_nelems,
 		  reinterpret_cast<outgoing_t*>(temp.data()));
       }
 
