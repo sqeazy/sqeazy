@@ -1,5 +1,6 @@
 #ifndef _SQEAZY_UTILS_H_
 #define _SQEAZY_UTILS_H_
+#include <numeric>
 
 namespace sqeazy {
 
@@ -50,5 +51,27 @@ namespace sqeazy {
     return value;
   }
 
+  template <typename T>
+  inline bool is_1d(const std::vector<T>& _shape){
+
+    static_assert(std::is_arithmetic<T>::value == true, " sqeazy::is_1d received non-arithmetic vector");
+    bool value = false;
+
+    if(_shape.empty())
+      return value;
+    
+    if(_shape.size()==1)
+      return true;
+    
+    T tail_product = std::accumulate(_shape.begin()+1, _shape.end(),1,std::multiplies<T>());
+
+    if(tail_product == T(1)){
+      if(_shape.front()>1)
+	value = true;
+    }
+
+    return value;
+  }
+  
 };
 #endif /* _SQEAZY_UTILS_H_ */
