@@ -60,7 +60,7 @@ namespace sqeazy {
 	  ptr_ = avcodec_find_decoder(_id);
       }      
       if (!ptr_) {
-	std::cerr << "[av_codec_t] Could not allocate video codec context from AVCodecID&\n";
+	std::cerr << "[av_codec_t] Could not allocate video codec context from AVCodecID& = "<< _id <<"\n";
       }
       
     }
