@@ -30,7 +30,6 @@ namespace sqeazy
   using default_sink_factory = stage_factory<blank_sink<T> >;
   
 
-
   
   template <
     typename raw_t,
@@ -726,14 +725,17 @@ namespace sqeazy
       int err_code = 0;
 
       ////////////////////// DECODING //////////////////
+      std::size_t input_len = in_size_bytes/sizeof(*_in);
       std::size_t output_len = std::accumulate(out_shape.begin(), out_shape.end(),
 					       1,
 					       std::multiplies<std::size_t>());
-      std::size_t in_nelems = in_size_bytes/sizeof(outgoing_t);
+      std::size_t out_size_bytes = output_len*sizeof(*_out);
+
+
       std::vector<incoming_t> temp(output_len,0);
       std::vector<std::size_t> in_shape(out_shape.size(),1);
       if(!in_shape.empty())
-	in_shape[0] = in_nelems;
+	in_shape[0] = input_len;
       
       if(is_compressor()){
 	typedef typename sink_t::out_type sink_out_t;
@@ -745,20 +747,26 @@ namespace sqeazy
 	  const outgoing_t* tail_in = reinterpret_cast<const outgoing_t*>(_in);
 
 	  //FIXME: filters may change the size of the buffer!
-	  sink_in.resize(output_len*sizeof(*_out));
+	  sink_in.resize(output_len*sizeof(*_out)/*/sizeof(*_in)*/);
 	  std::fill(sink_in.begin(), sink_in.end(),0);
 	  
 	  outgoing_t* tail_out = reinterpret_cast<outgoing_t*>(sink_in.data());
-	  
-	  err_code = tail_filters_.decode(tail_in,
-					  tail_out,
-					  in_shape,
-					  out_shape);
+
+	  // if(is_1d(out_shape))
+	  //   err_code = tail_filters_.decode(tail_in,
+	  // 				    tail_out,
+	  // 				    std::min(in_size_bytes,
+	  // 					     sink_in.size()));
+	  // else
+	    err_code = tail_filters_.decode(tail_in,
+					    tail_out,
+					    in_shape,
+					    out_shape);
 	  value += err_code ;
 
 	  //preparing for the sink
 	  compressor_begin = reinterpret_cast<const outgoing_t*>(sink_in.data());
-	  in_nelems    = sink_in.size();
+	  input_len    = sink_in.size();
 	  in_shape     = out_shape;
 	}
 		
@@ -766,13 +774,13 @@ namespace sqeazy
 	//produces a memory corruption, 2016/05/19
 	err_code = sink_->decode(compressor_begin,
 				 temp.data(),
-				 in_nelems,
+				 input_len,
 				 temp.size());
 	value += err_code ? err_code+10 : 0 ;
       }
       else{
 	std::copy(_in,
-		  _in+in_nelems,
+		  _in+input_len,
 		  reinterpret_cast<outgoing_t*>(temp.data()));
       }
 
