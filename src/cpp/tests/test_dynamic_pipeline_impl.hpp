@@ -489,8 +489,8 @@ struct high_bits :  public sqy::sink<T> {
     std::size_t insize = std::accumulate(_inshape.begin(), _inshape.end(),1,std::multiplies<std::size_t>());
     std::size_t outsize = std::accumulate(_outshape.begin(), _outshape.end(),1,std::multiplies<std::size_t>());
 
-    if(insize*sizeof(*_in)!=outsize*sizeof(*_out))
-      return 1;
+    // if(insize*sizeof(*_in)!=outsize*sizeof(*_out))
+    //   return 1;
     
     const int shift_left_by = (sizeof(raw_type)*CHAR_BIT) - 4;
 
