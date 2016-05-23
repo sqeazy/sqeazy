@@ -98,6 +98,8 @@ namespace sqeazy {
     static const raw_type max_value_raw_ =  std::numeric_limits<raw_type>::max() ; 
     static const compressed_type max_value_compressed_ = std::numeric_limits<compressed_type>::max(); 
 
+    static const char lut_field_separator = ':';
+    
     long sum_;
     std::array<uint32_t, max_raw_> histo_;
     std::array<float, max_raw_> weights_;
@@ -460,7 +462,7 @@ namespace sqeazy {
       std::ostringstream lut_stream(std::ios::out|std::ios::trunc);
 
       for(auto& el : _lut)
-	lut_stream << el << "-";
+	lut_stream << el << lut_field_separator;
 
       
       return lut_stream.str();
@@ -490,9 +492,10 @@ namespace sqeazy {
 
       std::istringstream lutf(_lut_as_string,std::ios::in);
 
+      const std::string sep(1,lut_field_separator);
       std::vector<std::string> splitted = split_by(_lut_as_string.begin(),
 						   _lut_as_string.end(),
-						   "-");
+						   sep);
 
       uint32_t counter = 0;
       for( const std::string& item : splitted ) 
