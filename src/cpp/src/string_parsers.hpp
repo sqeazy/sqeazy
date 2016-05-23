@@ -90,13 +90,14 @@ namespace sqeazy {
     struct ordered_command_sequence 
       : qi::grammar<Iterator, vec_of_pairs_t()>
     {
-        ordered_command_sequence()
+      ordered_command_sequence()
           : ordered_command_sequence::base_type(query)
         {
-	  query =  pair >> *((qi::lit(';') | qi::lit("->")) >> pair);
-	  pair  =  key >> -(qi::lit('(') >> -value >> qi::lit(')'));
-	  key   =  qi::char_("a-zA-Z_") >> *qi::char_("a-zA-Z_0-9");
-	  value =  qi::alnum >> *qi::char_("a-zA-Z_0-9.=,;");
+	  query =  pair >> *(qi::lit("->") >> pair);
+	  pair  =  key >> -('(' >> value >> ')');
+	  key   =  qi::char_("a-zA-Z") >> *qi::char_("a-zA-Z_0-9");
+	  //value =  +qi::char_("a-zA-Z_0-9:=,\"/");
+	  value =  +(qi::print - qi::char_("()"));
         }
 
         qi::rule<Iterator, vec_of_pairs_t()> query;
