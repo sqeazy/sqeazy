@@ -196,6 +196,9 @@ BOOST_AUTO_TEST_CASE( roundtrip_quantiser ){
   long length = data_bytes;
   
   std::vector<std::uint16_t> inputdata(len,1);
+  size_t count = 0;
+  for( std::uint16_t& n : inputdata )
+    n = 1 << ( ((count++) % 8) + 4);
   std::vector<std::uint16_t> outputdata(len,0);
 
   BOOST_REQUIRE_EQUAL(shape.size(),3);
@@ -246,6 +249,9 @@ BOOST_AUTO_TEST_CASE( roundtrip_quantiser2file ){
   long length = data_bytes;
   
   std::vector<std::uint16_t> inputdata(len,1);
+  size_t count = 0;
+  for( std::uint16_t& n : inputdata )
+    n = 1 << ( ((count++) % 8) + 4);
   std::vector<std::uint16_t> outputdata(len,0);
 
   BOOST_REQUIRE_EQUAL(shape.size(),3);
@@ -296,6 +302,9 @@ BOOST_AUTO_TEST_CASE( roundtrip_quantiser_h264 ){
   long length = data_bytes;
   
   std::vector<std::uint16_t> inputdata(len,42);
+  size_t count = 0;
+  for( std::uint16_t& n : inputdata )
+    n = 1 << ( ((count++) % 8) + 4);
   std::vector<std::uint16_t> outputdata(len,0);
 
   BOOST_REQUIRE_EQUAL(shape.size(),3);
@@ -347,6 +356,9 @@ BOOST_AUTO_TEST_CASE( roundtrip_quantiser2file_h264 ){
   long length = data_bytes;
   
   std::vector<std::uint16_t> inputdata(len,1);
+  size_t count = 0;
+  for( std::uint16_t& n : inputdata )
+    n = 1 << ( ((count++) % 8) + 4);
   std::vector<std::uint16_t> outputdata(len,0);
   
   BOOST_REQUIRE_EQUAL(shape.size(),3);
