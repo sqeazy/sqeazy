@@ -353,7 +353,11 @@ int SQY_PipelineEncode_UI16(const char* pipeline,
   
   std::vector<std::size_t> shape_(shape, shape+shape_size);
   auto pipe = sqy::dypeline<std::uint16_t>::from_string(pipeline);
-
+  if(pipe.empty()){
+    std::cerr << "[sqeazy]\t received " << pipe.name() << "pipeline of size 0, cannot encode buffer\n";
+    return value;
+  }
+  
   char* encoded_end = pipe.encode(reinterpret_cast<const std::uint16_t*>(src),
 				  dst,
 				  shape_);
@@ -377,6 +381,11 @@ int SQY_Pipeline_Max_Compressed_Length_UI16(const char* pipeline,long* length){
   
   auto received_pipeline = sqy::dypeline<std::uint16_t>::from_string(pipeline);
 
+  if(!received_pipeline.size()){
+    std::cerr << "[sqeazy]\t received " << received_pipeline.name() << "pipeline of size 0, cannot compite Max_Compressed_Length\n";
+    return value;
+  }
+
   *length = received_pipeline.max_encoded_size(*length);
   return 0;
 
@@ -387,7 +396,21 @@ int SQY_Pipeline_Max_Compressed_Length_3D_UI16(const char* pipeline,
 					       unsigned shape_size,
 					       long* length){
 
-  return SQY_Pipeline_Max_Compressed_Length_UI16(pipeline,length);
+  int value = 1;
+  if(!sqy::dypeline<std::uint16_t>::can_be_built_from(pipeline))
+    return value;
+
+  std::uintmax_t size_in_byte = sizeof(std::uint16_t)*std::accumulate(shape,shape+shape_size,1,std::multiplies<long>());
+
+  auto received_pipeline = sqy::dypeline<std::uint16_t>::from_string(pipeline);
+
+  if(!received_pipeline.size()){
+    std::cerr << "[sqeazy]\t received " << received_pipeline.name() << "pipeline of size 0, cannot compite Max_Compressed_Length\n";
+    return value;}
+  
+  *length = received_pipeline.max_encoded_size(size_in_byte);
+  
+  return 0;
 
 }
 
@@ -413,6 +436,9 @@ int SQY_PipelineDecode_UI16(const char* src, long srclength, char* dst){
   }
 
   auto pipe = sqy::dypeline<std::uint16_t>::from_string(hdr.pipeline());
+  if(!pipe.size()){
+    std::cerr << "[sqeazy]\t received " << pipe.name() << "pipeline of size 0, no decoding possible\n";
+    return value;}
 
   std::vector<std::size_t> inshape_  = {std::size_t(srclength)};
   std::vector<std::size_t> outshape_(hdr.shape()->begin(),hdr.shape()->end());
