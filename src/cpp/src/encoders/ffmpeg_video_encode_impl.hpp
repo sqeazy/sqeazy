@@ -328,7 +328,7 @@ static uint32_t decode_stack(const char* _buffer,
   sqeazy::av_frame_t frame;
   sqeazy::av_frame_t gray_frame(0,0,av_pixel_type<raw_type>::value);
   
-  while (av_read_frame(formatContext.get(), &packet) == 0)
+  while (av_read_frame(formatContext.get(), &packet) >= 0)
     {
       if (packet.stream_index != stream->index)
 	continue;
