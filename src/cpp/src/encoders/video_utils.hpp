@@ -15,8 +15,15 @@ extern "C" {
 }
 
 namespace sqeazy {
-
-      
+  
+  void init(AVPacket* _pkt){
+    if(_pkt){
+      av_init_packet(_pkt);
+      _pkt->data = NULL;
+      _pkt->size = 0;
+    }
+  }
+  
   template <typename T> struct av_pixel_type {};
   template <> struct av_pixel_type<char> { static const AVPixelFormat value = AV_PIX_FMT_GRAY8;};
   template <> struct av_pixel_type<std::uint8_t> { static const AVPixelFormat value = AV_PIX_FMT_GRAY8;};
