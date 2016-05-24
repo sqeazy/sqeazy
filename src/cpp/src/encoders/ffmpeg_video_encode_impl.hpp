@@ -242,7 +242,36 @@ namespace sqeazy {
     return bytes_written;
   }
 
+  //TODO: Test this!
+  template <typename raw_type>
+  std::size_t frame_to_vector(const sqeazy::av_frame_t& _frame,
+		       std::vector<raw_type>& _vector ){
 
+    sqeazy::av_frame_t gray_frame(_frame.get()->width,
+				  _frame.get()->height,
+				  av_pixel_type<raw_type>::value);
+
+    auto sws_ctx = std::make_shared<sqeazy::sws_context_t>(_frame,gray_frame);
+    
+    sws_scale((*sws_ctx).get(),
+	      (const std::uint8_t * const*)_frame.get()->data,
+	      frame.get()->linesize,
+	      0,
+	      frame.get()->height,
+	      gray_frame.get()->data,
+	      gray_frame.get()->linesize);
+
+    std::size_t bytes_copied = 0;
+    for(uint32_t y=0;y<_frame.get()->height;++y){
+      auto begin = gray_frame.get()->data[0] + y*gray_frame.get()->linesize[0];
+      auto end = begin + gray_frame.get()->width;
+      std::copy(begin, end,std::back_inserter(_vector));
+      bytes_copied += (end-begin)*sizeof(raw_type);
+    }
+
+    return bytes_copied;
+  }
+  
   /**
      \brief function that uses 
 
@@ -312,7 +341,12 @@ static uint32_t decode_stack(const char* _buffer,
   }
 
   //TODO: [ffmeg3.0.1/doc/examples/demuxing_decoding.c] perform av_image_alloc here!
-  
+  const int found_width = codec_ctx.get()->width;
+  const int found_height = codec_ctx.get()->height;
+  shape[row_major::w] = codec_ctx.get()->width;
+  shape[row_major::h] = found_height;
+  const enum AVPixelFormat found_pix_fmt = codec_ctx.get()->pix_fmt;
+	
   AVPacket packet;
   // av_init_packet(&packet);
   // pkt.data = NULL;
@@ -326,7 +360,29 @@ static uint32_t decode_stack(const char* _buffer,
   std::vector<uint32_t> shape(3,0);
 
   sqeazy::av_frame_t frame;
-  sqeazy::av_frame_t gray_frame(0,0,av_pixel_type<raw_type>::value);
+  sqeazy::av_frame_t gray_frame(found_width,found_height,av_pixel_type<raw_type>::value);
+
+  // gray_frame.get()->width = found_width;
+  // gray_frame.get()->height = found_height;
+
+  // int ret = av_image_alloc(gray_frame.get()->data,
+  // 			   gray_frame.get()->linesize,
+  // 			   gray_frame.get()->width,
+  // 			   gray_frame.get()->height,
+  // 			   av_pixel_type<raw_type>::value,
+  // 			   32 //align flag
+  // 			   );
+  // if (ret < 0) {
+  //   std::cerr << "Could not allocate gray picture buffer\n";
+		  
+  //   // avcodec_close(codec_ctx);
+  //   throw std::runtime_error("unable to create gray_frame");
+  // }   
+  
+  
+  
+  int frameFinished = 0;
+  int decoded_bytes = 0;
   
   while (av_read_frame(formatContext.get(), &packet) >= 0)
     {
@@ -334,62 +390,51 @@ static uint32_t decode_stack(const char* _buffer,
 	continue;
 
       AVPacket temp_pkt = packet;
+      decoded_bytes = packet.size;
+      frameFinished = 0;
+      do {
+	frameFinished = 0;
+	int rvalue = avcodec_decode_video2(codec_ctx.get(),
+					   frame.get(),
+					   &frameFinished,
+					   &packet);
+	if (rvalue < 0){
+	  std::cerr << "Error decoding frame "<< shape[row_major::d]
+		    << " " << av_err2str(rvalue) << "\n";
+	  decoded_bytes = 0;
+	  break;
+	} 
+	  
+
+	if(frameFinished){
+	  if(frame->width != found_width || frame->height != found_height ||
+	     frame->format != found_pix_fmt){
+	    std::cerr << "ouch ... width/height/pixel_format have changed during decoding of stream\n"
+		      << "old: " << found_width << " / " << found_height << " / " << found_pix_fmt << "\n"
+	      	      << "new: " << frame->width << " / " << frame->height << " / " << frame->pix_fmt << "\n";
+	    break;
+	  }
+
+	  //[ffmeg3.0.1/doc/examples/demuxing_decoding.c] performs av_image_copy here!
+	}
+	packet.data += decoded_bytes;
+	packet.size -= decoded_bytes;
+
+      } while (packet.size > 0);
       
-      int frameFinished = 0;
-      avcodec_decode_video2(codec_ctx.get(), frame.get(), &frameFinished, &packet);
 
       if (frameFinished)
 	{
+	      
+	  auto bytes_copied = frame_to_vector(frame,temp);
 
-	  if(!(gray_frame.get()->width && gray_frame.get()->height)){
-
-	    gray_frame.get()->width = frame.get()->width;
-	    gray_frame.get()->height = frame.get()->height;
-
-	    int ret = av_image_alloc(gray_frame.get()->data,
-				     gray_frame.get()->linesize,
-				     gray_frame.get()->width,
-				     gray_frame.get()->height,
-				     av_pixel_type<raw_type>::value,
-				     32 //align flag
-				     );
-	    if (ret < 0) {
-	      std::cerr << "Could not allocate gray picture buffer\n";
-		  
-	      // avcodec_close(codec_ctx);
-	      throw std::runtime_error("unable to create gray_frame");
-	    }    
+	  if(bytes_copied == sizeof(raw_type)*shape[row_major::w]*shape[row_major::h])
+	    shape[row_major::d]++;
+	  else{
+	    std::cerr << "unable to extract full frame at index " << shape[row_major::d]
+		      << " throwing!\n";
+	    throw std::runtime_error("ffmpeg_video_encode_impl.hpp::decode_stack");
 	  }
-	      
-	  if(!sws_ctx.get()){
-	    sws_ctx = std::make_shared<sqeazy::sws_context_t>(frame,gray_frame);
-	    if (!sws_ctx->get()) {
-	      fprintf(stderr,
-		      "Impossible to create scale context for the conversion "
-		      "fmt:%s s:%dx%d -> fmt:%s s:%dx%d\n",
-		      av_get_pix_fmt_name(av_pixel_type<raw_type>::value), gray_frame.get()->width, gray_frame.get()->height,
-		      av_get_pix_fmt_name((AVPixelFormat)frame.get()->format), frame.get()->width, frame.get()->height);
-		  
-	      throw std::runtime_error("unable to create swscale context");
-	    }
-	  }
-	      
-	      
-	  shape[row_major::w] = shape[row_major::w] != (uint32_t)frame.get()->width  ? frame.get()->width  : shape[row_major::w];
-	  shape[row_major::h] = shape[row_major::h] != (uint32_t)frame.get()->height ? frame.get()->height : shape[row_major::h];
-	  shape[row_major::d]++;
-
-	  sws_scale((*sws_ctx).get(),
-		    (const std::uint8_t * const*)frame.get()->data, frame.get()->linesize, 0, frame.get()->height,
-		    gray_frame.get()->data, gray_frame.get()->linesize);
-
-	  for(uint32_t y=0;y<shape[row_major::h];++y){
-	    auto begin = gray_frame.get()->data[0] + y*gray_frame.get()->linesize[0];
-	    auto end = begin + gray_frame.get()->width;
-	    std::copy(begin, end,std::back_inserter(temp));
-	  } 
-
-	    
         }
       
       av_packet_unref(&temp_pkt);
