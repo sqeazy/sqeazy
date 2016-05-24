@@ -210,14 +210,23 @@ namespace sqeazy {
       ptr_->width  = _width;
       ptr_->height = _height;
 
+      int allocation_status = 0;
       if(_width && _height)
-	av_image_alloc(ptr_->data,
-		       ptr_->linesize,
-		       ptr_->width,
-		       ptr_->height,
-		       (AVPixelFormat)ptr_->format,
-		       align_by//arch dependent
-		       );
+	allocation_status = av_image_alloc(ptr_->data,
+					   ptr_->linesize,
+					   ptr_->width,
+					   ptr_->height,
+					   (AVPixelFormat)ptr_->format,
+					   align_by//arch dependent
+					   );
+
+      if(allocation_status<0){
+	std::cerr << "unable to create frame "
+		  << "width: " << _width << ", "
+	  	  << "height: " << _height << ", "
+	  	  << "format: " << _format << "\n";
+	
+      }
     }
 
 
