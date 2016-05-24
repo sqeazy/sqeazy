@@ -72,8 +72,7 @@ namespace sqeazy {
       if(_payload.empty())
 	h264_config = "preset=ultrafast,qp=0";
       
-      if(!h264_config.empty())
-	config_map = parse_string_by(h264_config);
+      config_map = parse_string_by(h264_config,",");
 
       //TODO: catch this possibly throug the _payload
 #ifndef SQY_TRACE
