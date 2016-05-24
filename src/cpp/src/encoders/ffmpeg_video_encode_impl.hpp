@@ -110,7 +110,9 @@ namespace sqeazy {
     if (codec_id == AV_CODEC_ID_H264){
       if(_config.size()){
 	for( const auto & kv : _config ){
-
+	  #ifdef SQY_TRACE
+	  std::cout << "[ffmpeg_encode_stack]\t h264 av_opt_set " << kv.first << " :: " << kv.second << "\n";
+	  #endif
 	    av_opt_set(ctx.get()->priv_data,
 		       kv.first.c_str(),
 		       kv.second.c_str(),
@@ -308,10 +310,14 @@ static uint32_t decode_stack(const char* _buffer,
     return rcode;
   }
 
+  //TODO: [ffmeg3.0.1/doc/examples/demuxing_decoding.c] perform av_image_alloc here!
   
   AVPacket packet;
-  av_init_packet(&packet);
-
+  // av_init_packet(&packet);
+  // pkt.data = NULL;
+  // pkt.size = 0;
+  sqeazy::init(&packet);
+    
   // struct SwsContext * sws_ctx = 0;
   std::shared_ptr<sqeazy::sws_context_t> sws_ctx(nullptr);
   
