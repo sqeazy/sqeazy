@@ -161,12 +161,17 @@ BOOST_AUTO_TEST_CASE( lossless_roundtrip_step_ramp ){
 
   av_register_all();
   
-  std::vector<std::uint8_t> encoded(embryo_.num_elements(),0);
+
   std::vector<std::size_t> shape = {static_cast<uint32_t>(embryo_.shape()[sqy::row_major::z]),
 				    static_cast<uint32_t>(embryo_.shape()[sqy::row_major::y]),
 				    static_cast<uint32_t>(embryo_.shape()[sqy::row_major::x])};
 
-  sqeazy::h264_scheme<std::uint8_t> scheme("qp=0");
+  // shape[sqy::row_major::w] = 352;
+  // shape[sqy::row_major::h] = 288;
+  // embryo_.resize(shape);
+  std::vector<std::uint8_t> encoded(embryo_.num_elements(),0);
+  
+  sqeazy::h264_scheme<std::uint8_t> scheme;
 
   for(std::size_t i = 0;i<embryo_.num_elements();++i){
     embryo_.data()[i] = 1 << (i % 8);
@@ -174,9 +179,9 @@ BOOST_AUTO_TEST_CASE( lossless_roundtrip_step_ramp ){
   }
   
   auto encoded_end = scheme.encode(embryo_.data(),
-				   &encoded[0],
+				   encoded.data(),
 				   shape);
-  std::size_t bytes_written = encoded_end - &encoded[0];
+  std::size_t bytes_written = encoded_end - encoded.data();
   encoded.resize(bytes_written);
   
   BOOST_CHECK(encoded_end!=nullptr);
@@ -212,6 +217,16 @@ BOOST_AUTO_TEST_CASE( lossless_roundtrip_step_ramp ){
     sqeazy::write_stack_as_y4m(embryo_,"embryo.y4m");
     sqeazy::write_image_stack(roundtrip,"retrieved.tiff");
     sqeazy::write_stack_as_y4m(roundtrip,"retrieved.y4m");
+    std::ofstream h264_file("embryo.h264", std::ios_base::binary | std::ios_base::out);
+    h264_file.write((char*)encoded.data(),bytes_written);
+    h264_file.close();
+    
+    const std::size_t frame_size = embryo_.shape()[sqy::row_major::y]*embryo_.shape()[sqy::row_major::x];
+    
+    for(std::size_t i = 0;i < frame_size;++i){
+      if(embryo_.data()[i]!=roundtrip.data()[i])
+	std::cout << "frame:0 pixel:" << i<< " differ, " << (int)embryo_.data()[i] << " != " << (int)roundtrip.data()[i] << "\n";
+    }
     throw;
   }
   const size_t len = embryo_.num_elements();
