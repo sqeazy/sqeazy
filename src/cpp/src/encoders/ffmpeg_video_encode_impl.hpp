@@ -171,9 +171,10 @@ namespace sqeazy {
     uint32_t frames_encoded = 0;
     _buffer.clear();
     for (uint32_t z = 0; z < num_frames; z++) {
-      av_init_packet(&pkt);
-      pkt.data = NULL;    // packet data will be allocated by the encoder
-      pkt.size = 0;
+      sqeazy::init(&pkt);
+      // av_init_packet(&pkt);
+      // pkt.data = NULL;    // packet data will be allocated by the encoder
+      // pkt.size = 0;
 
       // fflush(stdout);
       idx = z*frame_size;
@@ -329,73 +330,81 @@ static uint32_t decode_stack(const char* _buffer,
   
   while (av_read_frame(formatContext.get(), &packet) == 0)
     {
-      if (packet.stream_index == stream->index)
-        {
-	  int frameFinished = 0;
-	  avcodec_decode_video2(codec_ctx.get(), frame.get(), &frameFinished, &packet);
+      if (packet.stream_index != stream->index)
+	continue;
 
-	  if (frameFinished)
-            {
+      AVPacket temp_pkt = packet;
+      
+      int frameFinished = 0;
+      avcodec_decode_video2(codec_ctx.get(), frame.get(), &frameFinished, &packet);
 
-	      if(!(gray_frame.get()->width && gray_frame.get()->height)){
+      if (frameFinished)
+	{
 
-		gray_frame.get()->width = frame.get()->width;
-		gray_frame.get()->height = frame.get()->height;
+	  if(!(gray_frame.get()->width && gray_frame.get()->height)){
 
-		int ret = av_image_alloc(gray_frame.get()->data,
-					 gray_frame.get()->linesize,
-					 gray_frame.get()->width,
-					 gray_frame.get()->height,
-					 av_pixel_type<raw_type>::value,
-					 32 //align flag
-					 );
-		if (ret < 0) {
-		  std::cerr << "Could not allocate gray picture buffer\n";
+	    gray_frame.get()->width = frame.get()->width;
+	    gray_frame.get()->height = frame.get()->height;
+
+	    int ret = av_image_alloc(gray_frame.get()->data,
+				     gray_frame.get()->linesize,
+				     gray_frame.get()->width,
+				     gray_frame.get()->height,
+				     av_pixel_type<raw_type>::value,
+				     32 //align flag
+				     );
+	    if (ret < 0) {
+	      std::cerr << "Could not allocate gray picture buffer\n";
 		  
-		  // avcodec_close(codec_ctx);
-		  throw std::runtime_error("unable to create gray_frame");
-		}    
-	      }
+	      // avcodec_close(codec_ctx);
+	      throw std::runtime_error("unable to create gray_frame");
+	    }    
+	  }
 	      
-	      if(!sws_ctx.get()){
-		sws_ctx = std::make_shared<sqeazy::sws_context_t>(frame,gray_frame);
-		if (!sws_ctx->get()) {
-		  fprintf(stderr,
-			  "Impossible to create scale context for the conversion "
-			  "fmt:%s s:%dx%d -> fmt:%s s:%dx%d\n",
-			  av_get_pix_fmt_name(av_pixel_type<raw_type>::value), gray_frame.get()->width, gray_frame.get()->height,
-			  av_get_pix_fmt_name((AVPixelFormat)frame.get()->format), frame.get()->width, frame.get()->height);
+	  if(!sws_ctx.get()){
+	    sws_ctx = std::make_shared<sqeazy::sws_context_t>(frame,gray_frame);
+	    if (!sws_ctx->get()) {
+	      fprintf(stderr,
+		      "Impossible to create scale context for the conversion "
+		      "fmt:%s s:%dx%d -> fmt:%s s:%dx%d\n",
+		      av_get_pix_fmt_name(av_pixel_type<raw_type>::value), gray_frame.get()->width, gray_frame.get()->height,
+		      av_get_pix_fmt_name((AVPixelFormat)frame.get()->format), frame.get()->width, frame.get()->height);
 		  
-		  throw std::runtime_error("unable to create swscale context");
-    		}
-	      }
-	      
-	      
-	      shape[row_major::w] = shape[row_major::w] != (uint32_t)frame.get()->width  ? frame.get()->width  : shape[row_major::w];
-	      shape[row_major::h] = shape[row_major::h] != (uint32_t)frame.get()->height ? frame.get()->height : shape[row_major::h];
-	      shape[row_major::d]++;
-
-	      sws_scale((*sws_ctx).get(),
-			(const std::uint8_t * const*)frame.get()->data, frame.get()->linesize, 0, frame.get()->height,
-			gray_frame.get()->data, gray_frame.get()->linesize);
-
-	      for(uint32_t y=0;y<shape[row_major::h];++y){
-		auto begin = gray_frame.get()->data[0] + y*gray_frame.get()->linesize[0];
-		auto end = begin + gray_frame.get()->width;
-		std::copy(begin, end,std::back_inserter(temp));
-	      } 
-
+	      throw std::runtime_error("unable to create swscale context");
 	    }
+	  }
+	      
+	      
+	  shape[row_major::w] = shape[row_major::w] != (uint32_t)frame.get()->width  ? frame.get()->width  : shape[row_major::w];
+	  shape[row_major::h] = shape[row_major::h] != (uint32_t)frame.get()->height ? frame.get()->height : shape[row_major::h];
+	  shape[row_major::d]++;
+
+	  sws_scale((*sws_ctx).get(),
+		    (const std::uint8_t * const*)frame.get()->data, frame.get()->linesize, 0, frame.get()->height,
+		    gray_frame.get()->data, gray_frame.get()->linesize);
+
+	  for(uint32_t y=0;y<shape[row_major::h];++y){
+	    auto begin = gray_frame.get()->data[0] + y*gray_frame.get()->linesize[0];
+	    auto end = begin + gray_frame.get()->width;
+	    std::copy(begin, end,std::back_inserter(temp));
+	  } 
+
+	    
         }
+      
+      av_packet_unref(&temp_pkt);
+      
     }
 
 
   int frameFinished = 1;
-
+  
+  //flush cached frames
   while(frameFinished){
 
-    packet.data = NULL;
-    packet.size = 0;
+    sqeazy::init(&packet);
+    // packet.data = NULL;
+    // packet.size = 0;
     int err = avcodec_decode_video2(codec_ctx.get(), frame.get(), &frameFinished, &packet);
     if(err < 0 ){
       std::cerr << "[delayed]\tdecide error detected\n";
