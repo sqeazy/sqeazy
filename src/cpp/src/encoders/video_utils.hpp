@@ -23,6 +23,10 @@ namespace sqeazy {
       _pkt->size = 0;
     }
   }
+
+  //see http://ffmpeg.org/doxygen/trunk/pixfmt_8h.html#a9a8e335cf3be472042bc9f0cf80cd4c5a107eadfcfe8c9fc751289eeb7744a6d3
+  //for references on pixel format
+  struct yuv420p;
   
   template <typename T> struct av_pixel_type {};
   template <> struct av_pixel_type<char> { static const AVPixelFormat value = AV_PIX_FMT_GRAY8;};
@@ -31,6 +35,12 @@ namespace sqeazy {
   
   template <> struct av_pixel_type<std::uint16_t> { static const AVPixelFormat value = AV_PIX_FMT_GRAY16;};
   template <> struct av_pixel_type<std::int16_t> { static const AVPixelFormat value = AV_PIX_FMT_GRAY16;};
+
+  template <> struct av_pixel_type<std::uint32_t> { static const AVPixelFormat value = AV_PIX_FMT_RGBA;};
+  template <> struct av_pixel_type<std::int32_t> { static const AVPixelFormat value = AV_PIX_FMT_RGBA;};
+
+  template <> struct av_pixel_type<yuv420p> { static const AVPixelFormat value = AV_PIX_FMT_YUV420P;};
+  
   // template <> struct av_pixel_type<short> { static const AVPixelFormat value = AV_PIX_FMT_GRAY16;};
   // template <> struct av_pixel_type<unsigned shortte> { static const AVPixelFormat value = AV_PIX_FMT_GRAY16;};
 
@@ -193,8 +203,10 @@ namespace sqeazy {
     
     static void how_to_delete_me(AVFrame* _frame){
       if(_frame){
+
 	if(&_frame->data[0])
 	  av_freep(&_frame->data[0]);
+
       	av_frame_free(&_frame);
       }
 
@@ -234,11 +246,31 @@ namespace sqeazy {
       return ptr_.get();
     }
 
+    enum AVPixelFormat pixel_format() const {
+      enum AVPixelFormat value = (AVPixelFormat)(ptr_.get()->format);
+      return value;
+    }
     
     AVFrame const* get() const {
       return ptr_.get();
     }
-    
+
+    std::size_t width() const {
+      return ptr_.get()->width;
+    }
+
+    std::size_t w() const {
+      return ptr_.get()->width;
+    }
+
+    std::size_t height() const {
+      return ptr_.get()->height;
+    }
+
+    std::size_t h() const {
+      return ptr_.get()->height;
+    }
+
   };
 
   //TODO: we could detect the current architecture
@@ -427,7 +459,48 @@ namespace sqeazy {
     }
     
   };
+
+  //TODO: Test this!
+  template <typename raw_type>
+  std::size_t y_to_vector(const sqeazy::av_frame_t& _frame,
+			  std::vector<raw_type>& _vector ){
+
     
+    // sqeazy::av_frame_t gray_frame(_frame.get()->width,
+    // 				  _frame.get()->height,
+    // 				  sqeazy::av_pixel_type<raw_type>::value);
+
+    std::size_t frame_size = _frame.get()->width*_frame.get()->height;
+    if(_vector.size() != frame_size)
+      _vector.resize(frame_size);
+    
+    // auto sws_ctx = std::make_shared<sqeazy::sws_context_t>(_frame,gray_frame);
+    
+    // int output_height = sws_scale((*sws_ctx).get(),
+    // 				  (const std::uint8_t * const*)_frame.get()->data,
+    // 				  _frame.get()->linesize,
+    // 				  0,
+    // 				  _frame.get()->height,
+    // 				  gray_frame.get()->data,
+    // 				  gray_frame.get()->linesize);
+
+    // if(output_height!= _frame.get()->height)
+    //   return 0;
+
+    std::size_t bytes_copied = 0;
+    const std::size_t height = _frame.get()->height;
+    for(uint32_t y=0;y<height;++y){
+      auto begin = _frame.get()->data[0] + (y*_frame.get()->linesize[0]);
+      auto end = begin + _frame.get()->width;
+      auto dst_begin = _vector.begin()+(y*_frame.get()->width);
+      std::copy(begin, end,dst_begin);
+      bytes_copied += (end-begin)*sizeof(raw_type);
+    }
+
+    return bytes_copied;
+  }
+
+  
 };
 
 #endif /* _VIDEO_UTILS_H_ */

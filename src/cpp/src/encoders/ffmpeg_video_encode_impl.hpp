@@ -242,35 +242,6 @@ namespace sqeazy {
     return bytes_written;
   }
 
-  //TODO: Test this!
-  template <typename raw_type>
-  std::size_t frame_to_vector(const sqeazy::av_frame_t& _frame,
-		       std::vector<raw_type>& _vector ){
-
-    sqeazy::av_frame_t gray_frame(_frame.get()->width,
-				  _frame.get()->height,
-				  av_pixel_type<raw_type>::value);
-
-    auto sws_ctx = std::make_shared<sqeazy::sws_context_t>(_frame,gray_frame);
-    
-    sws_scale((*sws_ctx).get(),
-	      (const std::uint8_t * const*)_frame.get()->data,
-	      frame.get()->linesize,
-	      0,
-	      frame.get()->height,
-	      gray_frame.get()->data,
-	      gray_frame.get()->linesize);
-
-    std::size_t bytes_copied = 0;
-    for(uint32_t y=0;y<_frame.get()->height;++y){
-      auto begin = gray_frame.get()->data[0] + y*gray_frame.get()->linesize[0];
-      auto end = begin + gray_frame.get()->width;
-      std::copy(begin, end,std::back_inserter(_vector));
-      bytes_copied += (end-begin)*sizeof(raw_type);
-    }
-
-    return bytes_copied;
-  }
   
   /**
      \brief function that uses 
