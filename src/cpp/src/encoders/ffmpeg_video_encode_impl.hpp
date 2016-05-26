@@ -312,10 +312,8 @@ static uint32_t decode_stack(const char* _buffer,
   }
 
   //TODO: [ffmeg3.0.1/doc/examples/demuxing_decoding.c] perform av_image_alloc here!
-  const int found_width = codec_ctx.get()->width;
-  const int found_height = codec_ctx.get()->height;
-  shape[row_major::w] = codec_ctx.get()->width;
-  shape[row_major::h] = found_height;
+  const std::size_t found_width = codec_ctx.get()->width;
+  const std::size_t found_height = codec_ctx.get()->height;
   const enum AVPixelFormat found_pix_fmt = codec_ctx.get()->pix_fmt;
 	
   AVPacket packet;
@@ -329,6 +327,8 @@ static uint32_t decode_stack(const char* _buffer,
   
   std::vector<raw_type> temp;
   std::vector<uint32_t> shape(3,0);
+  shape[row_major::w] = found_width;
+  shape[row_major::h] = found_height;
 
   sqeazy::av_frame_t frame;
   sqeazy::av_frame_t gray_frame(found_width,found_height,av_pixel_type<raw_type>::value);
@@ -370,19 +370,22 @@ static uint32_t decode_stack(const char* _buffer,
 					   &frameFinished,
 					   &packet);
 	if (rvalue < 0){
+	  std::string msg(128,' ');
+
+	  av_make_error_string(&msg[0],msg.size(),rvalue);
 	  std::cerr << "Error decoding frame "<< shape[row_major::d]
-		    << " " << av_err2str(rvalue) << "\n";
+		    << " " << msg << "\n";
 	  decoded_bytes = 0;
 	  break;
 	} 
 	  
 
 	if(frameFinished){
-	  if(frame->width != found_width || frame->height != found_height ||
-	     frame->format != found_pix_fmt){
-	    std::cerr << "ouch ... width/height/pixel_format have changed during decoding of stream\n"
+	  if(frame.w() != found_width || frame.h() != found_height ||
+	     frame.pixel_format() != found_pix_fmt){
+	    std::cerr << __FILE__ << ":" << __LINE__ << "\touch ... width/height/pixel_format have changed during decoding of stream\n"
 		      << "old: " << found_width << " / " << found_height << " / " << found_pix_fmt << "\n"
-	      	      << "new: " << frame->width << " / " << frame->height << " / " << frame->pix_fmt << "\n";
+	      	      << "new: " << frame.w() << " / " << frame.h() << " / " << frame.pixel_format() << "\n";
 	    break;
 	  }
 
@@ -397,7 +400,7 @@ static uint32_t decode_stack(const char* _buffer,
       if (frameFinished)
 	{
 	      
-	  auto bytes_copied = frame_to_vector(frame,temp);
+	  auto bytes_copied = y_to_vector(frame,temp);
 
 	  if(bytes_copied == sizeof(raw_type)*shape[row_major::w]*shape[row_major::h])
 	    shape[row_major::d]++;
@@ -408,12 +411,11 @@ static uint32_t decode_stack(const char* _buffer,
 	  }
         }
       
-      av_packet_unref(&temp_pkt);
       
     }
 
 
-  int frameFinished = 1;
+  frameFinished = 1;
   
   //flush cached frames
   while(frameFinished){
@@ -429,20 +431,25 @@ static uint32_t decode_stack(const char* _buffer,
       
     if (frameFinished)
       {
-	   
-	shape[row_major::w] = shape[row_major::w] != (uint32_t)frame.get()->width  ? frame.get()->width  : shape[row_major::w];
-	shape[row_major::h] = shape[row_major::h] != (uint32_t)frame.get()->height ? frame.get()->height : shape[row_major::h];
-	shape[row_major::d]++;
+	if(frame.w() != found_width || frame.h() != found_height ||
+	     frame.pixel_format() != found_pix_fmt){
+	    std::cerr << __FILE__ << ":" << __LINE__ << "\touch ... width/height/pixel_format have changed during decoding of stream\n"
+		      << "old: " << found_width << " / " << found_height << " / " << found_pix_fmt << "\n"
+	      	      << "new: " << frame.w() << " / " << frame.h() << " / " << frame.pixel_format() << "\n";
+	    break;
+	  }
 
+	// shape[row_major::w] = shape[row_major::w] != (uint32_t)frame.get()->width  ? frame.get()->width  : shape[row_major::w];
+	// shape[row_major::h] = shape[row_major::h] != (uint32_t)frame.get()->height ? frame.get()->height : shape[row_major::h];
 
-	sws_scale((*sws_ctx).get(),
-		  (const std::uint8_t * const*)frame.get()->data, frame.get()->linesize, 0, frame.get()->height,
-		  gray_frame.get()->data, gray_frame.get()->linesize);
+	auto bytes_copied = y_to_vector(frame,temp);
 
-	for(uint32_t y=0;y<shape[row_major::h];++y){
-	  auto begin = gray_frame.get()->data[0] + y*frame.get()->linesize[0];
-	  auto end = begin + frame.get()->width;
-	  std::copy(begin, end,std::back_inserter(temp));
+	if(bytes_copied == sizeof(raw_type)*shape[row_major::w]*shape[row_major::h])
+	  shape[row_major::d]++;
+	else{
+	  std::cerr << "unable to extract full frame at index " << shape[row_major::d]
+		    << " throwing!\n";
+	  throw std::runtime_error("ffmpeg_video_encode_impl.hpp::decode_stack");
 	}
       }
   }
