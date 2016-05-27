@@ -137,7 +137,7 @@ BOOST_AUTO_TEST_CASE( roundtrip ){
   std::vector<std::uint16_t> inputdata(len,1);
   std::size_t count=0;
   for( std::uint16_t& n : inputdata )
-    n = (count++) % 65535;
+    n = 1 << (count++ % 8);
   
   std::vector<std::uint16_t> outputdata(len,0);
 
@@ -179,6 +179,7 @@ BOOST_AUTO_TEST_CASE( roundtrip ){
 BOOST_AUTO_TEST_CASE( quantiser_only ){
 
   const std::string filter_name = "quantiser";
+  
   std::vector<size_t> shape(3,128);
   shape.front() *= 2;
   
@@ -192,8 +193,9 @@ BOOST_AUTO_TEST_CASE( quantiser_only ){
 
   std::vector<std::uint16_t> inputdata(len,1);
   std::size_t count=0;
+
   for( std::uint16_t& n : inputdata )
-    n = (count++) % 65535;
+    n = 1 << (count++ % 8);
   
   std::vector<std::uint16_t> outputdata(len,0);
 
