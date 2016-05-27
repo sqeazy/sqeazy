@@ -465,27 +465,10 @@ namespace sqeazy {
   std::size_t y_to_vector(const sqeazy::av_frame_t& _frame,
 			  std::vector<raw_type>& _vector ){
 
-    
-    // sqeazy::av_frame_t gray_frame(_frame.get()->width,
-    // 				  _frame.get()->height,
-    // 				  sqeazy::av_pixel_type<raw_type>::value);
-
     std::size_t frame_size = _frame.get()->width*_frame.get()->height;
     if(_vector.size() != frame_size)
       _vector.resize(frame_size);
     
-    // auto sws_ctx = std::make_shared<sqeazy::sws_context_t>(_frame,gray_frame);
-    
-    // int output_height = sws_scale((*sws_ctx).get(),
-    // 				  (const std::uint8_t * const*)_frame.get()->data,
-    // 				  _frame.get()->linesize,
-    // 				  0,
-    // 				  _frame.get()->height,
-    // 				  gray_frame.get()->data,
-    // 				  gray_frame.get()->linesize);
-
-    // if(output_height!= _frame.get()->height)
-    //   return 0;
 
     std::size_t bytes_copied = 0;
     const std::size_t height = _frame.get()->height;
@@ -498,6 +481,71 @@ namespace sqeazy {
     }
 
     return bytes_copied;
+  }
+
+
+
+  template <typename raw_type>
+  std::size_t vector_to_y(const std::vector<raw_type>& _vector,
+			  sqeazy::av_frame_t& _frame
+			  ){
+    
+    std::size_t value =0;
+    std::size_t frame_size = _frame.get()->width*_frame.get()->height;
+    
+    if(_vector.size() != frame_size)
+      return value;
+
+    std::size_t bytes_copied = 0;
+
+    const std::size_t height = _frame.get()->height;
+
+    static_assert(sizeof(raw_type)==sizeof(_frame.get()->data[0][0]), "unable to copy vector_to_y due to mismtaching type");
+    
+    for(uint32_t y=0;y<height;++y){
+      auto dst_begin = _frame.get()->data[0] + (y*_frame.get()->linesize[0]);
+
+      auto begin = _vector.begin()+(y*_frame.get()->width);
+      auto end = begin + _frame.get()->width;
+
+      std::copy(begin, end,dst_begin);
+      bytes_copied += (end-begin)*sizeof(raw_type);
+    }
+
+    value = bytes_copied;
+    return value;
+  }
+
+  template <typename itr_type>
+  std::size_t vector_to_y(itr_type _begin, itr_type _end,
+			  sqeazy::av_frame_t& _frame
+			  ){
+    
+    std::size_t value =0;
+    std::size_t frame_size = _frame.get()->width*_frame.get()->height;
+    std::size_t itr_size = _end - _begin;
+    
+    if(itr_size != frame_size)
+      return value;
+
+    std::size_t bytes_copied = 0;
+
+    const std::size_t height = _frame.get()->height;
+
+    static_assert(sizeof(*_begin)==sizeof(_frame.get()->data[0][0]), "unable to copy vector_to_y due to mismtaching type");
+    
+    for(uint32_t y=0;y<height;++y){
+      auto dst_begin = _frame.get()->data[0] + (y*_frame.get()->linesize[0]);
+
+      auto begin = _begin+(y*_frame.get()->width);
+      auto end = begin + _frame.get()->width;
+
+      std::copy(begin, end,dst_begin);
+      bytes_copied += (end-begin)*sizeof(*_begin);
+    }
+
+    value = bytes_copied;
+    return value;
   }
 
   

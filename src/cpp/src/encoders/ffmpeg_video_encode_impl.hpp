@@ -172,26 +172,12 @@ namespace sqeazy {
     _buffer.clear();
     for (uint32_t z = 0; z < num_frames; z++) {
       sqeazy::init(&pkt);
-      // av_init_packet(&pkt);
-      // pkt.data = NULL;    // packet data will be allocated by the encoder
-      // pkt.size = 0;
 
-      // fflush(stdout);
       idx = z*frame_size;
 
-
-      for (uint32_t y = 0; y < _stack.shape()[row_major::h]; y++) {
-	auto src_begin = &_stack.data()[idx] + y*gray_frame.get()->width;
-	auto src_end = src_begin + gray_frame.get()->width;
-	auto dst_begin = &gray_frame.get()->data[0][y*gray_frame.get()->linesize[0]];
-	std::copy(src_begin,src_end,dst_begin);
-      }
-
-	    
-      sws_scale(scale_ctx.get(),
-		(const std::uint8_t* const*)gray_frame.get()->data, gray_frame.get()->linesize, 0,
-		frame.get()->height, frame.get()->data, frame.get()->linesize);
-
+      auto frame_begin = _stack.data() + idx;
+      vector_to_y(frame_begin,frame_begin+frame_size,frame);
+      
       frame.get()->pts = z;
 
       /* encode the image */
@@ -312,9 +298,9 @@ static uint32_t decode_stack(const char* _buffer,
   }
 
   //TODO: [ffmeg3.0.1/doc/examples/demuxing_decoding.c] perform av_image_alloc here!
-  const std::size_t found_width = codec_ctx.get()->width;
-  const std::size_t found_height = codec_ctx.get()->height;
-  const enum AVPixelFormat found_pix_fmt = codec_ctx.get()->pix_fmt;
+  std::size_t found_width = codec_ctx.get()->width;
+  std::size_t found_height = codec_ctx.get()->height;
+  enum AVPixelFormat found_pix_fmt = codec_ctx.get()->pix_fmt;
 	
   AVPacket packet;
   // av_init_packet(&packet);
@@ -331,7 +317,7 @@ static uint32_t decode_stack(const char* _buffer,
   shape[row_major::h] = found_height;
 
   sqeazy::av_frame_t frame;
-  sqeazy::av_frame_t gray_frame(found_width,found_height,av_pixel_type<raw_type>::value);
+  // sqeazy::av_frame_t gray_frame(found_width,found_height,av_pixel_type<raw_type>::value);
 
   // gray_frame.get()->width = found_width;
   // gray_frame.get()->height = found_height;
@@ -360,7 +346,7 @@ static uint32_t decode_stack(const char* _buffer,
       if (packet.stream_index != stream->index)
 	continue;
 
-      AVPacket temp_pkt = packet;
+      
       decoded_bytes = packet.size;
       frameFinished = 0;
       do {
@@ -378,7 +364,14 @@ static uint32_t decode_stack(const char* _buffer,
 	  decoded_bytes = 0;
 	  break;
 	} 
-	  
+
+	if(!found_width && !found_height){
+	  found_width = codec_ctx.get()->width;
+	  found_height = codec_ctx.get()->height;
+	  found_pix_fmt = codec_ctx.get()->pix_fmt;
+	  shape[row_major::w] = found_width;
+	  shape[row_major::h] = found_height;
+	}
 
 	if(frameFinished){
 	  if(frame.w() != found_width || frame.h() != found_height ||

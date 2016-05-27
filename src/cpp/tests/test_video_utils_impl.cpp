@@ -205,7 +205,8 @@ BOOST_AUTO_TEST_CASE( roundtrip_frame ){
 
 BOOST_AUTO_TEST_SUITE_END()
 
-BOOST_FIXTURE_TEST_SUITE( av_frame_functions, av_frame_fixture )
+
+BOOST_FIXTURE_TEST_SUITE( frame_to_vector_et_al, av_frame_fixture )
 
 BOOST_AUTO_TEST_CASE( gray_frame_av_copy ){
 
@@ -296,6 +297,41 @@ BOOST_AUTO_TEST_CASE( yuv420_zeros_frame_to_vector ){
   
   BOOST_CHECK_EQUAL_COLLECTIONS(output.begin(), output.end(),
 				ref.begin(), ref.end());
+  
+}
+
+BOOST_AUTO_TEST_CASE( ref_to_frame ){
+
+  sqeazy::av_frame_t frame(fix_width,fix_height,sqeazy::av_pixel_type<sqy::yuv420p>::value);
+  // for(int i = 0;i<10;++i)
+  //   BOOST_REQUIRE_EQUAL(frame.get()->data[0][i],0);
+    
+  auto bytes_copied = sqy::vector_to_y(ref,frame);
+  
+  BOOST_REQUIRE_GT(bytes_copied,0);
+  for(int i = 0;i<10;++i)
+    BOOST_REQUIRE_MESSAGE(yuv420.get()->data[0][i] == frame.get()->data[0][i], "frame_to_vector produces wrong result, yuv420["<< i <<"] =  "<< (int)yuv420.get()->data[0][i] <<" became " << (int)frame.get()->data[0][i]);
+  
+  BOOST_CHECK_EQUAL_COLLECTIONS(yuv420.get()->data[0], yuv420.get()->data[0]+(fix_size),
+				frame.get()->data[0], frame.get()->data[0]+(fix_size));
+  
+}
+
+
+BOOST_AUTO_TEST_CASE( iterators_to_frame ){
+
+  sqeazy::av_frame_t frame(fix_width,fix_height,sqeazy::av_pixel_type<sqy::yuv420p>::value);
+  // for(int i = 0;i<10;++i)
+  //   BOOST_REQUIRE_EQUAL(frame.get()->data[0][i],0);
+    
+  auto bytes_copied = sqy::vector_to_y(ref.begin(),ref.end(),frame);
+  
+  BOOST_REQUIRE_GT(bytes_copied,0);
+  for(int i = 0;i<10;++i)
+    BOOST_REQUIRE_MESSAGE(yuv420.get()->data[0][i] == frame.get()->data[0][i], "frame_to_vector produces wrong result, yuv420["<< i <<"] =  "<< (int)yuv420.get()->data[0][i] <<" became " << (int)frame.get()->data[0][i]);
+  
+  BOOST_CHECK_EQUAL_COLLECTIONS(yuv420.get()->data[0], yuv420.get()->data[0]+(fix_size),
+				frame.get()->data[0], frame.get()->data[0]+(fix_size));
   
 }
 
