@@ -213,11 +213,11 @@ BOOST_AUTO_TEST_CASE( lossless_roundtrip_step_ramp ){
 	
   }
   catch(...){
-    sqeazy::write_image_stack(embryo_,"embryo.tiff");
-    sqeazy::write_stack_as_y4m(embryo_,"embryo.y4m");
-    sqeazy::write_image_stack(roundtrip,"retrieved.tiff");
-    sqeazy::write_stack_as_y4m(roundtrip,"retrieved.y4m");
-    std::ofstream h264_file("embryo.h264", std::ios_base::binary | std::ios_base::out);
+    sqeazy::write_image_stack(embryo_,"step_ramp.tiff");
+    sqeazy::write_stack_as_y4m(embryo_,"step_ramp.y4m");
+    sqeazy::write_image_stack(roundtrip,"step_ramp_rt.tiff");
+    sqeazy::write_stack_as_y4m(roundtrip,"step_ramp_rt.y4m");
+    std::ofstream h264_file("step_ramp.h264", std::ios_base::binary | std::ios_base::out);
     h264_file.write((char*)encoded.data(),bytes_written);
     h264_file.close();
     

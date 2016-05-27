@@ -303,39 +303,17 @@ static uint32_t decode_stack(const char* _buffer,
   enum AVPixelFormat found_pix_fmt = codec_ctx.get()->pix_fmt;
 	
   AVPacket packet;
-  // av_init_packet(&packet);
-  // pkt.data = NULL;
-  // pkt.size = 0;
   sqeazy::init(&packet);
-    
-  // struct SwsContext * sws_ctx = 0;
+
   std::shared_ptr<sqeazy::sws_context_t> sws_ctx(nullptr);
   
-  std::vector<raw_type> temp;
+
   std::vector<uint32_t> shape(3,0);
   shape[row_major::w] = found_width;
   shape[row_major::h] = found_height;
-
-  sqeazy::av_frame_t frame;
-  // sqeazy::av_frame_t gray_frame(found_width,found_height,av_pixel_type<raw_type>::value);
-
-  // gray_frame.get()->width = found_width;
-  // gray_frame.get()->height = found_height;
-
-  // int ret = av_image_alloc(gray_frame.get()->data,
-  // 			   gray_frame.get()->linesize,
-  // 			   gray_frame.get()->width,
-  // 			   gray_frame.get()->height,
-  // 			   av_pixel_type<raw_type>::value,
-  // 			   32 //align flag
-  // 			   );
-  // if (ret < 0) {
-  //   std::cerr << "Could not allocate gray picture buffer\n";
-		  
-  //   // avcodec_close(codec_ctx);
-  //   throw std::runtime_error("unable to create gray_frame");
-  // }   
+  std::size_t frame_size = 0;
   
+  sqeazy::av_frame_t frame;
   
   
   int frameFinished = 0;
@@ -365,12 +343,13 @@ static uint32_t decode_stack(const char* _buffer,
 	  break;
 	} 
 
-	if(!found_width && !found_height){
+	if(!found_width || !found_height){
 	  found_width = codec_ctx.get()->width;
 	  found_height = codec_ctx.get()->height;
 	  found_pix_fmt = codec_ctx.get()->pix_fmt;
 	  shape[row_major::w] = found_width;
 	  shape[row_major::h] = found_height;
+	  frame_size = found_width*found_height;
 	}
 
 	if(frameFinished){
@@ -393,7 +372,8 @@ static uint32_t decode_stack(const char* _buffer,
       if (frameFinished)
 	{
 	      
-	  auto bytes_copied = y_to_vector(frame,temp);
+	  auto bytes_copied = y_to_vector(frame,_volume,_volume + frame_size);
+	  _volume += frame_size;
 
 	  if(bytes_copied == sizeof(raw_type)*shape[row_major::w]*shape[row_major::h])
 	    shape[row_major::d]++;
@@ -432,11 +412,9 @@ static uint32_t decode_stack(const char* _buffer,
 	    break;
 	  }
 
-	// shape[row_major::w] = shape[row_major::w] != (uint32_t)frame.get()->width  ? frame.get()->width  : shape[row_major::w];
-	// shape[row_major::h] = shape[row_major::h] != (uint32_t)frame.get()->height ? frame.get()->height : shape[row_major::h];
-
-	auto bytes_copied = y_to_vector(frame,temp);
-
+	auto bytes_copied = y_to_vector(frame,_volume,_volume + frame_size);
+	_volume += frame_size;
+	  
 	if(bytes_copied == sizeof(raw_type)*shape[row_major::w]*shape[row_major::h])
 	  shape[row_major::d]++;
 	else{
@@ -445,15 +423,16 @@ static uint32_t decode_stack(const char* _buffer,
 	  throw std::runtime_error("ffmpeg_video_encode_impl.hpp::decode_stack");
 	}
       }
+
+    
+
+    
   }
 
 
-  if(temp.size() <= _volume_len)
-    std::copy(temp.begin(), temp.end(),_volume);
-    
   sqeazy::av_free_packet(&packet);
   
-  return temp.size()*sizeof(raw_type);
+  return shape[row_major::d]*frame_size*sizeof(raw_type);
 
 }
 
