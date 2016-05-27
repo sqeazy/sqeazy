@@ -126,7 +126,7 @@ void decompress_files(const std::vector<std::string>& _files,
 
       
       if(dec_ret) {
-	std::cerr << "[SQY]\tdecompressing "<< _file<<" failed! Nothing to write to disk...\n";
+	std::cerr << "[SQY]\tdecompressing "<< _file <<" failed! Nothing to write to disk...\n";
 	continue;
       }
 

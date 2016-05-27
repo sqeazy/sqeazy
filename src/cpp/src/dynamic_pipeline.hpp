@@ -752,16 +752,10 @@ namespace sqeazy
 	  
 	  outgoing_t* tail_out = reinterpret_cast<outgoing_t*>(sink_in.data());
 
-	  // if(is_1d(out_shape))
-	  //   err_code = tail_filters_.decode(tail_in,
-	  // 				    tail_out,
-	  // 				    std::min(in_size_bytes,
-	  // 					     sink_in.size()));
-	  // else
-	    err_code = tail_filters_.decode(tail_in,
-					    tail_out,
-					    in_shape,
-					    out_shape);
+	  err_code = tail_filters_.decode(tail_in,
+					  tail_out,
+					  in_shape,
+					  out_shape);
 	  value += err_code ;
 
 	  //preparing for the sink
