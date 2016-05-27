@@ -165,7 +165,7 @@ public class SqeazyLibraryTests
 	final Pointer<Short> lDestShort = Pointer.allocateShorts(lBufferLengthInShorts);
 	for (int i = 0; i < lBufferLengthInShorts; i++)
 	    {
-		lSourceShort.set(i, (short) (i));
+		lSourceShort.set(i, (short) (1 << (i % 8)));
 		lDestShort.set(i, (short) (0));
 	    }
 
