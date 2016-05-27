@@ -274,6 +274,26 @@ BOOST_AUTO_TEST_CASE( gray_frame_to_vector ){
   
 }
 
+BOOST_AUTO_TEST_CASE( gray_frame_to_nil_iterators ){
+
+  std::vector<std::uint8_t> output;
+  auto bytes_copied = sqy::y_to_vector(gray8, output.begin(), output.end());
+  BOOST_REQUIRE_EQUAL(bytes_copied,0);
+}
+
+BOOST_AUTO_TEST_CASE( gray_frame_to_iterators ){
+
+  std::vector<std::uint8_t> output(ref.size(),0);
+  auto bytes_copied = sqy::y_to_vector(gray8, output.begin(), output.end());
+  BOOST_REQUIRE_GT(bytes_copied,0);
+  for(int i = 0;i<10;++i)
+    BOOST_REQUIRE_MESSAGE(output[i] == ref[i], "frame_to_vector produces wrong result, ref["<< i <<"] =  "<< (int)ref[i] <<" became " << (int)output[i]);
+  
+  BOOST_CHECK_EQUAL_COLLECTIONS(output.begin(), output.end(),
+				ref.begin(), ref.end());
+}
+
+
 BOOST_AUTO_TEST_CASE( yuv420_frame_to_vector ){
 
   std::vector<std::uint8_t> output(ref.size(),0);

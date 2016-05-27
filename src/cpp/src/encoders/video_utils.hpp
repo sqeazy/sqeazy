@@ -460,7 +460,7 @@ namespace sqeazy {
     
   };
 
-  //TODO: Test this!
+
   template <typename raw_type>
   std::size_t y_to_vector(const sqeazy::av_frame_t& _frame,
 			  std::vector<raw_type>& _vector ){
@@ -478,6 +478,33 @@ namespace sqeazy {
       auto dst_begin = _vector.begin()+(y*_frame.get()->width);
       std::copy(begin, end,dst_begin);
       bytes_copied += (end-begin)*sizeof(raw_type);
+    }
+
+    return bytes_copied;
+  }
+
+    template <typename itr_type>
+    std::size_t y_to_vector(const sqeazy::av_frame_t& _frame,
+			    itr_type _begin, itr_type _end ){
+
+    std::size_t frame_size = _frame.get()->width*_frame.get()->height;
+    const std::size_t itr_size = _end - _begin;
+
+    std::size_t bytes_copied = 0;
+
+    static_assert(sizeof(*_begin)==sizeof(_frame.get()->data[0][0]), "unable to copy y_to_vector due to mismtaching type");
+    
+    if(itr_size != frame_size)
+      return bytes_copied;
+
+
+    const std::size_t height = _frame.get()->height;
+    for(uint32_t y=0;y<height;++y){
+      auto begin = _frame.get()->data[0] + (y*_frame.get()->linesize[0]);
+      auto end = begin + _frame.get()->width;
+      auto dst_begin = _begin+(y*_frame.get()->width);
+      std::copy(begin, end,dst_begin);
+      bytes_copied += (end-begin)*sizeof(*_begin);
     }
 
     return bytes_copied;
