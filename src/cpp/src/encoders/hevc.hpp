@@ -272,7 +272,7 @@ namespace sqeazy {
 	} 
 
 	if(drange<9)
-	  num_written_bytes = detail::hevc_encode_stack(&temp_in[0],
+	  num_written_bytes = detail::hevc_encode_stack(temp_in.data(),
 							_dims,
 							temp_out);
 	else {

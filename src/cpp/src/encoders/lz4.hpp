@@ -249,7 +249,7 @@ namespace sqeazy {
                                   ) {
 
         std::vector<size_type> artificial_dims(1);
-        artificial_dims[0] = _length;
+        artificial_dims.front() = _length;
 
         return static_encode(_input, _output, artificial_dims, _bytes_written);
 	

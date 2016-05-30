@@ -196,10 +196,10 @@ namespace sqeazy {
       size_t levels_available = max_compressed_;//-1 one because we are assuming to use 0 already
       float bucketSize = importanceSum/levels_available;
       
-      float importanceIntegral = importance_[0];
-      float quantile_sum = importance_[0];
+      float importanceIntegral = importance_.front();
+      float quantile_sum = importance_.front();
       uint32_t comp_idx = 0;
-      float max_importance_in_bucket = importance_[0];
+      float max_importance_in_bucket = importance_.front();
       float index_max_importance = 0;
 
       for(uint32_t raw_idx = 1;raw_idx<quantiser::max_raw_;++raw_idx){
@@ -255,10 +255,10 @@ namespace sqeazy {
       size_t levels_available = max_compressed_;//-1 one because we are assuming to use 0 already
       float bucketSize = importanceSum/levels_available;
       
-      float importanceIntegral = importance_[0];
-      float quantile_sum = importance_[0];
+      float importanceIntegral = importance_.front();
+      float quantile_sum = importance_.front();
       uint32_t comp_idx = 0;
-      float weighted_mean_importance_in_bucket = 0*importance_[0];
+      float weighted_mean_importance_in_bucket = 0*importance_.front();
       float index_weighted_mean_importance = 0;
 
       for(uint32_t raw_idx = 1;raw_idx<quantiser::max_raw_;++raw_idx){
@@ -615,7 +615,7 @@ namespace sqeazy {
       uint64_t histo_sum=0;
       float weights_sum=0;
       float importance_sum=0;
-      uint32_t last_level = lut_encode_[0];
+      uint32_t last_level = lut_encode_.front();
       
       for( uint32_t item = 0;item < (max_raw_);++item){
 
