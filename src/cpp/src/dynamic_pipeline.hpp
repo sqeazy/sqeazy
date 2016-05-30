@@ -614,7 +614,7 @@ namespace sqeazy
 	  if(compressed_size!=(len*sizeof(outgoing_t))){
 	    casted_shape.resize(_shape.size());
 	    std::fill(casted_shape.begin(), casted_shape.end(),1);
-	    casted_shape[0] = compressed_size;
+	    casted_shape[row_major::x] = compressed_size;
 	  }
 	  
 	  encoded_end = tail_filters_.encode(casted_temp,
@@ -735,7 +735,7 @@ namespace sqeazy
       std::vector<incoming_t> temp(output_len,0);
       std::vector<std::size_t> in_shape(out_shape.size(),1);
       if(!in_shape.empty())
-	in_shape[0] = input_len;
+	in_shape[row_major::x] = input_len;
       
       if(is_compressor()){
 	typedef typename sink_t::out_type sink_out_t;
@@ -765,7 +765,6 @@ namespace sqeazy
 	}
 		
 	//FIXME: provide shape vectors?
-	//produces a memory corruption, 2016/05/19
 	err_code = sink_->decode(compressor_begin,
 				 temp.data(),
 				 input_len,
