@@ -165,9 +165,9 @@ struct halo {
 
     halo(const U& _w, const U& _h, const U& _d) {
         world.resize(3);
-        world[2] = _w;
-        world[1] = _h;
-        world[0] = _d;
+        world[row_major::w] = _w;
+        world[row_major::h] = _h;
+        world[row_major::d] = _d;
     }
 
     template <typename Itr>

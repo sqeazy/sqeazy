@@ -8,7 +8,7 @@
 
 
 #include "tiffio.h"
-//#include "tiff.h"
+#include "traits.hpp"
 
 
 #include "boost/filesystem.hpp"
@@ -111,9 +111,9 @@ namespace sqeazy {
         heights.insert(h);
       }
 
-    value[2] = *(std::max_element(widths.begin(), widths.end()));
-    value[1] = *(std::max_element(heights.begin(), heights.end()));
-    value[0] = size_z;
+    value[row_major::w] = *(std::max_element(widths.begin(), widths.end()));
+    value[row_major::h] = *(std::max_element(heights.begin(), heights.end()));
+    value[row_major::d] = size_z;
 
     return value;
   }
@@ -152,7 +152,7 @@ namespace sqeazy {
     _container.resize(total);
     unsigned long index = 0;
 
-    for(unsigned frame = 0; frame<extents[0]; ++frame)
+    for(unsigned frame = 0; frame<extents[row_major::z]; ++frame)
       {
         TIFFSetDirectory(_tiff_handle,_tiff_dirs[frame]);
         TIFFGetField(_tiff_handle, TIFFTAG_IMAGEWIDTH, &w);
@@ -186,13 +186,13 @@ namespace sqeazy {
 
     
     unsigned w,h;
-    unsigned frame_offset = extents[2]*extents[1];
-    unsigned total = frame_offset*extents[0];
+    unsigned frame_offset = extents[row_major::w]*extents[row_major::h];
+    unsigned total = frame_offset*extents[row_major::z];
     std::vector<float> local_pixels;
     local_pixels.clear();
     local_pixels.resize(total);
 
-    for(unsigned frame = 0;frame<extents[0];++frame)
+    for(unsigned frame = 0;frame<extents[row_major::z];++frame)
       {
   	TIFFSetDirectory(_tiff_handle,_tiff_dirs[frame]);
   	TIFFGetField(_tiff_handle, TIFFTAG_IMAGEWIDTH, &w);
@@ -211,7 +211,7 @@ namespace sqeazy {
     // sqeazy::storage tiff_storage(tiff_order,ascending);
     typedef typename stack_type::storage_order_type storage_order_t;
     storage_order_t tiff_storage(tiff_order,ascending);
-    stack_type  local_stack    (&local_pixels[0],    extents,    tiff_storage);
+    stack_type  local_stack    (local_pixels.data(),    extents,    tiff_storage);
 
     //uses boost::multi_array conversion to do map all loaded pixels to the storage order in _container
     _container = local_stack;
@@ -284,7 +284,7 @@ namespace sqeazy {
 
     unsigned w = _dims[_dims.size()-1];
     unsigned h = _dims[_dims.size()-2];
-    unsigned z = _dims.size() > 2 ? _dims[0] : 1;
+    unsigned z = _dims.size() > 2 ? _dims[row_major::z] : 1;
     
     const unsigned long long frame_size = w*h;
     unsigned long long index = 0;
@@ -318,7 +318,7 @@ namespace sqeazy {
   void write_tiff_from_vector(const im_vec_type& _stack,
 			      const ext_type& _dims,
 			      const std::string& _dest) {
-      return write_tiff_from_array(&_stack[0], _dims, _dest);
+      return write_tiff_from_array(_stack.data(), _dims, _dest);
     }
 
 
@@ -352,9 +352,9 @@ namespace sqeazy {
       return;
     }
     
-    unsigned w = _stack.shape()[2];
-    unsigned h = _stack.shape()[1];
-    unsigned z = _stack.shape()[0];
+    unsigned w = _stack.shape()[row_major::w];
+    unsigned h = _stack.shape()[row_major::h];
+    unsigned z = _stack.shape()[row_major::d];
     
     for(unsigned frame = 0;frame<z;++frame){
       TIFFSetField(output_image, TIFFTAG_IMAGEWIDTH,		w);
@@ -376,7 +376,7 @@ namespace sqeazy {
 
 	stack_line_t temp = _stack[ boost::indices[frame][y][range_t(0,w)] ];
 	std::copy(temp.begin(), temp.end(), temp_row.begin());
-	TIFFWriteScanline(output_image,&temp_row[0],y,0);
+	TIFFWriteScanline(output_image,temp_row.data(),y,0);
 
       }
 
@@ -421,7 +421,7 @@ namespace sqeazy {
       
       unsigned long long bytes = n_pixels_*sizeof(T);
       buffer_.resize(bytes);
-      T* dest_begin = reinterpret_cast<T*>(&buffer_[0]);
+      T* dest_begin = reinterpret_cast<T*>(buffer_.data());
       std::copy(_begin, _end, dest_begin);
     }
 
@@ -479,7 +479,7 @@ namespace sqeazy {
 
 	if(n_frames){
 	  _shape.resize(3);
-	  _shape[0] = n_frames;
+	  _shape[row_major::z] = n_frames;
 	} else {
 	  _shape.resize(2);
 	}
@@ -537,12 +537,12 @@ namespace sqeazy {
       
       switch(_bits_per_sample){
       case 8:
-	write_tiff_from_array(reinterpret_cast<const unsigned char*>(&buffer_[0]), 
+	write_tiff_from_array(reinterpret_cast<const unsigned char*>(buffer_.data()), 
 			      shape_,
 			      _path);
 	break;
       case 16:
-	write_tiff_from_array(reinterpret_cast<const unsigned short*>(&buffer_[0]), 
+	write_tiff_from_array(reinterpret_cast<const unsigned short*>(buffer_.data()), 
 			      shape_,
 			      _path);
 	break;
@@ -564,11 +564,11 @@ namespace sqeazy {
       buffer_.resize(size_in_byte());
 
       unsigned w,h;
-      unsigned long frame_offset = shape_[2]*shape_[1];
+      unsigned long frame_offset = shape_[row_major::h]*shape_[row_major::w];
 
       unsigned long index = 0;
 
-      for(unsigned frame = 0; frame<shape_[0]; ++frame)
+      for(unsigned frame = 0; frame<shape_[row_major::d]; ++frame)
 	{
 
 	  TIFFGetField(handle_, TIFFTAG_IMAGEWIDTH, &w);
@@ -582,7 +582,7 @@ namespace sqeazy {
     }
 
     char const * data() const {
-      return &buffer_[0];
+      return buffer_.data();
     }
 
   };

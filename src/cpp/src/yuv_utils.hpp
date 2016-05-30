@@ -5,6 +5,7 @@
 #include <string>
 #include <cstdint>
 
+#include "traits.hpp"
 #include "regex_helpers.hpp"
 #include "boost/filesystem.hpp"
 
@@ -52,20 +53,20 @@ namespace sqeazy {
     
     std::stringstream dest_file;
     dest_file << dest
-	      << "_w" << _stack.shape()[2]
-	      << "_h" << _stack.shape()[1]
-	      << "_f" << _stack.shape()[0]
+	      << "_w" << _stack.shape()[row_major::w]
+	      << "_h" << _stack.shape()[row_major::h]
+	      << "_f" << _stack.shape()[row_major::d]
 	      << "_yuv420p.yuv";
       
     std::ofstream ofile(dest_file.str(),std::ios::out | std::ios::binary | std::ios::trunc);
     float mbytes_written = 0;
     
-    for(std::uint32_t z = 0;z<_stack.shape()[0];++z){
+    for(std::uint32_t z = 0;z<_stack.shape()[row_major::z];++z){
       const char* fptr = reinterpret_cast<const char*>(&_stack.data()[z*frame_size]);
       //luminance
       ofile.write(fptr,frame_size);
       //both chroma
-      ofile.write(&all_chroma_values[0],all_chroma_values.size());
+      ofile.write(all_chroma_values.data(),all_chroma_values.size());
       mbytes_written += frame_size + all_chroma_values.size();
       
     }
@@ -96,10 +97,10 @@ namespace sqeazy {
       static_assert(sizeof(value_type)<2,"[sqeazy::yuv420formatter] unable to write non-8-bit data");
 
       const std::string frame_title("FRAME\n");
-      const uint32_t frame_size = _stack.shape()[1]*_stack.shape()[2];
+      const uint32_t frame_size = _stack.shape()[row_major::h]*_stack.shape()[row_major::w];
       const std::vector<char> all_chroma_values(frame_size/2,0);
       
-      for(std::uint32_t z = 0;z<_stack.shape()[0];++z){
+      for(std::uint32_t z = 0;z<_stack.shape()[row_major::d];++z){
 
 	//header
 	_stream.write(frame_title.c_str(),frame_title.size());
@@ -108,7 +109,7 @@ namespace sqeazy {
 	//luminance
 	_stream.write(fptr,frame_size);
 	//both chroma
-	_stream.write(&all_chroma_values[0],all_chroma_values.size());
+	_stream.write(all_chroma_values.data(),all_chroma_values.size());
       }
 
 	  
@@ -160,7 +161,7 @@ namespace sqeazy {
       else
 	std::copy(_shape.begin(),_shape.end(),final_shape.begin());
 
-      final_shape[0] = frames_consumed ;
+      final_shape[row_major::z] = frames_consumed ;
       _shape = final_shape;
       return ;
     }
@@ -179,10 +180,10 @@ namespace sqeazy {
     static void write_stack_8(const stack_t& _stack, stream_t& _stream) {
 
       const std::string frame_title("FRAME\n");
-      const uint32_t frame_size = _stack.shape()[1]*_stack.shape()[2];
+      const uint32_t frame_size = _stack.shape()[row_major::y]*_stack.shape()[row_major::x];
       const std::vector<char> all_chroma_values(frame_size,0);
       
-      for(std::uint32_t z = 0;z<_stack.shape()[0];++z){
+      for(std::uint32_t z = 0;z<_stack.shape()[row_major::z];++z){
 
 	//header
 	_stream.write(frame_title.c_str(),frame_title.size());
@@ -192,8 +193,8 @@ namespace sqeazy {
 	_stream.write(fptr,frame_size);
 
 	//both chroma
-	_stream.write(&all_chroma_values[0],all_chroma_values.size());
-	_stream.write(&all_chroma_values[0],all_chroma_values.size());
+	_stream.write(all_chroma_values.data(),all_chroma_values.size());
+	_stream.write(all_chroma_values.data(),all_chroma_values.size());
 	
       }
 
@@ -218,7 +219,7 @@ namespace sqeazy {
       const value_type cb_mask = (0xff) << 8;
             
       uint32_t frame_offset = 0;
-      for(std::uint32_t z = 0;z<_stack.shape()[0];++z){
+      for(std::uint32_t z = 0;z<_stack.shape()[row_major::z];++z){
 
 	frame_offset = z*frame_size;
 	//header
@@ -229,9 +230,9 @@ namespace sqeazy {
 	  lumi_values[i] = _stack.data()[frame_offset+i] & lumi_mask;
 	  chroma_values[i] = (_stack.data()[frame_offset+i] & cb_mask) >> 8;
 	}
-	_stream.write((char*)&lumi_values[0],lumi_values.size());
-	_stream.write((char*)&chroma_values[0],chroma_values.size());
-	_stream.write((char*)&all_zeros[0],all_zeros.size());
+	_stream.write((char*)lumi_values.data(),lumi_values.size());
+	_stream.write((char*)chroma_values.data(),chroma_values.size());
+	_stream.write((char*)all_zeros.data(),all_zeros.size());
       }
 
 	  
@@ -299,7 +300,7 @@ namespace sqeazy {
       else
 	std::copy(_shape.begin(),_shape.end(),final_shape.begin());
 
-      final_shape[0] = frames_consumed ;
+      final_shape[row_major::z] = frames_consumed ;
       _shape = final_shape;
       return ;
       
@@ -340,8 +341,8 @@ namespace sqeazy {
       for (std::string line; std::getline(_stream, line); ) {
       
 	if(line.find("FRAME")!=std::string::npos){
-	  _stream.read((char*)&lumi_values[0],lumi_values.size());
-	  _stream.read((char*)&chroma_values[0],chroma_values.size());
+	  _stream.read((char*)lumi_values.data(),lumi_values.size());
+	  _stream.read((char*)chroma_values.data(),chroma_values.size());
 
 	  //lumi
 	  for(uint32_t i = 0;i<frame_size;++i){
@@ -376,7 +377,7 @@ namespace sqeazy {
       else
 	std::copy(_shape.begin(),_shape.end(),final_shape.begin());
 
-      final_shape[0] = frames_consumed ;
+      final_shape[row_major::z] = frames_consumed ;
       _shape = final_shape;
       return ;
       
@@ -460,7 +461,7 @@ namespace sqeazy {
     
     float mbytes_written = _stack.num_elements()*1.5f;
     mbytes_written += y4m_header.str().size();
-    mbytes_written += frame_title.size()*_stack.shape()[0];
+    mbytes_written += frame_title.size()*_stack.shape()[row_major::z];
 
     mbytes_written /= float(1<<20);
     
@@ -594,7 +595,7 @@ namespace sqeazy {
     
     
     if(_verbose)
-      std::cout << _path << ": contained "<< shape[0] <<" frames of " << shape[2] << "x" << shape[1] << " \n";
+      std::cout << _path << ": contained "<< shape[row_major::z] <<" frames of " << shape[row_major::x] << "x" << shape[row_major::y] << " \n";
     
     return shape;
   }
@@ -643,7 +644,7 @@ namespace sqeazy {
     }
     
     if(_verbose)
-      std::cout << _path << ": width = " << shape[2] << ", heigth = " << shape[1] << "\n";
+      std::cout << _path << ": width = " << shape[row_major::w] << ", heigth = " << shape[row_major::h] << "\n";
     
     std::ifstream yuv_file(_path,std::ios::in|std::ios::binary);
     
@@ -668,10 +669,10 @@ namespace sqeazy {
 		);
     }
      
-    shape[0] = frames_needed;
+    shape[row_major::z] = frames_needed;
     
     if(_verbose)
-      std::cout << _path << ": contained "<< shape[0] <<" frames of " << shape[2] << "x" << shape[1] << " \n";
+      std::cout << _path << ": contained "<< shape[row_major::z] <<" frames of " << shape[row_major::x] << "x" << shape[row_major::y] << " \n";
     
     return shape;
   }
