@@ -33,7 +33,7 @@ void compare_files(const std::vector<std::string>& _files,
     return;
   }
       
-  const bfs::path	src_file = _files[0];
+  const bfs::path	src_file = _files.front();
   const bfs::path	src_file_extension = src_file.extension();
   
   const bfs::path	target_file = _files[1];

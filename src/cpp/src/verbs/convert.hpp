@@ -32,7 +32,7 @@ void convert_files(const std::vector<std::string>& _files,
     return;
   }
       
-  const  bfs::path	src_file = _files[0];
+  const  bfs::path	src_file = _files.front();
   const  bfs::path	src_file_extension = src_file.extension();
   
   const bfs::path	target_file = _files[1];
@@ -171,18 +171,18 @@ void convert_files(const std::vector<std::string>& _files,
 
 	sqeazy::quantiser<uint16_t, uint8_t> shrinker;
 	shrinker.decode(lut_path.generic_string(),
-			&buffer[0],
+			buffer.data(),
 			buffer.size(),
-			&decoded[0]);
+			decoded.data());
 
       } 
 
     if(decoded.empty()){
-      sqeazy::tiff_facet output(&buffer[0],&buffer[0] + buffer.size(),shape);
+      sqeazy::tiff_facet output(buffer.data(),buffer.data() + buffer.size(),shape);
       output.write(target_file.generic_string());
     }
     else {
-      sqeazy::tiff_facet output(&decoded[0],&decoded[0] + decoded.size(),shape);
+      sqeazy::tiff_facet output(decoded.data(),decoded.data() + decoded.size(),shape);
       output.write(target_file.generic_string(),16);
     }
 

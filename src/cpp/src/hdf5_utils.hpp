@@ -571,7 +571,7 @@ namespace sqeazy {
       _shape.resize(ds->getSpace().getSimpleExtentNdims());
 
       std::vector<hsize_t> retrieved_dims(_shape.size());
-      ds->getSpace().getSimpleExtentDims( (hsize_t*)&retrieved_dims[0], NULL);
+      ds->getSpace().getSimpleExtentDims( (hsize_t*)retrieved_dims.data(), NULL);
       std::copy(retrieved_dims.begin(), retrieved_dims.end(), _shape.begin());
 
       delete ds;
@@ -625,7 +625,7 @@ namespace sqeazy {
       
       unsigned rank = dataspace.getSimpleExtentNdims();
       std::vector<hsize_t> retrieved_dims(rank);
-      dataspace.getSimpleExtentDims( (hsize_t*)&retrieved_dims[0], NULL);
+      dataspace.getSimpleExtentDims( (hsize_t*)retrieved_dims.data(), NULL);
 
       //check for type match
       if(!h5_read_type_matches<T>(dataset)){
@@ -681,7 +681,7 @@ namespace sqeazy {
 
     template <typename T, typename U>
     int write_nd_dataset(const std::string& _dname, const std::vector<T>& _payload, const std::vector<U>& _shape){
-      return write_nd_dataset(_dname, &_payload[0], &_shape[0], _shape.size());
+      return write_nd_dataset(_dname, _payload.data(), _shape.data(), _shape.size());
     }
 
 
@@ -809,7 +809,7 @@ namespace sqeazy {
 			 pipe_type& _pipe
 			 ){
 
-      return write_nd_dataset(_dname, &_payload[0], &_shape[0], _shape.size(), _pipe);
+      return write_nd_dataset(_dname, _payload.data(), _shape.data(), _shape.size(), _pipe);
     }
 
 
