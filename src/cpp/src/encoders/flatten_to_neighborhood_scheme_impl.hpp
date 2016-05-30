@@ -97,12 +97,12 @@ namespace sqeazy {
         sqeazy::halo<Neighborhood, size_type> geometry(_shape.begin(), _shape.end());
         geometry.compute_offsets_in_x(offsets);
 
-        size_type halo_size_x = length - offsets[0];
+        size_type halo_size_x = length - offsets[row_major::x];
 
         //no offsets in other dimensions than x
         if(offsets.size()!=1)
         {
-            halo_size_x = geometry.non_halo_end(0) - geometry.non_halo_begin(0) + 1;
+            halo_size_x = geometry.non_halo_end(row_major::x) - geometry.non_halo_begin(row_major::x) + 1;
         }
 
         unsigned long local_index=0;
@@ -222,12 +222,12 @@ namespace sqeazy {
         sqeazy::halo<Neighborhood, size_type> geometry(_dims.begin(), _dims.end());
         geometry.compute_offsets_in_x(offsets);
 
-        size_type halo_size_x = length - offsets[0];
+        size_type halo_size_x = length - offsets[row_major::x];
 
         //no offsets in other dimensions than x
         if(offsets.size()!=1)
         {
-            halo_size_x = geometry.non_halo_end(0) - geometry.non_halo_begin(0) + 1;
+            halo_size_x = geometry.non_halo_end(row_major::x) - geometry.non_halo_begin(row_major::x) + 1;
         }
 
         unsigned long local_index=0;

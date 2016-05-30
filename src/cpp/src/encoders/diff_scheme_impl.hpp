@@ -97,7 +97,7 @@ namespace sqeazy {
       size_type halo_size_x = geometry.non_halo_end(0)-geometry.non_halo_begin(0);
       if(offsets.size()==1)//no offsets in other dimensions than x
         {
-	  halo_size_x = length - offsets[0];
+	  halo_size_x = length - offsets.front();
         }
       sum_type local_sum = 0;
       size_type local_index = 0;
@@ -146,7 +146,7 @@ namespace sqeazy {
       size_type halo_size_x = geometry.non_halo_end(0)-geometry.non_halo_begin(0);
       if(offsets.size()==1)//no offsets in other dimensions than x
         {
-	  halo_size_x = length - offsets[0];
+	  halo_size_x = length - offsets.front();
         }
       sum_type local_sum = 0;
       const sum_type n_traversed_pixels = sqeazy::num_traversed_pixels<Neighborhood>();
@@ -248,7 +248,7 @@ namespace sqeazy {
       size_type halo_size_x = geometry.non_halo_end(0)-geometry.non_halo_begin(0);
       if(offsets.size()==1)//no offsets in other dimensions than x
         {
-	  halo_size_x = length - offsets[0];
+	  halo_size_x = length - offsets.front();
         }
       sum_type local_sum = 0;
       size_type local_index = 0;
@@ -311,7 +311,7 @@ namespace sqeazy {
       size_type halo_size_x = geometry.non_halo_end(0)-geometry.non_halo_begin(0);
       if(offsets.size()==1)//no offsets in other dimensions than x
         {
-	  halo_size_x = length - offsets[0];
+	  halo_size_x = length - offsets.front();
         }
       sum_type local_sum = 0;
       const sum_type n_traversed_pixels = sqeazy::num_traversed_pixels<Neighborhood>();
