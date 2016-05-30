@@ -43,7 +43,7 @@ namespace sqeazy {
 	std::cout << "\n";
 #endif
         //faces with z
-        const size_type indices[2] = {0,_dims[0]-1};
+        const size_type indices[2] = {0,_dims[row_major::z]-1};
 	size_type z_idx = 0;
 	
         for(size_type z_idx_ctr = 0;
@@ -51,7 +51,7 @@ namespace sqeazy {
 	    ++z_idx_ctr ) {
 
 	  z_idx = indices[z_idx_ctr];
-	  if(!(z_idx < _dims[0])){
+	  if(!(z_idx < _dims[row_major::z])){
 	    continue;
 	  }
 	  
@@ -65,7 +65,7 @@ namespace sqeazy {
 
 #ifdef _SQY_VERBOSE_
 	  running_histo.fill_stats();
-	  std::cout << "[SQY_VERBOSE]\t face z = " << z_idx << " / " << _dims[0] <<" , support = " << temp << ", mean = " << running_histo.calc_mean() << "\n";
+	  std::cout << "[SQY_VERBOSE]\t face z = " << z_idx << " / " << _dims[row_major::z] <<" , support = " << temp << ", mean = " << running_histo.calc_mean() << "\n";
 	    
 #endif
 
@@ -82,12 +82,12 @@ namespace sqeazy {
 
         //faces with y
         face_index =0;
-	std::vector<raw_type> face(_dims[2]*_dims[0]);
+	std::vector<raw_type> face(_dims[2]*_dims[row_major::z]);
         for(size_type y_idx = 0; y_idx < _dims[1]; y_idx+=(_dims[1]-1)) {
 
 	  running_histo.clear();
 
-            for(size_type z_idx = 0; z_idx < _dims[0]; ++z_idx) {
+            for(size_type z_idx = 0; z_idx < _dims[row_major::z]; ++z_idx) {
 	      input_index = z_idx*(frame_size)+y_idx*_dims[2];
 	      std::copy(_input + input_index, _input+input_index+_dims[2], face.begin() + (z_idx*_dims[2]));
 	      running_histo.add_from_image(_input + input_index, _input+input_index+_dims[2]);
@@ -102,8 +102,8 @@ namespace sqeazy {
 #endif
 
             if(temp < support) {
-	      if(_darkest_face.size()<(size_t)(_dims[2]*_dims[0]))
-                    _darkest_face.resize(_dims[2]*_dims[0]);
+	      if(_darkest_face.size()<(size_t)(_dims[row_major::x]*_dims[row_major::z]))
+                    _darkest_face.resize(_dims[row_major::x]*_dims[row_major::z]);
 		//FIXME: do we really need to copy the face out?
 		std::copy(face.begin(), face.end(),_darkest_face.begin());
 		
