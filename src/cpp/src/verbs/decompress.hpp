@@ -34,8 +34,10 @@ void decompress_files(const std::vector<std::string>& _files,
   std::vector<char> intermediate_buffer;
   std::vector<size_t> shape;
   
-  unsigned long long file_size_byte = 0;
-  unsigned long long expected_size_byte = 0;
+  std::uintmax_t file_size_byte = 0;
+  std::vector<size_t> file_shape;
+  std::uintmax_t expected_size_byte = 0;
+  
   bfs::path current_file;
   bfs::path output_file;
   std::fstream sqyfile;
@@ -62,7 +64,9 @@ void decompress_files(const std::vector<std::string>& _files,
 
     ////////////////////////INPUT I/O///////////////////////////////
     file_size_byte = bfs::file_size(current_file);
-
+    file_shape.clear();
+    
+    
     if(current_file.extension()==".sqy"){
       sqyfile.open(_file, std::ios_base::binary | std::ios_base::in );
 
@@ -74,11 +78,13 @@ void decompress_files(const std::vector<std::string>& _files,
 
       ////////////////////////EXTRACT HEADER///////////////////////////////
       const char* file_ptr = &file_content_buffer[0];
-
+      
       sqeazy::image_header sqy_header(file_ptr,
 				      file_ptr+file_size_byte
 				      );
-
+      file_shape.resize(sqy_header.shape()->size(),1);
+      file_shape[sqy::row_major::x] = file_size_byte;
+    
       std::string found_pipeline = sqy_header.pipeline();
       found_num_bits = sqy_header.sizeof_header_type()*CHAR_BIT;
       if(!(found_num_bits==16 || found_num_bits==8))
@@ -107,6 +113,7 @@ void decompress_files(const std::vector<std::string>& _files,
       
 	dec_ret = pipe16.decode(file_ptr,
 				reinterpret_cast<std::uint16_t*>(intermediate_buffer.data()),
+				file_shape,
 				*sqy_header.shape());
       }
 
@@ -120,6 +127,7 @@ void decompress_files(const std::vector<std::string>& _files,
       
 	dec_ret = pipe8.decode(file_ptr,
 			       reinterpret_cast<std::uint8_t*>(intermediate_buffer.data()),
+			       file_shape,
 			       *sqy_header.shape());
       } 
 
