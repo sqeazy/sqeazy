@@ -67,7 +67,9 @@ namespace sqeazy {
 						h264_scheme<std::uint8_t>
 						>,
 					       stage_factory<
-						 lz4_scheme<char>
+						 lz4_scheme<char>,
+						 hevc_scheme<char>,
+						 h264_scheme<char>
 						 >
 					      >;
 

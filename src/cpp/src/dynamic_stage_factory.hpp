@@ -24,7 +24,9 @@ namespace sqeazy {
   {
     if(Head().name() == _name)
     {
-      return std::dynamic_pointer_cast<pointee_t>(std::make_shared<Head>(_payload));
+      auto value = std::make_shared<Head>(_payload);
+      auto casted = std::dynamic_pointer_cast<pointee_t>(value);
+      return casted;
     }
     else
     {
@@ -38,7 +40,9 @@ namespace sqeazy {
   {
     if(Head().name() == _name)
     {
-      return std::dynamic_pointer_cast<pointee_t>(std::make_shared<Head>(_payload));
+      auto value = std::make_shared<Head>(_payload);
+      auto casted = std::dynamic_pointer_cast<pointee_t>(value);
+      return casted;
     }
     else
     {

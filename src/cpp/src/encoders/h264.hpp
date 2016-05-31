@@ -44,16 +44,17 @@ namespace sqeazy {
 
   template <typename in_type>
   using h264_scheme_base_type = typename binary_select_type<filter<in_type>,//true
-							    sink<in_type>,
-							    sizeof(in_type)==1>::type;
+							    sink<in_type>,//false
+							    std::is_same<in_type,char>::value
+							    >::type;
   
   template < typename in_type , typename S = std::size_t>
   struct h264_scheme :  public h264_scheme_base_type<in_type>
   {
 
     typedef typename binary_select_type<filter<in_type>,//true
-					sink<in_type>,
-					sizeof(in_type)==1>::type base_t;
+					sink<in_type>,//false
+					std::is_same<in_type,char>::value>::type base_t;
 
     typedef in_type raw_type;
     typedef typename base_t::out_type compressed_type;
@@ -133,7 +134,7 @@ namespace sqeazy {
      *
      * @param _input input raw_type buffer
      * @param _output output char buffer (not owned, not allocated)
-     * @param _length mutable std::vector<size_type>, contains the length of _input at [0] and the number of written bytes at [1]
+     * @param _length shape of input buffer
      * @return sqeazy::error_code
      */
     compressed_type* encode( const raw_type* _in,
