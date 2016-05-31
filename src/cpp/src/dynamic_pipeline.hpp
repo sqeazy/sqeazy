@@ -735,7 +735,7 @@ namespace sqeazy
       std::vector<incoming_t> temp(output_len,0);
       std::vector<std::size_t> in_shape(out_shape.size(),1);
       if(!in_shape.empty())
-	in_shape[row_major::x] = input_len;
+	in_shape.back() = input_len;
       
       if(is_compressor()){
 	typedef typename sink_t::out_type sink_out_t;
@@ -770,6 +770,10 @@ namespace sqeazy
 				 input_len,
 				 temp.size());
 	value += err_code ? err_code+10 : 0 ;
+	if(!err_code){
+	  std::fill(in_shape.begin(), in_shape.end(),1);
+	  in_shape.back() = temp.size();
+	}
       }
       else{
 	std::copy(_in,
@@ -783,8 +787,7 @@ namespace sqeazy
       else{
 	
 	err_code = head_filters_.decode(reinterpret_cast<const incoming_t*>(temp.data()),
-					_out,
-					out_shape);
+					_out,out_shape);
 	value += err_code ? err_code+100 : 0 ;
 	
       }

@@ -158,7 +158,7 @@ namespace sqeazy {
 						  _inlen*sizeof(compressed_type),
 						  expected_bytes_decoded);
 
-      if(num_bytes_decoded == expected_bytes_decoded)
+      if(num_bytes_decoded > 0 && num_bytes_decoded<=expected_bytes_decoded)
 	return 0;
       else
 	return 1;

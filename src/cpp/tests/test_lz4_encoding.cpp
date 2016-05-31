@@ -23,7 +23,7 @@ BOOST_AUTO_TEST_CASE( encode_success )
 {
   
   const char* input = reinterpret_cast<char*>(&constant_cube[0]);
-  long expected_size = uint16_cube_of_8::size;
+  long expected_size = uint16_cube_of_8::size*sizeof(std::uint16_t);
   
 
   int retcode = SQY_LZ4_Max_Compressed_Length(&expected_size);
@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_CASE( encode_success )
 			      &output_length
 			      );
   
-  BOOST_CHECK_EQUAL(retcode,0);
+  BOOST_REQUIRE_EQUAL(retcode,0);
   BOOST_CHECK_NE(constant_cube[0],to_play_with[0]);
   BOOST_CHECK_LT(output_length,expected_size);
 
@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE( encode_length )
   long output_length = uint16_cube_of_8::size;
   int retcode = SQY_LZ4_Max_Compressed_Length(&output_length);
 
-  BOOST_CHECK_EQUAL(retcode,0);
+  BOOST_REQUIRE_EQUAL(retcode,0);
   BOOST_CHECK_GT(output_length,input_length);
 }
 
@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE( decode_length )
   BOOST_CHECK_NE(output_length,input_in_bytes);
     
   retcode = SQY_LZ4_Decompressed_Length(compressed.data(),&output_length);
-  BOOST_CHECK_EQUAL(retcode,0);
+  BOOST_REQUIRE_EQUAL(retcode,0);
   unsigned expected = uint16_cube_of_8::size_in_byte;
   
   BOOST_CHECK_EQUAL(output_length, expected);
@@ -107,42 +107,48 @@ BOOST_AUTO_TEST_CASE( decode_encoded )
   
   long expected_size = size_in_byte;
   int retcode = SQY_LZ4_Max_Compressed_Length(&expected_size);
-  BOOST_CHECK_EQUAL(retcode,0);
+  BOOST_REQUIRE_EQUAL(retcode,0);
 
-  char* compressed = new char[expected_size];
+  // char* compressed = new char[expected_size];
+  std::vector<char> compressed(expected_size,0);
   long output_length = size_in_byte;
   retcode += SQY_LZ4Encode(input,
-			      uint16_cube_of_8::size_in_byte,
-			      compressed,
-			      &output_length
-			      );
+			   uint16_cube_of_8::size_in_byte,
+			   compressed.data(),
+			   &output_length
+			   );
  
-  BOOST_CHECK_EQUAL(retcode,0);
+  BOOST_REQUIRE_EQUAL(retcode,0);
   BOOST_CHECK_NE(output_length,0);
   long size_ = uint16_cube_of_8::size_in_byte;
   BOOST_CHECK_LT(output_length,size_);
 
   long uncompressed_max_size = output_length;
 
-  retcode += SQY_LZ4_Decompressed_Length(compressed,&uncompressed_max_size);
-  BOOST_CHECK_EQUAL(retcode,0);
+  retcode += SQY_LZ4_Decompressed_Length(compressed.data(),
+					 &uncompressed_max_size);
+  BOOST_REQUIRE_EQUAL(retcode,0);
 
   long hdr_size = output_length;
-  SQY_Header_Size(compressed,&hdr_size);
+  SQY_Header_Size(compressed.data(),&hdr_size);
   BOOST_CHECK_GT(hdr_size,0);
  
-  
-  char* uncompressed = new char[uncompressed_max_size];
-  std::fill(uncompressed,uncompressed + uncompressed_max_size,0);
 
-  retcode += SQY_LZ4Decode(compressed,
+  std::vector<char> uncompressed(uncompressed_max_size,0);
+  //char* uncompressed = new char[uncompressed_max_size];
+  std::fill(uncompressed.data(),uncompressed.data() + uncompressed_max_size,0);
+
+  retcode += SQY_LZ4Decode(compressed.data(),
 			   output_length,
-			   uncompressed
+			   uncompressed.data()
 			   );
   
-  BOOST_CHECK_EQUAL(retcode,0);
+  BOOST_REQUIRE_EQUAL(retcode,0);
 
-  int lz4_ret = LZ4_decompress_safe(compressed + hdr_size, (char*)&to_play_with[0], output_length-hdr_size, size_);
+  int lz4_ret = LZ4_decompress_safe(compressed.data() + hdr_size,
+				    (char*)&to_play_with[0],
+				    output_length-hdr_size,
+				    size_);
   BOOST_CHECK_NE(lz4_ret,0);  
   BOOST_CHECK_EQUAL_COLLECTIONS(&constant_cube[0], &constant_cube[0] + uint16_cube_of_8::size,
   				&to_play_with[0], &to_play_with[0] + uint16_cube_of_8::size);
@@ -153,8 +159,6 @@ BOOST_AUTO_TEST_CASE( decode_encoded )
   				&uncompressed_right[0], &uncompressed_right[0] + uint16_cube_of_8::size);
 
 
-  delete [] uncompressed;
-  delete [] compressed;
 }
 
 BOOST_AUTO_TEST_CASE( decode_encoded_ramp )
@@ -166,7 +170,7 @@ BOOST_AUTO_TEST_CASE( decode_encoded_ramp )
   
   long expected_size = size_in_byte;
   int retcode = SQY_LZ4_Max_Compressed_Length(&expected_size);
-  BOOST_CHECK_EQUAL(retcode,0);
+  BOOST_REQUIRE_EQUAL(retcode,0);
 
   std::vector<char> compressed(expected_size,0);
   long output_length = size_in_byte;
@@ -176,7 +180,7 @@ BOOST_AUTO_TEST_CASE( decode_encoded_ramp )
 			      &output_length
 			      );
  
-  BOOST_CHECK_EQUAL(retcode,0);
+  BOOST_REQUIRE_EQUAL(retcode,0);
   BOOST_CHECK_NE(output_length,0);
   long size_ = uint16_cube_of_8::size_in_byte;
   BOOST_CHECK_LT(output_length,size_);
@@ -184,7 +188,7 @@ BOOST_AUTO_TEST_CASE( decode_encoded_ramp )
   long uncompressed_max_size = output_length;
 
   retcode += SQY_LZ4_Decompressed_Length(&compressed[0],&uncompressed_max_size);
-  BOOST_CHECK_EQUAL(retcode,0);
+  BOOST_REQUIRE_EQUAL(retcode,0);
 
   long hdr_size = output_length;
   SQY_Header_Size(&compressed[0],&hdr_size);
@@ -197,7 +201,7 @@ BOOST_AUTO_TEST_CASE( decode_encoded_ramp )
 			   &uncompressed[0]
 			   );
   
-  BOOST_CHECK_EQUAL(retcode,0);
+  BOOST_REQUIRE_EQUAL(retcode,0);
 
   int lz4_ret = LZ4_decompress_safe(&compressed[0] + hdr_size, (char*)&to_play_with[0], output_length-hdr_size, size_);
   BOOST_CHECK_NE(lz4_ret,0);  
@@ -221,8 +225,8 @@ BOOST_FIXTURE_TEST_SUITE( lz4_study, sqeazy::lz4_fixture<unsigned short> )
 BOOST_AUTO_TEST_CASE( encoded_and_print_length )
 {
 
-  std::map<std::string, std::vector<value_type>* >::iterator begin = data.begin();
-  std::map<std::string, std::vector<value_type>* >::iterator end = data.end();
+  auto begin = data.begin();
+  auto end = data.end();
 
   for(;begin!=end;++begin){
     
@@ -232,19 +236,20 @@ BOOST_AUTO_TEST_CASE( encoded_and_print_length )
 					
     SQY_LZ4_Max_Compressed_Length(&expected_size);
     
-    char* compressed = new char[expected_size];
+    // char* compressed = new char[expected_size];
+    std::vector<char> compressed(expected_size,0);
     long output_length = expected_size;
     SQY_LZ4Encode(input,
 		  input_length,
-		  compressed,
+		  compressed.data(),
 		  &output_length
 		  );
 
     std::cout << "compressed " << begin->first.c_str() << "("<< begin->second->size()<< " elements) reduced from " << input_length << " B to " << output_length << " B, ratio out/in: " << output_length/float(input_length) << "\n";
       
-    delete [] compressed;
+
     try{
-    BOOST_REQUIRE_GT(output_length,0);
+      BOOST_REQUIRE_GT(output_length,0);
     }
     catch(...){
       break;
@@ -253,6 +258,34 @@ BOOST_AUTO_TEST_CASE( encoded_and_print_length )
     
     
   }
+
+  print();
+
+
+}
+
+
+BOOST_AUTO_TEST_CASE( encoded_and_print_length_ramp16bit )
+{
+    
+    long input_length = ramp_16bit.size()*sizeof(value_type);
+    const char* input = reinterpret_cast<char*>(ramp_16bit.data());
+    long expected_size = input_length;
+					
+    SQY_LZ4_Max_Compressed_Length(&expected_size);
+    
+    // char* compressed = new char[expected_size];
+    std::vector<char> compressed(expected_size,0);
+    long output_length = expected_size;
+    SQY_LZ4Encode(input,
+		  input_length,
+		  compressed.data(),
+		  &output_length
+		  );
+      
+
+
+      BOOST_REQUIRE_GT(output_length,0);
 
   print();
 

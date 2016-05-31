@@ -250,8 +250,10 @@ int SQY_RmBackground_Estimated_UI16(int width, int height, int depth, char* src,
 
 int SQY_LZ4Encode(const char* src, long srclength, char* dst, long* dstlength){
 
-  auto lz4 = sqy::dypeline_from_char::from_string("lz4");
-  char* encoded_end = lz4.encode(src,dst,srclength);
+  auto lz4 = sqy::dypeline_from_uint8::from_string("lz4");
+  char* encoded_end = lz4.encode((const std::uint8_t*)src,
+				 dst,
+				 srclength);
 
   if(encoded_end)
     *dstlength = encoded_end - dst;
@@ -271,7 +273,7 @@ int SQY_LZ4_Max_Compressed_Length(long* length){
   
   // sqy::image_header hdr(char(),shape, lz4_encoder.name());
   // long value = hdr.size() + lz4.max_encoded_size(*length);
-  auto lz4 = sqy::dypeline_from_char::from_string("lz4");
+  auto lz4 = sqy::dypeline_from_uint8::from_string("lz4");
   
   long value = (long)lz4.max_encoded_size(*length);
   
@@ -295,9 +297,11 @@ int SQY_LZ4_Decompressed_Length(const char* data, long *length){
 
 int SQY_LZ4Decode(const char* src, long srclength, char* dst){
 
-  auto lz4 = sqy::dypeline_from_char::from_string("lz4");
+  auto lz4 = sqy::dypeline_from_uint8::from_string("lz4");
   
-  int retcode = lz4.decode(src,dst,srclength);
+  int retcode = lz4.decode(src,
+			   (std::uint8_t*)dst,
+			   srclength);
   
   return retcode;
 }

@@ -11,11 +11,19 @@
 #include "dynamic_stage.hpp"
 
 namespace sqeazy {
+
+  template <typename in_type>
+  using pass_through_scheme_base_type = typename binary_select_type<filter<in_type>,//true
+								    sink<in_type>,//false
+								    std::is_same<in_type,char>::value
+								    >::type;
   
   template <typename in_type, typename out_type = char >
-  struct pass_through : public sink<in_type,out_type>  {
+  //  struct pass_through : public sink<in_type,out_type>  {
+  struct pass_through : public pass_through_scheme_base_type<in_type>  {
 
-    typedef sink<in_type,out_type> base_type;
+    // typedef sink<in_type,out_type> base_type;
+    typedef pass_through_scheme_base_type<in_type> base_type;
     typedef in_type raw_type;
     typedef typename base_type::out_type compressed_type;
 

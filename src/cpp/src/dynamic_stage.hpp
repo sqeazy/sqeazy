@@ -403,19 +403,29 @@ namespace sqeazy{
 
       std::vector<incoming_t> temp_in(_in, _in+len);
       std::vector<outgoing_t> temp_out(temp_in.size());
-
+      std::size_t compressed_items = 0;
+      
       for( std::size_t fidx = 0;fidx<chain_.size();++fidx )
 	{
 	  
-	  auto encoded_end = chain_[fidx]->encode(&temp_in[0],
-						  &temp_out[0],
+	  auto encoded_end = chain_[fidx]->encode( temp_in.data(),
+						   temp_out.data(),
 						  _shape);
-	  value = reinterpret_cast<decltype(value)>(encoded_end);
-	  std::copy(&temp_out[0],value,temp_in.begin());
+
+	  compressed_items = encoded_end - temp_out.data();
+	  if(compressed_items>temp_out.size()){
+	    std::ostringstream msg;
+	    msg << __FILE__ << ":" << __LINE__ << "\t encode wrote past the end of temporary buffers\n";
+	    throw std::runtime_error(msg.str());
+	  }
+	  
+	  value = reinterpret_cast<decltype(value)>(encoded_end);	    
+	  std::copy(temp_out.data(),value,temp_in.begin());
 	}
 
       std::size_t outgoing_size = value-((decltype(value))&temp_out[0]);
-      std::copy(&temp_out[0],value, _out);
+      std::copy(temp_out.data(),value,
+		_out);
       value = _out + outgoing_size;     
       return value;
       
