@@ -18,11 +18,16 @@
 namespace sqeazy {
 
   //FIXME: lz4 can also be a filter for char->char conversions
+  template <typename in_type>
+  using lz4_scheme_base_type = typename binary_select_type<filter<in_type>,//true
+							    sink<in_type>,//false
+							    std::is_same<in_type,char>::value
+							    >::type;
 
   template < typename T , typename S = std::size_t>
-  struct lz4_scheme :  public sink<T> {
+  struct lz4_scheme :  public lz4_scheme_base_type<T> {
 
-    typedef sink<T,char> sink_type;
+    typedef lz4_scheme_base_type<T> sink_type;
     typedef T raw_type;
     typedef typename sink_type::out_type compressed_type;
 
