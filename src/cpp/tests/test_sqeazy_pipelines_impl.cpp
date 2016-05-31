@@ -29,12 +29,12 @@ BOOST_AUTO_TEST_CASE( roundtrip_bitswap1 ){
   
   std::vector<size_t> shape(dims.begin(), dims.end());
 
-  auto pipe = sqeazy::dypeline_from_char::from_string(default_filter_name_part1);
+  auto pipe = sqeazy::dypeline_from_uint8::from_string(default_filter_name_part1);
   
   int max_encoded_size = pipe.max_encoded_size(data_bytes);
   std::vector<char> intermediate(max_encoded_size,0);
   
-  char* encoded_end = pipe.encode((const char*)constant_cube.data(),
+  char* encoded_end = pipe.encode(constant_cube.data(),
 				  intermediate.data(),
 				  shape);
     
@@ -44,7 +44,7 @@ BOOST_AUTO_TEST_CASE( roundtrip_bitswap1 ){
   BOOST_CHECK_LT(length,max_encoded_size);
   
   int rvalue = pipe.decode(intermediate.data(),
-			   (char*)incrementing_cube.data(),
+			   incrementing_cube.data(),
 			   length
 			   );
   
@@ -65,12 +65,12 @@ BOOST_AUTO_TEST_CASE( roundtrip_lz4 ){
   
   std::vector<size_t> shape(dims.begin(), dims.end());
 
-  auto pipe = sqeazy::dypeline_from_char::from_string(default_filter_name_part2);
+  auto pipe = sqeazy::dypeline_from_uint8::from_string(default_filter_name_part2);
   
   int max_encoded_size = pipe.max_encoded_size(data_bytes);
   std::vector<char> intermediate(max_encoded_size,0);
   
-  char* encoded_end = pipe.encode((const char*)constant_cube.data(),
+  char* encoded_end = pipe.encode(constant_cube.data(),
 				  intermediate.data(),
 				  shape);
     
@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE( roundtrip_lz4 ){
   BOOST_CHECK_LT(length,max_encoded_size);
   
   int rvalue = pipe.decode(intermediate.data(),
-			   (char*)incrementing_cube.data(),
+			   incrementing_cube.data(),
 			   length
 			   );
   
@@ -103,12 +103,12 @@ BOOST_AUTO_TEST_CASE( roundtrip ){
   
   std::vector<size_t> shape(dims.begin(), dims.end());
 
-  auto pipe = sqeazy::dypeline_from_char::from_string(default_filter_name);
+  auto pipe = sqeazy::dypeline_from_uint8::from_string(default_filter_name);
   
   int max_encoded_size = pipe.max_encoded_size(data_bytes);
   std::vector<char> intermediate(max_encoded_size,0);
   
-  char* encoded_end = pipe.encode((const char*)constant_cube.data(),
+  char* encoded_end = pipe.encode(constant_cube.data(),
 				  intermediate.data(),
 				  shape);
     
@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE( roundtrip ){
   BOOST_CHECK_LT(length,max_encoded_size);
   
   int rvalue = pipe.decode(intermediate.data(),
-			   (char*)incrementing_cube.data(),
+			   incrementing_cube.data(),
 			   length
 			   );
   
@@ -128,6 +128,60 @@ BOOST_AUTO_TEST_CASE( roundtrip ){
 				incrementing_cube.data(), incrementing_cube.data()+10);
   BOOST_REQUIRE_EQUAL_COLLECTIONS(constant_cube.data()+size-10, constant_cube.data()+size,
 				  incrementing_cube.data()+size-10, incrementing_cube.data()+size);
+
+  
+}
+
+
+BOOST_AUTO_TEST_CASE( flybrain_roundtrip_video_lz4 ){
+
+  const std::string filter_name = "h264->lz4";
+
+  std::vector<size_t> shape(3,256);
+  shape.front() = 57;
+  
+  const size_t len = std::accumulate(shape.begin(),
+				     shape.end(),
+				     1.,
+				     std::multiplies<size_t>());
+  
+  const size_t data_bytes = len*sizeof(std::uint16_t);
+  long length = data_bytes;
+  
+  std::vector<std::uint8_t> inputdata(len,1);
+  size_t count = 0;
+  for( std::uint8_t& n : inputdata )
+    n = 1 <<  ((count++) % 8);
+  std::vector<std::uint8_t> outputdata(len,0);
+
+
+  auto pipe = sqeazy::dypeline_from_uint8::from_string(filter_name);
+  
+  int max_encoded_size = pipe.max_encoded_size(data_bytes);
+  std::vector<char> intermediate(max_encoded_size,0);
+  
+  char* encoded_end = pipe.encode(inputdata.data(),
+				  intermediate.data(),
+				  shape);
+    
+  BOOST_REQUIRE(encoded_end!=nullptr);
+  length = encoded_end - intermediate.data();
+  
+  BOOST_CHECK_LT(length,max_encoded_size);
+  
+  int rvalue = pipe.decode(intermediate.data(),
+			   outputdata.data(),
+			   length
+			   );
+  
+  BOOST_CHECK_EQUAL(rvalue, 0);
+
+    BOOST_REQUIRE_EQUAL_COLLECTIONS(inputdata.data(), inputdata.data()+10,
+  				outputdata.data(), outputdata.data()+10); 
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(inputdata.data()+len-10, inputdata.data()+len,
+				  outputdata.data()+len-10, outputdata.data()+len);
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(inputdata.data(), inputdata.data()+len,
+				  outputdata.data(), outputdata.data()+len);
 
   
 }
@@ -179,12 +233,12 @@ BOOST_AUTO_TEST_CASE( roundtrip_bitswap1_from_casted ){
   
 
 
-  auto pipe = sqeazy::dypeline_from_char::from_string(default_filter_name_part1);
+  auto pipe = sqeazy::dypeline_from_uint8::from_string(default_filter_name_part1);
   
   int max_encoded_size = pipe.max_encoded_size(data_bytes);
   std::vector<char> intermediate(max_encoded_size,0);
 
-  char* encoded_end = pipe.encode((const char*)constant_cube.data(),
+  char* encoded_end = pipe.encode((const std::uint8_t*)constant_cube.data(),
 				  intermediate.data(),
 				  length);
     
@@ -194,7 +248,7 @@ BOOST_AUTO_TEST_CASE( roundtrip_bitswap1_from_casted ){
   BOOST_CHECK_LT(length,max_encoded_size);
   
   int rvalue = pipe.decode(intermediate.data(),
-			   (char*)incrementing_cube.data(),
+			   (std::uint8_t*)incrementing_cube.data(),
 			   length
 			   );
   
