@@ -14,7 +14,7 @@ To build sqeazy, the cmake build system (any version higher than 2.8) is require
 * lz4
 * boost (>= 1.55)
 * hdf5 (>= 1.8)
-* ffmpeg (>= 2.5.8) with libx256 (>= 1.7)
+* ffmpeg (>= 3.0) with libx256 (>= 1.7)
 
 ## sqy (application similar to zip/tar/...)
 
@@ -22,7 +22,7 @@ To build sqeazy, the cmake build system (any version higher than 2.8) is require
 * libtiff
 * boost (>= 1.55)
 * hdf5 (>1.8)
-* ffmpeg (>= 2.5.8) with libx256 (>= 1.7)
+* ffmpeg (>= 3.0) with libx256 (>= 1.7)
 
 # General Remarks
 
