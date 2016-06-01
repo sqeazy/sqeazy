@@ -110,32 +110,7 @@ int brief_help(const options_type& _sqy_options ,
   
 }
 
-
-template <typename modes_map_t, typename map_type >
-int full_help(
-	       const modes_map_t& _modes_args,
-	       const map_type& _verb_aliases 
-	       ) {
-
-  std::string me = "sqy";
-  std::cout << "usage: " << me << " <-h|optional> <verb> <files|..>\n"
-	    << "\n"
-	    << "available verbs:\n"
-	    << "<help>" << "\n";
-
-
-  if(_modes_args.size()){
-      
-    for( auto args : _modes_args ){
-
-      auto fitr = _verb_aliases.find(args.first);
-      if(fitr!=_verb_aliases.end())
-	std::cout << "<" << fitr->second << ">\n" << args.second << "\n";
-      else
-	std::cout << "<" << args.first << ">\n" << args.second << "\n";
-    }
-  }
-
+static void print_pipeline_descriptions(){
   std::cout << "pipeline builder\n"
 	    << "----------------\n"
 	    << "	- pipelines may consist of any number of filters\n"
@@ -164,6 +139,35 @@ int full_help(
   
   std::cout << "\n";
 
+}
+
+template <typename modes_map_t, typename map_type >
+int full_help(
+	       const modes_map_t& _modes_args,
+	       const map_type& _verb_aliases 
+	       ) {
+
+  std::string me = "sqy";
+  std::cout << "usage: " << me << " <-h|optional> <verb> <files|..>\n"
+	    << "\n"
+	    << "available verbs:\n"
+	    << "<help>" << "\n";
+
+
+  if(_modes_args.size()){
+      
+    for( auto args : _modes_args ){
+
+      auto fitr = _verb_aliases.find(args.first);
+      if(fitr!=_verb_aliases.end())
+	std::cout << "<" << fitr->second << ">\n" << args.second << "\n";
+      else
+	std::cout << "<" << args.first << ">\n" << args.second << "\n";
+    }
+  }
+
+  print_pipeline_descriptions();
+  
   return 1;
 }
 
@@ -171,7 +175,7 @@ int full_help(
 int main(int argc, char *argv[])
 {
 
-
+  int retcode = 1;
   typedef std::function<void(const std::vector<std::string>&,const po::variables_map&) > func_t;
 
   po::options_description sqy_options;
@@ -186,8 +190,29 @@ int main(int argc, char *argv[])
   po::store(sqy_parsed, sqy_vm); 
   po::notify(sqy_vm);
 
-  
-  
+
+  if(sqy_vm.count("version")) {
+    //FIXME: introduce versioing infrastructure
+    std::cout << "sqy 0.0-alpha\n";
+    return 1;
+  }
+    
+  static     std::map<std::string, std::string> verb_aliases;
+  verb_aliases["help"] 	= std::string("");
+  verb_aliases["compress"] 	= std::string("compress|enc|encode|comp");
+  verb_aliases["decompress"] 	= std::string("decompress|dec|decode|rec");
+  verb_aliases["scan"]		= std::string("scan|info");                
+  verb_aliases["convert"] 	= std::string("convert|transform|trf");
+  verb_aliases["compare"] 	= std::string("compare|cmp");
+
+  static     std::map<std::string, std::string> verb_descriptions;
+  verb_descriptions["help"] 	= std::string("print a help message");
+  verb_descriptions["compress"]	= std::string("compress a tiff stack to native sqy format or hdf5");
+  verb_descriptions["decompress"]= std::string("decompress a .sqy/.h5 file to tiff");
+  verb_descriptions["scan"]	= std::string("print statistics about the stack in a tiff file");
+  verb_descriptions["convert"] 	= std::string("convert a tiff file to another format (.yuv, .y4m)");
+  verb_descriptions["compare"] 	= std::string("compare two tiff stacks and see if they are equal");
+
   const static std::string default_compression = "bitswap1->lz4";
   static std::unordered_map<std::string,po::options_description> descriptions(4);
 
@@ -229,21 +254,6 @@ int main(int argc, char *argv[])
     ("metrics,m", po::value<std::string>()->default_value("nrmse"), "comma-separated list of metrics (possible values: mse, psnr)")
     ;
 
-  static     std::map<std::string, std::string> verb_aliases;
-  verb_aliases["help"] 	= std::string("");
-  verb_aliases["compress"] 	= std::string("compress|enc|encode|comp");
-  verb_aliases["decompress"] 	= std::string("decompress|dec|decode|rec");
-  verb_aliases["scan"]		= std::string("scan|info");                
-  verb_aliases["convert"] 	= std::string("convert|transform|trf");
-  verb_aliases["compare"] 	= std::string("compare|cmp");
-
-  static     std::map<std::string, std::string> verb_descriptions;
-  verb_descriptions["help"] 	= std::string("print a help message");
-  verb_descriptions["compress"]	= std::string("compress a tiff stack to native sqy format or hdf5");
-  verb_descriptions["decompress"]= std::string("decompress a .sqy/.h5 file to tiff");
-  verb_descriptions["scan"]	= std::string("print statistics about the stack in a tiff file");
-  verb_descriptions["convert"] 	= std::string("convert a tiff file to another format (.yuv, .y4m)");
-  verb_descriptions["compare"] 	= std::string("compare two tiff stacks and see if they are equal");
   
   static     std::unordered_map<std::string, func_t> verb_functors;
   verb_functors["compress"]	= compress_files;      
@@ -260,21 +270,28 @@ int main(int argc, char *argv[])
     if(!pair.second.empty())
       verb_aliases_rex[pair.first] = std::regex(rex.str());
   }
-    
-  std::string joint_args;
-  for( int i = 0;i<argc;++i ){
-    joint_args.append(argv[i]);
-  }
-    
-  int retcode = 0;
-  if(argc<2 || // joint_args.find("-h")!=std::string::npos ||
-     joint_args.find("help")!=std::string::npos) {
+
+
+  if(argc<2) {
     retcode = brief_help(sqy_options,
 			 verb_descriptions,
 			 verb_aliases
 			 );
     return retcode;
   }
+
+  if(sqy_vm.count("fullhelp")) {
+    retcode = full_help(descriptions,verb_aliases);
+    return retcode;
+  }
+
+  
+  std::string joint_args;
+  for( int i = 0;i<argc;++i ){
+    joint_args.append(argv[i]);
+  }
+    
+
 
   
   po::options_description options_to_parse;
@@ -296,9 +313,13 @@ int main(int argc, char *argv[])
   }
 
   if(verb.empty()){
-    std::cerr << "unable to find matching verb for " << target << "\n";
-    full_help(descriptions,verb_aliases);
-    return 1;
+
+      std::cerr << "unable to find matching verb for " << target << "\n";
+      brief_help(sqy_options,
+		 verb_descriptions,
+		 verb_aliases
+		 );
+    return retcode;
   }
     
   if(descriptions.find(verb)!=descriptions.end()){
@@ -314,7 +335,15 @@ int main(int argc, char *argv[])
 						      ).options(options_to_parse).allow_unregistered().run();
   po::store(parsed, vm); 
   po::notify(vm);
-	
+
+
+  if(vm.count("help")){
+    std::cout << descriptions[verb] << "\n";
+    if(vm.count("pipeline"))
+      print_pipeline_descriptions();
+    return retcode;
+  }
+  
   std::vector<std::string> inputFiles = po::collect_unrecognized(parsed.options, po::include_positional);
 
   if(inputFiles.empty()){
@@ -329,7 +358,7 @@ int main(int argc, char *argv[])
 			 verb_descriptions,
 			 verb_aliases
 			 );
-      return 1;
+      return retcode;
     }
   }
   
