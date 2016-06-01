@@ -316,9 +316,11 @@ int SQY_Header_Size(const char* src, long *srclength){
 }
 
 int SQY_Version_Triple(int* version){
-  version[0] = 2015;//placeholder
-  version[1] = 4;//placeholder
-  version[2] = 28;//placeholder
+  
+  //FIXME: introduce versioing infrastructure
+  version[0] = 0;//major
+  version[1] = 0;//minor
+  version[2] = 1;//patch
 
   return 0;
 }
