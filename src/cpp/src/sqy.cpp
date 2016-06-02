@@ -189,13 +189,6 @@ int main(int argc, char *argv[])
 						      ).options(sqy_options).allow_unregistered().run();
   po::store(sqy_parsed, sqy_vm); 
   po::notify(sqy_vm);
-
-
-  if(sqy_vm.count("version")) {
-    //FIXME: introduce versioing infrastructure
-    std::cout << "sqy 0.0-alpha\n";
-    return 1;
-  }
     
   static     std::map<std::string, std::string> verb_aliases;
   verb_aliases["help"] 	= std::string("");
@@ -218,7 +211,7 @@ int main(int argc, char *argv[])
 
   
   descriptions["compress"].add_options()
-    ("help", "produce help message")
+    ("help,h", "produce help message")
     ("verbose,v", "enable verbose output")
     ("pipeline,p", po::value<std::string>()->default_value(default_compression), "compression pipeline to be used (see 'pipeline builder' documentation below)")
     ("dataset_name,d", po::value<std::string>()->default_value("sqy_stack"), "name of the HDF5 dataset to appear inside any of .h5 encoded files (ignored for native .sqy compression)")
@@ -227,7 +220,7 @@ int main(int argc, char *argv[])
     ;
 
   descriptions["decompress"].add_options()
-    ("help", "produce help message")
+    ("help,h", "produce help message")
     ("verbose,v", "enable verbose output")
     ("dataset_name,d", po::value<std::string>()->default_value("sqy_stack"), "name of the HDF5 dataset to load from input h5 file(s) (ignored for native .sqy compression)")
     ("output_name,o", po::value<std::string>(), "file location to write output to (if only 1 is given)")
@@ -235,21 +228,21 @@ int main(int argc, char *argv[])
     ;
 
   descriptions["scan"].add_options()
-    ("help", "produce help message")
+    ("help,h", "produce help message")
     ("verbose,v", "enable verbose output")
     ;
 
   descriptions["convert"].add_options()
-    ("help", "produce help message")
+    ("help,h", "produce help message")
     ("verbose,v", "enable verbose output")
-    ("chroma_sampling,c", po::value<std::string>()->default_value("C420"),  "from .tif to .y4m (possible values: C420, C444)")
-    //("method,m", po::value<std::string>()->default_value("internal"), "method for conversion (possible: sws_scale, internal)")
-    ("frame_shape,s", po::value<std::string>()->default_value(""), "shape of each frame to expect (only needed for .yuv sources), e.g. 1920x1020")
-    ("dump_quantiser,d", "dump LUT for quantiser")
+    ("chroma_sampling,c", po::value<std::string>()->default_value("C420"),  "how to subsample chroma channels (possible values: C420, C444)")
+    ("quantiser,q", po::value<std::string>()->default_value("quantiser"), "method for conversion")
+    ("frame_shape,s", po::value<std::string>()->default_value(""), "WidthxHeight of each frame  to expect (only needed for .yuv input sources), e.g. 1920x1020")
+    ("lut_suffix,l", po::value<std::string>()->default_value(".lut"), "suffix for the LUT, i.e. stack_16bit.tif will generate stack_16bit.y4m and stack_16bit.lut) ")
     ;
 
   descriptions["compare"].add_options()
-    ("help", "produce help message")
+    ("help,h", "produce help message")
     ("verbose,v", "enable verbose output")
     ("metrics,m", po::value<std::string>()->default_value("nrmse"), "comma-separated list of metrics (possible values: mse, psnr)")
     ;
@@ -314,14 +307,24 @@ int main(int argc, char *argv[])
 
   if(verb.empty()){
 
-      std::cerr << "unable to find matching verb for " << target << "\n";
-      brief_help(sqy_options,
-		 verb_descriptions,
-		 verb_aliases
-		 );
+    
+    if(sqy_vm.count("version")) {
+      //FIXME: introduce versioing infrastructure
+      std::cout << "sqy 0.0-alpha\n";
+      return 1;
+    }
+
+    
+    std::cerr << "unable to find matching verb for " << target << "\n";
+    brief_help(sqy_options,
+	       verb_descriptions,
+	       verb_aliases
+	       );
     return retcode;
   }
-    
+
+  
+  
   if(descriptions.find(verb)!=descriptions.end()){
     options_to_parse.add(descriptions[verb]);
   }
