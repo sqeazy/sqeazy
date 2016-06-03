@@ -21,6 +21,29 @@
 namespace po = boost::program_options;
 namespace bfs = boost::filesystem;
 
+void insert_lut_path_if_not_present(std::string& quantiser_definition,
+				    const bfs::path& lut_path){
+
+  if(quantiser_definition.find("(")==std::string::npos){
+
+    std::ostringstream args;
+    args << "(decode_lut_path=" << lut_path.generic_string() << ")";
+    quantiser_definition += args.str();
+    return ;
+    
+  }
+
+  if(quantiser_definition.find("lut_path")!=std::string::npos){
+    return ;
+  }
+
+  std::ostringstream value;
+  value << quantiser_definition.substr(0,quantiser_definition.size()-1);
+  value << ",decode_lut_path=" << lut_path.generic_string() << ")"; 
+
+  quantiser_definition = value.str();
+}
+
 /**
    \brief method to load data from file at _src and convert it back to _dst
    this method is meant for y4m/yuv to tif conversions
@@ -50,49 +73,52 @@ void backward_conversion(const bfs::path& _src,
     return;
   }
 
-  bfs::path lut_path = _src.parent_path()/_src.stem();
-  lut_path+=".lut";
-    
-  const bool lut_found = bfs::exists(lut_path) && bfs::file_size(lut_path);
+  if(!(sqeazy::is_y4m_file(_src) || sqeazy::is_yuv_file(_src))){
 
+      std::cerr << "[SQY]\tunsupported file format " << _src << "\nsqy-convert only works for y4m/yuv files\n";
+      return;
+
+    }
+  
+  bfs::path lut_path = _dst;
+  lut_path.replace_extension(_config["lut_suffix"].as<std::string>());
+  const bool lut_found = bfs::exists(lut_path) && bfs::file_size(lut_path);
+  
   if(_config.count("verbose"))
     std::cout << "lut" << (lut_found ? " " : " not ") << "found at " << lut_path
 	      << (lut_found ? " assuming 16-bit encoding " : " assuming 8-bit encoding ")
 	      << "\n";
 	
   std::vector<uint8_t> buffer;
-  std::vector<uint32_t> shape;
+    std::vector<std::size_t> shape;
   std::vector<uint16_t> decoded;
-    
+
+  
+  
   if(sqeazy::is_y4m_file(_src)){
     std::string y4m_header = sqeazy::y4m_header(_src.generic_string());
 
     if(y4m_header.find("C420") != std::string::npos){
       shape = sqeazy::read_y4m_to_gray(buffer,
 				       _src.generic_string(),
-				       _config.count("verbose"));}
-      
-    if(y4m_header.find("C444") != std::string::npos){
-      shape = sqeazy::read_y4m_to_gray(decoded,
-				       _src.generic_string(),
 				       _config.count("verbose"));
     }
-      
+    else {
+      std::cerr << "detected unsupported chroma format in" << y4m_header << "\n";
+      return;
+    }  
   }
-  else{
-    if(sqeazy::is_yuv_file(_src)){
-      shape = sqeazy::read_yuv_to_gray8(buffer,
-					_src.generic_string(),
-					_config["frame_shape"].as<std::string>(),
-					_config.count("verbose"));}
-    else
-      {
-	std::cerr << "source location is neither .y4m nor .yuv! Exiting ...\n";
-	return;
-      }
+  
+  if(sqeazy::is_yuv_file(_src)){
+    shape = sqeazy::read_yuv_to_gray8(buffer,
+				      _src.generic_string(),
+				      _config["frame_shape"].as<std::string>(),
+				      _config.count("verbose"));
   }
 
-  if(buffer.empty() && decoded.empty()){
+  
+
+  if(buffer.empty()){
     std::cerr << "no data extracted from " << _src << "! Exiting ...\n";
     return;
   }
@@ -102,13 +128,23 @@ void backward_conversion(const bfs::path& _src,
   if(lut_found)//most likely a 16-bit stack, let's decode it
     {
       decoded.resize(buffer.size());
+      std::string quantiser_definition = _config["quantiser"].as<std::string>();
+      insert_lut_path_if_not_present(quantiser_definition,lut_path);
+      
+      if(_config.count("verbose"))
+	std::cout << "[SQY]\tUsing decoding quantiser " << quantiser_definition << "\n";
 
-      sqeazy::quantiser<uint16_t, uint8_t> shrinker;
-      shrinker.decode(lut_path.generic_string(),
-		      buffer.data(),
-		      buffer.size(),
-		      decoded.data());
-
+    
+      auto decode_pipe = sqy::dypeline<std::uint16_t>::from_string(quantiser_definition);
+      int retcode = decode_pipe.detail_decode((const char*)buffer.data(),
+					      decoded.data(),
+					      buffer.size()*sizeof(std::uint8_t),
+					      shape
+					      );
+      if(retcode){
+	std::cout << "[SQY]\tdequantisation failed, returned " << retcode << "\n";
+	return;
+      }
     } 
 
   if(decoded.empty()){
@@ -130,28 +166,6 @@ void backward_conversion(const bfs::path& _src,
   }
 }
 
-void insert_lut_path_if_not_present(std::string& quantiser_definition,
-				    const bfs::path& lut_path){
-
-  if(quantiser_definition.find("(")==std::string::npos){
-
-    std::ostringstream args;
-    args << "(decode_lut_path=" << lut_path << ")";
-    quantiser_definition += args.str();
-    return ;
-    
-  }
-
-  if(quantiser_definition.find("lut_path")!=std::string::npos){
-    return ;
-  }
-
-  std::ostringstream value;
-  value << quantiser_definition.substr(0,quantiser_definition.size()-1);
-  value << ",decode_lut_path=" << lut_path << ")"; 
-
-  quantiser_definition = value.str();
-}
 
 /**
    \brief method to load data from file at _src and convert it back to _dst
