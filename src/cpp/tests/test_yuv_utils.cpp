@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE( y4m_right_shape )
   BOOST_CHECK(sqeazy::is_y4m_file(example_y4m));
 
   std::vector<uint8_t> payload;
-  std::vector<uint32_t> dims = sqeazy::read_y4m_to_gray(payload, example_y4m);
+  std::vector<std::size_t> dims = sqeazy::read_y4m_to_gray(payload, example_y4m);
 
   BOOST_CHECK_EQUAL_COLLECTIONS(shape.begin(), shape.end(),dims.begin(), dims.end());
   
@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE( yuv_right_shape )
   BOOST_CHECK(sqeazy::is_yuv_file(example_yuv));
 
   std::vector<uint8_t> payload;
-  std::vector<uint32_t> dims = sqeazy::read_yuv_to_gray8(payload, example_yuv);
+  std::vector<std::size_t> dims = sqeazy::read_yuv_to_gray8(payload, example_yuv);
 
   BOOST_CHECK_EQUAL_COLLECTIONS(shape.begin(), shape.end(),dims.begin(), dims.end());
   
@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_CASE( y4m_roundtrip )
   BOOST_REQUIRE(bfs::file_size(path)>0);
   
   std::vector<uint8_t> reread;  
-  std::vector<uint32_t> dims = sqeazy::read_y4m_to_gray(reread, path);
+  std::vector<std::size_t> dims = sqeazy::read_y4m_to_gray(reread, path);
 
   BOOST_REQUIRE_EQUAL_COLLECTIONS(shape.begin(), shape.end(),dims.begin(), dims.end());
   BOOST_REQUIRE_EQUAL_COLLECTIONS(payload.begin(), payload.end(),reread.begin(), reread.end());
@@ -126,7 +126,7 @@ BOOST_AUTO_TEST_CASE( yuv_roundtrip )
   BOOST_REQUIRE(bfs::file_size(expected_path)>0);
   
   std::vector<uint8_t> reread;  
-  std::vector<uint32_t> dims = sqeazy::read_yuv_to_gray8(reread, expected_path);
+  std::vector<std::size_t> dims = sqeazy::read_yuv_to_gray8(reread, expected_path);
 
   BOOST_REQUIRE_EQUAL_COLLECTIONS(shape.begin(), shape.end(),dims.begin(), dims.end());
   BOOST_REQUIRE_EQUAL_COLLECTIONS(payload.begin(), payload.end(),reread.begin(), reread.end());
@@ -153,7 +153,7 @@ BOOST_AUTO_TEST_CASE( y4m_roundtrip )
   BOOST_REQUIRE(bfs::file_size(path)>0);
   
   std::vector<uint16_t> reread;  
-  std::vector<uint32_t> dims = sqeazy::read_y4m_to_gray(reread, path);
+  std::vector<std::size_t> dims = sqeazy::read_y4m_to_gray(reread, path);
 
   BOOST_REQUIRE_EQUAL_COLLECTIONS(shape_.begin(), shape_.end(),dims.begin(), dims.end());
   BOOST_REQUIRE_EQUAL_COLLECTIONS(noisy_embryo_.data(), noisy_embryo_.data()+128,reread.begin(), reread.begin()+128);
