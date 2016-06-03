@@ -9,9 +9,8 @@ before_install:
   - sudo add-apt-repository -y ppa:mc3man/trusty-media
   - sudo apt-get -qq update
   - sudo apt-get install -y ffmpeg libx264-dev x264  libx265-dev x265 cmake libtiff5-dev libhdf5-dev liblz4-dev libavcodec-dev  libavdevice-dev  libavfilter-dev  libavformat-dev  libavutil-dev   libswscale-dev
-  - git clone --depth 1 --recursive https://github.com/boostorg/boost.git boost
+  - git clone -b "boost-1.59.0" --single-branch --depth 1 --recursive https://github.com/boostorg/boost.git boost
   - cd boost
-  - git checkout boost-1.59.0
   - sudo ./bootstrap.sh --with-toolset=gcc
   - sudo ./b2
   - sudo ./b2 install
