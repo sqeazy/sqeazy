@@ -2,6 +2,8 @@ sudo: required
 dist: trusty
 
 language: java
+jdk:
+  - oraclejdk8
 
 before_install:
   - sudo add-apt-repository ppa:mc3man/trusty-media
@@ -10,7 +12,5 @@ before_install:
   
 script: let_me_build_that_for_you.sh
 
-jdk:
-  - oraclejdk8
   
-install: gradle assemble --stacktrace
+
