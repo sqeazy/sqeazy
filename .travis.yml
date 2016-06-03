@@ -13,7 +13,7 @@ before_install:
 script:
   - git clone --recursive https://github.com/boostorg/boost.git boost
   - cd boost
-  - git checkout 1.59.0
+  - git checkout boost-1.59.0
   - sudo ./bootstrap.sh --with-toolset=gcc
   - sudo ./b2
   - sudo ./b2 install
