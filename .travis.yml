@@ -1,8 +1,16 @@
+sudo: required
+dist: trusty
+
 language: java
-script: "gradle build"
+
+before_install:
+  - sudo add-apt-repository ppa:mc3man/trusty-media
+  - sudo apt-get -qq update
+  - sudo apt-get install -y ffmpeg libx264-dev x264  libboost1.55-all-dev libx265-dev x265 cmake libtiff5-dev libhdf5-dev liblz4-dev libavcodec-dev  libavdevice-dev  libavfilter-dev  libavformat-dev  libavutil-dev	libpostproc-dev  libswresample-dev libswscale-dev
+  
+script: let_me_build_that_for_you.sh
+
 jdk:
   - oraclejdk8
-  - oraclejdk7
-  - oraclejdk6
+  
 install: gradle assemble --stacktrace
-
