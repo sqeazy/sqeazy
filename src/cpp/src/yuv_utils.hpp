@@ -35,7 +35,7 @@ namespace sqeazy {
     static_assert(sizeof(value_type)<2,"[sqeazy::write_stack_as_yuv] non-compliant pixel type received");
 
 
-    const uint32_t frame_size = _stack.shape()[1]*_stack.shape()[2];
+    const uint32_t frame_size = _stack.shape()[row_major::w]*_stack.shape()[row_major::h];
     std::vector<char> all_chroma_values(frame_size/2,0);
 
     std::string dest;
@@ -210,7 +210,7 @@ namespace sqeazy {
       typedef typename stack_t::element value_type;
       
       const std::string frame_title("FRAME\n");
-      const uint32_t frame_size = _stack.shape()[1]*_stack.shape()[2];
+      const uint32_t frame_size = _stack.shape()[row_major::w]*_stack.shape()[row_major::h];
 
       std::vector<char> chroma_values(frame_size,0);
       const std::vector<char> all_zeros(frame_size,0);
@@ -556,12 +556,12 @@ namespace sqeazy {
      
   */
   template <typename stl_vec_t, typename string_t>
-  static std::vector<uint32_t> read_y4m_to_gray(stl_vec_t& _data,const string_t& _path, bool _verbose = false){
+  static std::vector<std::size_t> read_y4m_to_gray(stl_vec_t& _data,const string_t& _path, bool _verbose = false){
 
     typedef typename stl_vec_t::value_type pixel_t;
     static_assert(sizeof(pixel_t)>0 && sizeof(pixel_t)<3, "read_y4m_to_gray8\treceived vector with non-char or non-short type");
     
-    std::vector<uint32_t> shape(3,0);
+    std::vector<std::size_t> shape(3,0);
     _data.clear();
 
     
@@ -577,14 +577,14 @@ namespace sqeazy {
     if((re_result = sqeazy::int_extract(header,"H([0-9]+)",1))>=0)
       shape[shape.size()-2] = re_result;
 
-    if(!shape[1] || !shape[2]){
+    if(!shape[row_major::x] || !shape[row_major::y]){
       std::cerr << "unable to extract width and height from header\n\t>> " << header << "<<\n";
       shape.clear();
       return shape;
     }
     
     if(_verbose)
-      std::cout << _path << ": width = " << shape[2] << ", heigth = " << shape[1] << "\n";
+      std::cout << _path << ": width = " << shape[row_major::w] << ", heigth = " << shape[row_major::h] << "\n";
 
     if(chroma_sampling==yuv420formatter::y4m_code())
       yuv420formatter::read_stack(_data,y4m_file,shape);
@@ -610,15 +610,15 @@ namespace sqeazy {
      
   */
   template <typename stl_vec_t, typename string_t>
-  static std::vector<uint32_t> read_yuv_to_gray8(stl_vec_t& _data,
-						 const string_t& _path,
-						 const string_t& _shape_given = "",
-						 bool _verbose = false){
+  static std::vector<std::size_t> read_yuv_to_gray8(stl_vec_t& _data,
+						    const string_t& _path,
+						    const string_t& _shape_given = "",
+						    bool _verbose = false){
 
     static_assert(sizeof(_data[0])==1, "read_yuv_to_gray8\treceived vector with non-char type");
 
     
-    std::vector<uint32_t> shape(3,0);
+    std::vector<std::size_t> shape(3,0);
     _data.clear();
 
     int re_result = 0;
@@ -629,7 +629,7 @@ namespace sqeazy {
       shape[shape.size()-2] = re_result;
 
         
-    if(!shape[1] || !shape[2]){
+    if(!shape[row_major::h] || !shape[row_major::w]){
       if((re_result = sqeazy::int_extract(_shape_given,"[hH]([0-9]+)x",1))>=0)
 	shape[shape.size()-2] = re_result;
 
@@ -637,7 +637,7 @@ namespace sqeazy {
 	shape[shape.size()-1] = re_result;
     }
         
-    if(!shape[1] || !shape[2]){
+    if(!shape[row_major::h] || !shape[row_major::w]){
       std::cerr << "unable to extract width and height from header\n\t>> " << _path << "\tor\t" << _shape_given << "<<\n";
       shape.clear();
       return shape;
@@ -648,7 +648,7 @@ namespace sqeazy {
     
     std::ifstream yuv_file(_path,std::ios::in|std::ios::binary);
     
-    size_t frame_size_bytes = shape[2]*shape[1];
+    size_t frame_size_bytes = shape.back()*shape[shape.size()-2];
     size_t yuv_frame_size_bytes = 1.5*frame_size_bytes;
     
     std::string yuv_frames;
