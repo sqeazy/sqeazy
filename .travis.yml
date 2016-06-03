@@ -8,9 +8,16 @@ jdk:
 before_install:
   - sudo add-apt-repository -y ppa:mc3man/trusty-media
   - sudo apt-get -qq update
-  - sudo apt-get install -y ffmpeg libx264-dev x264  libboost1.55-all-dev libx265-dev x265 cmake libtiff5-dev libhdf5-dev liblz4-dev libavcodec-dev  libavdevice-dev  libavfilter-dev  libavformat-dev  libavutil-dev   libswscale-dev
+  - sudo apt-get install -y ffmpeg libx264-dev x264  libx265-dev x265 cmake libtiff5-dev libhdf5-dev liblz4-dev libavcodec-dev  libavdevice-dev  libavfilter-dev  libavformat-dev  libavutil-dev   libswscale-dev
   
-script: let_me_build_that_for_you.sh
+script:
+  - git clone --recursive https://github.com/boostorg/boost.git boost
+  - cd boost
+  - git checkout 1.59.0
+  - sudo ./bootstrap.sh --with-toolset=gcc
+  - sudo ./b2
+  - sudo ./b2 install
+  - let_me_build_that_for_you.sh
 
   
 
