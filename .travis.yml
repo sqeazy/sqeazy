@@ -38,7 +38,8 @@ before_install:
   - cd boost_1_*/
   - sudo ./bootstrap.sh --with-toolset=gcc --with-libraries=date_time,system,filesystem,test,thread,program_options
   - sudo ./b2 -j2
-  - sudo ./b2 install && cd .. && rm -rf boost_1_*/
+  - sudo ./b2 install
+  - cd .. && sudo rm -rf boost_1_*/
   
 
   #############################################################################
