@@ -18,6 +18,7 @@ before_install:
   # CMAKE                                                                     #
   #############################################################################
   - CMAKE_33_FOUND=$(cmake --version | grep " 3\.3\." >/dev/null && { echo 0; } || { echo 1; })
+  - export CMAKE_ROOT=/tmp/cmake
   - if [ $CMAKE_33_FOUND -ne 0 ]; then
       mkdir -p $CMAKE_ROOT &&
       cd $CMAKE_ROOT &&
