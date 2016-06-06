@@ -52,7 +52,13 @@ before_install:
 
 script:
   - ls -lrth
-  - ./let_me_build_that_for_you.sh
+  - if [[ -e ./let_me_build_that_for_you.sh ]]; then
+       ./let_me_build_that_for_you.sh
+    else
+       cd sqeazy/sqeazy && ./let_me_build_that_for_you.sh
+       fi
+       
+  
 
   
 
