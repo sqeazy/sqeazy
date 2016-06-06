@@ -11,9 +11,38 @@ before_install:
   #############################################################################
   - sudo add-apt-repository -y ppa:mc3man/trusty-media
   - sudo apt-get -qq update
-  - sudo apt-get install -y ffmpeg libx264-dev x264  libx265-dev x265 cmake libtiff5-dev libhdf5-dev liblz4-dev libavcodec-dev  libavdevice-dev  libavfilter-dev  libavformat-dev  libavutil-dev   libswscale-dev wget bzip2 libbz2-dev
+  - sudo apt-get install -y libx264-dev x264  libx265-dev x265 cmake libtiff5-dev wget bzip2 libbz2-dev make
+  - git clone https://git.ffmpeg.org/ffmpeg.git ffmpeg_repo yasm nasm
+  - cd ffmpeg_repo
+  - git checkout n3.0.2
+  - ./configure --enable-libx265 --enable-libx264 --enable-gpl --enable-shared
+  - make -j2
+  - sudo make install
+  - cd .. && sudo rm -rf n3.0.2
   - ffmpeg -version
-  
+
+  #############################################################################
+  # LZ4                                                                       #
+  #############################################################################
+  - travis_retry wget --no-check-certificate https://github.com/Cyan4973/lz4/archive/r131.tar.gz
+  - tar xf r131.tar.gz
+  - cd lz4-r131/lib
+  - sudo make install PREFIX=/usr
+  - cd ../.. && sudo rm -rf lz4-r131
+  - ls -lrth /usr/include/lz4.h
+
+  #############################################################################
+  # HDF5                                                                       #
+  #############################################################################
+  - travis_retry wget --no-check-certificate https://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.16/src/hdf5-1.8.16.tar.bz2
+  - tar xf hdf5-1.8.16.tar.bz2
+  - cd hdf5-1.8.16/
+  - ./configure --enable-cxx --prefix=/usr
+  - make -j2
+  - sudo make install
+  - cd ... && sudo rm -rf hdf5-1.8.16/
+  - h5ls --version
+
   #############################################################################
   # CMAKE                                                                     #
   #############################################################################
@@ -53,9 +82,9 @@ before_install:
 script:
   - ls -lrth
   - if [[ -e ./let_me_build_that_for_you.sh ]]; then
-       ./let_me_build_that_for_you.sh
+       ./let_me_build_that_for_you.sh;
     else
-       cd sqeazy/sqeazy && ./let_me_build_that_for_you.sh
+       cd sqeazy/sqeazy && ./let_me_build_that_for_you.sh;
        fi
        
   
