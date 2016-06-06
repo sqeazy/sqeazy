@@ -24,7 +24,7 @@ before_install:
       cd $CMAKE_ROOT &&
       travis_retry wget --no-check-certificate http://www.cmake.org/files/v3.3/cmake-3.3.2-Linux-x86_64.tar.gz &&
       tar -xzf cmake-3.3.2-Linux-x86_64.tar.gz &&
-      sudo cp -r cmake-3.3.2-Linux-x86_64/* /usr
+      sudo cp -r cmake-3.3.2-Linux-x86_64/* /usr/ &&
       rm -rf cmake-3.3.2-Linux-x86_64.tar.gz cmake-3.3.2-Linux-x86_64 &&
       cd -;
     fi
