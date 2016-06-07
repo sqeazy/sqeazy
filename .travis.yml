@@ -15,7 +15,7 @@ before_install:
   - git clone https://git.ffmpeg.org/ffmpeg.git ffmpeg_repo
   - cd ffmpeg_repo
   - git checkout n3.0.2
-  - ./configure --enable-libx265 --enable-libx264 --enable-gpl --enable-shared
+  - ./configure --prefix=/usr --enable-libx265 --enable-libx264 --enable-gpl --enable-shared
   - make -j2
   - sudo make install
   - cd .. && sudo rm -rf ffmpeg_repo
