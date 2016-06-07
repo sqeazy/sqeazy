@@ -40,7 +40,7 @@ before_install:
   - ./configure --enable-cxx --prefix=/usr
   - make -j2
   - sudo make install
-  - cd ... && sudo rm -rf hdf5-1.8.16/
+  - cd .. && sudo rm -rf hdf5-1.8.16/
   - h5ls --version
 
   #############################################################################
