@@ -109,9 +109,11 @@ void compare_files(const std::vector<std::string>& _files,
   bool do_mse = (metrics.find("mse") != std::string::npos && !do_nrmse) ? true : false;
   bool do_psnr = metrics.find("psnr") != std::string::npos ? true : false;
   bool do_drange = metrics.find("drange") != std::string::npos ? true : false;
+  bool do_bitwidth = metrics.find("bitwidth") != std::string::npos ? true : false;
+  
   if(metrics.find("all") != std::string::npos)
     {
-      do_nrmse = do_mse = do_psnr = do_drange = true;
+      do_nrmse = do_mse = do_psnr = do_drange = do_bitwidth = true;
     }
   
   if(src_file_extension.generic_string().find("tif")!=std::string::npos &&
@@ -156,7 +158,9 @@ void compare_files(const std::vector<std::string>& _files,
 	results["left_drange"] = sqeazy::dyn_range(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements());
 	results["right_drange"] = sqeazy::dyn_range(target_stack_cref.data(), target_stack_cref.data() + target_stack_cref.num_elements());
       }
-      results["bits_p_sample"]  = 16;
+
+      if(do_bitwidth)
+	results["bits_p_sample"]  = 16;
     }
 
     if(src_bits_per_sample==8){
@@ -183,7 +187,8 @@ void compare_files(const std::vector<std::string>& _files,
 	results["right_drange"] = sqeazy::dyn_range(target_stack_cref.data(), target_stack_cref.data() + target_stack_cref.num_elements());
       }
 
-      results["bits_p_sample"]  = 8;
+      if(do_bitwidth)
+	results["bits_p_sample"]  = 8;
     }
 
   }
@@ -224,7 +229,9 @@ void compare_files(const std::vector<std::string>& _files,
       results["left_drange"] = sqeazy::dyn_range(src_stack.data(), src_stack.data() + src_stack.size());
       results["right_drange"] = sqeazy::dyn_range(tgt_stack.data(), tgt_stack.data() + tgt_stack.size());
     }
-    results["bits_p_sample"]  = 8;
+
+    if(do_bitwidth)
+      results["bits_p_sample"]  = 8;
   }
 
   if(results.empty()){
