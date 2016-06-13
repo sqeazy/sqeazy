@@ -8,7 +8,7 @@
 #include <string>
 
 #include "boost/filesystem.hpp"
-#include <boost/program_options.hpp>
+#include "boost/program_options.hpp"
 
 #include "tiff_utils.hpp"
 #include "deprecated/static_pipeline_select.hpp"
@@ -22,7 +22,47 @@
 namespace po = boost::program_options;
 namespace bfs = boost::filesystem;
 
+static void add_compare_options_to(po::options_description& _desc){
+  
+  _desc.add_options()
+    ("help,h", "produce help message")
+    ("verbose,v", "enable verbose output")
+    ("metrics,m", po::value<std::string>()->default_value("nrmse"), "comma-separated list of metrics (possible values: mse, nrmse, psnr, drange)")
+    ;
 
+}
+
+static void display_results(const std::map<std::string,float>& _results,
+			    const po::variables_map& _config){
+
+
+  std::vector<std::string> keys;
+  std::vector<float> values;
+  for(const auto & k_v : _results ){
+    keys.push_back(k_v.first);
+    values.push_back(k_v.second);
+  }
+
+  if(!_config.count("noheader")){
+    for(std::size_t i = 0;i<keys.size();i++){
+      std::cout << keys[i];
+      if(i!=(keys.size()-1))
+	std::cout << ",";
+      else
+	std::cout << "\n";
+    }
+  }
+
+  for(std::size_t i = 0;i<values.size();i++){
+    std::cout << values[i];
+    if(i!=(values.size()-1))
+      std::cout << ",";
+    else
+      std::cout << "\n";
+  }
+
+}
+  
 void compare_files(const std::vector<std::string>& _files,
 		    const po::variables_map& _config) {
 
@@ -36,7 +76,7 @@ void compare_files(const std::vector<std::string>& _files,
   const bfs::path	src_file = _files.front();
   const bfs::path	src_file_extension = src_file.extension();
   
-  const bfs::path	target_file = _files[1];
+  const bfs::path	target_file = _files.back();
   const bfs::path	target_file_extension = target_file.extension();
   const bfs::path	target_file_stem = target_file.parent_path()/target_file.stem();//TODO
 
@@ -63,7 +103,16 @@ void compare_files(const std::vector<std::string>& _files,
     std::cerr << "[sqy-compare]\tno metrics received\tExiting.\n";
     return;
   }
-    
+
+  std::string metrics = _config["metrics"].as<std::string>();
+  bool do_nrmse = metrics.find("nrmse") != std::string::npos ? true : false;
+  bool do_mse = (metrics.find("mse") != std::string::npos && !do_nrmse) ? true : false;
+  bool do_psnr = metrics.find("psnr") != std::string::npos ? true : false;
+  bool do_drange = metrics.find("drange") != std::string::npos ? true : false;
+  if(metrics.find("all") != std::string::npos)
+    {
+      do_nrmse = do_mse = do_psnr = do_drange = true;
+    }
   
   if(src_file_extension.generic_string().find("tif")!=std::string::npos &&
      target_file_extension.generic_string().find("tif")!=std::string::npos){
@@ -92,34 +141,22 @@ void compare_files(const std::vector<std::string>& _files,
       // std::vector<uint32_t> target_shape(target_input_dims.rbegin(), target_input_dims.rend());
       sqeazy::uint16_image_stack_cref target_stack_cref(reinterpret_cast<const uint16_t*>(target_input.data()),target_input_dims);
 
-      if(_config["metrics"].as<std::string>().find("all") != std::string::npos ){
-	results["mse"] = sqeazy::mse(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements(),
-				     target_stack_cref.data());
+      if(do_nrmse)
 	results["nrmse"] = sqeazy::nrmse(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements(),
 					 target_stack_cref.data());
-	results["psnr"] = sqeazy::psnr(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements(),
-				       target_stack_cref.data());
-	results["left_drange"] = sqeazy::dyn_range(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements());
-	results["right_drange"] = sqeazy::dyn_range(target_stack_cref.data(), target_stack_cref.data() + target_stack_cref.num_elements());
-      }
-      
-      if(_config["metrics"].as<std::string>().find("nrmse") !=std::string::npos){
-	results["nrmse"] = sqeazy::nrmse(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements(),
-					 target_stack_cref.data());}
 
-      if(_config["metrics"].as<std::string>().find("mse") != std::string::npos){
+      if(do_mse)
 	results["mse"] = sqeazy::mse(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements(),
 				     target_stack_cref.data());
-      }
       
-      if(_config["metrics"].as<std::string>().find("psnr") != std::string::npos )
+      if(do_psnr)
 	results["psnr"] = sqeazy::psnr(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements(),
 				       target_stack_cref.data());
-      if(_config["metrics"].as<std::string>().find("drange") != std::string::npos ){
+      if(do_drange){
 	results["left_drange"] = sqeazy::dyn_range(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements());
 	results["right_drange"] = sqeazy::dyn_range(target_stack_cref.data(), target_stack_cref.data() + target_stack_cref.num_elements());
       }
-
+      results["bits_p_sample"]  = 16;
     }
 
     if(src_bits_per_sample==8){
@@ -130,51 +167,74 @@ void compare_files(const std::vector<std::string>& _files,
       // std::vector<uint32_t> target_shape(target_input_dims.rbegin(), target_input_dims.rend());
       sqeazy::uint8_image_stack_cref target_stack_cref((const uint8_t*)target_input.data(),target_input_dims);
 
-      if(_config["metrics"].as<std::string>().find("all") != std::string::npos ){
-	results["mse"] = sqeazy::mse(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements(),
-				     target_stack_cref.data());
-	results["psnr"] = sqeazy::psnr(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements(),
-				       target_stack_cref.data());
-	results["left_drange"] = sqeazy::dyn_range(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements());
-	results["right_drange"] = sqeazy::dyn_range(target_stack_cref.data(), target_stack_cref.data() + target_stack_cref.num_elements());
-      }
-
-      if(_config["metrics"].as<std::string>().find("nrmse") !=std::string::npos){
+      if(do_nrmse)
 	results["nrmse"] = sqeazy::nrmse(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements(),
-					 target_stack_cref.data());}
+					 target_stack_cref.data());
 
-      if(_config["metrics"].as<std::string>().find("mse") != std::string::npos){
+      if(do_mse)
 	results["mse"] = sqeazy::mse(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements(),
 				     target_stack_cref.data());
-      }
       
-      if(_config["metrics"].as<std::string>().find("psnr") != std::string::npos )
+      if(do_psnr)
 	results["psnr"] = sqeazy::psnr(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements(),
 				       target_stack_cref.data());
-
-      if(_config["metrics"].as<std::string>().find("drange") != std::string::npos ){
+      if(do_drange){
 	results["left_drange"] = sqeazy::dyn_range(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements());
 	results["right_drange"] = sqeazy::dyn_range(target_stack_cref.data(), target_stack_cref.data() + target_stack_cref.num_elements());
       }
-	
+
+      results["bits_p_sample"]  = 8;
     }
 
-  } else {
-    std::cerr << "non-tif file format found, sqy-compare does not support anything else yet!\n";
+  }
+
+  if(src_file_extension.generic_string().find("y4m")!=std::string::npos &&
+     target_file_extension.generic_string().find("y4m")!=std::string::npos){
+
+    std::vector<std::uint8_t> src_stack;
+    std::vector<std::uint8_t> tgt_stack;
+    
+    auto src_shape = sqeazy::read_y4m_to_gray(src_stack,src_file.generic_string()	,_config.count("verbose"));
+    auto tgt_shape = sqeazy::read_y4m_to_gray(tgt_stack,target_file.generic_string()	,_config.count("verbose"));
+
+    if(!std::equal(src_shape.begin(), src_shape.end(),
+		   tgt_shape.begin())){
+      
+      std::cerr << "unable to compare " <<  src_file << " vs " << target_file << ", shapes mismatch\n"
+		<<  "width = "  << src_shape[sqeazy::row_major::w] << " =? " << tgt_shape[sqeazy::row_major::w] << ", "
+		<<  "height = " << src_shape[sqeazy::row_major::h] << " =? " << tgt_shape[sqeazy::row_major::h] << ", "
+		<<  "depth = "  << src_shape[sqeazy::row_major::d] << " =? " << tgt_shape[sqeazy::row_major::d] << "\n"
+	;
+      return;
+    }
+
+    
+    if(do_nrmse)
+      results["nrmse"] = sqeazy::nrmse(src_stack.data(), src_stack.data() + src_stack.size(),
+				       tgt_stack.data());
+
+    if(do_mse)
+      results["mse"] = sqeazy::mse(src_stack.data(), src_stack.data() + src_stack.size(),
+				   tgt_stack.data());
+      
+    if(do_psnr)
+      results["psnr"] = sqeazy::psnr(src_stack.data(), src_stack.data() + src_stack.size(),
+				     tgt_stack.data());
+    if(do_drange){
+      results["left_drange"] = sqeazy::dyn_range(src_stack.data(), src_stack.data() + src_stack.size());
+      results["right_drange"] = sqeazy::dyn_range(tgt_stack.data(), tgt_stack.data() + tgt_stack.size());
+    }
+    results["bits_p_sample"]  = 8;
+  }
+
+  if(results.empty()){
+    
+    std::cerr << "file format(s) unknown, sqeazy-compare does not support anything else than tif-to-tif or y4m-to-y4m yet!\n";
     return;
   }
 
+  display_results(results, _config);
   
-  for(const auto & k_v : results ){
-    if(_config.count("verbose"))
-      std::cout << std::setw(10) << k_v.first << "\t" << std::setw(15) << k_v.second << "\n";
-    else
-      std::cout << std::setw(15) << k_v.second << "\t";
-
-  }
-
-  if(!_config.count("verbose"))
-    std::cout << "\n";
 }
 
-#endif /* _SQY_COMPARE_H_ */
+#endif /* _SQEAZY_COMPARE_H_ */
