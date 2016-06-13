@@ -131,10 +131,10 @@ size_t h5_compress_write(const sqeazy::tiff_facet& _input,
     return bytes_written;
 }
 
-void compress_files(const std::vector<std::string>& _files,
+int compress_files(const std::vector<std::string>& _files,
 		    const po::variables_map& _config) {
 
-
+  int value = 1;
   
   bfs::path			current_file;
   bfs::path			output_file;
@@ -152,7 +152,7 @@ void compress_files(const std::vector<std::string>& _files,
   
   if(!sqy::dypeline<std::uint16_t>::can_be_built_from(pipeline_string)){
     std::cerr << "[SQY]\tunable to build pipeline from " << pipeline_string << "\nDoing nothing.\n";
-    return;
+    return value;
   }
 
   pipe16 = sqy::dypeline<std::uint16_t>::from_string(pipeline_string);
@@ -235,9 +235,13 @@ void compress_files(const std::vector<std::string>& _files,
     
     if(!bytes_written){
       std::cerr << "[SQY]\terrors occurred while processing " << _file << "\n";
-    }
-
+    } else
+      {
+	value = 0;
+      }
   }
+
+  return value;
 
 }
 

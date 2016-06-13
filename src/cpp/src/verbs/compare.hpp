@@ -63,14 +63,15 @@ static void display_results(const std::map<std::string,float>& _results,
 
 }
   
-void compare_files(const std::vector<std::string>& _files,
+int compare_files(const std::vector<std::string>& _files,
 		    const po::variables_map& _config) {
 
+  int value = 1;
 
   if(_files.size()!=2){
     std::cerr << "number of files given is unequal 2 (received: "
 	      << _files.size() <<")" << std::endl;
-    return;
+    return value;
   }
       
   const bfs::path	src_file = _files.front();
@@ -91,17 +92,17 @@ void compare_files(const std::vector<std::string>& _files,
   
   if(!bfs::exists(src_file)){
     std::cerr << "[sqy-compare]\tunable to open " << src_file << "\tExiting.\n";
-    return;
+    return value;
   }
 
   if(!bfs::exists(target_file)){
     std::cerr << "[sqy-compare]\tunable to open " << target_file << "\tExiting.\n";
-    return;
+    return value;
   }
 
   if(!_config.count("metrics")){
     std::cerr << "[sqy-compare]\tno metrics received\tExiting.\n";
-    return;
+    return value;
   }
 
   std::string metrics = _config["metrics"].as<std::string>();
@@ -132,7 +133,7 @@ void compare_files(const std::vector<std::string>& _files,
       std::cerr << "[SQY-compare]\t"
 		<< src_file << " "<< src_bits_per_sample <<"-bit has different encoding as "
 		<< target_file <<" " << target_bits_per_sample << "bit\n";
-      return;
+      return value;
     }
 
     if(src_bits_per_sample==16){
@@ -210,7 +211,7 @@ void compare_files(const std::vector<std::string>& _files,
 		<<  "height = " << src_shape[sqeazy::row_major::h] << " =? " << tgt_shape[sqeazy::row_major::h] << ", "
 		<<  "depth = "  << src_shape[sqeazy::row_major::d] << " =? " << tgt_shape[sqeazy::row_major::d] << "\n"
 	;
-      return;
+      return value;
     }
 
     
@@ -237,11 +238,13 @@ void compare_files(const std::vector<std::string>& _files,
   if(results.empty()){
     
     std::cerr << "file format(s) unknown, sqeazy-compare does not support anything else than tif-to-tif or y4m-to-y4m yet!\n";
-    return;
+    return value;
   }
 
   display_results(results, _config);
+  value = 0;
   
+  return value;
 }
 
 #endif /* _SQEAZY_COMPARE_H_ */

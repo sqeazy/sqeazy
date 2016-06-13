@@ -26,10 +26,11 @@ namespace bfs = boost::filesystem;
 namespace sqy = sqeazy;
 
 
-void decompress_files(const std::vector<std::string>& _files,
-		      const po::variables_map& _config) {
+int decompress_files(const std::vector<std::string>& _files,
+		     const po::variables_map& _config) {
 
-
+  int value = 1;
+  
   std::string file_content_buffer;
   std::vector<char> intermediate_buffer;
   std::vector<size_t> shape;
@@ -221,6 +222,9 @@ void decompress_files(const std::vector<std::string>& _files,
     
   }
 
+  value = 0;//FIXME
+  return value;
+  
 }
 
 #endif /* _SQY_DECOMPRESS_H_ */

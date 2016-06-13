@@ -64,10 +64,11 @@ struct info
 };
 
 
-void scan_files(const std::vector<std::string>& _files,
-		const po::variables_map& _config) {
+int scan_files(const std::vector<std::string>& _files,
+	       const po::variables_map& _config) {
 
 
+  int value = 1;
   bfs::path	current_file;
   bfs::path	output_file;
 
@@ -129,6 +130,9 @@ void scan_files(const std::vector<std::string>& _files,
     }
       
   }
+
+  value = 0;//FIXME
+  return value;
 
 }
 

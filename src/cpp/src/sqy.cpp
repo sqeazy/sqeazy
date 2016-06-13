@@ -176,7 +176,7 @@ int main(int argc, char *argv[])
 {
 
   int retcode = 1;
-  typedef std::function<void(const std::vector<std::string>&,const po::variables_map&) > func_t;
+  typedef std::function<int(const std::vector<std::string>&,const po::variables_map&) > func_t;
 
   po::options_description sqy_options;
   sqy_options.add_options()
@@ -348,8 +348,9 @@ int main(int argc, char *argv[])
     std::cerr << "[sqy] no input files given, exiting ...\n";
     return 1;
   } else {
-    if(!verb.empty())
-      prog_flow(inputFiles, vm);
+    if(!verb.empty()){
+      retcode = prog_flow(inputFiles, vm);
+    }
     else{
       std::cerr << "unable to find matching verb for " << target << "\n";
       brief_help(sqy_options,

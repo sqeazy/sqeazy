@@ -56,11 +56,12 @@ void insert_lut_path_if_not_present(std::string& quantiser_definition,
    \retval 
    
 */
-void backward_conversion(const bfs::path& _src,
+int backward_conversion(const bfs::path& _src,
 			 const bfs::path& _dst,
 			 const po::variables_map& _config) {
 
 
+  int value = 1;
   
   const bfs::path	target_file_extension = _dst.extension();
   const bfs::path	target_file_stem = _dst.parent_path()/_dst.stem();
@@ -70,13 +71,13 @@ void backward_conversion(const bfs::path& _src,
   sqeazy::tiff_facet	input;
   if(!bfs::exists(_src)){
     std::cerr << "[SQY]\tunable to open " << _src << "\t Exit.\n";
-    return;
+    return value;
   }
 
   if(!(sqeazy::is_y4m_file(_src) || sqeazy::is_yuv_file(_src))){
 
       std::cerr << "[SQY]\tunsupported file format " << _src << "\nsqy-convert only works for y4m/yuv files\n";
-      return;
+      return value;
 
     }
   
@@ -105,7 +106,7 @@ void backward_conversion(const bfs::path& _src,
     }
     else {
       std::cerr << "detected unsupported chroma format in" << y4m_header << "\n";
-      return;
+      return value;
     }  
   }
   
@@ -120,7 +121,7 @@ void backward_conversion(const bfs::path& _src,
 
   if(buffer.empty()){
     std::cerr << "no data extracted from " << _src << "! Exiting ...\n";
-    return;
+    return value;
   }
 
 
@@ -143,7 +144,7 @@ void backward_conversion(const bfs::path& _src,
 					      );
       if(retcode){
 	std::cout << "[SQY]\tdequantisation failed, returned " << retcode << "\n";
-	return;
+	return value;
       }
     } 
 
@@ -164,6 +165,10 @@ void backward_conversion(const bfs::path& _src,
     else
       std::cerr << _dst << " written with errors of unknown cause!.\n";
   }
+
+  value = bfs::exists(_dst) ? 0 : 1;
+  return value;
+    
 }
 
 
@@ -179,14 +184,15 @@ void backward_conversion(const bfs::path& _src,
    \retval 
    
 */
-void forward_conversion(const bfs::path& _src,
+int forward_conversion(const bfs::path& _src,
 			const bfs::path& _dst,
 			const po::variables_map& _config) {
 
+
+  int value = 1;
+  
   const bfs::path	target_file_extension = _dst.extension();
   const bfs::path	target_file_stem = _dst.parent_path()/_dst.stem();
-
-
   
   std::fstream			sqyfile;
   std::vector<uint32_t>		input_dims;
@@ -194,12 +200,12 @@ void forward_conversion(const bfs::path& _src,
   
   if(!bfs::exists(_src)){
     std::cerr << "[SQY]\tunable to open " << _src << "\t Exit.\n";
-    return;
+    return value;
   }
 
   if(!(target_file_extension == ".y4m" || target_file_extension == ".yuv")){
     std::cerr << "[SQY]\tunable to convert to anything else than y4m/yuv (received  " << target_file_extension << ")!\n";
-    return;
+    return value;
   }
 
   //load tiff & extract the dimensions
@@ -211,7 +217,7 @@ void forward_conversion(const bfs::path& _src,
   const std::uint32_t bits_per_sample = input.bits_per_sample();
   if(bits_per_sample>16 || bits_per_sample<8){
     std::cerr << "[SQY]\t" << _src << "contains unsupported encoding (16-bit, 8-bit) found: " <<bits_per_sample <<"bits\t Exit.\n";
-    return;
+    return value;
   }
 
   std::vector<std::size_t> c_storage_order_shape(input_dims.begin(), input_dims.end());
@@ -267,17 +273,22 @@ void forward_conversion(const bfs::path& _src,
   else
     sqeazy::write_stack_as_yuv(converted_stack,target_file_stem.generic_string(),_config.count("verbose"));
 
+  value = 0;
+  
+  return value;
   
 }
 
-void convert_files(const std::vector<std::string>& _files,
+int convert_files(const std::vector<std::string>& _files,
 		    const po::variables_map& _config) {
 
+  int value = 1;
+  
 
   if(_files.size()!=2){
     std::cerr << "number of files given is unequal 2 (received: "
 	      << _files.size() <<")" << std::endl;
-    return;
+    return value;
   }
       
   const  bfs::path	src_file = _files[0];
@@ -287,17 +298,19 @@ void convert_files(const std::vector<std::string>& _files,
   
   if(!bfs::exists(src_file)){
     std::cerr << "[SQY]\tunable to open " << src_file << "\t Exit.\n";
-    return;
+    return value;
   }
 
 
   if(src_file_extension.generic_string().find("tif")!=std::string::npos){
 
-    forward_conversion(src_file,target_file,_config);
+    value = forward_conversion(src_file,target_file,_config);
 
   } else {
-    backward_conversion(src_file,target_file,_config);
+    value = backward_conversion(src_file,target_file,_config);
   }
+
+  return value;
 }
 
 
