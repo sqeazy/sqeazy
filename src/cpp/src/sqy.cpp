@@ -241,12 +241,7 @@ int main(int argc, char *argv[])
     ("lut_suffix,l", po::value<std::string>()->default_value(".lut"), "suffix for the LUT, i.e. stack_16bit.tif will generate stack_16bit.y4m and stack_16bit.lut) ")
     ;
 
-  descriptions["compare"].add_options()
-    ("help,h", "produce help message")
-    ("verbose,v", "enable verbose output")
-    ("metrics,m", po::value<std::string>()->default_value("nrmse"), "comma-separated list of metrics (possible values: mse, psnr)")
-    ;
-
+  add_compare_options_to(descriptions["compare"]);
   
   static     std::unordered_map<std::string, func_t> verb_functors;
   verb_functors["compress"]	= compress_files;      
