@@ -61,7 +61,7 @@ namespace sqeazy {
     std::string config() const {
 
       std::ostringstream msg;
-      msg << "threshold=" << threshold;
+      msg << "threshold=" << std::to_string(threshold);
       return msg.str();
     
     }

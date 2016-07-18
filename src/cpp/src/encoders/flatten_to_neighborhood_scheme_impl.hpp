@@ -75,8 +75,8 @@ namespace sqeazy {
     std::string config() const override final {
 
       std::ostringstream msg;
-      msg << "threshold=" << threshold << ",";
-      msg << "fraction=" << fraction;
+      msg << "threshold=" << std::to_string(threshold) << ",";
+      msg << "fraction=" << std::to_string(fraction);
       return msg.str();
     
     }

@@ -68,7 +68,7 @@ namespace sqeazy {
     std::string config() const {
 
       std::ostringstream msg;
-      msg << "num_bits_per_plane=" << num_bits_per_plane;
+      msg << "num_bits_per_plane=" << std::to_string(num_bits_per_plane);
       return msg.str();
     
     }
