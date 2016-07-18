@@ -154,7 +154,11 @@ namespace sqeazy {
 		const std::vector<std::size_t>& _shape,
 		std::vector<std::size_t>) const override final {
 
-      return 1;
+      std::size_t total_size = std::accumulate(_shape.begin(), _shape.end(), 1, std::multiplies<std::size_t>());
+      if(_input!=_output )
+	std::copy(_input, _input + total_size, _output);
+      return 0;
+
     }
 
     
