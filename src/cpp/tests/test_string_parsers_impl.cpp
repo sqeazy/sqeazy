@@ -33,6 +33,7 @@ struct string_fixture
   std::string one_value = "test=0";
   std::string one_command = "ls(test=0)";
   std::string quantiser_bug_20160520 = "quantiser(decode_lut_string=254:766:1278:1790:2302:2814:3326:3838:4350:4862:5374)->h264(option=1)";
+  std::string parsing_0_githubissue_2 = "remove_background(threshold=\u0000";
   
 };
 
@@ -232,6 +233,18 @@ BOOST_AUTO_TEST_CASE (bug_20160520) {
   BOOST_CHECK_EQUAL(value.back().first, "h264");
   BOOST_CHECK_EQUAL(value.front().second, "decode_lut_string=254:766:1278:1790:2302:2814:3326:3838:4350:4862:5374");
   BOOST_CHECK_EQUAL(value.back().second, "option=1");
+
+}
+
+BOOST_AUTO_TEST_CASE (githubissue_2) {
+
+  std::string sep = "->";
+  sqy::vec_of_pairs_t value = sqy::parse_by(parsing_0_githubissue_2.begin(),
+					    parsing_0_githubissue_2.end(),
+					    sep);
+  BOOST_REQUIRE_EQUAL(value.size(),1);
+  BOOST_CHECK_EQUAL(value.front().first, "remove_background");
+  BOOST_CHECK_EQUAL(value.front().second, "threshold=0");
 
 }
 
