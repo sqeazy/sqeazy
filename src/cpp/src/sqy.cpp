@@ -97,16 +97,23 @@ int brief_help(const options_type& _sqy_options ,
     
     if(_verb_aliases.find(key) != _verb_aliases.end()){
       auto value = _verb_aliases.find(key);
-      std::cout << "(" << value->second << ")\n";
+      if(!value->second.empty())
+	std::cout << "(" << value->second << ")";
+      std::cout << "\n";
     }
     else
       std::cout << "\n";
   }
+
+  std::cout << std::setw(4) << " " << std::left << std::setw(15)
+    	    << "<verb> -h/--help"
+	    << std::setw(3) << " " << std::left << std::setw(60)
+	    << "print detailed help for <verb>\n";
   
   std::cout << "\n"
 	    << "available flags to sqy only:\n"
 	    << _sqy_options << "\n";
-  
+
   
 }
 
