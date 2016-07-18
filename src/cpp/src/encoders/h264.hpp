@@ -85,7 +85,7 @@ namespace sqeazy {
       av_register_all();
     }
 
-    static const std::string description() { return std::string("h264 encode gray8 buffer with h264, args can be anything that libavcodec can understand, see ffmpeg -h encoder=h264"); };
+    static const std::string description() { return std::string("h264 encode gray8 buffer with h264, args can be anything that libavcodec can understand, e.g. h264(preset=ultrafast,qp=0) would match the ffmpeg flags --preset=ultrafast --qp=0; see ffmpeg -h encoder=h264 for details. "); };
     
     std::string name() const override final {
 
