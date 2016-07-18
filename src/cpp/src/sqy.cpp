@@ -108,7 +108,7 @@ int brief_help(const options_type& _sqy_options ,
   std::cout << std::setw(4) << " " << std::left << std::setw(15)
     	    << "<verb> -h/--help"
 	    << std::setw(3) << " " << std::left << std::setw(60)
-	    << "print detailed help for <verb>\n";
+	    << "print detailed help for <verb>, e.g. sqy compress -h\n";
   
   std::cout << "\n"
 	    << "available flags to sqy only:\n"
