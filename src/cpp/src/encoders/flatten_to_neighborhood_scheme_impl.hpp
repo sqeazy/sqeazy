@@ -212,11 +212,11 @@ namespace sqeazy {
 
      * @return sqeazy::error_code
      */
-    static const error_code static_encode(raw_type* _input,
-                                   raw_type* _output,
-                                   const std::vector<size_type>& _dims,
-                                   const raw_type& _threshold,
-                                   float _frac_neighb_to_null = percentage_below/100.f)
+    static const error_code static_encode(const raw_type* _input,
+					  raw_type* _output,
+					  const std::vector<size_type>& _dims,
+					  const raw_type& _threshold,
+					  float _frac_neighb_to_null = percentage_below/100.f)
     {
 
 

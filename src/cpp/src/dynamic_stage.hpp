@@ -412,8 +412,12 @@ namespace sqeazy{
 						   temp_out.data(),
 						  _shape);
 
-	  compressed_items = encoded_end - temp_out.data();
-	  if(compressed_items>temp_out.size()){
+	  if(encoded_end)
+	    compressed_items = encoded_end - temp_out.data();
+	  else
+	    compressed_items = 0;
+	  
+	  if(compressed_items>temp_out.size() || compressed_items == 0){
 	    std::ostringstream msg;
 	    msg << __FILE__ << ":" << __LINE__ << "\t encode wrote past the end of temporary buffers\n";
 	    throw std::runtime_error(msg.str());

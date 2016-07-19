@@ -44,6 +44,17 @@ IteratorT median_index(IteratorT begin, IteratorT end) {
 
 }
 
+  /**
+     \brief calcuate the bin index of the histogram where the normalised integral is greater than the given threshold
+
+     \param[in] begin starting iterator of the array to calculate the support of
+     \param[in] end end+1 iterator of the array to calculate the support of
+     \param[in] threshold 
+
+     \return iterator pointing to the index in question
+     \retval 
+
+  */
   template <typename IteratorT,typename ValueT>
   IteratorT support_index(IteratorT begin, IteratorT end, ValueT threshold) {
 
@@ -336,20 +347,39 @@ struct histogram {
 
     }
 
-  
-    float calc_support(float _threshold = .99) const {
+  /**
+     \brief calculate the support of the histogram
+     the support is the value of the histogram x-axis at which the cumulative PDF reaches the threshold given, here the weighted mean between the support index bin found and the bin before it is calculated
 
-        T mindex = support_index(bins.begin()+smallest_populated_bin(),
-				 bins.begin()+largest_populated_bin() +1,
-				 _threshold
-				 ) - bins.begin();
-        float result = 0;
-        if(mindex>0 ) //the underlying distribution has always even number of entries
-            result = (bins[mindex]*mindex + bins[mindex-1]*(mindex-1))/float(bins[mindex-1] + bins[mindex]);
+     \param[in] _threshold value of cumulative PDF at which the bin value is returned (threshold is required to be inside the closed real interval [0.,1.]
 
-        return result;
+     \return 
+     \retval 
 
+  */
+  float calc_support(float _threshold = .99) const {
+
+    float result = 0;
+      
+    if(_threshold>1.){
+      return result;
     }
+
+    if(_threshold<0.){
+      return result;
+    }
+
+    T mindex = support_index(bins.begin()+smallest_populated_bin(),
+			     bins.begin()+largest_populated_bin() +1,
+			     _threshold
+			     ) - bins.begin();
+        
+    if(mindex>0 ) //the underlying distribution has always even number of entries
+      result = (bins[mindex]*mindex + bins[mindex-1]*(mindex-1))/float(bins[mindex-1] + bins[mindex]);
+
+    return result;
+
+  }
 
 
 

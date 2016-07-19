@@ -53,6 +53,92 @@ namespace sqeazy {
       return base_type::is_compressor;
     
     }
+
+
+    compressed_type* encode( const raw_type* _input, compressed_type* _output, std::size_t _input_size) override final {
+
+      std::vector<std::size_t> shape = {_input_size};
+      
+      return encode(_input,_output,shape);
+      
+    }
+    
+    compressed_type* encode( const raw_type* _input, compressed_type* _output, const std::vector<std::size_t>& _shape) override final {
+
+      std::vector<raw_type> darkest_face;
+      extract_darkest_face((const raw_type*)_input, _shape, darkest_face);
+        
+      sqeazy::histogram<raw_type> t;
+      t.add_from_image(darkest_face.begin(), darkest_face.end());
+	
+      std::size_t input_length = std::accumulate(_shape.begin(), _shape.end(), 1, std::multiplies<std::size_t>());
+
+      const float reduce_by = t.calc_support(.99f);
+
+#ifdef _SQY_VERBOSE_
+      std::cout << "[SQY_VERBOSE] remove_estimated_background ";
+      for(short i = 0;i<_dims.size();++i){
+	std::cout << _dims[i] << ((_dims[i]!=_dims.back()) ? "x" : ", ");
+      }
+	
+      std::cout << " darkest face: backgr_estimate = " << reduce_by << "\n";
+      t.fill_stats();
+      std::cout << "[SQY_VERBOSE] " << histogram<raw_type>::print_header() << "\n[SQY_VERBOSE] " << t << "\n";
+	
+#endif
+
+      if(_output) {
+	//copies the input to output, skipping pixels that have a neighborhood complying crirteria
+	flatten_to_neighborhood_scheme<raw_type>::static_encode(_input, _output, _shape, reduce_by);
+	//set those pixels to 0 that fall below reduce_by
+	remove_background_scheme<raw_type>::static_encode_inplace(_output, input_length, reduce_by);
+      }
+      else {
+	std::cerr << "WARNING ["<< static_name() <<"::encode]\t inplace operation not supported\n";
+	return nullptr;
+      }
+
+      return _output+input_length;
+
+    }
+
+    /**
+       \brief decode method basically does a copy only as we cannot infer the estimated background level (yet)
+
+       \param[in] 
+
+       \return 
+       \retval 
+
+    */
+    int decode( const compressed_type* _input,
+		raw_type* _output,
+		std::size_t _input_size,
+		std::size_t _output_size = 0) const override final {
+
+      std::copy(_input, _input + _input_size,_output);
+      
+      return 0;
+    }
+
+    /**
+       \brief decode method basically does a copy only as we cannot infer the estimated background level (yet)
+
+       \param[in] 
+
+       \return 
+       \retval 
+
+    */
+    int decode( const compressed_type* _input, raw_type* _output,
+		const std::vector<std::size_t>& _shape,
+		std::vector<std::size_t>) const override final {
+
+      std::size_t length = std::accumulate(_shape.begin(), _shape.end(), 1, std::multiplies<std::size_t>());
+      return decode(_input,_output,length);
+    }
+
+    
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // DEPRECATED API
     
