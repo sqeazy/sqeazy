@@ -77,8 +77,8 @@ namespace sqeazy {
 
 #ifdef _SQY_VERBOSE_
       std::cout << "[SQY_VERBOSE] remove_estimated_background ";
-      for(short i = 0;i<_dims.size();++i){
-	std::cout << _dims[i] << ((_dims[i]!=_dims.back()) ? "x" : ", ");
+      for(short i = 0;i<_shape.size();++i){
+	std::cout << _shape[i] << ((_shape[i]!=_shape.back()) ? "x" : ", ");
       }
 	
       std::cout << " darkest face: backgr_estimate = " << reduce_by << "\n";
