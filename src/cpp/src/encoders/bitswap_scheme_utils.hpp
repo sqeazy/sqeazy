@@ -170,31 +170,42 @@ namespace sqeazy {
       if(_length*sizeof(raw_type)<16)
 	return FAILURE;
 
-      static const unsigned items_per_register = 128/(CHAR_BIT*sizeof(raw_type));
-      static const unsigned raw_type_num_bits = sizeof(raw_type)*CHAR_BIT;
-      static const unsigned num_planes = raw_type_num_bits/num_bits_per_plane;
+      static const std::size_t raw_type_num_bits = sizeof(raw_type)*CHAR_BIT;
+
+      if(raw_type_num_bits==8){
+	std::cerr << "8-bit SSE accelerated bitswap not implemented yet\n";
+	return FAILURE;
+      }
+      
+      static const std::size_t items_per_register = 128/raw_type_num_bits;
+      static const std::size_t num_planes = raw_type_num_bits/num_bits_per_plane;
 
       //prepare output array of pointers
       std::vector<raw_type*> output_ptr(num_planes,0);
-      const unsigned plane_width = _length/num_planes;
-      unsigned offset = 0;
-      for(unsigned i = 0;i<output_ptr.size();++i){
+      const std::size_t plane_width = _length/num_planes;
+      std::size_t offset = 0;
+      for(std::size_t i = 0;i<output_ptr.size();++i){
 	output_ptr[i] = _output + offset;
 	offset += plane_width;
       }
 
       //one item of the output array may contain multiple results of the iterations
-      unsigned planesets_per_output = sizeof(raw_type)*CHAR_BIT/items_per_register;
+      float planesets_per_output = raw_type_num_bits/float(items_per_register);
 
       //
-      unsigned shift_reorder_by = sizeof(raw_type)*CHAR_BIT/planesets_per_output;
-      if(planesets_per_output==1)
+      std::size_t shift_reorder_by = 0;
+      if(planesets_per_output>1)
+	shift_reorder_by = raw_type_num_bits/std::round(planesets_per_output);
+      
+      if(std::fabs(planesets_per_output-1)<.01)
 	shift_reorder_by = 0;
 
+      
+      
       vec_xor<raw_type> xoring;
       vec_rotate_left<raw_type> rotate;
       __m128i input;
-      unsigned count = 0;
+      std::size_t count = 0;
 
       for(size_type index = 0; index < _length; index += items_per_register, count++ ) {
 
@@ -207,11 +218,13 @@ namespace sqeazy {
 	input = rotate(&input);
       
 	//bitplane reordering starts here!
-	reorder_bitplanes<num_bits_per_plane>(input, output_ptr,(count % planesets_per_output == 0) ? shift_reorder_by : 0);
+	reorder_bitplanes<num_bits_per_plane>(input,
+					      output_ptr,
+					      (count % (std::size_t)std::round(planesets_per_output) == 0) ? shift_reorder_by : 0);
     
 	//moving the pointers to the output array forward
 	if(count % 2 != 0){
-	  for(unsigned i = 0;i<output_ptr.size();++i){
+	  for(std::size_t i = 0;i<output_ptr.size();++i){
 	    ++output_ptr[i];
 	  }
 	}
