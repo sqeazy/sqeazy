@@ -1,15 +1,17 @@
 #ifndef _SQY_COMMON_HPP_
 #define _SQY_COMMON_HPP_
 
+#include <iostream>
+
 namespace sqeazy {
   
-enum error_code {
+  enum error_code {
 
     SUCCESS = 0,
     FAILURE = 1,
     NOT_IMPLEMENTED_YET = 42
 
-};
+  };
 
   struct unknown {};
 
@@ -31,7 +33,7 @@ enum error_code {
     struct has_sse3   {const static bool value = false;};
 #endif
 
-#if defined __SSE4_2__ && defined __SSSE4_1__
+#if defined __SSE4_2__ && defined __SSE4_1__
     struct has_sse4   {const static bool value = __SSE4_2__ && __SSE4_1__;};
 #else
     struct has_sse4   {const static bool value = false;};
@@ -39,6 +41,14 @@ enum error_code {
 
     struct use_vectorisation {
       const static bool value = (has_sse2::value && has_sse3::value && has_sse4::value) && _SQY_X_;
+
+      static void debug() {
+
+	std::cout << "sse2 ? " << has_sse2::value << "\n"
+		  << "sse3 ? " << has_sse3::value << "\n"
+		  << "sse4 ? " << has_sse4::value << "\n"
+	  	  << "sqyx ? " << _SQY_X_ << "\n";
+      }
     };
     
   };
