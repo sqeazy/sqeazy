@@ -17,6 +17,8 @@ typedef const_anyvalue_fixture<(1 << 15), 0x0ff0> default_micv_fixture;
 
 typedef ramp_fixture<(1 << 15)> default_ramp_fixture; 
 
+
+
 BOOST_FIXTURE_TEST_SUITE( bitplane_reorder, default_cv_fixture )
 
 BOOST_AUTO_TEST_CASE( runs_on_data ){
@@ -217,6 +219,48 @@ BOOST_AUTO_TEST_CASE( versus_default_all ){
 
 BOOST_AUTO_TEST_SUITE_END()
 
+typedef const_anyvalue_fixture<(1 << 8), 2, unsigned char> default_cv_fixture_8bit;
+
+BOOST_FIXTURE_TEST_SUITE( bitplane_reorder_8bit, default_cv_fixture_8bit )
+
+// BOOST_AUTO_TEST_CASE( runs_on_data ){
+
+//   sqeazy::bitswap_scheme<unsigned char,1>::static_encode(&input[0], &reference[0],input.size());
+  
+//   try{
+//     BOOST_REQUIRE( reference[input.size()-1] == 0 );
+//     BOOST_REQUIRE( reference[(input.size()-1)-(32)] != 0 );
+//   }
+//   catch(...){
+//     std::copy(reference.begin(), reference.end(), std::ostream_iterator<unsigned char>(std::cout, " "));
+//   }
+
+// }
+
+BOOST_AUTO_TEST_CASE( vectorized_version_is_callable ){
+
+  int rc = 0;
+  BOOST_REQUIRE( rc == sqeazy::detail::sse_bitplane_reorder_encode<1>(&input[0], &output[0],input.size()));
+}
+
+BOOST_AUTO_TEST_CASE(produces_same_output){
+
+
+  sqeazy::detail::sse_bitplane_reorder_encode<1>(&input[0], &output[0],input.size());
+    
+  BOOST_REQUIRE( reference[0] == output[0] );
+  try{
+    BOOST_REQUIRE( reference[input.size()-3] == output[input.size()-3] );
+  }
+  catch(...){
+    std::cout << "reference:\n";
+    std::copy(reference.begin(), reference.end(), std::ostream_iterator<unsigned char>(std::cout, " "));
+    std::cout << "\noutput:\n";
+    std::copy(output.begin(), output.end(), std::ostream_iterator<unsigned char>(std::cout, " "));
+    std::cout << "\n";
+  }
+}
+BOOST_AUTO_TEST_SUITE_END()
 //TODO!
 // TEST_CASE("2-bit extraction for 16bit input of all bits to short","[bp2-reorder-const]"){
 
