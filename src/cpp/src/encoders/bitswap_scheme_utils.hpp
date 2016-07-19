@@ -191,14 +191,19 @@ namespace sqeazy {
 
       //one item of the output array may contain multiple results of the iterations
       float planesets_per_output = raw_type_num_bits/float(items_per_register);
-
+      std::size_t n_planesets_per_output_item = 0;
+      
       //
       std::size_t shift_reorder_by = 0;
-      if(planesets_per_output>1)
+      if(raw_type_num_bits>8){
+	n_planesets_per_output_item = 
 	shift_reorder_by = raw_type_num_bits/std::round(planesets_per_output);
+	
+      }
       
-      if(std::fabs(planesets_per_output-1)<.01)
+      if(raw_type_num_bits == 8){
 	shift_reorder_by = 0;
+      }
 
       
       

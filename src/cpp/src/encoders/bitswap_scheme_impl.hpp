@@ -86,7 +86,7 @@ namespace sqeazy {
 	std::copy(_input+max_size,_input+_length,_output+max_size);
 
       int err = 0;
-      if(sqeazy::platform::use_vectorisation::value && num_bits_per_plane==1){
+      if(sqeazy::platform::use_vectorisation::value && num_bits_per_plane==1 && sizeof(raw_type)>1){
 #ifdef _SQY_VERBOSE_
 	std::cout << "[bitswap_scheme::encode]\tusing see method\n";
 #endif
@@ -244,7 +244,7 @@ namespace sqeazy {
       if(max_size < _length)
 	std::copy(_input+max_size,_input+_length,_output+max_size);
       
-      if(sqeazy::platform::use_vectorisation::value && static_num_bits_per_plane==1){
+      if(sqeazy::platform::use_vectorisation::value && static_num_bits_per_plane==1 && sizeof(raw_type)>1){
 #ifdef _SQY_VERBOSE_
 	std::cout << "[bitplane encode]\tusing see method\n";
 #endif
