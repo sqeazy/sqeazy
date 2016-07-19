@@ -223,7 +223,7 @@ namespace sqeazy {
 					      (count % (std::size_t)std::round(planesets_per_output) == 0) ? shift_reorder_by : 0);
     
 	//moving the pointers to the output array forward
-	if(count % 2 != 0){
+	if(count % (std::size_t)std::round(planesets_per_output) != 0){
 	  for(std::size_t i = 0;i<output_ptr.size();++i){
 	    ++output_ptr[i];
 	  }
