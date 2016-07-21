@@ -275,10 +275,41 @@ struct vec_rotate_left
   
   
   int shift;
+
+  /**
+     \brief construct a vectorised left rotation
+     
+     example:
+     input = 0001 0111
+
+     for _shift = 1:
+     vec_rotate_left(input): 0010 1110
+
+     for _shift = 2
+     vec_rotate_left(input): 0101 1100
+
+     \param[in] _shift number of bits to rotate by
+     
+     \return 
+     \retval 
+
+  */
   vec_rotate_left(int _shift = 1):
     shift(_shift)
   {};
 
+  /**
+     \brief vectorized rotate of register
+     rotate bits of integer by <shift> to the left (wrapping around the ends)
+     input = 0001 0111
+     vec_rotate_left(input): 0010 1110
+     
+     \param[in] _in SSE register to rotate
+
+     \return 
+     \retval 
+
+  */
   __m128i operator()(const __m128i* _in){
     __m128i value;
     throw std::runtime_error("rotate_left called with unknown type");
@@ -424,13 +455,13 @@ struct to_32bit_field<char>
 /**
    \brief bitplane reordering given sse register _block, new planes will be put into _reordered
    
-   \param[in] _block SSE block that contains X times the type identified by T
+   \param[in] _block SSE block that contains X times of the type identified by T
    \param[out] _reordered bit planes to write reordered data into
    \param[in] _left_shift_output move the result number of bits (given by _left_shift_output) left 
    before writing it to _reordered
 
    Example: 
-   given an input block of 
+   given an 128-bit input block of 
    {1000000000000000, 1000000000000000, 1000000000000000, 1000000000000000, 
     1000000000000000, 1000000000000000, 1000000000000000, 1000000000000000}
    the expected output is
@@ -450,36 +481,45 @@ void reorder_bitplanes(const __m128i& _block,
 		       const unsigned& _left_shift_output = 0
 		       ){
 
-  //TODO: convert to static assert
-  if(plane_size>(CHAR_BIT*sizeof(T))){
-    std::cerr << "[reorder_bitplanes]\t plane_size larger than input type. Doing nothing.\n";
-    return;
-  }
-
+  static const unsigned type_width = sizeof(T)*CHAR_BIT;
   static const unsigned __m128i_in_bytes = 16;
-  unsigned n_planes = (sizeof(T)*CHAR_BIT)/plane_size;
+  static const unsigned n_items_per_m128i = __m128i_in_bytes/(sizeof(T));
+  static const unsigned n_items_per_m128i_half = n_items_per_m128i/2;
+  static const unsigned n_planes_per_T = type_width/plane_size;
 
-  unsigned reordered_byte = _reordered.size()*sizeof(T);
+  static_assert(n_items_per_m128i*plane_size <= 32,
+		"[reorder_bitplanes]\t SSE API forbids to extract more than 32bit\n");
+  // static_assert((n_items_per_m128i*plane_size) % type_width == 0,
+  // 		"[reorder_bitplanes]\t writing odd-sized planes to result array not implemented yet\n");
+  static_assert(plane_size <= type_width,
+  		"[reorder_bitplanes]\t plane_size larger than input type. Doing nothing.\n");
+  
+  float output_items_per_plane = n_items_per_m128i*plane_size/float(type_width);
 
-  if(!(reordered_byte>=__m128i_in_bytes)){
-    std::cerr << "[reorder_bitplanes]\t buffer for output has insufficent size, " 
-	      << "found " << reordered_byte << " B, min. required " << __m128i_in_bytes << "\n"
-	      << "Doing Nothing.\n";
-    return;
-  }
+  // unsigned reordered_byte = _reordered.size()*sizeof(T);
+  // if(!(reordered_byte>=__m128i_in_bytes)){
+  //   std::cerr << "[reorder_bitplanes]\t buffer for output has insufficent size, " 
+  // 	      << "found " << reordered_byte << " B, min. required " << __m128i_in_bytes << "\n"
+  // 	      // << "Doing Nothing."
+  // 	      << "\n";
+  //   return;
+  // }
     
-  static const unsigned n_items_per_m128i_half = __m128i_in_bytes/(2*sizeof(T));
-
-  const unsigned planes_per_output_item = n_planes/_reordered.size();
-  const unsigned bits_per_plane_on_output_item = (sizeof(T)*CHAR_BIT)/planes_per_output_item;
+  const unsigned planes_per_output_segment = n_planes_per_T/_reordered.size();
+  const unsigned bits_per_plane_on_output_item = type_width/planes_per_output_segment;
   static const unsigned char left_shift_to_msb = sizeof(int) - sizeof(T);
   
   shift_left_m128i<T> left_shifter;
+  int result = 0;
+  T to_write_to_output = 0;
+  std::size_t output_index = 0;
+  
+  for(unsigned plane = 0;plane<(n_planes_per_T);plane+=plane_size){
 
-  for(unsigned plane = 0;plane<(n_planes);plane+=plane_size){
-
-    //left shift by plane to make the bit of interest the msb
+    result = 0;
+    to_write_to_output = 0;
     
+    //left shift by plane to make the bit of interest the msb
     __m128i input = left_shifter(_block,plane);
 
     __m128i v_first_items =  _mm_slli_si128(
@@ -494,23 +534,23 @@ void reorder_bitplanes(const __m128i& _block,
     __m128 first_part = *reinterpret_cast<__m128*>(&v_first_items);
 
     //collect the msb per 32bit item into result
-    T result = _mm_movemask_ps (first_part); 
+    result = _mm_movemask_ps (first_part); 
     result <<= (n_items_per_m128i_half*plane_size);
 
 #ifdef WIN32
-	__m128 input_casted = _mm_castsi128_ps(input);
+    __m128 input_casted = _mm_castsi128_ps(input);
 #else
     __m128 input_casted = reinterpret_cast<__m128>(input);
 #endif
 
 #ifdef WIN32
-	__m128i swapped_second_first = _mm_castps_si128(//swap second with first half of 128bits
-		_mm_movehl_ps(input_casted, input_casted)
-		);
+    __m128i swapped_second_first = _mm_castps_si128(//swap second with first half of 128bits
+						    _mm_movehl_ps(input_casted, input_casted)
+						    );
 #else
-	    __m128i swapped_second_first = reinterpret_cast<__m128i>(//swap second with first half of 128bits
-							  _mm_movehl_ps(input_casted,input_casted)
-							  );
+    __m128i swapped_second_first = reinterpret_cast<__m128i>(//swap second with first half of 128bits
+							     _mm_movehl_ps(input_casted,input_casted)
+							     );
 #endif
     
     __m128i v_second_items = _mm_slli_si128(//convert to 32bits in order to get only the first (items 0,1,2,3 in _block) half of m128i
@@ -518,28 +558,46 @@ void reorder_bitplanes(const __m128i& _block,
 					    //left shift by n bytes to get the lower half of 32bits 
 					    //(which is the higher half of the original)
 					    left_shift_to_msb
-					);
+					    );
 
     //invert the sequence of v_second_items
     v_second_items = _mm_shuffle_epi32(v_second_items, _MM_SHUFFLE(0,1,2,3));
 
     //collect the msb per 32bit item into result
 #ifdef WIN32
-	result += _mm_movemask_ps(_mm_castsi128_ps(v_second_items));
+    result += _mm_movemask_ps(_mm_castsi128_ps(v_second_items));
 #else
-	result += _mm_movemask_ps (reinterpret_cast<__m128>(v_second_items)) ; 
+    result += _mm_movemask_ps (reinterpret_cast<__m128>(v_second_items)) ; 
 #endif
 
-    unsigned reordered_index = planes_per_output_item > 1 ? plane/planes_per_output_item : plane;
-    
     result <<= _left_shift_output;
+       
     
-    if(planes_per_output_item!=1){
-      unsigned offset = ((plane % planes_per_output_item)*bits_per_plane_on_output_item);
-      *(_reordered[reordered_index]) += (result << offset);
+
+    //dump the result to the output
+    output_index = planes_per_output_segment > 1 ? plane/planes_per_output_segment : plane;
+
+    if(!(output_items_per_plane>1)){
+      //compute what needs to be written to the output
+      if(planes_per_output_segment!=1){
+	unsigned offset = ((plane % planes_per_output_segment)*bits_per_plane_on_output_item);
+	to_write_to_output = T(result << offset);
+      }
+      else{
+	to_write_to_output = T(result);
+      }
+    
+      *(_reordered[output_index]) += to_write_to_output;
+
     }
-    else
-      *(_reordered[reordered_index]) += result;
+    else{
+      int n_output_items_per_plane = std::round(output_items_per_plane);
+      for(int out_offset = 0; out_offset < n_output_items_per_plane; ++out_offset)
+	{
+	  *(_reordered[output_index]+n_output_items_per_plane-1-out_offset) += (result >> out_offset) & T(~0);
+	}
+    }
+
   }
 
 }
