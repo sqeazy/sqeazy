@@ -143,6 +143,9 @@ target_link_libraries(test_bitswap_scheme_impl ${Boost_LIBRARIES})
 add_executable(test_bitplane_reorder_impl test_bitplane_reorder_impl.cpp)
 target_link_libraries(test_bitplane_reorder_impl ${Boost_LIBRARIES})
 
+add_executable(test_sse_utils_impl test_sse_utils_impl.cpp)
+target_link_libraries(test_sse_utils_impl ${Boost_LIBRARIES})
+
 add_executable(test_shift_by_intrinsics test_shift_by_intrinsics.cpp)
 target_link_libraries(test_shift_by_intrinsics ${Boost_LIBRARIES})
 
