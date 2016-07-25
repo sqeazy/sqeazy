@@ -487,8 +487,8 @@ void reorder_bitplanes(const __m128i& _block,
   static const unsigned n_items_per_m128i_half = n_items_per_m128i/2;
   static const unsigned n_planes_per_T = type_width/plane_size;
 
-  static_assert(n_items_per_m128i*plane_size <= 32,
-		"[reorder_bitplanes]\t SSE API forbids to extract more than 32bit\n");
+  // static_assert(n_items_per_m128i*plane_size <= 32,
+  // 		"[reorder_bitplanes]\t SSE API forbids to extract more than 32bit\n");
   // static_assert((n_items_per_m128i*plane_size) % type_width == 0,
   // 		"[reorder_bitplanes]\t writing odd-sized planes to result array not implemented yet\n");
   static_assert(plane_size <= type_width,
