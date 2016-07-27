@@ -5,10 +5,10 @@
 #include <iostream>
 #include <algorithm> // for copy
 #include <iterator> // for ostream_iterator
-#include "encoders/sqeazy_impl.hpp"
+#include "encoders/sse_utils.hpp"
 
 #include "sse_test_utils.hpp"
-#include "bitplane_reorder_detail.hpp"
+//#include "bitplane_reorder_detail.hpp"
 
 
 #include <xmmintrin.h>
@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_CASE( shift_left_by_constant ){
   
   static const __m128i v_const = _mm_set1_epi16(2);
 
-  shift_left_m128i<unsigned short> shifter;
+  sqeazy::detail::shift_left_m128i<unsigned short> shifter;
   __m128i result = shifter(v_const,1);
   _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);
 
@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE( shift_msb_left_by_constant ){
 
   static const __m128i v_msb = _mm_set1_epi16(0x8000);
 
-  shift_left_m128i<unsigned short> shifter;
+  sqeazy::detail::shift_left_m128i<unsigned short> shifter;
   __m128i result = shifter(v_msb,1);
   _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);
 
@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE( shift_right_by_constant ){
 
   static const __m128i v_const = _mm_set1_epi16(2);
 
-  shift_right_m128i<unsigned short> shifter;
+  sqeazy::detail::shift_right_m128i<unsigned short> shifter;
   __m128i result = shifter(v_const,1);
   _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);
 
@@ -103,7 +103,7 @@ BOOST_AUTO_TEST_CASE( shift_right_by_constant ){
 BOOST_AUTO_TEST_CASE( shift_lsb_right_by_constant ){
   static const __m128i v_lsb = _mm_set1_epi16(1);
 
-  shift_right_m128i<unsigned short> shifter;
+  sqeazy::detail::shift_right_m128i<unsigned short> shifter;
   __m128i result = shifter(v_lsb,1);
   _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);
   BOOST_REQUIRE(output[0] == 0);
@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE( shift_left_by_constant ){
 
   __m128i v_input = _mm_load_si128(reinterpret_cast<__m128i*>(&input[0]));
 
-  shift_left_m128i<unsigned char> shifter;
+  sqeazy::detail::shift_left_m128i<unsigned char> shifter;
   __m128i result = shifter(v_input,1);
   _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);
   for (unsigned i = 0; i < input.size()/2; ++i)
@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE( shift_left_by_constant ){
 
 BOOST_AUTO_TEST_CASE( shift_left_msb_by_constant ){
 
-  shift_left_m128i<unsigned char> shifter;
+  sqeazy::detail::shift_left_m128i<unsigned char> shifter;
   static const __m128i v_msb = _mm_set1_epi8(0x80);
   __m128i result = shifter(v_msb,1);
   _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);
@@ -164,7 +164,7 @@ BOOST_AUTO_TEST_CASE( shift_right_msb_by_constant ){
 
     static const __m128i v_lsb = _mm_set1_epi8(1);
 
-    shift_right_m128i<unsigned char> shifter;
+    sqeazy::detail::shift_right_m128i<unsigned char> shifter;
     
     __m128i result = shifter(v_lsb,1);
     _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);
@@ -190,7 +190,7 @@ BOOST_AUTO_TEST_CASE( shift_right_by_constant ){
   __m128i v_input = _mm_load_si128(reinterpret_cast<__m128i*>(&input[0]));
 
 
-    shift_right_m128i<unsigned char> shifter;
+    sqeazy::detail::shift_right_m128i<unsigned char> shifter;
     
     __m128i result = shifter(v_input,1);
 
@@ -219,7 +219,7 @@ BOOST_AUTO_TEST_CASE( shift_left_by_constant ){
 
   __m128i v_input = _mm_load_si128(reinterpret_cast<__m128i*>(&input[0]));
 
-    shift_left_m128i<char> shifter;
+    sqeazy::detail::shift_left_m128i<char> shifter;
     __m128i result = shifter(v_input,1);
     _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);
 
@@ -241,7 +241,7 @@ BOOST_AUTO_TEST_CASE( shift_left_msb_by_constant ){
 
     static const __m128i v_msb = _mm_set1_epi8(0x80);
 
-    shift_left_m128i<char> shifter;
+    sqeazy::detail::shift_left_m128i<char> shifter;
     
     __m128i result = shifter(v_msb,1);
     _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);
@@ -261,7 +261,7 @@ BOOST_AUTO_TEST_CASE( shift_right_msb_by_constant ){
 
     static const __m128i v_lsb = _mm_set1_epi8(1);
 
-    shift_right_m128i<char> shifter;
+    sqeazy::detail::shift_right_m128i<char> shifter;
     
     __m128i result = shifter(v_lsb,1);
     _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);
@@ -287,7 +287,7 @@ BOOST_AUTO_TEST_CASE( shift_right_by_constant ){
   __m128i v_input = _mm_load_si128(reinterpret_cast<__m128i*>(&input[0]));
 
 
-    shift_right_m128i<char> shifter;
+    sqeazy::detail::shift_right_m128i<char> shifter;
     
     __m128i result = shifter(v_input,1);
     _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);
@@ -316,7 +316,7 @@ BOOST_AUTO_TEST_CASE( shift_left_by_constant ){
 
   __m128i v_input = _mm_load_si128(reinterpret_cast<__m128i*>(&input[0]));
 
-    shift_left_m128i<unsigned> shifter;
+    sqeazy::detail::shift_left_m128i<unsigned> shifter;
     __m128i result = shifter(v_input,1);
     _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);
 
@@ -338,7 +338,7 @@ BOOST_AUTO_TEST_CASE( shift_left_msb_by_constant ){
 
     static const __m128i v_msb = _mm_set1_epi8(0x8000);
 
-    shift_left_m128i<unsigned> shifter;
+    sqeazy::detail::shift_left_m128i<unsigned> shifter;
     
     __m128i result = shifter(v_msb,1);
     _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);
@@ -358,7 +358,7 @@ BOOST_AUTO_TEST_CASE( shift_right_msb_by_constant ){
 
     static const __m128i v_lsb = _mm_set1_epi32(1);
 
-    shift_right_m128i<unsigned> shifter;
+    sqeazy::detail::shift_right_m128i<unsigned> shifter;
     
     __m128i result = shifter(v_lsb,1);
     _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);
@@ -384,7 +384,7 @@ BOOST_AUTO_TEST_CASE( shift_right_by_constant ){
   __m128i v_input = _mm_load_si128(reinterpret_cast<__m128i*>(&input[0]));
 
 
-    shift_right_m128i<unsigned> shifter;
+    sqeazy::detail::shift_right_m128i<unsigned> shifter;
     
     __m128i result = shifter(v_input,1);
     _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);

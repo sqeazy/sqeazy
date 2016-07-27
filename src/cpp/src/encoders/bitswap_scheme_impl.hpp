@@ -4,9 +4,15 @@
 #include "neighborhood_utils.hpp"
 #include "sqeazy_common.hpp"
 #include "traits.hpp"
-#include "bitswap_scheme_utils.hpp"
+
 #include "dynamic_stage.hpp"
 #include "string_parsers.hpp"
+
+#ifdef __SSE4_2__
+#include "bitplane_reorder_sse.hpp"
+#endif
+
+#include "bitplane_reorder_scalar.hpp"
 
 namespace sqeazy {
 

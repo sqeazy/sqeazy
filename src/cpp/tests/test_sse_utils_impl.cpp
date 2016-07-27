@@ -5,7 +5,7 @@
 #include <iostream>
 #include <algorithm> // for copy
 #include <iterator> // for ostream_iterator
-#include "sse_utils.hpp"
+#include "encoders/sse_utils.hpp"
 
 
 int pop(unsigned x)
@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE( from_16_to_4_bits ){
   for(auto & el: msb_is_1)
     icount += pop(el);
     
-  __m128i received = to_32bit_field<std::uint8_t>::conversion(input);
+  __m128i received = sqeazy::detail::to_32bit_field<std::uint8_t>::conversion(input);
   int msb_mask = _mm_movemask_epi8(received);
   int rcount = pop(msb_mask);
 
@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE( from_8_to_4_bits ){
   for(auto & el: msb_is_1)
     icount += pop(el);
     
-  __m128i received = to_32bit_field<std::uint16_t>::conversion(input);
+  __m128i received = sqeazy::detail::to_32bit_field<std::uint16_t>::conversion(input);
   int msb_mask = _mm_movemask_epi8(received);
   int rcount = pop(msb_mask);
 
