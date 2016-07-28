@@ -15,6 +15,7 @@ add_test(NAME bitswap_schemes COMMAND test_bitswap_schemes)
 
 
 #TODO: until sse_bitswap is fixed
+message(">> WARNING: tests for 16-/8-bit SSE enabled bitswapping have been removed temporarily")
 add_test(NAME bitplane_reorder_impl COMMAND test_bitplane_reorder_impl CONFIGURATION --run_test=*16bit/*)
 add_test(NAME bitswap_scheme_impl COMMAND test_bitswap_scheme_impl CONFIGURATION --run_test=*bit/*)
 
