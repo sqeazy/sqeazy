@@ -7,33 +7,40 @@
 A fast and flexible compression library for 2D/3D/ND volume data (currently only 3D is supported).
 The core library is written in C++ with bindings for C, Java (to be implemented), and Python (to be implemented). Binaries are provided for Win (working for the native library), OSX (working for the native library, but not all tests pass), and Linux (works, native library and java bindings).
 
-# Using Sqeazy from binary distribution (experimental)
+## Using Sqeazy Java interface from binary distribution (experimental)
 
 Sqeazy is hosted on bintray. In order to use it, do:
 
-## If you gradle is your build system
+### If gradle is your build system
 
 Add the following to your `build.gradle`:
 
 ```
-//...
-
 repositories 
 {
 	//...
 	maven { url  "https://dl.bintray.com/psteinb/maven"  }
 }
 
-//...
-
 dependencies {
 	//...
     compile 'net.sqeazy:sqeazy:0.1'
-	//...
 }
 ```
 
-You may then use sqeazy in your java projects as:
+### If maven is your build system
+
+```
+<dependency>
+  <groupId>net.sqeazy</groupId>
+  <artifactId>sqeazy</artifactId>
+  <version>0.1</version>
+  <type>pom</type>
+</dependency>
+```
+
+
+### To use sqeazy in Java do
 
 ```
 import sqeazy.bindings.SqeazyLibrary;
