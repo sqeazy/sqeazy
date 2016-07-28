@@ -31,12 +31,23 @@ dependencies {
 ### If maven is your build system
 
 ```
-<dependency>
-  <groupId>net.sqeazy</groupId>
-  <artifactId>sqeazy</artifactId>
-  <version>0.1</version>
-  <type>pom</type>
-</dependency>
+<repositories>
+	...
+	<repository>
+		<id>sqeazy</id>
+		<url>https://dl.bintray.com/psteinb/maven</url>
+	</repository>
+</repositories>
+
+<dependencies>
+	...
+	<dependency>
+		<groupId>net.sqeazy</groupId>
+		<artifactId>sqeazy</artifactId>
+		<version>0.1</version>
+		<type>pom</type>
+	</dependency>
+</dependencies>
 ```
 
 
