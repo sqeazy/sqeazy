@@ -17,7 +17,7 @@ typedef sqeazy::bitswap_scheme<std::uint16_t> bswap1_scheme;
 typedef sqeazy::bitswap_scheme<std::uint16_t,2> bswap2_scheme;
 typedef sqeazy::bitswap_scheme<std::uint16_t,4> bswap4_scheme;
 
-BOOST_FIXTURE_TEST_SUITE( shift_signed_bits, uint16_cube_of_8 )
+BOOST_FIXTURE_TEST_SUITE( shift_signed_bits_16bit, uint16_cube_of_8 )
 
 BOOST_AUTO_TEST_CASE( rotate_left )
 {
@@ -163,33 +163,6 @@ sqeazy::rotate_left<1>(xor_if_signed(test_signed[i]));
 }
 
 
-BOOST_AUTO_TEST_CASE( roundtrip_ramp )
-{
-  using namespace sqeazy;
-
-  std::vector<unsigned> shape(3);
-  shape[0] = 7;
-  shape[1] = 9;
-  shape[2] = 11;
-
-  const unsigned long flat_size = std::accumulate(shape.begin(), shape.end(),1,std::multiplies<unsigned>());
-  std::vector<std::uint16_t> expected(flat_size);
-  for(unsigned i = 0;i<flat_size;++i)
-    expected[i] = static_cast<std::uint16_t>(i);
-
-  std::vector<std::uint16_t> compressed(expected);
-  
-  int res = bswap1_scheme::static_encode(&expected[0], &compressed[0],flat_size);
-
-  BOOST_CHECK(!res);
-
-  std::vector<std::uint16_t> decoded(flat_size,0);
-
-  res = bswap1_scheme::static_decode(&compressed[0], &decoded[0] ,flat_size);
-
-  BOOST_CHECK(!res);
-  BOOST_CHECK_EQUAL_COLLECTIONS(decoded.begin(), decoded.end(), expected.begin(), expected.end());
-}
 
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -282,7 +255,7 @@ struct xor_expected_results {
 };
 
 
-BOOST_FIXTURE_TEST_SUITE( requirements_upon_bitset, xor_expected_results )
+BOOST_FIXTURE_TEST_SUITE( requirements_upon_bitset_16bit, xor_expected_results )
 
 BOOST_AUTO_TEST_CASE( apply_xor )
 {
@@ -355,7 +328,24 @@ struct incrementing_array
   
 };
 
-BOOST_FIXTURE_TEST_SUITE( encode_decode_loop, incrementing_array )
+BOOST_FIXTURE_TEST_SUITE( encode_decode_loop_16bit, incrementing_array )
+
+BOOST_AUTO_TEST_CASE( setbits_on_integertype )
+{
+  std::uint16_t zero = 0;
+  std::uint16_t one = 1;
+  BOOST_CHECK(sqeazy::setbits_of_integertype(zero, one, 5u, 1u) == 1 << 5);
+
+  std::uint16_t max_char = 0xff;
+  BOOST_CHECK(sqeazy::setbits_of_integertype(max_char, one, 10u, 1u) == (max_char + (1 << 10)));
+
+  BOOST_CHECK(sqeazy::setbits_of_integertype(max_char, zero, 4u, 4u) == 0xf);
+  
+  std::uint16_t three = 3;
+  //three is truncated if it maps to more than 16 bits (here)
+  BOOST_CHECK(sqeazy::setbits_of_integertype(zero, three, 15u, 2u) == 0x8000);
+}
+
 
 BOOST_AUTO_TEST_CASE( encoded_equals_by_hand_planewidth1 )
 {
@@ -502,24 +492,9 @@ BOOST_AUTO_TEST_CASE( decode_encoded_by_hand_planewidth4_new_api )
 BOOST_AUTO_TEST_SUITE_END()
 
 
-BOOST_AUTO_TEST_CASE( setbits_on_integertype )
-{
-  std::uint16_t zero = 0;
-  std::uint16_t one = 1;
-  BOOST_CHECK(sqeazy::setbits_of_integertype(zero, one, 5u, 1u) == 1 << 5);
+BOOST_AUTO_TEST_SUITE( shift_signed_bits_8bit )
 
-  std::uint16_t max_char = 0xff;
-  BOOST_CHECK(sqeazy::setbits_of_integertype(max_char, one, 10u, 1u) == (max_char + (1 << 10)));
-
-  BOOST_CHECK(sqeazy::setbits_of_integertype(max_char, zero, 4u, 4u) == 0xf);
-  
-  std::uint16_t three = 3;
-  //three is truncated if it maps to more than 16 bits (here)
-  BOOST_CHECK(sqeazy::setbits_of_integertype(zero, three, 15u, 2u) == 0x8000);
-}
-
-
-BOOST_AUTO_TEST_CASE( roundtrip_ramp_8bit )
+BOOST_AUTO_TEST_CASE( roundtrip_ramp )
 {
   using namespace sqeazy;
 
@@ -551,5 +526,36 @@ BOOST_AUTO_TEST_CASE( roundtrip_ramp_8bit )
 			   flat_size);
 
   BOOST_CHECK(!err);
+  BOOST_CHECK_EQUAL_COLLECTIONS(decoded.begin(), decoded.end(), expected.begin(), expected.end());
+}
+
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_CASE( roundtrip_ramp )
+{
+  using namespace sqeazy;
+
+  std::vector<unsigned> shape(3);
+  shape[0] = 7;
+  shape[1] = 9;
+  shape[2] = 11;
+
+  const unsigned long flat_size = std::accumulate(shape.begin(), shape.end(),1,std::multiplies<unsigned>());
+  std::vector<std::uint16_t> expected(flat_size);
+  for(unsigned i = 0;i<flat_size;++i)
+    expected[i] = static_cast<std::uint16_t>(i);
+
+  std::vector<std::uint16_t> compressed(expected);
+  
+  int res = bswap1_scheme::static_encode(&expected[0], &compressed[0],flat_size);
+
+  BOOST_CHECK(!res);
+
+  std::vector<std::uint16_t> decoded(flat_size,0);
+
+  res = bswap1_scheme::static_decode(&compressed[0], &decoded[0] ,flat_size);
+
+  BOOST_CHECK(!res);
   BOOST_CHECK_EQUAL_COLLECTIONS(decoded.begin(), decoded.end(), expected.begin(), expected.end());
 }

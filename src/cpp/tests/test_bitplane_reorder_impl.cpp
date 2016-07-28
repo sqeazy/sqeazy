@@ -19,7 +19,7 @@ typedef ramp_fixture<(1 << 15)> default_ramp_fixture;
 
 
 
-BOOST_FIXTURE_TEST_SUITE( bitplane_reorder, default_cv_fixture )
+BOOST_FIXTURE_TEST_SUITE( bitplane_reorder_16bit, default_cv_fixture )
 
 BOOST_AUTO_TEST_CASE( runs_on_data ){
 
@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_SUITE_END()
 
 
 
-BOOST_FIXTURE_TEST_SUITE( check_sse_default_highbit, default_hicv_fixture )
+BOOST_FIXTURE_TEST_SUITE( check_sse_default_highbit_16bit, default_hicv_fixture )
 
 BOOST_AUTO_TEST_CASE( versus_default_first_16 ){
   
@@ -103,7 +103,7 @@ BOOST_AUTO_TEST_CASE( versus_default_all ){
 
 BOOST_AUTO_TEST_SUITE_END()
 
-BOOST_FIXTURE_TEST_SUITE( check_sse_default_lobit, default_locv_fixture )
+BOOST_FIXTURE_TEST_SUITE( check_sse_default_lobit_16bit, default_locv_fixture )
 
 BOOST_AUTO_TEST_CASE( versus_default_first_16 ){
 
@@ -141,7 +141,7 @@ BOOST_AUTO_TEST_CASE( versus_default_all ){
 BOOST_AUTO_TEST_SUITE_END()
 
 
-BOOST_FIXTURE_TEST_SUITE( check_sse_default_mibit, default_micv_fixture )
+BOOST_FIXTURE_TEST_SUITE( check_sse_default_mibit_16bit, default_micv_fixture )
 
 BOOST_AUTO_TEST_CASE( versus_default_first_16 ){
 
@@ -178,7 +178,7 @@ BOOST_AUTO_TEST_CASE( versus_default_all ){
 }
 BOOST_AUTO_TEST_SUITE_END()
 
-BOOST_FIXTURE_TEST_SUITE( check_sse_ramp, default_ramp_fixture )
+BOOST_FIXTURE_TEST_SUITE( check_sse_ramp_16bit, default_ramp_fixture )
 
 BOOST_AUTO_TEST_CASE( versus_default_first_16 ){
 
