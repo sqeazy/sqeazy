@@ -222,13 +222,54 @@ task ctest(type:Exec) {
 
 }
 
+task build_native <<  {
+
+  // if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+  //   inputs.files "./build/cpp/src/libsqeazy.dll"
+  // } 
+  // else if (Os.isFamily(Os.FAMILY_MAC))
+  // {
+  //   inputs.files "./build/cpp/src/libsqeazy.dylib"
+  // }
+  // else if (Os.isFamily(Os.FAMILY_UNIX))
+  // {
+  //   inputs.files "./build/cpp/src/libsqeazy.so"
+  // }
+
+  println 'sqeazy native build successful'
+  
+}
+
+task sqeazy_available << {
+  
+  if (Os.isFamily(Os.FAMILY_WINDOWS))
+  {
+    assert file("./build/cpp/src/libsqeazy.dll").exists()
+  } 
+  else if (Os.isFamily(Os.FAMILY_MAC)) 
+  {
+    assert file("./build/cpp/src/libsqeazy.dylib").exists()
+  }
+  else if (Os.isFamily(Os.FAMILY_UNIX)) 
+  {
+    assert file("./build/cpp/src/libsqeazy.so").exists()
+  }
+  
+}
+
 // Task dependencies:
+
+//native tasks
 cmake.dependsOn create_build_dir
 make.dependsOn cmake
-java_bindings.dependsOn make
-compileJava.dependsOn java_bindings
 ctest.dependsOn make
-test.dependsOn ctest
+build_native.dependsOn ctest
+
+//java tasks
+java_bindings.dependsOn sqeazy_available
+compileJava.dependsOn java_bindings
+test.dependsOn compileJava
+
 
 //***********************************************************************************
 // JAVA CODE BUILDING
