@@ -223,7 +223,7 @@ task upload_bundle(type:Exec) {
    }
 
 
-   args '-Tsqeazy_bundle.zip','-u'+bintray_user+':'+bintray_key, 'https://api.bintray.com/content/psteinb/sqeazy_binaries/'+arch+'/'+version+'/';
+   args '-Tsqeazy_bundle.zip','-u'+bintray_user+':'+bintray_key, 'https://api.bintray.com/content/psteinb/sqeazy_binaries/'+arch+'/'+version+'/sqeazy_bundle.zip';
    println '>> [upload_bundle] ' + executable + ' ' + args 
 
 }
