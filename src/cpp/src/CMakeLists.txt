@@ -141,7 +141,7 @@ ENDIF()
 
 #DYNAMIC LIBRARY
 add_library(${PROJECT_NAME} SHARED sqeazy.cpp)
-set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-I${HDF5_INCLUDE_DIRS}")
+#set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-I${HDF5_INCLUDE_DIRS}")
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED YES)
 
 
@@ -181,6 +181,7 @@ INSTALL(TARGETS ${SQY_SRC_TARGETS}
   LIBRARY DESTINATION "${INSTALL_LIB_DIR}" 
   ARCHIVE DESTINATION "${INSTALL_LIB_DIR}"
   PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}" COMPONENT inc)
+
 
 
 ########################################### SQY ######################################################
@@ -259,3 +260,16 @@ ELSE()
   WARNING("[src/cpp/src] Skipping sqy app, libtiff not found (but required for build)\!")
 ENDIF()
 
+
+
+
+########################################### DEPLOYMENT LIBSQY ######################################################
+include(${PROJECT_SOURCE_DIR}/cmake/bundle_target.cmake)
+
+set(BUNDLE_DIR ${PROJECT_BINARY_DIR}/bundle CACHE STRING "directory to put bundle into")
+set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES ${BUNDLE_DIR})
+
+bundle(${PROJECT_NAME} ${BUNDLE_DIR})
+
+add_custom_target(bundle DEPENDS bundle_${PROJECT_NAME} )
+set_target_properties(bundle PROPERTIES EXCLUDE_FROM_ALL TRUE)
