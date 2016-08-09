@@ -8,17 +8,46 @@ apply plugin: 'eclipse'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
 
+version = '0.1'
+
 def project_root = file(".").absolutePath
 def native_build_dir = './build/cpp'
 def native_source_dir = './src/cpp'
 def native_static_lib = ""
 def native_shared_lib = ""
 
+def jnaerator_plat_path = {
+
+  def is_64 = (System.getProperty("os.arch").indexOf("64") != -1)
+  def plat_path = ""
+  
+  if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+    if(is_64){
+      plat_path = "win64"
+    }
+    else{
+      plat_path = "win32"
+    }
+  }
+  else if (Os.isFamily(Os.FAMILY_MAC)) {
+      plat_path = "darwin_universal"
+ }
+else if (Os.isFamily(Os.FAMILY_UNIX)) {
+    if(is_64){
+      plat_path = "linux_x64"
+    }
+    else{
+      plat_path = "linux_x86"
+    }
+}
+
+}
 
 task create_build_dir << {
   println 'create_build_dir'
   new File(native_build_dir).mkdirs()
 }
+
 
 // cmake task:
 task cmake(type:Exec) {
@@ -124,6 +153,79 @@ task make(type:Exec) {
 
 }
 
+// TODO: check if we can use multiple threads and forward that to make/cmake
+// make task:
+task make_bundle(type:Exec) {
+  
+  inputs.dir file(native_build_dir).absolutePath
+
+  workingDir native_build_dir
+  
+  if (Os.isFamily(Os.FAMILY_WINDOWS))
+  {
+    outputs.file './build/cpp/src/libsqeazy.dll'
+    executable 'cmake.exe'
+    args ' --build . --target bundle --config Release'
+  } 
+  else if (Os.isFamily(Os.FAMILY_MAC))
+  {
+    outputs.file './build/cpp/src/libsqeazy.dylib'
+    executable 'make'
+    args 'bundle'
+
+  } 
+  else if (Os.isFamily(Os.FAMILY_UNIX))
+  {
+    outputs.file './build/cpp/src/libsqeazy.so'
+    executable 'make'
+    args 'bundle'
+  }
+
+}
+
+task zip_bundle(type:Zip) {
+
+def zinpath = file(native_build_dir).absolutePath+'/bundle'
+  println ">> zip_bundle: "+zinpath+" .. "+file(native_build_dir).absolutePath
+from (zinpath)
+include 'lib*'
+include '*h'
+ // into 'resources' // note that this specifies path *in* the archive
+ destinationDir file(native_build_dir+'/bundle') // directory that you want your archive to be placed in
+ archiveName 'sqeazy_bundle.zip'
+
+ def outputs_exp = file(native_build_dir+'/bundle/').absolutePath+archiveName
+ outputs.files outputs_exp
+}
+
+task upload_bundle(type:Exec) {
+
+     //curl -T <FILE.EXT> -upsteinb:<API_KEY> https://api.bintray.com/content/psteinb/sqeazy_binaries/<YOUR_COOL_PACKAGE_NAME>/<VERSION_NAME>/<FILE_TARGET_PATH>
+
+   inputs.files zip_bundle.outputs.files
+   workingDir native_build_dir
+   def arch = jnaerator_plat_path()
+
+   if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+    inputs.files './src/cpp/inc/sqeazy.h', './build/cpp/bundle/libsqeazy.dll'
+    executable 'curl.exe'
+   } 
+   else if (Os.isFamily(Os.FAMILY_MAC)) 
+   {
+     inputs.files './src/cpp/inc/sqeazy.h', './build/cpp/bundle/libsqeazy.dylib'
+     executable 'curl'
+   }
+   else if (Os.isFamily(Os.FAMILY_UNIX)) 
+   {
+     inputs.files './src/cpp/inc/sqeazy.h', './build/cpp/bundle/libsqeazy.so'
+     executable 'curl'
+   }
+
+
+   args '-T '+inputs.files[0]+' -u'+bintray_user+':'+bintray_key+' https://api.bintray.com/content/psteinb/sqeazy_binaries/'+arch+'/'+version+'/'
+   println '>> [upload_bundle] ' + executable + ' ' + args 
+
+}
 
 // Build java bindings:
 task java_bindings(type:JavaExec) {
@@ -142,8 +244,8 @@ task java_bindings(type:JavaExec) {
   outputs.file 'src/java/src/sqeazy/bindings/SqeazyLibrary.java'
 
   workingDir '.'
-  def jnaerate_arch = ""
-  def is_64 = (System.getProperty("os.arch").indexOf("64") != -1)
+  def arch = jnaerator_plat_path()
+
 
   File libsqeazy_file;
   File sqeazy_header;
@@ -153,16 +255,10 @@ task java_bindings(type:JavaExec) {
     libsqeazy_file = file( native_build_dir + "/src/libsqeazy.dll" )
     sqeazy_header = file( native_source_dir + "/inc/sqeazy.h" )
 
-    if(is_64){
-      jnaerate_arch = "win64"
-    }
-    else{
-      jnaerate_arch = "win32"
-    }
   } 
   else if (Os.isFamily(Os.FAMILY_MAC)) 
   {
-    jnaerate_arch = "darwin_universal"
+
     libsqeazy_file = file( native_build_dir + "/src/libsqeazy.dylib" )
     sqeazy_header = file( native_source_dir + "/inc/sqeazy.h" )
 
@@ -173,12 +269,6 @@ task java_bindings(type:JavaExec) {
     libsqeazy_file = file( native_build_dir + "/src/libsqeazy.so" )
     sqeazy_header = file( native_source_dir + "/inc/sqeazy.h" )
 
-    if(is_64){
-      jnaerate_arch = "linux_x64"
-    }
-    else{
-      jnaerate_arch = "linux_x86"
-    }
   }
 
   //see  https://github.com/mike-plummer/NativeGroovy/blob/master/build.gradle 
@@ -189,7 +279,7 @@ task java_bindings(type:JavaExec) {
   	'-o','src/java/src',
 	'-rootPackage','src',
   	'-package','sqeazy.bindings',
-  	'-arch',jnaerate_arch,
+  	'-arch',arch,
   	'-libFile',libsqeazy_file.absolutePath,
   	'-runtime','BridJ',
   	'-mode','Directory',
@@ -241,6 +331,10 @@ task build_native <<  {
 }
 
 task sqeazy_available << {
+
+  //todo: download files if they don't exist!
+  
+  println 'checking if native libraries are present ...'
   
   if (Os.isFamily(Os.FAMILY_WINDOWS))
   {
@@ -254,6 +348,9 @@ task sqeazy_available << {
   {
     assert file("./build/cpp/src/libsqeazy.so").exists()
   }
+
+
+
   
 }
 
@@ -264,6 +361,10 @@ cmake.dependsOn create_build_dir
 make.dependsOn cmake
 ctest.dependsOn make
 build_native.dependsOn ctest
+
+make_bundle.dependsOn cmake
+zip_bundle.dependsOn make_bundle
+upload_bundle.dependsOn zip_bundle
 
 //java tasks
 java_bindings.dependsOn sqeazy_available
@@ -324,6 +425,7 @@ repositories
 	mavenCentral()
 	maven
 	{ url "http://oss.sonatype.org/content/groups/public" }
+	
 }
 
 
@@ -352,7 +454,7 @@ if (JavaVersion.current().isJava8Compatible()) {
 group = 'net.sqeazy'
 
 //TODO: infer version from git!
-version = '0.1'
+
 
 artifacts
 {
