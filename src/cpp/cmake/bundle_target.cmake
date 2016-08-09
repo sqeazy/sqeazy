@@ -99,24 +99,25 @@ function(BUNDLE tgt destdir)
     endif()
   endforeach()
 
-  if(NOT EXISTS ${destdir})
-    #TODO: build system time create
-    #http://stackoverflow.com/questions/3702115/creating-a-directory-in-cmake#3702233
-    file(MAKE_DIRECTORY ${destdir})
-  endif()
+  # if(NOT EXISTS ${destdir})
+  #   #TODO: build system time create
+  #   #http://stackoverflow.com/questions/3702115/creating-a-directory-in-cmake#3702233
+  #   file(MAKE_DIRECTORY ${destdir})
+  # endif()
 
   add_custom_target(bundle_directory_${tgt}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${destdir})
   
   # cmake build system setup copy_in
-  copy_in(${destdir} ${TGT_LIB_FILES})
+  copy_in_fortarget(${destdir} ${tgt} ${TGT_LIB_FILES})
   if(TGT_HDR)
-    copy_in(${destdir} ${TGT_HDR})
+    copy_in_fortarget(${destdir} ${tgt} ${TGT_HDR})
   endif()
   
   
   add_library(bundle_${tgt} SHARED ${TGT_SRC})
-  add_dependencies(bundle_${tgt} bundle_directory_${tgt})
+  add_dependencies(bundle_copy_${tgt} bundle_directory_${tgt})
+  add_dependencies(bundle_${tgt} bundle_copy_${tgt})
 
   set_target_properties(bundle_${tgt} PROPERTIES OUTPUT_NAME ${tgt})
   ##gcc: -Wl,-rpath,./ ./libboost_unit_test_framework.so
