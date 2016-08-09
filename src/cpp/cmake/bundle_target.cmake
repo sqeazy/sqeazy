@@ -69,7 +69,7 @@ function(BUNDLE tgt destdir)
   ## introspect target
   get_property(TGT_LIBS TARGET ${tgt} PROPERTY LINK_LIBRARIES)
   get_property(TGT_SRC TARGET ${tgt} PROPERTY SOURCES)
-  get_property(TGT_HDR TARGET ${tgt} PROPERTY PUBLIC_HEADERS)
+  get_property(TGT_HDR TARGET ${tgt} PROPERTY PUBLIC_HEADER)
   #get_property(TGT_ONAME TARGET ${tgt} PROPERTY OUTPUT_NAME)
 
   ## copy-in link_libraries
