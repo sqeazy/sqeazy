@@ -203,7 +203,8 @@ task upload_bundle(type:Exec) {
      //curl -T <FILE.EXT> -upsteinb:<API_KEY> https://api.bintray.com/content/psteinb/sqeazy_binaries/<YOUR_COOL_PACKAGE_NAME>/<VERSION_NAME>/<FILE_TARGET_PATH>
 
    inputs.files zip_bundle.outputs.files
-   workingDir native_build_dir
+   def outputs_exp = file(native_build_dir+'/bundle/').absolutePath
+   workingDir outputs_exp
    def arch = jnaerator_plat_path()
 
    if (Os.isFamily(Os.FAMILY_WINDOWS)) {
@@ -222,7 +223,7 @@ task upload_bundle(type:Exec) {
    }
 
 
-   args '-T '+inputs.files[0]+' -u'+bintray_user+':'+bintray_key+' https://api.bintray.com/content/psteinb/sqeazy_binaries/'+arch+'/'+version+'/'
+   args '-Tsqeazy_bundle.zip','-u'+bintray_user+':'+bintray_key, 'https://api.bintray.com/content/psteinb/sqeazy_binaries/'+arch+'/'+version+'/';
    println '>> [upload_bundle] ' + executable + ' ' + args 
 
 }
