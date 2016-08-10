@@ -222,8 +222,9 @@ task upload_bundle(type:Exec) {
      executable 'curl'
    }
 
-
-   args '-Tsqeazy_bundle.zip','-u'+bintray_user+':'+bintray_key, 'https://api.bintray.com/content/psteinb/sqeazy_binaries/'+arch+'/'+version+'/sqeazy_bundle.zip';
+   def fname = zip_bundle.outputs.files[0]
+   args '-T'+fname,'-u'+bintray_user+':'+bintray_key, 'https://api.bintray.com/content/psteinb/sqeazy_binaries/'+arch+'/'+version+'/'+fname+'?publish=1';
+   
    println '>> [upload_bundle] ' + executable + ' ' + args 
 
 }
