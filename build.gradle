@@ -55,8 +55,12 @@ task cmake(type:Exec) {
   workingDir native_build_dir
   
   inputs.dir file(native_source_dir).absolutePath
-  outputs.file file(native_build_dir).absolutePath + '/Makefile'
-
+  
+  if (Os.isFamily(Os.FAMILY_WINDOWS)){
+  outputs.files file(native_build_dir).absolutePath + '\\ALL_BUILD.vcxproj', file(native_build_dir).absolutePath + '\\CMakeCache.txt'
+  } else {
+  outputs.files file(native_build_dir).absolutePath + '/Makefile', file(native_build_dir).absolutePath + '/CMakeCache.txt'
+}
   def native_build_type = project.hasProperty("sqy_build_type") ? sqy_build_type : "Release"
   def sqy_x = project.hasProperty("sqy_experimental") ? sqy_experimental : "0"
   def path_to_lz4 = project.hasProperty("lz4_path") ? lz4_path : ""
@@ -66,62 +70,71 @@ task cmake(type:Exec) {
   def path_to_boost = project.hasProperty("boost_path") ? boost_path : ""
   def path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake"
   
-  def cmake_args = [] as List
+  
 
-  cmake_args.add("-DCMAKE_BUILD_TYPE="+native_build_type+" ")
+  args "-DCMAKE_BUILD_TYPE="+native_build_type
   
   if(sqy_x != "0"){
-    cmake_args.add("-DSQY_EXPERIMENTAL=ON")
+    args "-DSQY_EXPERIMENTAL=ON"
   }
     
   if(path_to_lz4){
-    //TODO: see if path exists
-    cmake_args.add("-DLZ4_ROOT=" + path_to_lz4 + " ")
+    
+    args "-DLZ4_ROOT=" + path_to_lz4
   }
 
   if(path_to_ffmpeg){
     //TODO: see if path exists
-    cmake_args.add("-DFFMPEG_ROOT=" + path_to_ffmpeg + " ")
+    args "-DFFMPEG_ROOT=" + path_to_ffmpeg
   }
 
   
   if(path_to_hdf5){
     //TODO: see if path exists
-    cmake_args.add("-DHDF5_ROOT=" + path_to_hdf5 + " ")
+    args "-DHDF5_ROOT=" + path_to_hdf5
   }
 
   if(path_to_tiff){
     //TODO: see if path exists
-    cmake_args.add("-DTIFF_ROOT=" + path_to_tiff + " ")
-    cmake_args.add("-DTIFF_INCLUDE_DIR="+ path_to_tiff +"/include")
-    cmake_args.add("-DTIFF_LIBRARY="+ path_to_tiff +"/lib/libtiff.so")
+    args "-DTIFF_ROOT=" + path_to_tiff 
+	if (Os.isFamily(Os.FAMILY_WINDOWS)){
+		def tiff_path = file(path_to_tiff).absolutePath
+		def tiff_include = tiff_path + "\\include"
+		def tiff_lib = tiff_path + "\\lib\\libtiff.dll"
+		args "-DTIFF_INCLUDE_DIR="+ tiff_include
+		args "-DTIFF_LIBRARY="+ tiff_lib
+	} else {
+		args "-DTIFF_INCLUDE_DIR="+ path_to_tiff +"/include"
+		args "-DTIFF_LIBRARY="+ path_to_tiff +"/lib/libtiff.so"
+	}
   }
 
   if(path_to_boost){
     //TODO: see if path exists
-    cmake_args.add("-DBOOST_ROOT=" + path_to_boost + " ") 
+    args "-DBOOST_ROOT=" + path_to_boost 
   }
-
-  cmake_args += file(native_source_dir).absolutePath
-
-  println "cmake_args: "+cmake_args
 
   //DEFINE DEFAULTS
   if (Os.isFamily(Os.FAMILY_WINDOWS)){
-    //TODO
+    
+	path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake.exe"
     executable path_to_cmake_app
+	
+	//args "-DCMAKE_BINARY_DIR="+file(native_build_dir).absolutePath
   } 
   else if (Os.isFamily(Os.FAMILY_MAC))
   {
     executable path_to_cmake_app
-    args cmake_args
+    
   } 
   else if (Os.isFamily(Os.FAMILY_UNIX))
   {
     executable path_to_cmake_app
-    args cmake_args
+    
   }
-
+	
+	args file(native_source_dir).absolutePath
+	
 }
 
 // TODO: check if we can use multiple threads and forward that to make/cmake
@@ -134,8 +147,14 @@ task make(type:Exec) {
   
   if (Os.isFamily(Os.FAMILY_WINDOWS))
   {
-    outputs.file './build/cpp/src/libsqeazy.dll'
-    executable 'cmake.exe --build . --target ALL_BUILD --config Release'
+	   
+	executable project_root+'\\run_cmake_build.bat'
+	//executable 'cmake.exe'
+	//args '--build .'
+	//args '--config Release'
+	//args '--target ALL_BUILD'
+	 
+	outputs.file '.\\build\\cpp\\src\\libsqeazy.dll'
   } 
   else if (Os.isFamily(Os.FAMILY_MAC))
   {
