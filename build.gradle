@@ -119,7 +119,7 @@ task cmake(type:Exec) {
     
 	path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake.exe"
     executable path_to_cmake_app
-	
+	args '-G "Visual Studio 14 2015 Win64"'
 	//args "-DCMAKE_BINARY_DIR="+file(native_build_dir).absolutePath
   } 
   else if (Os.isFamily(Os.FAMILY_MAC))
