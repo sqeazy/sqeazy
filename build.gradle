@@ -8,7 +8,7 @@ apply plugin: 'eclipse'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
 
-version = '0.1'
+version = '0.1.0'
 
 def project_root = file(".").absolutePath
 def native_build_dir = './build/cpp'
