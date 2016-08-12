@@ -71,6 +71,31 @@ task cmake(type:Exec) {
   def path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake"
   
   
+  //DEFINE DEFAULTS
+  if (Os.isFamily(Os.FAMILY_WINDOWS)){
+    
+	path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake.exe"
+    executable path_to_cmake_app
+	
+	if(System.getProperty("os.arch").indexOf("64") != -1){
+		args "-Ax64"
+	} //args "-G \"Visual Studio 14 2015 Win64\""
+	
+	
+	
+	//args "-DCMAKE_BINARY_DIR="+file(native_build_dir).absolutePath
+  } 
+  else if (Os.isFamily(Os.FAMILY_MAC))
+  {
+    executable path_to_cmake_app
+    
+  } 
+  else if (Os.isFamily(Os.FAMILY_UNIX))
+  {
+    executable path_to_cmake_app
+    
+  }
+	
 
   args "-DCMAKE_BUILD_TYPE="+native_build_type
   
@@ -114,27 +139,10 @@ task cmake(type:Exec) {
     args "-DBOOST_ROOT=" + path_to_boost 
   }
 
-  //DEFINE DEFAULTS
-  if (Os.isFamily(Os.FAMILY_WINDOWS)){
-    
-	path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake.exe"
-    executable path_to_cmake_app
-	args '-G "Visual Studio 14 2015 Win64"'
-	//args "-DCMAKE_BINARY_DIR="+file(native_build_dir).absolutePath
-  } 
-  else if (Os.isFamily(Os.FAMILY_MAC))
-  {
-    executable path_to_cmake_app
-    
-  } 
-  else if (Os.isFamily(Os.FAMILY_UNIX))
-  {
-    executable path_to_cmake_app
-    
-  }
-	
+  
 	args file(native_source_dir).absolutePath
 	
+ 
 }
 
 // TODO: check if we can use multiple threads and forward that to make/cmake
