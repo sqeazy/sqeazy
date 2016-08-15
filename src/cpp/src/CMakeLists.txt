@@ -201,25 +201,32 @@ ENDIF()
 FIND_PACKAGE(TIFF REQUIRED)
 IF(TIFF_FOUND)
   INCLUDE_DIRECTORIES(${TIFF_INCLUDE_DIR})
+  
   SET(TIFF_DYN_LIB ${TIFF_LIBRARIES})
   SET(TIFF_STATIC_LIB "")
   
+  
+  
   IF(WIN32)
-    add_library(ext_static_tiff STATIC IMPORTED)
+  #TODO: revise this section, finding libtiff on windows appears buggy
+    get_filename_component(TIFF_LIB_PATH ${TIFF_LIBRARIES} ABSOLUTE)
+	link_directories(${TIFF_LIB_PATH})
+	
+	set(TIFF_IMP_LIB_GLOB "${TIFF_LIB_PATH}\*lib")
+	file(GLOB TIFF_IMP_LIB ${TIFF_IMP_LIB_GLOB})
+	
+    add_library(ext_tiff SHARED IMPORTED)
     IF("${TIFF_LIBRARIES}" MATCHES ".*.dll$")
-      STRING(REPLACE .dll .lib TIFF_STATIC_LIB ${TIFF_LIBRARIES})
-    ELSE()
-      SET(TIFF_STATIC_LIB ${TIFF_LIBRARIES})
+		if(EXISTS "${TIFF_LIBRARIES}")
+		set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIBRARIES}") 
+		endif()	
+		if(EXISTS "${TIFF_IMP_LIB}")
+		set_target_properties(ext_tiff PROPERTIES IMPORTED_IMPLIB "${TIFF_IMP_LIB}") 
+		endif()
     ENDIF()
-    set_target_properties(ext_static_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_STATIC_LIB}") 
-
-    add_library(ext_dyn_tiff SHARED IMPORTED)
-    IF("${TIFF_LIBRARIES}" MATCHES ".*.dll$")
-      STRING(REPLACE .dll _i.lib TIFF_IMP_LIB ${TIFF_LIBRARIES})
-      set_target_properties(ext_dyn_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIBRARIES}") 
-      set_target_properties(ext_dyn_tiff PROPERTIES IMPORTED_IMPLIB "${TIFF_IMP_LIB}") 
-    ENDIF()
-
+	
+	message("++ [src/cpp/src::FindTIFF] includes: ${TIFF_INCLUDE_DIR} libs: ${TIFF_LIBRARY} ${TIFF_LIBRARIES} imp_lib: ${TIFF_IMP_LIB}")
+	
   ELSE(WIN32)
 
 
@@ -234,22 +241,19 @@ IF(TIFF_FOUND)
     ENDIF()
 
     IF(EXISTS ${TIFF_DYN_LIB})
-      add_library(ext_dyn_tiff SHARED IMPORTED)
-      set_target_properties(ext_dyn_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_DYN_LIB}")
+      add_library(ext_tiff SHARED IMPORTED)
+      set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_DYN_LIB}")
     ENDIF()
 
-    #FIXME: static includes of libtiff showed missing symbols (mostly deflate, there must be a depenency to libz or something which maybe not included in libtiff.a)
-    IF(EXISTS ${TIFF_STATIC_LIB})
-      add_library(ext_static_tiff STATIC IMPORTED)
-      set_target_properties(ext_static_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_STATIC_LIB}")
-    ENDIF()
     
   ENDIF(WIN32)
 
-
   add_executable(sqy sqy.cpp)
-  target_link_libraries(sqy ext_dyn_tiff ext_lz4 ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries} ${HDF5_LIBRARIES})
-
+  if(WIN32)
+  target_link_libraries(sqy tiff ext_lz4 ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries} ${HDF5_LIBRARIES})
+  else()
+  target_link_libraries(sqy ext_tiff ext_lz4 ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries} ${HDF5_LIBRARIES})
+  endif()
 
   INSTALL(TARGETS sqy
     EXPORT sqeazy-targets 

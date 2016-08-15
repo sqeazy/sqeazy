@@ -49,8 +49,10 @@ IF(UNIX)
     set(INSTALL_SHARE_DIR lib/CMake/${PROJECT_NAME} CACHE PATH "Installation directory for shared files")
   ENDIF(APPLE)
 ELSE(UNIX)
+  
   IF(WIN32 AND NOT CYGWIN)
     set(INSTALL_SHARE_DIR CMake CACHE PATH "Installation directory for shared files")
+	
   ELSE(WIN32 AND NOT CYGWIN)
     MESSAGE(FATAL_ERROR ">> UNKNOWN ARCHITECTURE .. unable to set share dir")
   ENDIF(WIN32 AND NOT CYGWIN)

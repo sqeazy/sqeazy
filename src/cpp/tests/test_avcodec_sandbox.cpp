@@ -97,7 +97,8 @@ static uint32_t encode_stack(const stack_type& _volume,
   c->width = _volume.shape()[2];
   c->height = _volume.shape()[1];
   /* frames per second */
-  c->time_base = (AVRational){1,25};
+  AVRational temp = { 1,25 };
+	c->time_base = temp;
   /* emit one intra frame every ten frames
    * check frame pict_type before passing frame
    * to encoder, if frame->pict_type is AV_PICTURE_TYPE_I

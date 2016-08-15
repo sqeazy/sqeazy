@@ -434,7 +434,7 @@ header_ = "";
 
 
     
-    unsigned size() const {
+    std::size_t size() const {
 
       return header_.size();
     }
@@ -584,7 +584,7 @@ header_ = "";
       // }
 
       image_header unpacked = unpack(_buffer, _buffer+_size);
-      return unpacked.raw_shape_.size();
+      return static_cast<int>(unpacked.raw_shape_.size());
     }
 
     static const std::string unpack_type(const char* _buffer, const unsigned& _size) {
