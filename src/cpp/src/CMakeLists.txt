@@ -198,14 +198,16 @@ IF(FFMPEG_FOUND)
   LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
 ENDIF()
 
+if(DEFINED TIFF_ROOT)
+	list(APPEND CMAKE_PREFIX_PATH ${TIFF_ROOT})
+endif()
+
 FIND_PACKAGE(TIFF REQUIRED)
 IF(TIFF_FOUND)
-  INCLUDE_DIRECTORIES(${TIFF_INCLUDE_DIR})
-  
-  SET(TIFF_DYN_LIB ${TIFF_LIBRARIES})
-  SET(TIFF_STATIC_LIB "")
-  
-  
+  include_directories(${TIFF_INCLUDE_DIR})
+  get_filename_component(TIFF_LIB_PATH ${TIFF_LIBRARIES} ABSOLUTE)
+  link_directories(${TIFF_LIB_PATH})
+    
   
   IF(WIN32)
   #TODO: revise this section, finding libtiff on windows appears buggy
@@ -250,7 +252,7 @@ IF(TIFF_FOUND)
 
   add_executable(sqy sqy.cpp)
   if(WIN32)
-  target_link_libraries(sqy tiff ext_lz4 ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries} ${HDF5_LIBRARIES})
+  target_link_libraries(sqy TIFF::TIFF ext_lz4 ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries} ${HDF5_LIBRARIES})
   else()
   target_link_libraries(sqy ext_tiff ext_lz4 ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries} ${HDF5_LIBRARIES})
   endif()

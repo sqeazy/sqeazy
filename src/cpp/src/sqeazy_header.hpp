@@ -90,7 +90,7 @@ namespace sqeazy {
 
     std::string header_;
     
-    std::vector<unsigned long> raw_shape_;
+    std::vector<std::size_t> raw_shape_;
     std::string pipeline_;
     std::string raw_type_name_;
     std::intmax_t compressed_size_byte_;
@@ -439,7 +439,7 @@ header_ = "";
       return header_.size();
     }
 
-     std::vector<unsigned long> const * shape() const {
+     std::vector<std::size_t> const * shape() const {
       return &raw_shape_;
     }
 
@@ -563,7 +563,7 @@ header_ = "";
 
     }
     
-    static const std::vector<unsigned long> unpack_shape(const char* _buffer, const unsigned& _size) {
+    static const std::vector<std::size_t> unpack_shape(const char* _buffer, const unsigned& _size) {
       
       image_header unpacked = unpack(_buffer,_buffer + _size);
       return unpacked.raw_shape_;
