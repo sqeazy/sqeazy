@@ -113,7 +113,8 @@ BOOST_AUTO_TEST_CASE( av_codec_context_open ){
   BOOST_REQUIRE(ctx.get());
   ctx.get()->width = 124;
   ctx.get()->height = 456;
-  ctx.get()->time_base = (AVRational){1,25};
+  AVRational temp = { 1,25 };
+  ctx.get()->time_base = temp;
   ctx.get()->gop_size = 10;
   ctx.get()->max_b_frames = 1;
   ctx.get()->pix_fmt = AV_PIX_FMT_YUV420P;

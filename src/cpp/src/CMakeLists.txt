@@ -9,10 +9,19 @@ IF(EXISTS ${HDF5_ROOT})
 ENDIF(EXISTS ${HDF5_ROOT})
 
 
+
 FIND_PACKAGE(HDF5 1.8 QUIET REQUIRED CXX HL)
 IF(HDF5_FOUND)
   INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIRS})
-
+  #only required for hdf5 1.8.16 and newer
+  #http://hdf-forum.184993.n3.nabble.com/Re-linking-HDF5-with-VS2015-C-64-bit-only-works-with-static-libraries-td4028678.html
+  
+  if(WIN32)
+  add_definitions(/DH5_BUILT_AS_DYNAMIC_LIB=1)
+  else()
+  add_definitions(-DH5_BUILT_AS_DYNAMIC_LIB=1)
+  endif()
+  
   #to discard compiler warnings in Debug mode
   IF(${CMAKE_BUILD_TYPE} MATCHES "Debug")
     SET(FORTIFY_INDEX "")
@@ -36,33 +45,38 @@ ELSE()
 MESSAGE(WARNING "[src/cpp/src] HDF5 not found!")
 ENDIF()
 
+include(CheckFunctionExists)
+CHECK_FUNCTION_EXISTS(pow EXTRA_LIBM_NOT_NEEDED)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-find_package(FFMPEG REQUIRED)
+find_package(FFMPEG REQUIRED QUIET)
 IF(FFMPEG_FOUND)
 	INCLUDE_DIRECTORIES(${FFMPEG_INCLUDE_DIRS})
 	LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
 
-	add_library(ext_avcodec SHARED IMPORTED)
-	add_library(ext_avutil SHARED IMPORTED)
-	add_library(ext_avformat SHARED IMPORTED)
-	add_library(ext_swscale SHARED IMPORTED)	
+	# add_library(ext_avcodec SHARED IMPORTED)
+	# add_library(ext_avutil SHARED IMPORTED)
+	# add_library(ext_avformat SHARED IMPORTED)
+	# add_library(ext_swscale SHARED IMPORTED)	
 	
-	IF(WIN32) 
-		set_target_properties(ext_avcodec  PROPERTIES IMPORTED_IMPLIB "${FFMPEG_AVCODEC_LIBRARIES}")
-		set_target_properties(ext_avutil   PROPERTIES IMPORTED_IMPLIB "${FFMPEG_AVUTIL_LIBRARIES}")
-		set_target_properties(ext_avformat PROPERTIES IMPORTED_IMPLIB "${FFMPEG_AVFORMAT_LIBRARIES}")
-		set_target_properties(ext_swscale PROPERTIES IMPORTED_IMPLIB "${FFMPEG_SWSCALE_LIBRARIES}")
-		SET(SQY_FFMPEG_Libraries ext_avcodec ext_avutil ext_avformat ext_swscale)
-	ELSE(WIN32)
-		set_target_properties(ext_avcodec  PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVCODEC_LIBRARIES}")
-		set_target_properties(ext_avutil   PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVUTIL_LIBRARIES}")
-		set_target_properties(ext_avformat PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVFORMAT_LIBRARIES}")
-		set_target_properties(ext_swscale PROPERTIES IMPORTED_LOCATION "${FFMPEG_SWSCALE_LIBRARIES}")
-		SET(SQY_FFMPEG_Libraries ext_avcodec ext_avutil ext_avformat ext_swscale m)
-	ENDIF(WIN32)
+	# IF(WIN32) 
+		# set_target_properties(ext_avcodec  PROPERTIES IMPORTED_IMPLIB "${FFMPEG_AVCODEC_LIBRARY}")
+		# set_target_properties(ext_avutil   PROPERTIES IMPORTED_IMPLIB "${FFMPEG_AVUTIL_LIBRARY}")
+		# set_target_properties(ext_avformat PROPERTIES IMPORTED_IMPLIB "${FFMPEG_AVFORMAT_LIBRARY}")
+		# set_target_properties(ext_swscale PROPERTIES IMPORTED_IMPLIB "${FFMPEG_SWSCALE_LIBRARY}")
+		# SET(SQY_FFMPEG_LIBRARY ext_avcodec ext_avutil ext_avformat ext_swscale)
+	# ELSE(WIN32)
+		# set_target_properties(ext_avcodec  PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVCODEC_LIBRARY}")
+		# set_target_properties(ext_avutil   PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVUTIL_LIBRARY}")
+		# set_target_properties(ext_avformat PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVFORMAT_LIBRARY}")
+		# set_target_properties(ext_swscale PROPERTIES IMPORTED_LOCATION "${FFMPEG_SWSCALE_LIBRARY}")
+		# SET(SQY_FFMPEG_LIBRARY ext_avcodec ext_avutil ext_avformat ext_swscale m)
+	# ENDIF(WIN32)
 
-  
+  SET(SQY_FFMPEG_Libraries ${FFMPEG_AVCODEC_LIBRARY} ${FFMPEG_AVUTIL_LIBRARY} ${FFMPEG_AVFORMAT_LIBRARY} ${FFMPEG_SWSCALE_LIBRARY})
+  if(NOT EXTRA_LIBM_NOT_NEEDED)
+	set(SQY_FFMPEG_Libraries ${SQY_FFMPEG_Libraries} m)
+  endif()
   
 ELSE()
   MESSAGE(WARNING "[src/cpp/src] FFMPEG not found!")
@@ -199,42 +213,41 @@ IF(FFMPEG_FOUND)
 ENDIF()
 
 if(DEFINED TIFF_ROOT)
+	if(EXISTS ${TIFF_ROOT})
 	list(APPEND CMAKE_PREFIX_PATH ${TIFF_ROOT})
+	else()
+	message(FATAL_ERROR "provided TIFF_ROOT ${TIFF_ROOT} does not exist")
+	endif()
 endif()
 
 FIND_PACKAGE(TIFF REQUIRED)
 IF(TIFF_FOUND)
   include_directories(${TIFF_INCLUDE_DIR})
-  get_filename_component(TIFF_LIB_PATH ${TIFF_LIBRARIES} ABSOLUTE)
+  get_filename_component(TIFF_LIB_PATH ${TIFF_LIBRARY} ABSOLUTE)
   link_directories(${TIFF_LIB_PATH})
     
+	SET(TIFF_DYN_LIB ${TIFF_LIBRARY})
+	SET(TIFF_STATIC_LIB "")
   
   IF(WIN32)
-  #TODO: revise this section, finding libtiff on windows appears buggy
-    get_filename_component(TIFF_LIB_PATH ${TIFF_LIBRARIES} ABSOLUTE)
-	link_directories(${TIFF_LIB_PATH})
-	
-	set(TIFF_IMP_LIB_GLOB "${TIFF_LIB_PATH}\*lib")
-	file(GLOB TIFF_IMP_LIB ${TIFF_IMP_LIB_GLOB})
-	
-    add_library(ext_tiff SHARED IMPORTED)
-    IF("${TIFF_LIBRARIES}" MATCHES ".*.dll$")
-		if(EXISTS "${TIFF_LIBRARIES}")
-		set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIBRARIES}") 
-		endif()	
-		if(EXISTS "${TIFF_IMP_LIB}")
-		set_target_properties(ext_tiff PROPERTIES IMPORTED_IMPLIB "${TIFF_IMP_LIB}") 
-		endif()
-    ENDIF()
-	
-	message("++ [src/cpp/src::FindTIFF] includes: ${TIFF_INCLUDE_DIR} libs: ${TIFF_LIBRARY} ${TIFF_LIBRARIES} imp_lib: ${TIFF_IMP_LIB}")
+      
+	# add_library(ext_tiff SHARED IMPORTED)
+    # IF("${TIFF_LIBRARY}" MATCHES ".*.dll$")
+		# if(EXISTS "${TIFF_LIBRARY}")
+		# set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIBRARY}") 
+		# endif()	
+		# if(EXISTS "${TIFF_IMP_LIB}")
+		# set_target_properties(ext_tiff PROPERTIES IMPORTED_IMPLIB "${TIFF_IMP_LIB}") 
+		# endif()
+    # ENDIF()
+	message("++ using ${TIFF_INCLUDE_DIR} ${TIFF_LIBRARY}")
 	
   ELSE(WIN32)
 
 
     IF(APPLE)
-      IF("${TIFF_LIBRARIES}" MATCHES ".*.so$")
-	STRING(REPLACE .so .dylib TIFF_DYN_LIB ${TIFF_LIBRARIES})
+      IF("${TIFF_LIBRARY}" MATCHES ".*.so$")
+	STRING(REPLACE .so .dylib TIFF_DYN_LIB ${TIFF_LIBRARY})
 	#Homebrew ships a static library that fails to contain important symbols
 	#STRING(REPLACE .dylib .a TIFF_STATIC_LIB ${TIFF_DYN_LIB})
       ENDIF()
@@ -247,14 +260,14 @@ IF(TIFF_FOUND)
       set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_DYN_LIB}")
     ENDIF()
 
-    
+    message("++ using ${TIFF_INCLUDE_DIR} ${TIFF_DYN_LIB}")
   ENDIF(WIN32)
 
   add_executable(sqy sqy.cpp)
   if(WIN32)
-  target_link_libraries(sqy TIFF::TIFF ext_lz4 ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries} ${HDF5_LIBRARIES})
+  target_link_libraries(sqy ext_lz4 ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries} ${HDF5_LIBRARIES} ${TIFF_LIBRARY})
   else()
-  target_link_libraries(sqy ext_tiff ext_lz4 ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries} ${HDF5_LIBRARIES})
+  target_link_libraries(sqy ext_lz4 ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries} ${HDF5_LIBRARIES} ${TIFF_LIBRARY})
   endif()
 
   INSTALL(TARGETS sqy

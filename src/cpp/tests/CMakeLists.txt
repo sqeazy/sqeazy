@@ -8,11 +8,21 @@ IF(EXISTS ${HDF5_ROOT})
 	SET(ENV{HDF5_ROOT} ${HDF5_ROOT})
 ENDIF(EXISTS ${HDF5_ROOT})
 
-#SET(HDF5_USE_STATIC_LIBRARIES TRUE)#only works on Unix
-FIND_PACKAGE(HDF5 1.8 QUIET REQUIRED CXX)
+
+
+
+FIND_PACKAGE(HDF5 1.8 QUIET REQUIRED CXX HL)
 IF(HDF5_FOUND)
   INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIRS})
 
+  #only required for hdf5 1.8.16 and newer
+  #http://hdf-forum.184993.n3.nabble.com/Re-linking-HDF5-with-VS2015-C-64-bit-only-works-with-static-libraries-td4028678.html
+
+  if(WIN32)
+  add_definitions(/DH5_BUILT_AS_DYNAMIC_LIB=1)
+  else()
+  add_definitions(-DH5_BUILT_AS_DYNAMIC_LIB=1)
+  endif()
   #to discard compiler warnings in Debug mode
   IF(${CMAKE_BUILD_TYPE} MATCHES "Debug")
     SET(FORTIFY_INDEX "")
@@ -30,38 +40,41 @@ IF(HDF5_FOUND)
   LINK_DIRECTORIES(${HDF5_LIBRARY_DIRS}) 
 ENDIF()
 
-IF(TIFF_ROOT)
-  SET(TIFF_DIR ${TIFF_ROOT})
-ENDIF()
+message("++ [tests] ${HDF5_LIBRARIES} ${HDF5_DEFINITIONS} ${HDF5_INCLUDE_DIRS} ${HDF5_LIBRARY_DIRS}")
+
+if(TIFF_ROOT)
+	if(EXISTS ${TIFF_ROOT})
+		list(APPEND CMAKE_PREFIX_PATH ${TIFF_ROOT})
+	else()
+		message(FATAL_ERROR "provided TIFF_ROOT ${TIFF_ROOT} does not exist")
+	endif()
+endif()
+
+if(DEFINED TIFF_ROOT)
+	if(EXISTS ${TIFF_ROOT})
+	list(APPEND CMAKE_PREFIX_PATH ${TIFF_ROOT})
+	else()
+	message(FATAL_ERROR "provided TIFF_ROOT ${TIFF_ROOT} does not exist")
+	endif()
+endif()
 
 FIND_PACKAGE(TIFF REQUIRED)
 IF(TIFF_FOUND)
-  INCLUDE_DIRECTORIES(${TIFF_INCLUDE_DIR})
-
-  SET(TIFF_DYN_LIB ${TIFF_LIBRARIES})
+  include_directories(${TIFF_INCLUDE_DIR})
+  get_filename_component(TIFF_LIB_PATH ${TIFF_LIBRARY} ABSOLUTE)
+  link_directories(${TIFF_LIB_PATH})
+  
+  SET(TIFF_DYN_LIB ${TIFF_LIBRARY})
   SET(TIFF_STATIC_LIB "")
   
   IF(WIN32)
-    add_library(ext_static_tiff STATIC IMPORTED)
-    IF("${TIFF_LIBRARIES}" MATCHES ".*.dll$")
-      STRING(REPLACE .dll .lib TIFF_STATIC_LIB ${TIFF_LIBRARIES})
-    ELSE()
-      SET(TIFF_STATIC_LIB ${TIFF_LIBRARIES})
-    ENDIF()
-    set_target_properties(ext_static_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_STATIC_LIB}") 
-
-    add_library(ext_dyn_tiff SHARED IMPORTED)
-    IF("${TIFF_LIBRARIES}" MATCHES ".*.dll$")
-      STRING(REPLACE .dll _i.lib TIFF_IMP_LIB ${TIFF_LIBRARIES})
-      set_target_properties(ext_dyn_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIBRARIES}") 
-      set_target_properties(ext_dyn_tiff PROPERTIES IMPORTED_IMPLIB "${TIFF_IMP_LIB}") 
-    ENDIF()
-
+    message("++ [tests] using ${TIFF_INCLUDE_DIR} ${TIFF_LIBRARY}")
+	
   ELSE(WIN32)
 
     IF(APPLE)
-      IF("${TIFF_LIBRARIES}" MATCHES ".*.so$")
-	STRING(REPLACE .so .dylib TIFF_DYN_LIB ${TIFF_LIBRARIES})
+      IF("${TIFF_LIBRARY}" MATCHES ".*.so$")
+	STRING(REPLACE .so .dylib TIFF_DYN_LIB ${TIFF_LIBRARY})
 	#Homebrew ships a static library that fails to contain important symbols
 	#STRING(REPLACE .dylib .a TIFF_STATIC_LIB ${TIFF_DYN_LIB})
       ENDIF()
@@ -93,7 +106,8 @@ IF(WIN32)
   
   add_library(ext_hdf5 SHARED IMPORTED)
   set_target_properties(ext_hdf5 PROPERTIES IMPORTED_LOCATION "${HDF5_LIBRARIES}")
-
+	
+  
   # add_library(ext_tiff STATIC IMPORTED)
 
   set(SQY_LIB ${PROJECT_NAME}_static)
@@ -114,7 +128,7 @@ ENDIF(WIN32)
 
 
 
-# set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIBRARIES}") 
+# set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIBRARY}") 
 
 FIND_PACKAGE (Boost 1.42 QUIET COMPONENTS regex system filesystem unit_test_framework REQUIRED)
 IF(Boost_FOUND)
@@ -210,69 +224,79 @@ target_link_libraries(test_yuv_utils ${Boost_LIBRARIES})
 IF(TIFF_FOUND)
 
 add_executable(test_tiff_fixture test_tiff_fixture.cpp)
-target_link_libraries(test_tiff_fixture ${Boost_LIBRARIES} ext_tiff)
+target_link_libraries(test_tiff_fixture ${Boost_LIBRARIES} ${TIFF_LIBRARY})
 set_target_properties(test_tiff_fixture PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/bench")
 
 
 
 
 add_executable(test_huffman_utils_impl test_huffman_utils_impl.cpp)
-target_link_libraries(test_huffman_utils_impl ${Boost_LIBRARIES} ext_tiff)
+target_link_libraries(test_huffman_utils_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY})
 
 add_executable(test_volume_fixtures test_volume_fixtures.cpp)
-target_link_libraries(test_volume_fixtures ${Boost_LIBRARIES} ext_tiff)
+target_link_libraries(test_volume_fixtures ${Boost_LIBRARIES} ${TIFF_LIBRARY})
 
 
 
+include(CheckFunctionExists)
+CHECK_FUNCTION_EXISTS(pow EXTRA_LIBM_NOT_NEEDED)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-find_package(FFMPEG REQUIRED)
+find_package(FFMPEG REQUIRED QUIET)
 
 IF(FFMPEG_FOUND)
   INCLUDE_DIRECTORIES(${FFMPEG_INCLUDE_DIRS})
-  LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
-    
+  if(WIN32)
+	LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}\\lib)
+	else()
+	LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
+    endif()
+	
   add_library(ext_avcodec SHARED IMPORTED)
-  set_target_properties(ext_avcodec PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVCODEC_LIBRARIES}")
+  set_target_properties(ext_avcodec PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVCODEC_LIBRARY}")
 
   add_library(ext_avutil SHARED IMPORTED)
-  set_target_properties(ext_avutil PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVUTIL_LIBRARIES}")
+  set_target_properties(ext_avutil PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVUTIL_LIBRARY}")
 
   add_library(ext_avformat SHARED IMPORTED)
-  set_target_properties(ext_avformat PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVFORMAT_LIBRARIES}")
+  set_target_properties(ext_avformat PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVFORMAT_LIBRARY}")
 
   add_library(ext_swscale SHARED IMPORTED)
-  set_target_properties(ext_swscale PROPERTIES IMPORTED_LOCATION "${FFMPEG_SWSCALE_LIBRARIES}")
-  SET(SQY_FFMPEG_Libraries ext_avcodec ext_avutil ext_avformat ext_swscale m)
-
+  set_target_properties(ext_swscale PROPERTIES IMPORTED_LOCATION "${FFMPEG_SWSCALE_LIBRARY}")
+  
+  
+  SET(SQY_FFMPEG_Libraries ${FFMPEG_AVCODEC_LIBRARY} ${FFMPEG_AVUTIL_LIBRARY} ${FFMPEG_AVFORMAT_LIBRARY} ${FFMPEG_SWSCALE_LIBRARY})
+  if(NOT EXTRA_LIBM_NOT_NEEDED)
+	set(SQY_FFMPEG_Libraries ${SQY_FFMPEG_Libraries} m)
+  endif()
   
   add_executable(test_avcodec_sandbox test_avcodec_sandbox.cpp)
-  target_link_libraries(test_avcodec_sandbox ${Boost_LIBRARIES} ext_tiff ${SQY_FFMPEG_Libraries})
+  target_link_libraries(test_avcodec_sandbox ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries})
 
   add_executable(deprecated_pipeline_select_impl deprecated_pipeline_select_impl.cpp)
-  target_link_libraries(deprecated_pipeline_select_impl ${Boost_LIBRARIES} ext_tiff ext_lz4 ${SQY_FFMPEG_Libraries})
+  target_link_libraries(deprecated_pipeline_select_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY} ext_lz4 ${SQY_FFMPEG_Libraries})
 #  set_target_properties(deprecated_pipeline_select_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src ")
 
   add_executable(deprecated_pipeline_impl deprecated_pipeline_impl.cpp)
   target_link_libraries(deprecated_pipeline_impl ${Boost_LIBRARIES} ext_lz4 ${SQY_FFMPEG_Libraries})
 
   add_executable(test_hevc_scheme_impl test_hevc_scheme_impl.cpp)
-  target_link_libraries(test_hevc_scheme_impl ${Boost_LIBRARIES} ext_tiff ${SQY_FFMPEG_Libraries})
+  target_link_libraries(test_hevc_scheme_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries})
 
   add_executable(test_h264_scheme_impl test_h264_scheme_impl.cpp)
-  target_link_libraries(test_h264_scheme_impl ${Boost_LIBRARIES} ext_tiff ${SQY_FFMPEG_Libraries})
+  target_link_libraries(test_h264_scheme_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries})
 
   add_executable(test_video_utils_impl test_video_utils_impl.cpp)
-  target_link_libraries(test_video_utils_impl ${Boost_LIBRARIES} ext_tiff ${SQY_FFMPEG_Libraries})
+  target_link_libraries(test_video_utils_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries})
 
 #  set_target_properties(test_hevc_scheme_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")  
 
   add_executable(test_hevc_scheme_utils test_hevc_scheme_utils.cpp)
-  target_link_libraries(test_hevc_scheme_utils ${Boost_LIBRARIES} ext_tiff ${SQY_FFMPEG_Libraries})
+  target_link_libraries(test_hevc_scheme_utils ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries})
 #  set_target_properties(test_hevc_scheme_utils PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")  
 
   add_executable(test_sqeazy_pipelines_impl test_sqeazy_pipelines_impl.cpp)
-  target_link_libraries(test_sqeazy_pipelines_impl ${Boost_LIBRARIES} ext_tiff ${SQY_FFMPEG_Libraries} ext_lz4)
+  target_link_libraries(test_sqeazy_pipelines_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries} ext_lz4)
 
   add_executable(test_hdf5_impl test_hdf5_impl.cpp)
 #  set_target_properties(test_hdf5_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src ")
@@ -283,7 +307,7 @@ ELSE(FFMPEG_FOUND)
 ENDIF(FFMPEG_FOUND)
 
 FIND_PACKAGE (Boost 1.42 QUIET COMPONENTS system filesystem unit_test_framework thread date_time REQUIRED)
-target_link_libraries(test_bench_utils_impl ${Boost_LIBRARIES} ext_tiff)
+target_link_libraries(test_bench_utils_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY})
 #set_target_properties(test_bench_utils_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")  
 
 

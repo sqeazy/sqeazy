@@ -287,11 +287,25 @@ BOOST_AUTO_TEST_CASE( _bit_extraction_for_16bit_input ){
   __m128 low_part = *reinterpret_cast<__m128*>(&v_low_items);
   int result = _mm_movemask_ps (low_part); 
 
+#ifdef WIN32 
+  __m128 test = _mm_castsi128_ps(testi);
+  __m128i swapped_hi_lo = _mm_castps_si128(_mm_movehl_ps(test, test));
+#else
   __m128 test = reinterpret_cast<__m128>(testi);
-  __m128i swapped_hi_lo = reinterpret_cast<__m128i>(_mm_movehl_ps(test,test));
+  __m128i swapped_hi_lo = reinterpret_cast<__m128i>(_mm_movehl_ps(test, test));
+#endif
+
+
+  
   __m128i v_high_items = _mm_slli_si128(_mm_cvtepu16_epi32(swapped_hi_lo),2);
-    
-  result += _mm_movemask_ps (reinterpret_cast<__m128>(v_high_items)) << 4; 
+
+#ifdef WIN32
+  __m128 v_high_items_m128 = _mm_castsi128_ps(v_high_items);
+#else
+  __m128 v_high_items_m128 = reinterpret_cast<__m128>(v_high_items);
+#endif
+
+  result += _mm_movemask_ps (v_high_items_m128) << 4; 
 
   BOOST_REQUIRE(result != 0);
   BOOST_REQUIRE(result == 0xff);
@@ -329,8 +343,13 @@ BOOST_AUTO_TEST_CASE( first_2_0_with_leading_1 ){
     input[3] = 0x80000000;
     
     __m128i v_const = _mm_load_si128(reinterpret_cast<__m128i*>(&input[0]));
+
+#ifdef WIN32
+	__m128 c_input= _mm_castsi128_ps(v_const);
+#else
     __m128 c_input = reinterpret_cast<__m128>(v_const);
-    
+#endif
+
     int result = _mm_movemask_ps(c_input);
 
     BOOST_REQUIRE(result != 3);
@@ -342,8 +361,13 @@ BOOST_AUTO_TEST_CASE( first_2_0_with_leading_1_with_shuffle ){
     input[3] = 0x80000000;
     
     __m128i v_const = _mm_load_si128(reinterpret_cast<__m128i*>(&input[0]));
-    __m128 c_input = reinterpret_cast<__m128>(_mm_shuffle_epi32(v_const,_MM_SHUFFLE(0,1,2,3)));
-    
+
+#ifdef WIN32
+	__m128 c_input = _mm_castsi128_ps(_mm_shuffle_epi32(v_const, _MM_SHUFFLE(0, 1, 2, 3)));
+#else
+	__m128 c_input = reinterpret_cast<__m128>(_mm_shuffle_epi32(v_const, _MM_SHUFFLE(0, 1, 2, 3)));
+#endif
+
     int result = _mm_movemask_ps(c_input);
 
     BOOST_REQUIRE(result == 3);

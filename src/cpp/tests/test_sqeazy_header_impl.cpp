@@ -157,12 +157,12 @@ BOOST_AUTO_TEST_CASE( encode_header_correct_values_of_dims_corner_cases )
   sqeazy::image_header hdr(value_type(),dims);
 
   std::string hstr = hdr.str();
-  std::vector<unsigned long> extracted_dims_2(sqeazy::image_header::unpack_shape(hstr.c_str(), hstr.size()));
+  std::vector<std::size_t> extracted_dims_2(sqeazy::image_header::unpack_shape(hstr.c_str(), hstr.size()));
   BOOST_CHECK_EQUAL_COLLECTIONS(dims.begin(), dims.end(), extracted_dims_2.begin(), extracted_dims_2.end());
   
   std::string header_plus_separator = hdr.str();
   header_plus_separator += "|";
-  std::vector<unsigned long> extracted_dims_3 = sqeazy::image_header::unpack_shape(header_plus_separator.c_str(), header_plus_separator.size());
+  std::vector<std::size_t> extracted_dims_3 = sqeazy::image_header::unpack_shape(header_plus_separator.c_str(), header_plus_separator.size());
   BOOST_CHECK_EQUAL_COLLECTIONS(dims.begin(), dims.end(), extracted_dims_3.begin(), extracted_dims_3.end());
 
   std::vector<unsigned> ramp_shape(dims);
