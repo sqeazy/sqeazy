@@ -190,21 +190,21 @@ task make_bundle(type:Exec) {
   
   if (Os.isFamily(Os.FAMILY_WINDOWS))
   {
-    outputs.file './build/cpp/src/libsqeazy.dll'
+    outputs.file '.\\build\\cpp\\bundle\\libsqeazy.dll'
     executable project_root+'\\run_cmake_bundle.bat'
 	/* executable 'cmake.exe'
     args ' --build . --target bundle --config Release' */
   } 
   else if (Os.isFamily(Os.FAMILY_MAC))
   {
-    outputs.file './build/cpp/src/libsqeazy.dylib'
+    outputs.file './build/cpp/bundle/libsqeazy.dylib'
     executable 'make'
     args 'bundle'
 
   } 
   else if (Os.isFamily(Os.FAMILY_UNIX))
   {
-    outputs.file './build/cpp/src/libsqeazy.so'
+    outputs.file './build/cpp/bundle/libsqeazy.so'
     executable 'make'
     args 'bundle'
   }
@@ -217,7 +217,10 @@ def zinpath = file(native_build_dir).absolutePath+'/bundle'
   println ">> zip_bundle: "+zinpath+" .. "+file(native_build_dir).absolutePath
 from (zinpath)
 include 'lib*'
+include '*lib'
+include '*dll'
 include '*h'
+include '*hpp'
  // into 'resources' // note that this specifies path *in* the archive
  destinationDir file(native_build_dir+'/bundle') // directory that you want your archive to be placed in
  archiveName 'sqeazy_bundle.zip'

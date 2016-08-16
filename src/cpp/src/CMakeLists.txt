@@ -98,15 +98,14 @@ FIND_PACKAGE (Boost 1.55 QUIET COMPONENTS filesystem system REQUIRED)
 IF(Boost_FOUND)
   INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 ELSE()
-  MESSAGE(WARNING "[src/cpp/src] BOOST not found!")
+  message(WARNING "-- [src/cpp/src] BOOST not found!")
 ENDIF()
 
-FIND_PACKAGE(LZ4 REQUIRED)
-IF(LZ4_FOUND)
+FIND_PACKAGE(LZ4 REQUIRED QUIET)
+if(LZ4_FOUND)
   INCLUDE_DIRECTORIES(${LZ4_INCLUDE_DIRS})
   LINK_DIRECTORIES(${LZ4_LIBRARY_DIRS}) 
-  MESSAGE(STATUS "[src/cpp/src] LZ4 found !! shared: ${LZ4_SHARED_LIB} static: ${LZ4_STATIC_LIB}")
-
+  
 	IF(WIN32)
 		IF(EXISTS ${LZ4_STATIC_LIB})
 			add_library(ext_lz4 STATIC IMPORTED )
@@ -132,10 +131,11 @@ IF(LZ4_FOUND)
 		ENDIF()
 	ENDIF(WIN32)
 
-  
+else(LZ4_FOUND)
 
+message(WARNING "-- [src/cpp/src] lz4 not found!")
 
-ENDIF()
+endif(LZ4_FOUND)
 
 ########################################### GLOBAL DEFINES ######################################################
 #SET(LIST_ADDITIONAL_COMPILE_FLAGS "")
@@ -159,7 +159,7 @@ add_library(${PROJECT_NAME} SHARED sqeazy.cpp)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED YES)
 set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${PROJECT_SOURCE_DIR}/inc/sqeazy.h;${PROJECT_SOURCE_DIR}/inc/H5PLextern.h")
 
-target_link_libraries(${PROJECT_NAME} ext_lz4 ${HDF5_LIBRARIES} ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries})
+target_link_libraries(${PROJECT_NAME} ${LZ4_LIBRARY} ${HDF5_LIBRARIES} ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries})
 
 SET(SQY_SRC_TARGETS ${PROJECT_NAME})
 
@@ -206,7 +206,7 @@ IF(Boost_FOUND)
 ENDIF()
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-find_package(FFMPEG REQUIRED)
+find_package(FFMPEG REQUIRED QUIET)
 IF(FFMPEG_FOUND)
   INCLUDE_DIRECTORIES(${FFMPEG_INCLUDE_DIRS})
   LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
@@ -220,7 +220,7 @@ if(DEFINED TIFF_ROOT)
 	endif()
 endif()
 
-FIND_PACKAGE(TIFF REQUIRED)
+FIND_PACKAGE(TIFF REQUIRED QUIET)
 IF(TIFF_FOUND)
   include_directories(${TIFF_INCLUDE_DIR})
   get_filename_component(TIFF_LIB_PATH ${TIFF_LIBRARY} ABSOLUTE)
@@ -264,12 +264,9 @@ IF(TIFF_FOUND)
   ENDIF(WIN32)
 
   add_executable(sqy sqy.cpp)
-  if(WIN32)
-  target_link_libraries(sqy ext_lz4 ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries} ${HDF5_LIBRARIES} ${TIFF_LIBRARY})
-  else()
-  target_link_libraries(sqy ext_lz4 ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries} ${HDF5_LIBRARIES} ${TIFF_LIBRARY})
-  endif()
-
+  
+  target_link_libraries(sqy ${LZ4_LIBRARY} ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries} ${HDF5_LIBRARIES} ${TIFF_LIBRARY})
+  
   INSTALL(TARGETS sqy
     EXPORT sqeazy-targets 
     RUNTIME DESTINATION "${INSTALL_BIN_DIR}" 
@@ -285,7 +282,7 @@ ENDIF()
 ########################################### DEPLOYMENT LIBSQY ######################################################
 include(${PROJECT_SOURCE_DIR}/cmake/bundle_target.cmake)
 
-set(BUNDLE_DIR ${PROJECT_BINARY_DIR}/bundle CACHE STRING "directory to put bundle into")
+set(BUNDLE_DIR ${PROJECT_BINARY_DIR}/bundle CACHE STRING "directory to put sqeazy bundle into")
 set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES ${BUNDLE_DIR})
 
 bundle(${PROJECT_NAME} ${BUNDLE_DIR})

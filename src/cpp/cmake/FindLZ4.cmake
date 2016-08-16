@@ -2,6 +2,7 @@
 # This module defines
 #  LZ4_INCLUDE_DIRS, directory containing headers
 #  LZ4_LIBRARY_DIRS, directory containing lz4 libraries
+#  LZ4_LIBRARY, absolute path to lz4 library
 #  LZ4_STATIC_LIB, path to liblz4.a
 #  LZ4_FOUND, whether lz4 has been found
 set(_LZ4_ROOT $ENV{LZ4_ROOT})
@@ -45,7 +46,7 @@ if(IS_DIRECTORY ${LZ4_ROOT})
   ENDIF()
   
   if (NOT LZ4_FIND_QUIETLY)
-    message(STATUS "[FindLZ4] Found: ${LZ4_LIB_PATH} ${LZ4_INC_PATH} with LZ4_ROOT = ${LZ4_ROOT}")
+    message("** [FindLZ4] Found: ${LZ4_LIB_PATH} ${LZ4_INC_PATH} with LZ4_ROOT = ${LZ4_ROOT}")
   endif ()
   
   
@@ -58,7 +59,7 @@ else()
   # find_path(LZ4_INC_PATH lz4.h)
   # find_library(LZ4_LIB_PATH NAMES lz4)
   if (NOT LZ4_FIND_QUIETLY)
-    message(STATUS "[FindLZ4] Found: ${LZ4_LIB_PATH} ${LZ4_INC_PATH} without LZ4_ROOT")
+    message( "** [FindLZ4] Found: ${LZ4_LIB_PATH} ${LZ4_INC_PATH} without LZ4_ROOT")
   endif ()
 
 endif()
@@ -73,11 +74,13 @@ if (LZ4_INC_PATH AND LZ4_LIB_PATH)
     get_filename_component(LZ4_LIBRARY_DIRS ${LZ4_LIB_PATH} PATH)
   endif()
   set(LZ4_INCLUDE_DIRS ${LZ4_INC_PATH})
+  set(LZ4_LIBRARY ${LZ4_LIB_PATH})
 else ()
   set(LZ4_FOUND FALSE)
 endif ()
+
 if (NOT LZ4_FIND_QUIETLY)
-    message(STATUS "[FindLZ4] searching ${LZ4_LIBRARY_DIRS} for libraries")
+    message( "** [FindLZ4] searching ${LZ4_LIBRARY_DIRS} for libraries")
   endif ()
   
 if (LZ4_FOUND)
@@ -121,14 +124,14 @@ if (LZ4_FOUND)
 		ENDIF(WIN32)
 	ENDIF(UNIX)
   if (NOT LZ4_FIND_QUIETLY)
-    message(STATUS "Found LZ4 library: ${LZ4_LIBRARY_DIRS} ${LZ4_INCLUDE_DIRS} \n(static lib: ${LZ4_STATIC_LIB}), dyn lib: ${LZ4_SHARED_LIB}")
+    message( "** Found LZ4 library: ${LZ4_LIBRARY_DIRS} ${LZ4_INCLUDE_DIRS} \n(static lib: ${LZ4_STATIC_LIB}), dyn lib: ${LZ4_SHARED_LIB}")
   endif ()
 else ()
   if (NOT LZ4_FIND_QUIETLY)
-      message(WARNING "LZ4_LIB_PATH ${LZ4_LIB_PATH}")
-      message(WARNING "LZ4_INC_PATH ${LZ4_INC_PATH}")
-      message(FATAL_ERROR "LZ4 not found")
+      message(WARNING "** LZ4_LIB_PATH ${LZ4_LIB_PATH}")
+      message(WARNING "** LZ4_INC_PATH ${LZ4_INC_PATH}")
+	  message(FATAL_ERROR "** LZ4 not found **")
   endif ()
 endif ()
 
-mark_as_advanced(LZ4_LIBRARY_DIRS LZ4_INCLUDE_DIRS LZ4_STATIC_LIB LZ4_SHARED_LIB)
+mark_as_advanced(LZ4_LIBRARY LZ4_LIBRARY_DIRS LZ4_INCLUDE_DIRS LZ4_STATIC_LIB LZ4_SHARED_LIB)
