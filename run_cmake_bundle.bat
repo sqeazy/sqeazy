@@ -1,0 +1,1 @@
+cmake.exe --build . --target bundle --config Release
