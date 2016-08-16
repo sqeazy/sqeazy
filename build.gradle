@@ -191,8 +191,9 @@ task make_bundle(type:Exec) {
   if (Os.isFamily(Os.FAMILY_WINDOWS))
   {
     outputs.file './build/cpp/src/libsqeazy.dll'
-    executable 'cmake.exe'
-    args ' --build . --target bundle --config Release'
+    executable project_root+'\\run_cmake_bundle.bat'
+	/* executable 'cmake.exe'
+    args ' --build . --target bundle --config Release' */
   } 
   else if (Os.isFamily(Os.FAMILY_MAC))
   {
