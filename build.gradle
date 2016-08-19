@@ -16,6 +16,7 @@ def build_dir = './build'
 def native_source_dir = './src/cpp'
 def native_static_lib = ""
 def native_shared_lib = ""
+def supported_platforms = ['linux_x64', 'win64', 'darwin_universal']
 
 def jnaerator_platform = {
 
@@ -45,13 +46,17 @@ def jnaerator_platform = {
 }
 
 task create_build_dir << {
-  println 'create_build_dir'
+
+  description 'create custom build directory '+native_build_dir
+  
   new File(native_build_dir).mkdirs()
 }
 
 
 // cmake task:
 task cmake(type:Exec) {
+
+  description 'invoke cmake to build native libs in '+native_build_dir
   
   workingDir native_build_dir
   
@@ -149,6 +154,8 @@ task cmake(type:Exec) {
 // TODO: check if we can use multiple threads and forward that to make/cmake
 // make task:
 task make(type:Exec) {
+
+  description 'compile native code'
   
   inputs.dir file(native_build_dir).absolutePath
 
@@ -184,6 +191,8 @@ task make(type:Exec) {
 // TODO: check if we can use multiple threads and forward that to make/cmake
 // make task:
 task make_bundle(type:Exec) {
+
+  description 'use cmake to bundle libsqeazy.* and all first order dependencies'
   
   inputs.dir file(native_build_dir).absolutePath
 
@@ -214,6 +223,8 @@ task make_bundle(type:Exec) {
 
 task zip_bundle(type:Zip) {
 
+  description 'zip the libsqeazy.* bundle'
+  
   def zinpath = file(native_build_dir).absolutePath+'/bundle'
 
   from (zinpath)
@@ -234,6 +245,8 @@ task zip_bundle(type:Zip) {
 
 task upload_bundle(type:Exec) {
 
+  description 'upload the libsqeazy* bundle to bintray for the current platform'
+  
   inputs.files zip_bundle.outputs.files
   def outputs_exp = file(native_build_dir+'/bundle/').absolutePath
   workingDir outputs_exp
@@ -262,6 +275,8 @@ task upload_bundle(type:Exec) {
 
 
 task fetch_version {
+
+  description 'download all known libsqeazy* bundles from bintray'
   
   def version_to_fetch = project.hasProperty("version_to_fetch") ? version_to_fetch : version
 
@@ -271,17 +286,15 @@ task fetch_version {
     bdir.mkdir()
 
   def download_dir = file(build_dir+'/distribution/')
-
-  
   
   if(!download_dir.exists())
     download_dir.mkdir()
 
   
   def filename = 'sqeazy_bundle.zip'
-  def platforms = ['linux_x64', 'win64', 'darwin_universal']
+  
   def expected_zips = []
-  platforms.each{ String plat ->
+  supported_platforms.each{ String plat ->
     expected_zips.add(download_dir.absolutePath+'/sqeazy_bundle_'+plat+'.zip')
   }
   outputs.files expected_zips
@@ -300,7 +313,7 @@ task fetch_version {
     app_string = 'curl'
   }
 
-  platforms.each { String plat ->
+  supported_platforms.each { String plat ->
     def tgt_file = file(download_dir.absolutePath+'/sqeazy_bundle_'+plat+'.zip')
     def cmdstring = [app_string,
 		     '-L',
@@ -318,8 +331,10 @@ task fetch_version {
 
 task unpack_for_bake(type: Copy){
 
-  
   def dist_dir = fetch_version.outputs.files[0].getParent()
+  
+  description 'unpack libsqeazy* bundles from bintray to '+dist_dir
+
   def ftree = fileTree(dist_dir).include('*.zip')
   ftree.each { File bundle ->
     from zipTree(bundle)
@@ -327,11 +342,64 @@ task unpack_for_bake(type: Copy){
   }
   
   into dist_dir
+
+  def bundled_headers = []
+  supported_platforms.each{ String plat ->
+    bundled_headers.add(dist_dir+"/"+plat+"/sqeazy.h")
+  }
+  outputs.files bundled_headers
 }
 
-// Build java bindings:
+// Build java bindings base on all 
 task bake_bindings(type:JavaExec) {
 
+  def dist_dir = fetch_version.outputs.files[0].getParent()
+  description 'use libsqeazy* bundles in '+dist_dir+' to build a fat jnaerator jar'
+  classpath = files('tools/jnaerator.jar')
+  //http://stackoverflow.com/questions/29530261/how-to-use-jnaerator-with-multiple-dynamic-libraries-under-one-header/29549769#29549769
+
+  def sqy_libs = fileTree(dist_dir).include('**/libsqeazy.*')
+  def sqeazy_header = file( native_source_dir + "/inc/sqeazy.h" )
+  def bundled_headers = []
+  supported_platforms.each{ String plat ->
+    bundled_headers.add(dist_dir+"/"+plat+"/sqeazy.h")
+  }
+
+  inputs.files sqeazy_header, bundled_headers
+  outputs.files  dist_dir+'sqeazy.jar'
+
+  workingDir '.'
+  def arch = jnaerator_platform()
+
+  main = 'com.ochafik.lang.jnaerator.JNAerator'
+
+  //start with head of jnaerator args
+  def arch_flags = ['-library','sqeazy',
+		    '-f',
+		    '-o',dist_dir,
+		    '-rootPackage','src',
+		    '-package','sqeazy.bindings']
+  supported_platforms.each{ String plat ->
+    def tree_clone = fileTree(dist_dir+"/${plat}").include('**/*sqeazy.*').exclude('**/sqeazy.h').exclude('*.lib')
+    def results = tree_clone.getFiles()
+
+    if(results.size()>0){
+      arch_flags << ("-arch")
+      arch_flags << (plat)
+      arch_flags << (results[0])
+    }
+  }
+
+  //add the tail
+  ['-runtime','BridJ',
+   '-mode','StandaloneJar',
+   '-jar',"sqeazy.jar",
+   sqeazy_header.absolutePath].each{ String tail -> arch_flags << tail }
+
+  	
+  args arch_flags
+
+  outputs.file dist_dir+"/sqeazy.jar"
 }
 
 // Build java bindings:
