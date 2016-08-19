@@ -16,7 +16,7 @@ def native_source_dir = './src/cpp'
 def native_static_lib = ""
 def native_shared_lib = ""
 
-def jnaerator_plat_path = {
+def jnaerator_platform = {
 
   def is_64 = (System.getProperty("os.arch").indexOf("64") != -1)
   def plat_path = ""
@@ -218,14 +218,16 @@ task zip_bundle(type:Zip) {
   println ">> zip_bundle: "+zinpath+" .. "+file(native_build_dir).absolutePath
   
   from (zinpath)
+  into jnaerator_platform()
+  
   include 'lib*'
   include '*lib'
   include '*dll'
   include '*h'
   include '*hpp'
-  // into 'resources' // note that this specifies path *in* the archive
+  
   destinationDir file(native_build_dir+'/bundle') // directory that you want your archive to be placed in
-  archiveName jnaerator_plat_path()+'.sqeazy.zip'
+  archiveName 'sqeazy_bundle.zip'
 
   def outputs_exp = file(native_build_dir+'/bundle/').absolutePath+archiveName
   outputs.files outputs_exp
@@ -238,26 +240,25 @@ task upload_bundle(type:Exec) {
   inputs.files zip_bundle.outputs.files
   def outputs_exp = file(native_build_dir+'/bundle/').absolutePath
   workingDir outputs_exp
-  def arch = jnaerator_plat_path()
 
-  if (Os.isFamily(Os.FAMILY_WINDOWS)) 
-     {
-       inputs.files './src/cpp/inc/sqeazy.h', './build/cpp/bundle/libsqeazy.dll'
-       executable 'curl.exe'
-     } 
-     else if (Os.isFamily(Os.FAMILY_MAC)) 
-  {
-    inputs.files './src/cpp/inc/sqeazy.h', './build/cpp/bundle/libsqeazy.dylib'
-    executable 'curl'
-  }
-  else if (Os.isFamily(Os.FAMILY_UNIX)) 
-  {
-    inputs.files './src/cpp/inc/sqeazy.h', './build/cpp/bundle/libsqeazy.so'
+
+  if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+    executable 'curl.exe'
+  } 
+       
+  if (Os.isFamily(Os.FAMILY_MAC)) {
     executable 'curl'
   }
 
+  if (Os.isFamily(Os.FAMILY_UNIX)) {
+    executable 'curl'
+  }
+
+  def arch = jnaerator_platform()
   def fname = file(zip_bundle.outputs.files[0]).getName()
-  args '-T'+fname,'-u'+bintray_user+':'+bintray_key, 'https://api.bintray.com/content/psteinb/sqeazy_binaries/'+version+'/'+fname+'?publish=1';
+  def url = 'https://api.bintray.com/content/psteinb/sqeazy/'+arch+'/'+version+'/'+arch+'/'+version+'/'+fname+'?publish=1'
+  
+  args '-T'+fname,'-u'+bintray_user+':'+bintray_key, url
    
   println '>> [upload_bundle] ' + executable + ' ' + args 
 
@@ -280,7 +281,7 @@ task java_bindings(type:JavaExec) {
   outputs.file 'src/java/src/sqeazy/bindings/SqeazyLibrary.java'
 
   workingDir '.'
-  def arch = jnaerator_plat_path()
+  def arch = jnaerator_platform()
 
 
   File libsqeazy_file;
