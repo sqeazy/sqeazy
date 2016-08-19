@@ -2,7 +2,6 @@ plugins { id "com.jfrog.bintray" version "1.7" }
 
 import org.apache.tools.ant.taskdefs.condition.Os
 
-
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'maven'
@@ -10,8 +9,10 @@ apply plugin: 'maven-publish'
 
 version = '0.1.0'
 
+
 def project_root = file(".").absolutePath
 def native_build_dir = './build/cpp'
+def build_dir = './build'
 def native_source_dir = './src/cpp'
 def native_static_lib = ""
 def native_shared_lib = ""
@@ -215,8 +216,6 @@ task zip_bundle(type:Zip) {
 
   def zinpath = file(native_build_dir).absolutePath+'/bundle'
 
-  println ">> zip_bundle: "+zinpath+" .. "+file(native_build_dir).absolutePath
-  
   from (zinpath)
   into jnaerator_platform()
   
@@ -234,8 +233,6 @@ task zip_bundle(type:Zip) {
 }
 
 task upload_bundle(type:Exec) {
-
-  //curl -T <FILE.EXT> -upsteinb:<API_KEY> https://api.bintray.com/content/psteinb/sqeazy_binaries/<YOUR_COOL_PACKAGE_NAME>/<VERSION_NAME>/<FILE_TARGET_PATH>
 
   inputs.files zip_bundle.outputs.files
   def outputs_exp = file(native_build_dir+'/bundle/').absolutePath
@@ -260,7 +257,80 @@ task upload_bundle(type:Exec) {
   
   args '-T'+fname,'-u'+bintray_user+':'+bintray_key, url
    
-  println '>> [upload_bundle] ' + executable + ' ' + args 
+  
+}
+
+
+task fetch_version {
+  
+  def version_to_fetch = project.hasProperty("version_to_fetch") ? version_to_fetch : version
+
+  def bdir = file(build_dir)
+  
+  if(!bdir.exists())
+    bdir.mkdir()
+
+  def download_dir = file(build_dir+'/distribution/')
+
+  
+  
+  if(!download_dir.exists())
+    download_dir.mkdir()
+
+  
+  def filename = 'sqeazy_bundle.zip'
+  def platforms = ['linux_x64', 'win64', 'darwin_universal']
+  def expected_zips = []
+  platforms.each{ String plat ->
+    expected_zips.add(download_dir.absolutePath+'/sqeazy_bundle_'+plat+'.zip')
+  }
+  outputs.files expected_zips
+  
+  def app_string = ""
+  
+  if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+    app_string = 'curl.exe'
+  } 
+       
+  if (Os.isFamily(Os.FAMILY_MAC)) {
+    app_string = 'curl'
+  }
+
+  if (Os.isFamily(Os.FAMILY_UNIX)) {
+    app_string = 'curl'
+  }
+
+  platforms.each { String plat ->
+    def tgt_file = file(download_dir.absolutePath+'/sqeazy_bundle_'+plat+'.zip')
+    def cmdstring = [app_string,
+		     '-L',
+		     'https://dl.bintray.com/psteinb/sqeazy/'+plat+'/0.1.0/sqeazy_bundle.zip',
+		     '-o',
+		     tgt_file.absolutePath
+		    ].join(" ")
+
+    def curl_ret = cmdstring.execute()
+    println "${curl_ret.text}"
+  }
+
+  
+}
+
+task unpack_for_bake(type: Copy){
+
+  
+  def dist_dir = fetch_version.outputs.files[0].getParent()
+  def ftree = fileTree(dist_dir).include('*.zip')
+  ftree.each { File bundle ->
+    from zipTree(bundle)
+    include "**/*"
+  }
+  
+  into dist_dir
+}
+
+// Build java bindings:
+task bake_bindings(type:JavaExec) {
 
 }
 
@@ -351,18 +421,6 @@ task ctest(type:Exec) {
 
 task build_native <<  {
 
-  // if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-  //   inputs.files "./build/cpp/src/libsqeazy.dll"
-  // } 
-  // else if (Os.isFamily(Os.FAMILY_MAC))
-  // {
-  //   inputs.files "./build/cpp/src/libsqeazy.dylib"
-  // }
-  // else if (Os.isFamily(Os.FAMILY_UNIX))
-  // {
-  //   inputs.files "./build/cpp/src/libsqeazy.so"
-  // }
-
   println 'sqeazy native build successful'
   
 }
@@ -386,9 +444,6 @@ task sqeazy_available << {
     assert file("./build/cpp/src/libsqeazy.so").exists()
   }
 
-
-
-  
 }
 
 // Task dependencies:
@@ -399,9 +454,15 @@ make.dependsOn cmake
 ctest.dependsOn make
 build_native.dependsOn ctest
 
+//bundle native libraries for bintray upload
 make_bundle.dependsOn cmake
 zip_bundle.dependsOn make_bundle
 upload_bundle.dependsOn zip_bundle
+
+//fetch all bintray entries for version
+unpack_for_bake.dependsOn fetch_version
+bake_bindings.dependsOn unpack_for_bake
+
 
 //java tasks
 java_bindings.dependsOn sqeazy_available
