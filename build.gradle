@@ -1,4 +1,4 @@
-plugins { id "com.jfrog.bintray" version "1.7" }
+plugins { id "com.jfrog.bintray" version "1.7.1+" }
 
 import org.apache.tools.ant.taskdefs.condition.Os
 
@@ -7,12 +7,14 @@ apply plugin: 'eclipse'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
 
-version = '0.1.0'
+
+version '0.1.1'
 
 
 def project_root = file(".").absolutePath
 def native_build_dir = './build/cpp'
 def build_dir = './build'
+def dist_dir = build_dir+"/distribution"
 def native_source_dir = './src/cpp'
 def native_static_lib = ""
 def native_shared_lib = ""
@@ -162,17 +164,17 @@ task make(type:Exec) {
   workingDir native_build_dir
   
   if (Os.isFamily(Os.FAMILY_WINDOWS))
-    {
+      {
 	   
-      executable project_root+'\\run_cmake_build.bat'
-      //executable 'cmake.exe'
-      //args '--build .'
-      //args '--config Release'
-      //args '--target ALL_BUILD'
+	executable project_root+'\\run_cmake_build.bat'
+	//executable 'cmake.exe'
+	//args '--build .'
+	//args '--config Release'
+	//args '--target ALL_BUILD'
 	 
-      outputs.file '.\\build\\cpp\\src\\libsqeazy.dll'
-    } 
-    else if (Os.isFamily(Os.FAMILY_MAC))
+	outputs.file '.\\build\\cpp\\src\\libsqeazy.dll'
+      } 
+      else if (Os.isFamily(Os.FAMILY_MAC))
   {
     outputs.file './build/cpp/src/libsqeazy.dylib'
     def build_command = 'make'
@@ -199,13 +201,13 @@ task make_bundle(type:Exec) {
   workingDir native_build_dir
   
   if (Os.isFamily(Os.FAMILY_WINDOWS))
-    {
-      outputs.file '.\\build\\cpp\\bundle\\libsqeazy.dll'
-      executable project_root+'\\run_cmake_bundle.bat'
-      /* executable 'cmake.exe'
-	 args ' --build . --target bundle --config Release' */
-    } 
-    else if (Os.isFamily(Os.FAMILY_MAC))
+      {
+	outputs.file '.\\build\\cpp\\bundle\\libsqeazy.dll'
+	executable project_root+'\\run_cmake_bundle.bat'
+	/* executable 'cmake.exe'
+	   args ' --build . --target bundle --config Release' */
+      } 
+      else if (Os.isFamily(Os.FAMILY_MAC))
   {
     outputs.file './build/cpp/bundle/libsqeazy.dylib'
     executable 'make'
@@ -266,7 +268,7 @@ task upload_bundle(type:Exec) {
 
   def arch = jnaerator_platform()
   def fname = file(zip_bundle.outputs.files[0]).getName()
-  def url = 'https://api.bintray.com/content/psteinb/sqeazy/'+arch+'/'+version+'/'+arch+'/'+version+'/'+fname+'?publish=1'
+  def url = 'https://api.bintray.com/content/psteinb/sqeazy/'+arch+'/'+project.version+'/'+arch+'/'+project.version+'/'+fname+'?publish=1'
   
   args '-T'+fname,'-u'+bintray_user+':'+bintray_key, url
    
@@ -278,61 +280,59 @@ task fetch_version {
 
   description 'download all known libsqeazy* bundles from bintray'
   
-  def version_to_fetch = project.hasProperty("version_to_fetch") ? version_to_fetch : version
+  def version_to_fetch = project.hasProperty("version_to_fetch") ? version_to_fetch : project.version
 
   def bdir = file(build_dir)
   
   if(!bdir.exists())
     bdir.mkdir()
 
-  def download_dir = file(build_dir+'/distribution/')
+    def download_dir = file(build_dir+'/distribution/')
   
-  if(!download_dir.exists())
-    download_dir.mkdir()
+    if(!download_dir.exists())
+      download_dir.mkdir()
 
   
-  def filename = 'sqeazy_bundle.zip'
+      def filename = 'sqeazy_bundle.zip'
   
-  def expected_zips = []
-  supported_platforms.each{ String plat ->
-    expected_zips.add(download_dir.absolutePath+'/sqeazy_bundle_'+plat+'.zip')
-  }
-  outputs.files expected_zips
+      def expected_zips = []
+      supported_platforms.each{ String plat ->
+	expected_zips.add(download_dir.absolutePath+'/sqeazy_bundle_'+plat+'.zip')
+      }
+      outputs.files expected_zips
   
-  def app_string = ""
+      def app_string = ""
   
-  if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-    app_string = 'curl.exe'
-  } 
+      if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+	app_string = 'curl.exe'
+      } 
        
-  if (Os.isFamily(Os.FAMILY_MAC)) {
-    app_string = 'curl'
-  }
+      if (Os.isFamily(Os.FAMILY_MAC)) {
+	app_string = 'curl'
+      }
 
-  if (Os.isFamily(Os.FAMILY_UNIX)) {
-    app_string = 'curl'
-  }
+      if (Os.isFamily(Os.FAMILY_UNIX)) {
+	app_string = 'curl'
+      }
 
-  supported_platforms.each { String plat ->
-    def tgt_file = file(download_dir.absolutePath+'/sqeazy_bundle_'+plat+'.zip')
-    def cmdstring = [app_string,
-		     '-L',
-		     'https://dl.bintray.com/psteinb/sqeazy/'+plat+'/0.1.0/sqeazy_bundle.zip',
-		     '-o',
-		     tgt_file.absolutePath
-		    ].join(" ")
+      supported_platforms.each { String plat ->
+	def tgt_file = file(download_dir.absolutePath+'/sqeazy_bundle_'+plat+'.zip')
+	def cmdstring = [app_string,
+			 '-L',
+			 'https://dl.bintray.com/psteinb/sqeazy/'+plat+'/0.1.0/sqeazy_bundle.zip',
+			 '-o',
+			 tgt_file.absolutePath
+			].join(" ")
 
-    def curl_ret = cmdstring.execute()
-    println "${curl_ret.text}"
-  }
+	def curl_ret = cmdstring.execute()
+	//	println "${curl_ret.text}"
+      }
 
   
 }
 
 task unpack_for_bake(type: Copy){
 
-  def dist_dir = fetch_version.outputs.files[0].getParent()
-  
   description 'unpack libsqeazy* bundles from bintray to '+dist_dir
 
   def ftree = fileTree(dist_dir).include('*.zip')
@@ -341,11 +341,11 @@ task unpack_for_bake(type: Copy){
     include "**/*"
   }
   
-  into dist_dir
+  into dist_dir+"/lib"
 
   def bundled_headers = []
   supported_platforms.each{ String plat ->
-    bundled_headers.add(dist_dir+"/"+plat+"/sqeazy.h")
+    bundled_headers.add(dist_dir+"/lib/"+plat+"/sqeazy.h")
   }
   outputs.files bundled_headers
 }
@@ -353,9 +353,9 @@ task unpack_for_bake(type: Copy){
 // Build java bindings base on all 
 task bake_bindings(type:JavaExec) {
 
-  def dist_dir = fetch_version.outputs.files[0].getParent()
+
   description 'use libsqeazy* bundles in '+dist_dir+' to build a fat jnaerator jar'
-  classpath = files('tools/jnaerator.jar')
+  classpath = files('tools/jnaerator-0.13-SNAPSHOT-shaded.jar')
   //http://stackoverflow.com/questions/29530261/how-to-use-jnaerator-with-multiple-dynamic-libraries-under-one-header/29549769#29549769
 
   def sqy_libs = fileTree(dist_dir).include('**/libsqeazy.*')
@@ -378,29 +378,56 @@ task bake_bindings(type:JavaExec) {
 		    '-f',
 		    '-o',dist_dir,
 		    '-rootPackage','src',
-		    '-package','sqeazy.bindings']
+		    '-package','sqeazy.bindings',
+		    '-dependencies','avcodec,avformat,avutil,hdf5,hdf5_cpp,hdf5_hl,boost_filesystem,boost_system,lz4,swscale'
+		   ]
+
+  //adding platform identifiers
   supported_platforms.each{ String plat ->
-    def tree_clone = fileTree(dist_dir+"/${plat}").include('**/*sqeazy.*').exclude('**/sqeazy.h').exclude('*.lib')
+
+    def tree_clone = fileTree(dist_dir+"/lib/${plat}").include('*sqeazy.*').exclude('sqeazy.h').exclude('*.lib')
+        
     def results = tree_clone.getFiles()
 
     if(results.size()>0){
       arch_flags << ("-arch")
       arch_flags << (plat)
-      arch_flags << (results[0])
+      arch_flags << results.join(",")
     }
-  }
 
+  }
+  
   //add the tail
-  ['-runtime','BridJ',
-   '-mode','StandaloneJar',
-   '-jar',"sqeazy.jar",
-   sqeazy_header.absolutePath].each{ String tail -> arch_flags << tail }
+  [
+    '-runtime','BridJ',
+    '-mode','StandaloneJar',
+    '-jar',"build/sqeazy.jar",
+    sqeazy_header.absolutePath
+  ].each{ String tail -> arch_flags << tail }
 
   	
   args arch_flags
 
-  outputs.file dist_dir+"/sqeazy.jar"
+  outputs.file "build/sqeazy.jar"
 }
+
+task advertise_pie(type: Copy) {
+
+  from zipTree("build/sqeazy.jar")
+  into dist_dir
+  
+}
+
+task finish_pie(type: Jar) {
+
+  from dist_dir
+  include "**"
+  exclude "*.zip"
+  baseName 'sqeazy'
+  version project.version
+}
+
+
 
 // Build java bindings:
 task java_bindings(type:JavaExec) {
@@ -473,10 +500,10 @@ task ctest(type:Exec) {
   workingDir native_build_dir
   
   if (Os.isFamily(Os.FAMILY_WINDOWS))
-    {
-      executable 'ctest.exe -C Release'
-    } 
-    else if (Os.isFamily(Os.FAMILY_MAC))
+      {
+	executable 'ctest.exe -C Release'
+      } 
+      else if (Os.isFamily(Os.FAMILY_MAC))
   {
     executable 'ctest'
   } 
@@ -500,10 +527,10 @@ task sqeazy_available << {
   println 'checking if native libraries are present ...'
   
   if (Os.isFamily(Os.FAMILY_WINDOWS))
-    {
-      assert file("./build/cpp/src/libsqeazy.dll").exists()
-    } 
-    else if (Os.isFamily(Os.FAMILY_MAC)) 
+      {
+	assert file("./build/cpp/src/libsqeazy.dll").exists()
+      } 
+      else if (Os.isFamily(Os.FAMILY_MAC)) 
   {
     assert file("./build/cpp/src/libsqeazy.dylib").exists()
   }
@@ -527,10 +554,11 @@ make_bundle.dependsOn cmake
 zip_bundle.dependsOn make_bundle
 upload_bundle.dependsOn zip_bundle
 
-//fetch all bintray entries for version
+//fetch all bintray entries for version and build the sqeazy pie
 unpack_for_bake.dependsOn fetch_version
 bake_bindings.dependsOn unpack_for_bake
-
+advertise_pie.dependsOn bake_bindings
+finish_pie.dependsOn advertise_pie
 
 //java tasks
 java_bindings.dependsOn sqeazy_available
@@ -561,30 +589,29 @@ sourceSets
 
 sourceCompatibility = 1.6
 
-test
-  {
-    testLogging.showStandardStreams = true
-    testLogging
-    { events "passed", "skipped", "failed" }
+test  {
+  testLogging.showStandardStreams = true
+  testLogging
+  { events "passed", "skipped", "failed" }
 
-    exclude '**/demo/**'
-    exclude '**/run/**'
+  exclude '**/demo/**'
+  exclude '**/run/**'
 
-    maxHeapSize = "4G"
-  }
+  maxHeapSize = "4G"
+}
 
-  dependencies
-  {
+dependencies
+{
 
-    compile group: 'commons-collections', name: 'commons-collections', version: '3.2.1'
-    compile group: 'commons-lang', name: 'commons-lang', version: '2.6'
-    compile group: 'commons-io', name: 'commons-io', version: '2.4'
-    compile group: 'org.apache.commons', name: 'commons-math3', version: '3.4.1'
-    compile group: 'com.nativelibs4java', name: 'bridj', version: '0.7.0'
-    compile group: 'junit', name: 'junit', version: '4.+'
+  compile group: 'commons-collections', name: 'commons-collections', version: '3.2.1'
+  compile group: 'commons-lang', name: 'commons-lang', version: '2.6'
+  compile group: 'commons-io', name: 'commons-io', version: '2.4'
+  compile group: 'org.apache.commons', name: 'commons-math3', version: '3.4.1'
+  compile group: 'com.nativelibs4java', name: 'bridj', version: '0.7.0'
+  compile group: 'junit', name: 'junit', version: '4.+'
 
-    testCompile group: 'junit', name: 'junit', version: '4.+'
-  }
+  testCompile group: 'junit', name: 'junit', version: '4.+'
+}
 
 repositories
 {
@@ -622,22 +649,34 @@ group = 'net.sqeazy'
 //TODO: infer version from git!
 
 
-artifacts
-  {
-    archives sourcesJar
-    archives javadocJar
-  }
+artifacts {
+  archives sourcesJar
+  archives javadocJar
+  archives finish_pie
+}
 
-  publishing {
-    publications {
-      SqeazyArtifacts(MavenPublication) {
-	from components.java
-	groupId group
-	artifact sourcesJar { classifier "sources" }
-	version '0.1' //same than above
+publishing {
+  
+  publications {
+    SqeazyArtifacts(MavenPublication) {
+      from components.java
+      groupId 'net.single_sqeazy'
+      artifact sourcesJar { classifier "sources" }
+      version project.version
+    }
+
+    SqeazyPie(MavenPublication) {
+      
+      groupId group
+      artifact finish_pie 
+      version project.version
+      pom.withXml {
+        asNode().appendNode('description', 'sqeazy jar that contains sqy for win64, darwin_universal and linux_x64')
       }
     }
+
   }
+}
 
 if(hasProperty('bintray_user') && hasProperty('bintray_key') )
 {
@@ -647,9 +686,11 @@ if(hasProperty('bintray_user') && hasProperty('bintray_key') )
     user = bintray_user
     key =  bintray_key
 
-    publications = ['SqeazyArtifacts'] //When uploading configuration files
+    publications = ['SqeazyPie'] //When uploading configuration files
+
     dryRun = false //Whether to run this as dry-run, without deploying
     publish = true //If version should be auto published after an upload
+    
     pkg {
       repo = 'maven'
       userOrg = user //An optional organization name when the repo belongs to one of the user's orgs
@@ -668,24 +709,9 @@ if(hasProperty('bintray_user') && hasProperty('bintray_key') )
 	'images'
       ]
       publicDownloadNumbers = true
-      //attributes= ['a': ['ay1', 'ay2'], 'b': ['bee'], c: 'cee'] //Optional package-level attributes
-      //Optional version descriptor
+      
       version {
-	name = project.version //Bintray logical version name
-	desc = '.'
-	released  = new java.util.Date()
-	vcsTag = project.version
-	/*attributes = ['gradle-plugin': 'com.use.less:com.use.less.gradle:gradle-useless-plugin'] //Optional version-level attributes
-	  gpg {
-	  sign = false //Determines whether to GPG sign the files. The default is false
-	  passphrase = 'passphrase' //Optional. The passphrase for GPG signing'
-	  }
-	  mavenCentralSync {
-	  sync = false //Optional (true by default). Determines whether to sync the version to Maven Central.
-	  user = 'userToken' //OSS user token
-	  password = 'paasword' //OSS user password
-	  close = '1' //Optional property. By default the staging repository is closed and artifacts are released to Maven Central. You can optionally turn this behaviour off (by puting 0 as value) and release the version manually.
-	  }  /**/          
+	name = project.version 
       }
     }
     /**/
