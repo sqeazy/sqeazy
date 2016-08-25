@@ -213,7 +213,7 @@ IF(WIN32)
   set(Boost_USE_STATIC_RUNTIME    OFF)
 ENDIF()
 
-FIND_PACKAGE (Boost 1.55 COMPONENTS program_options regex system filesystem unit_test_framework date_time REQUIRED QUIET)
+FIND_PACKAGE (Boost 1.55 COMPONENTS program_options regex system filesystem unit_test_framework date_time thread REQUIRED QUIET)
 IF(Boost_FOUND)
   MESSAGE("++ Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES} : ${Boost_LIBRARIES}")
   INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
