@@ -54,7 +54,7 @@ ELSE(UNIX)
     set(INSTALL_SHARE_DIR CMake CACHE PATH "Installation directory for shared files")
 	
   ELSE(WIN32 AND NOT CYGWIN)
-    MESSAGE(FATAL_ERROR ">> UNKNOWN ARCHITECTURE .. unable to set share dir")
+    MESSAGE(FATAL_ERROR "UNKNOWN ARCHITECTURE .. unable to set share dir")
   ENDIF(WIN32 AND NOT CYGWIN)
 ENDIF(UNIX)
  
@@ -72,7 +72,7 @@ include_directories("${PROJECT_SOURCE_DIR}/inc")
 IF(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
    SET(CMAKE_BUILD_TYPE Release)
 ENDIF(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
-MESSAGE(STATUS ">> Setting up ${CMAKE_BUILD_TYPE} build")
+MESSAGE(STATUS "Setting up ${CMAKE_BUILD_TYPE} build")
 
 
 check_cxx_compiler_flag(-ftree-vectorize HAS_GCC_TREE_VECTORIZE_COMPILERFLAG)
@@ -148,6 +148,9 @@ IF( CMAKE_GENERATOR STREQUAL Xcode )
     SET( CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++" )
 ENDIF()					     
 
+if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
+    add_definitions("-DSQY_TRACE=1")
+endif()
 
 IF(HAS_FAST_MATH_COMPILERFLAG)
   SET(HOST_COMPILER_RELEASE_FLAGS "${HOST_COMPILER_RELEASE_FLAGS} -ffast-math")
@@ -160,17 +163,17 @@ SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${HOST_COMPILER_DEBUG_FLAGS}
 SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${HOST_COMPILER_DEBUG_FLAGS} ")
 
 IF(CMAKE_BUILD_TYPE STREQUAL Release)
-  MESSAGE(STATUS ">> using ${CMAKE_BUILD_TYPE} build flags: ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
+  MESSAGE(STATUS "using ${CMAKE_BUILD_TYPE} build flags: ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
 ELSE()
-  MESSAGE(STATUS ">> using ${CMAKE_BUILD_TYPE} build flags: ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
+  MESSAGE(STATUS "using ${CMAKE_BUILD_TYPE} build flags: ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
 ENDIF()
 
 IF(SQY_EXPERIMENTAL) 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_SQY_X_=1")
 set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -D_SQY_X_=1")
-MESSAGE(STATUS ">> appended experimental flags: ${CMAKE_CXX_FLAGS}")
+MESSAGE(STATUS "appended experimental flags: ${CMAKE_CXX_FLAGS}")
 else(SQY_EXPERIMENTAL)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_SQY_X_=0")
 set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -D_SQY_X_=0")
@@ -179,20 +182,25 @@ endif(SQY_EXPERIMENTAL)
 IF(UNIX)
 check_cxx_compiler_flag(-std=c++11 HAS_CPP11_COMPILERFLAG)
 ELSE(UNIX)
-  
   SET(HAS_CPP11_COMPILERFLAG "NOT NEEDED")
 ENDIF(UNIX)
+
 
 #lz4 is needed for the entire project, so let's include it here
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
+################################# DEPENDENCIES #################################
+
+#-------------------------------- LZ4          ---------------------------------
 FIND_PACKAGE(LZ4 REQUIRED QUIET)
-IF(LZ4_FOUND)
-INCLUDE_DIRECTORIES(${LZ4_INCLUDE_DIRS})
-LINK_DIRECTORIES(${LZ4_LIBRARY_DIRS}) 
-ENDIF()
+if(LZ4_FOUND)
+  INCLUDE_DIRECTORIES(${LZ4_INCLUDE_DIRS})
+  LINK_DIRECTORIES(${LZ4_LIBRARY_DIRS})
+else()
+  MESSAGE(FATAL_ERROR "++ lz4 not found!")
+endif()
 
-
+#-------------------------------- BOOST        ---------------------------------
 IF(WIN32)
   SET(Boost_USE_STATIC_LIBS ON)
   SET(Boost_USE_MULTITHREADED ON)
@@ -200,12 +208,135 @@ IF(WIN32)
 ENDIF()
 
 FIND_PACKAGE (Boost 1.55 COMPONENTS regex system filesystem unit_test_framework thread REQUIRED QUIET)
-
 IF(Boost_FOUND)
-  MESSAGE(STATUS "++ Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES}")
+  MESSAGE("++ Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES}")
   INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+else()
+  MESSAGE(FATAL_ERROR "++ Boost not found!")
+endif()
 
-  #library
+#-------------------------------- HDF5         ---------------------------------
+#needed for FindHDF5 as it expects an ENVIRONMENT variable called HDF5_ROOT as hint to the HDF5 path
+IF(EXISTS ${HDF5_ROOT})
+  SET(ENV{HDF5_ROOT} ${HDF5_ROOT})
+ENDIF(EXISTS ${HDF5_ROOT})
+
+FIND_PACKAGE(HDF5 1.8 QUIET REQUIRED CXX HL)
+IF(HDF5_FOUND)
+  INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIRS})
+  #only required for hdf5 1.8.16 and newer
+  #http://hdf-forum.184993.n3.nabble.com/Re-linking-HDF5-with-VS2015-C-64-bit-only-works-with-static-libraries-td4028678.html
+  if(WIN32)
+    add_definitions(/DH5_BUILT_AS_DYNAMIC_LIB=1)
+  else()
+    add_definitions(-DH5_BUILT_AS_DYNAMIC_LIB=1)
+  endif()
+  
+  #to discard compiler warnings in Debug mode
+  IF(${CMAKE_BUILD_TYPE} MATCHES "Debug")
+    SET(FORTIFY_INDEX "")
+    list(FIND HDF5_DEFINITIONS "-D_FORTIFY_SOURCE=2" FORTIFY_INDEX)
+    
+    IF(${FORTIFY_INDEX} GREATER -1)
+      list(REMOVE_AT HDF5_DEFINITIONS ${FORTIFY_INDEX})
+      list(APPEND HDF5_DEFINITIONS -D_FORTIFY_SOURCE=0)
+    ENDIF()
+
+  ENDIF()
+  
+  ADD_DEFINITIONS(${HDF5_DEFINITIONS})
+  IF(DEFINED HDF5_LIBRARY_DIRS)
+	LINK_DIRECTORIES(${HDF5_LIBRARY_DIRS}) 
+  ENDIF()
+
+  MESSAGE("++ hdf5 found at ${HDF5_INCLUDE_DIRS} ${HDF5_LIBRARY_DIRS} : ${HDF5_LIBRARIES}")
+ELSE()
+MESSAGE(FATAL_ERROR "++ HDF5 not found!")
+ENDIF()
+
+#-------------------------------- FFMPEG       ---------------------------------
+include(CheckFunctionExists)
+CHECK_FUNCTION_EXISTS(pow EXTRA_LIBM_NOT_NEEDED)
+
+find_package(FFMPEG REQUIRED QUIET)
+IF(FFMPEG_FOUND)
+	INCLUDE_DIRECTORIES(${FFMPEG_INCLUDE_DIRS})
+	LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
+
+  SET(SQY_FFMPEG_Libraries ${FFMPEG_AVCODEC_LIBRARY} ${FFMPEG_AVUTIL_LIBRARY} ${FFMPEG_AVFORMAT_LIBRARY} ${FFMPEG_SWSCALE_LIBRARY})
+  if(NOT EXTRA_LIBM_NOT_NEEDED)
+	set(SQY_FFMPEG_Libraries ${SQY_FFMPEG_Libraries} m)
+  endif()
+  MESSAGE("++ FFMPEG found at ${FFMPEG_INCLUDE_DIRS} ${FFMPEG_ROOT_DIR}/lib")
+ELSE()
+  MESSAGE(WARNING "++ FFMPEG not found!")
+ENDIF()
+
+
+#-------------------------------- TIFF       ---------------------------------
+
+if(TIFF_ROOT)
+	if(EXISTS ${TIFF_ROOT})
+		list(APPEND CMAKE_PREFIX_PATH ${TIFF_ROOT})
+	else()
+		message(FATAL_ERROR "provided TIFF_ROOT ${TIFF_ROOT} does not exist")
+	endif()
+endif()
+
+if(DEFINED TIFF_ROOT)
+	if(EXISTS ${TIFF_ROOT})
+	list(APPEND CMAKE_PREFIX_PATH ${TIFF_ROOT})
+	else()
+	message(FATAL_ERROR "provided TIFF_ROOT ${TIFF_ROOT} does not exist")
+	endif()
+endif()
+
+FIND_PACKAGE(TIFF REQUIRED QUIET)
+IF(TIFF_FOUND)
+  include_directories(${TIFF_INCLUDE_DIR})
+  get_filename_component(TIFF_LIB_PATH ${TIFF_LIBRARY} ABSOLUTE)
+  link_directories(${TIFF_LIB_PATH})
+  
+  SET(TIFF_DYN_LIB ${TIFF_LIBRARY})
+  SET(TIFF_STATIC_LIB "")
+  
+  IF(WIN32)
+    message("++ [tests] using ${TIFF_INCLUDE_DIR} ${TIFF_LIBRARY}")
+	
+  ELSE(WIN32)
+
+    IF(APPLE)
+      IF("${TIFF_LIBRARY}" MATCHES ".*.so$")
+	STRING(REPLACE .so .dylib TIFF_DYN_LIB ${TIFF_LIBRARY})
+	#Homebrew ships a static library that fails to contain important symbols
+	#STRING(REPLACE .dylib .a TIFF_STATIC_LIB ${TIFF_DYN_LIB})
+      ENDIF()
+    ELSE()
+      STRING(REPLACE .so .a TIFF_STATIC_LIB ${TIFF_DYN_LIB})
+    ENDIF()
+
+    #FIXME: static includes of libtiff showed missing symbols (mostly deflate, there must be a depenency to libz or something)
+    # IF(EXISTS ${TIFF_STATIC_LIB})
+    #   add_library(ext_tiff STATIC IMPORTED)
+    #   set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_STATIC_LIB}")
+    # ELSE()
+      IF(EXISTS ${TIFF_DYN_LIB})
+	add_library(ext_tiff SHARED IMPORTED)
+	set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_DYN_LIB}")
+      ENDIF()
+    # ENDIF()
+    
+  ENDIF(WIN32)
+  
+ENDIF(TIFF_FOUND)
+
+
+
+
+
+IF(Boost_FOUND AND HDF5_FOUND AND LZ4_FOUND AND FFMPEG_FOUND AND TIFF_FOUND)
+
+  #library and app
   ADD_SUBDIRECTORY(src) # source code of the library
 
   #tests
@@ -215,15 +346,12 @@ IF(Boost_FOUND)
 
   
 ELSE()
-  MESSAGE(FATAL_ERROR ">> Boost libraries not found, unable to compile sqeazy")
+  MESSAGE(FATAL_ERROR "++ required dependencies not found, sqeazy cannot be build")
 ENDIF()
 
-#needed for FindHDF5 as it expects an ENVIRONMENT variable called HDF5_ROOT as hint to the HDF5 path
-IF(EXISTS ${HDF5_ROOT})
-  SET(ENV{HDF5_ROOT} ${HDF5_ROOT})
-ENDIF(EXISTS ${HDF5_ROOT})
 
-# export stuff
+################################ EXPORT/INSTALL ################################
+
 export(PACKAGE ${PROJECT_NAME})
 # Create the sqeazy-config.cmake and sqeazy-config-version files
 file(RELATIVE_PATH REL_INCLUDE_DIR "${INSTALL_SHARE_DIR}"
