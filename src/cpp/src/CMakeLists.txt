@@ -88,18 +88,19 @@ IF(WIN32)
 #http://stackoverflow.com/a/25148990
 add_definitions(-DBOOST_ALL_NO_LIB)
 
-set(Boost_USE_STATIC_LIBS        ON)
-set(Boost_USE_MULTITHREADED      ON)
-set(Boost_USE_STATIC_RUNTIME    OFF)
+# set(Boost_USE_STATIC_LIBS        ON)
+# set(Boost_USE_MULTITHREADED      ON)
+# set(Boost_USE_STATIC_RUNTIME    OFF)
 
     
 ENDIF()
-FIND_PACKAGE (Boost 1.55 QUIET COMPONENTS filesystem system REQUIRED)
-IF(Boost_FOUND)
-  INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-ELSE()
-  message(WARNING "-- [src/cpp/src] BOOST not found!")
-ENDIF()
+
+# FIND_PACKAGE (Boost 1.55 QUIET COMPONENTS filesystem system REQUIRED)
+# IF(Boost_FOUND)
+#   INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+# ELSE()
+#   message(WARNING "-- [src/cpp/src] BOOST not found!")
+# ENDIF()
 
 FIND_PACKAGE(LZ4 REQUIRED QUIET)
 if(LZ4_FOUND)

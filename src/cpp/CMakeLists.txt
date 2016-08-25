@@ -192,36 +192,30 @@ INCLUDE_DIRECTORIES(${LZ4_INCLUDE_DIRS})
 LINK_DIRECTORIES(${LZ4_LIBRARY_DIRS}) 
 ENDIF()
 
-# add subdirectories
-# src
-ADD_SUBDIRECTORY(src) # source code of the library
 
-# bench
-# IF(UNIX OR APPLE)
-#   IF(HAS_CPP11_COMPILERFLAG)
-#     ADD_SUBDIRECTORY(bench) # source code of the benchmark suite
-#     export(TARGETS bench ${PROJECT_NAME} FILE "${PROJECT_BINARY_DIR}/sqeazy-targets.cmake")
-#   ELSE()
-#     MESSAGE(WARNING ">> unable to build benchmark suite due to missing C++11 support")
-#   ENDIF()
-# ELSE()
-#   ADD_SUBDIRECTORY(bench) # source code of the benchmark suite
-#   export(TARGETS bench ${PROJECT_NAME} FILE "${PROJECT_BINARY_DIR}/sqeazy-targets.cmake")
-# ENDIF()
-
-# test
 IF(WIN32)
   SET(Boost_USE_STATIC_LIBS ON)
   SET(Boost_USE_MULTITHREADED ON)
+  set(Boost_USE_STATIC_RUNTIME    OFF)
 ENDIF()
-FIND_PACKAGE (Boost 1.55 COMPONENTS system filesystem unit_test_framework thread REQUIRED QUIET)
+
+FIND_PACKAGE (Boost 1.55 COMPONENTS regex system filesystem unit_test_framework thread REQUIRED QUIET)
+
 IF(Boost_FOUND)
-  MESSAGE(STATUS "Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES}")
+  MESSAGE(STATUS "++ Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES}")
+  INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+
+  #library
+  ADD_SUBDIRECTORY(src) # source code of the library
+
+  #tests
   ADD_SUBDIRECTORY(tests)
   enable_testing()
   include("CTestLists.txt")
+
+  
 ELSE()
-  MESSAGE(WARNING ">> Boost libraries not found, unable to compile tests (skipping)")
+  MESSAGE(FATAL_ERROR ">> Boost libraries not found, unable to compile sqeazy")
 ENDIF()
 
 #needed for FindHDF5 as it expects an ENVIRONMENT variable called HDF5_ROOT as hint to the HDF5 path

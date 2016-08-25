@@ -99,7 +99,7 @@ ENDIF(TIFF_FOUND)
 
 ##LZ4, HDF5. TIFF
 IF(WIN32)
-  set(Boost_USE_STATIC_LIBS ON)
+  #set(Boost_USE_STATIC_LIBS ON)
 
   add_library(ext_lz4 STATIC IMPORTED)
   set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_STATIC_LIB}")
@@ -126,15 +126,11 @@ ELSE(WIN32)
   set(SQY_LIB ${PROJECT_NAME})
 ENDIF(WIN32)
 
-
-
-# set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIBRARY}") 
-
-FIND_PACKAGE (Boost 1.42 QUIET COMPONENTS regex system filesystem unit_test_framework REQUIRED)
-IF(Boost_FOUND)
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-LINK_DIRECTORIES(${Boost_LIBRARY_DIRS}) 
-ENDIF()
+# FIND_PACKAGE (Boost 1.42 QUIET COMPONENTS regex system filesystem unit_test_framework REQUIRED)
+# IF(Boost_FOUND)
+# INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+# LINK_DIRECTORIES(${Boost_LIBRARY_DIRS}) 
+# ENDIF()
 
 add_executable(test_string_parsers_impl test_string_parsers_impl.cpp)
 target_link_libraries(test_string_parsers_impl ${Boost_LIBRARIES})
