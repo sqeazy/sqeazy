@@ -34,7 +34,16 @@ function(COPY_IN_FORTARGET copydest _tgt files)
   if(NOT TARGET bundle_copy_${_tgt})
     add_custom_target(bundle_copy_${_tgt})
   endif()
-  
+
+  #TODO: append .so* files for UNIX
+  if(UNIX)
+    foreach(_ITEM IN LISTS flist)
+
+      file(GLOB GLOBRESULT "${_ITEM}.*")
+      list(APPEND flist ${GLOBRESULT})
+    endforeach()
+  endif()
+
   foreach(_ITEM IN LISTS flist)
     
     get_filename_component(FNAME ${_ITEM} NAME)
@@ -113,8 +122,12 @@ function(BUNDLE tgt destdir)
   if(TGT_HDR)
     copy_in_fortarget(${destdir} ${tgt} ${TGT_HDR})
   endif()
-  
-  
+
+  #TODO: try to build shared library from static external dependencies
+  #these variables might be related:
+  #  - CMAKE_POSITION_INDEPENDENT_CODE
+  #  - BUILD_SHARED_LIBS
+  #
   add_library(bundle_${tgt} SHARED ${TGT_SRC})
   add_dependencies(bundle_copy_${tgt} bundle_directory_${tgt})
   add_dependencies(bundle_${tgt} bundle_copy_${tgt})
