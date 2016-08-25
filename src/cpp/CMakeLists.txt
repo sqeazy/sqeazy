@@ -149,8 +149,14 @@ IF( CMAKE_GENERATOR STREQUAL Xcode )
 ENDIF()					     
 
 if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
-    add_definitions("-DSQY_TRACE=1")
+  add_definitions(-DSQY_TRACE=1)
+  ADD_DEFINITIONS(-D_SQY_DEBUG_=1)
 endif()
+
+if(SQY_VERBOSE)
+  ADD_DEFINITIONS(-D_SQY_VERBOSE_=1)
+endif(SQY_VERBOSE)
+
 
 IF(HAS_FAST_MATH_COMPILERFLAG)
   SET(HOST_COMPILER_RELEASE_FLAGS "${HOST_COMPILER_RELEASE_FLAGS} -ffast-math")
@@ -207,7 +213,7 @@ IF(WIN32)
   set(Boost_USE_STATIC_RUNTIME    OFF)
 ENDIF()
 
-FIND_PACKAGE (Boost 1.55 COMPONENTS program_options regex system filesystem unit_test_framework REQUIRED QUIET)
+FIND_PACKAGE (Boost 1.55 COMPONENTS program_options regex system filesystem unit_test_framework date_time REQUIRED QUIET)
 IF(Boost_FOUND)
   MESSAGE("++ Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES} : ${Boost_LIBRARIES}")
   INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})

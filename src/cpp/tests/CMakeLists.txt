@@ -3,103 +3,8 @@ INCLUDE_DIRECTORIES(.)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/include)
 
-#needed for FindHDF5 as it expects an ENVIRONMENT variable called HDF5_ROOT as hint to the HDF5 path
-IF(EXISTS ${HDF5_ROOT})
-	SET(ENV{HDF5_ROOT} ${HDF5_ROOT})
-ENDIF(EXISTS ${HDF5_ROOT})
-
-
-
-
-# FIND_PACKAGE(HDF5 1.8 QUIET REQUIRED CXX HL)
-# IF(HDF5_FOUND)
-#   INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIRS})
-
-#   #only required for hdf5 1.8.16 and newer
-#   #http://hdf-forum.184993.n3.nabble.com/Re-linking-HDF5-with-VS2015-C-64-bit-only-works-with-static-libraries-td4028678.html
-
-#   if(WIN32)
-#   add_definitions(/DH5_BUILT_AS_DYNAMIC_LIB=1)
-#   else()
-#   add_definitions(-DH5_BUILT_AS_DYNAMIC_LIB=1)
-#   endif()
-#   #to discard compiler warnings in Debug mode
-#   IF(${CMAKE_BUILD_TYPE} MATCHES "Debug")
-#     SET(FORTIFY_INDEX "")
-#     list(FIND HDF5_DEFINITIONS "-D_FORTIFY_SOURCE=2" FORTIFY_INDEX)
-    
-#     IF(${FORTIFY_INDEX} GREATER -1)
-#       list(REMOVE_AT HDF5_DEFINITIONS ${FORTIFY_INDEX})
-#       list(APPEND HDF5_DEFINITIONS -D_FORTIFY_SOURCE=0)
-#     ENDIF()
-
-#     add_definitions("-DSQY_TRACE=1")
-#   ENDIF()
-
-#   ADD_DEFINITIONS(${HDF5_DEFINITIONS})
-#   LINK_DIRECTORIES(${HDF5_LIBRARY_DIRS}) 
-# ENDIF()
-
-message("++ [tests] ${HDF5_LIBRARIES} ${HDF5_DEFINITIONS} ${HDF5_INCLUDE_DIRS} ${HDF5_LIBRARY_DIRS}")
-
-# if(TIFF_ROOT)
-# 	if(EXISTS ${TIFF_ROOT})
-# 		list(APPEND CMAKE_PREFIX_PATH ${TIFF_ROOT})
-# 	else()
-# 		message(FATAL_ERROR "provided TIFF_ROOT ${TIFF_ROOT} does not exist")
-# 	endif()
-# endif()
-
-# if(DEFINED TIFF_ROOT)
-# 	if(EXISTS ${TIFF_ROOT})
-# 	list(APPEND CMAKE_PREFIX_PATH ${TIFF_ROOT})
-# 	else()
-# 	message(FATAL_ERROR "provided TIFF_ROOT ${TIFF_ROOT} does not exist")
-# 	endif()
-# endif()
-
-# FIND_PACKAGE(TIFF REQUIRED QUIET)
-# IF(TIFF_FOUND)
-#   include_directories(${TIFF_INCLUDE_DIR})
-#   get_filename_component(TIFF_LIB_PATH ${TIFF_LIBRARY} ABSOLUTE)
-#   link_directories(${TIFF_LIB_PATH})
-  
-#   SET(TIFF_DYN_LIB ${TIFF_LIBRARY})
-#   SET(TIFF_STATIC_LIB "")
-  
-#   IF(WIN32)
-#     message("++ [tests] using ${TIFF_INCLUDE_DIR} ${TIFF_LIBRARY}")
-	
-#   ELSE(WIN32)
-
-#     IF(APPLE)
-#       IF("${TIFF_LIBRARY}" MATCHES ".*.so$")
-# 	STRING(REPLACE .so .dylib TIFF_DYN_LIB ${TIFF_LIBRARY})
-# 	#Homebrew ships a static library that fails to contain important symbols
-# 	#STRING(REPLACE .dylib .a TIFF_STATIC_LIB ${TIFF_DYN_LIB})
-#       ENDIF()
-#     ELSE()
-#       STRING(REPLACE .so .a TIFF_STATIC_LIB ${TIFF_DYN_LIB})
-#     ENDIF()
-
-#     #FIXME: static includes of libtiff showed missing symbols (mostly deflate, there must be a depenency to libz or something)
-#     # IF(EXISTS ${TIFF_STATIC_LIB})
-#     #   add_library(ext_tiff STATIC IMPORTED)
-#     #   set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_STATIC_LIB}")
-#     # ELSE()
-#       IF(EXISTS ${TIFF_DYN_LIB})
-# 	add_library(ext_tiff SHARED IMPORTED)
-# 	set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_DYN_LIB}")
-#       ENDIF()
-#     # ENDIF()
-    
-#   ENDIF(WIN32)
-  
-# ENDIF(TIFF_FOUND)
-
 ##LZ4, HDF5. TIFF
 IF(WIN32)
-  #set(Boost_USE_STATIC_LIBS ON)
 
   add_library(ext_lz4 STATIC IMPORTED)
   set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_STATIC_LIB}")
@@ -107,9 +12,6 @@ IF(WIN32)
   add_library(ext_hdf5 SHARED IMPORTED)
   set_target_properties(ext_hdf5 PROPERTIES IMPORTED_LOCATION "${HDF5_LIBRARIES}")
 	
-  
-  # add_library(ext_tiff STATIC IMPORTED)
-
   set(SQY_LIB ${PROJECT_NAME}_static)
   
 ELSE(WIN32)
@@ -120,17 +22,11 @@ ELSE(WIN32)
   add_library(ext_hdf5 SHARED IMPORTED)
   set_target_properties(ext_hdf5 PROPERTIES IMPORTED_LOCATION "${HDF5_LIBRARIES}") 
 
-  # add_library(ext_tiff SHARED IMPORTED)
   add_definitions(-DBOOST_TEST_DYN_LINK)
 
   set(SQY_LIB ${PROJECT_NAME})
 ENDIF(WIN32)
 
-# FIND_PACKAGE (Boost 1.42 QUIET COMPONENTS regex system filesystem unit_test_framework REQUIRED)
-# IF(Boost_FOUND)
-# INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-# LINK_DIRECTORIES(${Boost_LIBRARY_DIRS}) 
-# ENDIF()
 
 add_executable(test_string_parsers_impl test_string_parsers_impl.cpp)
 target_link_libraries(test_string_parsers_impl ${Boost_LIBRARIES})
@@ -234,14 +130,13 @@ target_link_libraries(test_volume_fixtures ${Boost_LIBRARIES} ${TIFF_LIBRARY})
 
 
 
-include(CheckFunctionExists)
-CHECK_FUNCTION_EXISTS(pow EXTRA_LIBM_NOT_NEEDED)
+# include(CheckFunctionExists)
+# CHECK_FUNCTION_EXISTS(pow EXTRA_LIBM_NOT_NEEDED)
 
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-find_package(FFMPEG REQUIRED QUIET)
+# set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+# find_package(FFMPEG REQUIRED QUIET)
 
 IF(FFMPEG_FOUND)
-  INCLUDE_DIRECTORIES(${FFMPEG_INCLUDE_DIRS})
   if(WIN32)
 	LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}\\lib)
 	else()
@@ -302,7 +197,7 @@ ELSE(FFMPEG_FOUND)
   MESSAGE(">> [tests] libavcodec not found. skipping test_avcodec_sandbox ...")
 ENDIF(FFMPEG_FOUND)
 
-FIND_PACKAGE (Boost 1.42 QUIET COMPONENTS system filesystem unit_test_framework thread date_time REQUIRED)
+# FIND_PACKAGE (Boost 1.42 QUIET COMPONENTS system filesystem unit_test_framework thread date_time REQUIRED)
 target_link_libraries(test_bench_utils_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY})
 #set_target_properties(test_bench_utils_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")  
 
