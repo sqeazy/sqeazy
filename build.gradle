@@ -1,4 +1,4 @@
-plugins { id "com.jfrog.bintray" version "1.7.1+" }
+plugins { id "com.jfrog.bintray" version "1.7.1" }
 
 import org.apache.tools.ant.taskdefs.condition.Os
 
@@ -336,13 +336,15 @@ task unpack_for_bake(type: Copy){
   description 'unpack libsqeazy* bundles from bintray to '+dist_dir
 
   def ftree = fileTree(dist_dir).include('*.zip')
-  ftree.each { File bundle ->
+  ftree.getFiles().each { File bundle ->
     from zipTree(bundle)
     include "**/*"
+    
   }
   
   into dist_dir+"/lib"
 
+  
   def bundled_headers = []
   supported_platforms.each{ String plat ->
     bundled_headers.add(dist_dir+"/lib/"+plat+"/sqeazy.h")
@@ -366,7 +368,7 @@ task bake_bindings(type:JavaExec) {
   }
 
   inputs.files sqeazy_header, bundled_headers
-  outputs.files  dist_dir+'sqeazy.jar'
+  
 
   workingDir '.'
   def arch = jnaerator_platform()
@@ -401,7 +403,8 @@ task bake_bindings(type:JavaExec) {
   [
     '-runtime','BridJ',
     '-mode','StandaloneJar',
-    '-jar',"build/sqeazy.jar",
+    //'-mode','Directory',
+    '-jar','build/sqeazy.jar',
     sqeazy_header.absolutePath
   ].each{ String tail -> arch_flags << tail }
 
