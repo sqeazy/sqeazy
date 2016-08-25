@@ -177,7 +177,7 @@ if(EXISTS ${LZ4_STATIC_LIB})
   #just here to reset ${Boost_LIBRARIES}
   #REMINDER: it would be nice to use Boost_USE_STATIC_LIBS for the shared lib as well (requires an fPIC enabled installed boost)
   #set(Boost_USE_STATIC_LIBS ON)
-  FIND_PACKAGE (Boost 1.42 QUIET COMPONENTS system REQUIRED)
+  #FIND_PACKAGE (Boost 1.42 QUIET COMPONENTS system REQUIRED)
   
   target_link_libraries(${PROJECT_NAME}_static ext_lz4_static ${HDF5_LIBRARIES} ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries}) 
   IF(UNIX)
