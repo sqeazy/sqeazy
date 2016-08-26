@@ -23,18 +23,20 @@ endif()
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
  
-# version number
+# Project information
 SET (SQEAZY_NAME "Sqeazy - Fast and Flexible Volume Compression Library")
 SET (SQEAZY_CODENAME "${PROJECT_NAME}")
 SET (SQEAZY_COPYRIGHT_YEARS "2016")
 SET (SQEAZY_VERSION_MAJOR 0)
 SET (SQEAZY_VERSION_MINOR 1)
-SET (SQEAZY_VERSION_PATCH 0)
+SET (SQEAZY_VERSION_PATCH 1)
 SET (SQEAZY_VERSION "${SQEAZY_VERSION_MAJOR}.${SQEAZY_VERSION_MINOR}.${SQEAZY_VERSION_PATCH}")
 SET (SQEAZY_VENDOR_ID "mpi cbg")
 SET (SQEAZY_VENDOR_NAME "Max Planck Institute of Molecular Cell Biology and Genetics ")
 SET (SQEAZY_VENDOR_URL "www.mpi-cbg.de")
 SET (SQEAZY_ID "${SQEAZY_VENDOR_ID}.${PROJECT_NAME}")
+
+option(READY_4_BUNDLE "compile sqeazy ready for bundling" OFF)
 
 # trying to setup paths so this package can be picked up
 set(INSTALL_BIN_DIR bin CACHE PATH "Installation directory for executables")
@@ -66,7 +68,6 @@ foreach(p BIN LIB INCLUDE SHARE)
   endif()
 endforeach()
 
-include_directories("${PROJECT_SOURCE_DIR}/inc")
 
 # set project build type
 IF(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
@@ -195,6 +196,14 @@ ENDIF(UNIX)
 #lz4 is needed for the entire project, so let's include it here
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
+if(${READY_4_BUNDLE})
+  #implies that all find_package calls will primarily look for static libs
+  set(BUILD_SHARED_LIBS OFF)
+  SET(Boost_USE_STATIC_LIBS ON)
+  SET(LZ4_USE_STATIC_LIBS ON)
+  SET(FFMPEG_USE_STATIC_LIBS ON)
+endif()
+
 ################################# DEPENDENCIES #################################
 
 #-------------------------------- LZ4          ---------------------------------
@@ -202,6 +211,7 @@ FIND_PACKAGE(LZ4 REQUIRED QUIET)
 if(LZ4_FOUND)
   INCLUDE_DIRECTORIES(${LZ4_INCLUDE_DIRS})
   LINK_DIRECTORIES(${LZ4_LIBRARY_DIRS})
+  MESSAGE("++ lz4 found at ${LZ4_INCLUDE_DIRS} ${LZ4_LIBRARY_DIRS} : ${LZ4_LIBRARY}")
 else()
   MESSAGE(FATAL_ERROR "++ lz4 not found!")
 endif()
@@ -212,6 +222,7 @@ IF(WIN32)
   SET(Boost_USE_MULTITHREADED ON)
   set(Boost_USE_STATIC_RUNTIME    OFF)
 ENDIF()
+
 
 FIND_PACKAGE (Boost 1.55 COMPONENTS program_options regex system filesystem unit_test_framework date_time thread REQUIRED QUIET)
 IF(Boost_FOUND)
@@ -269,7 +280,8 @@ IF(FFMPEG_FOUND)
 	INCLUDE_DIRECTORIES(${FFMPEG_INCLUDE_DIRS})
 	LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
 
-  SET(SQY_FFMPEG_Libraries ${FFMPEG_AVCODEC_LIBRARY} ${FFMPEG_AVUTIL_LIBRARY} ${FFMPEG_AVFORMAT_LIBRARY} ${FFMPEG_SWSCALE_LIBRARY})
+  SET(SQY_FFMPEG_Libraries ${FFMPEG_AVCODEC_LIBRARY} ${FFMPEG_AVUTIL_LIBRARY} ${FFMPEG_AVFORMAT_LIBRARY} # ${FFMPEG_SWSCALE_LIBRARY}
+    )
   if(NOT EXTRA_LIBM_NOT_NEEDED)
 	set(SQY_FFMPEG_Libraries ${SQY_FFMPEG_Libraries} m)
   endif()
@@ -339,9 +351,12 @@ ENDIF(TIFF_FOUND)
 
 
 
+################################## add source ##################################
 
 IF(Boost_FOUND AND HDF5_FOUND AND LZ4_FOUND AND FFMPEG_FOUND AND TIFF_FOUND)
 
+  include_directories("${PROJECT_SOURCE_DIR}/inc")
+  
   #library and app
   ADD_SUBDIRECTORY(src) # source code of the library
 
