@@ -59,7 +59,12 @@ add_library(${PROJECT_NAME} SHARED sqeazy.cpp)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED YES)
 set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${PROJECT_SOURCE_DIR}/inc/sqeazy.h;${PROJECT_SOURCE_DIR}/inc/H5PLextern.h")
 
-target_link_libraries(${PROJECT_NAME} ${LZ4_LIBRARY} ${HDF5_LIBRARIES} ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries})
+
+if(HAS_BSYMBOLIC_COMPILERFLAG)
+  target_link_libraries(${PROJECT_NAME} ${LZ4_LIBRARY} ${HDF5_LIBRARIES} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES} "-Wl,-Bsymbolic")
+else()
+  target_link_libraries(${PROJECT_NAME} ${LZ4_LIBRARY} ${HDF5_LIBRARIES} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES})
+endif()
 
 SET(SQY_SRC_TARGETS ${PROJECT_NAME})
 
@@ -79,7 +84,7 @@ SET(SQY_SRC_TARGETS ${PROJECT_NAME})
 #   #set(Boost_USE_STATIC_LIBS ON)
 #   #FIND_PACKAGE (Boost 1.42 QUIET COMPONENTS system REQUIRED)
   
-#   target_link_libraries(${PROJECT_NAME}_static ext_lz4_static ${HDF5_LIBRARIES} ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries}) 
+#   target_link_libraries(${PROJECT_NAME}_static ext_lz4_static ${HDF5_LIBRARIES} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES}) 
 #   IF(UNIX)
 #     SET_TARGET_PROPERTIES(${PROJECT_NAME}_static PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
 #   ENDIF(UNIX)
@@ -102,7 +107,9 @@ INSTALL(TARGETS ${SQY_SRC_TARGETS}
 
 add_executable(sqy sqy.cpp)
 
-target_link_libraries(sqy ${LZ4_LIBRARY} ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries} ${HDF5_LIBRARIES} ${TIFF_LIBRARY})
+set_target_properties(sqy PROPERTIES POSITION_INDEPENDENT_CODE ON)
+message("++ [src] sqy deps: ${LZ4_LIBRARY} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES} ${HDF5_LIBRARIES} ${TIFF_LIBRARY}")
+target_link_libraries(sqy ${LZ4_LIBRARY} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES} ${HDF5_LIBRARIES} ${TIFF_LIBRARY})
 
 INSTALL(TARGETS sqy
   EXPORT sqeazy-targets 

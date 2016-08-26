@@ -75,7 +75,7 @@ IF(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
 ENDIF(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
 MESSAGE(STATUS "Setting up ${CMAKE_BUILD_TYPE} build")
 
-
+check_cxx_compiler_flag(-Wl,-Bsymbolic HAS_BSYMBOLIC_COMPILERFLAG)
 check_cxx_compiler_flag(-ftree-vectorize HAS_GCC_TREE_VECTORIZE_COMPILERFLAG)
 check_cxx_compiler_flag(-march=native HAS_MARCH_COMPILERFLAG)
 check_cxx_compiler_flag(-ffast-math HAS_FAST_MATH_COMPILERFLAG)
@@ -136,11 +136,16 @@ ENDIF()
 
 
 IF(UNIX OR APPLE)
-IF(HAS_MARCH_COMPILERFLAG)
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
-ELSE()
-  MESSAGE(WARNING "Compiler does not support -march=native!")
-ENDIF()
+  IF(HAS_MARCH_COMPILERFLAG)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+  ELSE()
+    MESSAGE(WARNING "Compiler does not support -march=native!")
+  ENDIF()
+
+  # if(HAS_BSYMBOLIC_COMPILERFLAG)
+  #   SET(CMAKE_LINK_FLAGS "${CMAKE_LINK_FLAGS} -Wl,-Bsymbolic")
+  #   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wl,-Bsymbolic")
+  # endif()
 ENDIF()
 
 #TODO: look into preference of libc++ over other std libraries
@@ -275,16 +280,17 @@ ENDIF()
 include(CheckFunctionExists)
 CHECK_FUNCTION_EXISTS(pow EXTRA_LIBM_NOT_NEEDED)
 
-find_package(FFMPEG REQUIRED QUIET)
+find_package(FFMPEG REQUIRED QUIET COMPONENTS avcodec avutil avformat swscale)
 IF(FFMPEG_FOUND)
-	INCLUDE_DIRECTORIES(${FFMPEG_INCLUDE_DIRS})
-	LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
+  INCLUDE_DIRECTORIES(${FFMPEG_INCLUDE_DIRS})
+  LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
 
-  SET(SQY_FFMPEG_Libraries ${FFMPEG_AVCODEC_LIBRARY} ${FFMPEG_AVUTIL_LIBRARY} ${FFMPEG_AVFORMAT_LIBRARY} # ${FFMPEG_SWSCALE_LIBRARY}
-    )
-  if(NOT EXTRA_LIBM_NOT_NEEDED)
-	set(SQY_FFMPEG_Libraries ${SQY_FFMPEG_Libraries} m)
-  endif()
+  # SET(SQY_FFMPEG_Libraries ${FFMPEG_AVCODEC_LIBRARY} ${FFMPEG_AVUTIL_LIBRARY} ${FFMPEG_AVFORMAT_LIBRARY} ${FFMPEG_SWSCALE_LIBRARY}
+  #   )
+  
+  # if(NOT EXTRA_LIBM_NOT_NEEDED)
+  #   set(SQY_FFMPEG_Libraries ${SQY_FFMPEG_Libraries} m)
+  # endif()
   MESSAGE("++ FFMPEG found at ${FFMPEG_INCLUDE_DIRS} ${FFMPEG_ROOT_DIR}/lib")
 ELSE()
   MESSAGE(WARNING "++ FFMPEG not found!")
