@@ -361,9 +361,12 @@ IF(Boost_FOUND AND HDF5_FOUND AND LZ4_FOUND AND FFMPEG_FOUND AND TIFF_FOUND)
   ADD_SUBDIRECTORY(src) # source code of the library
 
   #tests
-  ADD_SUBDIRECTORY(tests)
-  enable_testing()
-  include("CTestLists.txt")
+  if(NOT READY_4_BUNDLE)
+    message(STATUS "\n\n++ WARNING: READY_4_BUNDLE implies skipping the tests!")
+    ADD_SUBDIRECTORY(tests)
+    enable_testing()
+    include("CTestLists.txt")
+  endif()
 
   
 ELSE()

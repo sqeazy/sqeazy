@@ -23,11 +23,11 @@ ELSE(WIN32)
   set_target_properties(ext_hdf5 PROPERTIES IMPORTED_LOCATION "${HDF5_LIBRARIES}") 
 
   add_definitions(-DBOOST_TEST_DYN_LINK)
-
+  
   set(SQY_LIB ${PROJECT_NAME})
 ENDIF(WIN32)
 
-
+message(STATUS "[tests] ${Boost_LIBRARIES} ")
 add_executable(test_string_parsers_impl test_string_parsers_impl.cpp)
 target_link_libraries(test_string_parsers_impl ${Boost_LIBRARIES})
 
@@ -129,13 +129,6 @@ add_executable(test_volume_fixtures test_volume_fixtures.cpp)
 target_link_libraries(test_volume_fixtures ${Boost_LIBRARIES} ${TIFF_LIBRARY})
 
 
-
-# include(CheckFunctionExists)
-# CHECK_FUNCTION_EXISTS(pow EXTRA_LIBM_NOT_NEEDED)
-
-# set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-# find_package(FFMPEG REQUIRED QUIET)
-
 IF(FFMPEG_FOUND)
   if(WIN32)
 	LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}\\lib)
@@ -157,41 +150,42 @@ IF(FFMPEG_FOUND)
   
   
   SET(SQY_FFMPEG_Libraries ${FFMPEG_AVCODEC_LIBRARY} ${FFMPEG_AVUTIL_LIBRARY} ${FFMPEG_AVFORMAT_LIBRARY} ${FFMPEG_SWSCALE_LIBRARY})
+
   if(NOT EXTRA_LIBM_NOT_NEEDED)
 	set(SQY_FFMPEG_Libraries ${SQY_FFMPEG_Libraries} m)
   endif()
   
   add_executable(test_avcodec_sandbox test_avcodec_sandbox.cpp)
-  target_link_libraries(test_avcodec_sandbox ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries})
+  target_link_libraries(test_avcodec_sandbox ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${FFMPEG_LIBRARIES})
 
   add_executable(deprecated_pipeline_select_impl deprecated_pipeline_select_impl.cpp)
-  target_link_libraries(deprecated_pipeline_select_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${LZ4_LIBRARY} ${SQY_FFMPEG_Libraries})
+  target_link_libraries(deprecated_pipeline_select_impl ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} ${TIFF_LIBRARY} ${LZ4_LIBRARY} ${FFMPEG_LIBRARIES})
 #  set_target_properties(deprecated_pipeline_select_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src ")
 
   add_executable(deprecated_pipeline_impl deprecated_pipeline_impl.cpp)
-  target_link_libraries(deprecated_pipeline_impl ${Boost_LIBRARIES} ${LZ4_LIBRARY} ${SQY_FFMPEG_Libraries})
+  target_link_libraries(deprecated_pipeline_impl ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} ${LZ4_LIBRARY} ${FFMPEG_LIBRARIES})
 
   add_executable(test_hevc_scheme_impl test_hevc_scheme_impl.cpp)
-  target_link_libraries(test_hevc_scheme_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries})
+  target_link_libraries(test_hevc_scheme_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${FFMPEG_LIBRARIES})
 
   add_executable(test_h264_scheme_impl test_h264_scheme_impl.cpp)
-  target_link_libraries(test_h264_scheme_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries})
+  target_link_libraries(test_h264_scheme_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${FFMPEG_LIBRARIES})
 
   add_executable(test_video_utils_impl test_video_utils_impl.cpp)
-  target_link_libraries(test_video_utils_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries})
+  target_link_libraries(test_video_utils_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${FFMPEG_LIBRARIES})
 
 #  set_target_properties(test_hevc_scheme_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")  
 
   add_executable(test_hevc_scheme_utils test_hevc_scheme_utils.cpp)
-  target_link_libraries(test_hevc_scheme_utils ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries})
+  target_link_libraries(test_hevc_scheme_utils ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${FFMPEG_LIBRARIES})
 #  set_target_properties(test_hevc_scheme_utils PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")  
 
   add_executable(test_sqeazy_pipelines_impl test_sqeazy_pipelines_impl.cpp)
-  target_link_libraries(test_sqeazy_pipelines_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries} ${LZ4_LIBRARY})
+  target_link_libraries(test_sqeazy_pipelines_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${FFMPEG_LIBRARIES} ${LZ4_LIBRARY})
 
   add_executable(test_hdf5_impl test_hdf5_impl.cpp)
 #  set_target_properties(test_hdf5_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src ")
-  target_link_libraries(test_hdf5_impl ${HDF5_LIBRARIES} ${Boost_LIBRARIES} ${LZ4_LIBRARY} ${SQY_FFMPEG_Libraries})
+  target_link_libraries(test_hdf5_impl ${HDF5_LIBRARIES} ${Boost_LIBRARIES} ${LZ4_LIBRARY} ${FFMPEG_LIBRARIES})
 
 ELSE(FFMPEG_FOUND)
   MESSAGE(">> [tests] libavcodec not found. skipping test_avcodec_sandbox ...")
