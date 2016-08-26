@@ -111,7 +111,7 @@ SET (FFMPEG_INCLUDE_DIRS ${FFMPEG_INCLUDE_DIR})
   
 if (NOT FFMPEG_FIND_COMPONENTS)
 
-  set (FFMPEG_FIND_COMPONENTS avcodec avdevice avfilter avformat avutil postproc swresample swscale)
+  set (FFMPEG_FIND_COMPONENTS avdevice avformat avfilter avcodec  swresample swscale avutil postproc)
 endif (NOT FFMPEG_FIND_COMPONENTS)
 
 if(NOT FFMPEG_FIND_QUIETLY)
