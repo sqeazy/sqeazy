@@ -207,6 +207,7 @@ if(${READY_4_BUNDLE})
   SET(Boost_USE_STATIC_LIBS ON)
   SET(LZ4_USE_STATIC_LIBS ON)
   SET(FFMPEG_USE_STATIC_LIBS ON)
+  SET(FFMPEG_IGNORE_PKG_CONFIG ON)
 endif()
 
 ################################# DEPENDENCIES #################################
