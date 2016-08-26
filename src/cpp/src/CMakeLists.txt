@@ -104,18 +104,18 @@ INSTALL(TARGETS ${SQY_SRC_TARGETS}
 
 
 ########################################### SQY ######################################################
+if(NOT READY_4_BUNDLE)
+  add_executable(sqy sqy.cpp)
 
-add_executable(sqy sqy.cpp)
+  set_target_properties(sqy PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  message("++ [src] sqy deps: ${LZ4_LIBRARY} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES} ${HDF5_LIBRARIES} ${TIFF_LIBRARY}")
+  target_link_libraries(sqy ${LZ4_LIBRARY} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES} ${HDF5_LIBRARIES} ${TIFF_LIBRARY})
 
-set_target_properties(sqy PROPERTIES POSITION_INDEPENDENT_CODE ON)
-message("++ [src] sqy deps: ${LZ4_LIBRARY} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES} ${HDF5_LIBRARIES} ${TIFF_LIBRARY}")
-target_link_libraries(sqy ${LZ4_LIBRARY} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES} ${HDF5_LIBRARIES} ${TIFF_LIBRARY})
-
-INSTALL(TARGETS sqy
-  EXPORT sqeazy-targets 
-  RUNTIME DESTINATION "${INSTALL_BIN_DIR}" 
-  COMPONENT bin) 
-
+  INSTALL(TARGETS sqy
+    EXPORT sqeazy-targets 
+    RUNTIME DESTINATION "${INSTALL_BIN_DIR}" 
+    COMPONENT bin) 
+endif()
 
 ########################################### DEPLOYMENT LIBSQY ######################################################
 include(${PROJECT_SOURCE_DIR}/cmake/bundle_target.cmake)
