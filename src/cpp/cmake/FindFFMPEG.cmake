@@ -4,6 +4,8 @@
 # Customizable variables:
 #   FFMPEG_ROOT_DIR
 #     Specifies Ffmpeg's root directory.
+#   FFMPEG_IGNORE_PKG_CONFIG
+#     Do not use pkg_config even if availabe
 #
 # Read-only variables:
 #   FFMPEG_FOUND
@@ -130,7 +132,7 @@ endif()
 
 # FIND COMPONENTS ##############################################################
 
-if(PKG_CONFIG_FOUND)
+if(PKG_CONFIG_FOUND AND NOT FFMPEG_IGNORE_PKG_CONFIG)
   set(comp_with_fixed_names "")
   foreach(_COMP IN LISTS FFMPEG_FIND_COMPONENTS)
     if(NOT ${_COMP} MATCHES lib*)
