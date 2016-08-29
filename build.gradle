@@ -8,7 +8,7 @@ apply plugin: 'maven'
 apply plugin: 'maven-publish'
 
 
-version '0.1.1'
+version '0.2.1'
 
 
 def project_root = file(".").absolutePath
@@ -377,7 +377,7 @@ task fetch_version {
 	def tgt_file = file(download_dir.absolutePath+'/sqeazy_bundle_'+plat+'.zip')
 	def cmdstring = [app_string,
 			 '-L',
-			 'https://dl.bintray.com/psteinb/sqeazy/'+plat+'/0.1.0/sqeazy_bundle.zip',
+			 'https://dl.bintray.com/psteinb/sqeazy/'+plat+'/'+project.version+'/sqeazy_bundle.zip',
 			 '-o',
 			 tgt_file.absolutePath
 			].join(" ")
