@@ -230,7 +230,7 @@ IF(WIN32)
 ENDIF()
 
 
-FIND_PACKAGE (Boost 1.55 COMPONENTS program_options regex system filesystem unit_test_framework date_time thread REQUIRED QUIET)
+FIND_PACKAGE (Boost 1.55 COMPONENTS program_options regex system filesystem unit_test_framework REQUIRED QUIET)
 IF(Boost_FOUND)
   MESSAGE("++ Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES} : ${Boost_LIBRARIES}")
   INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
@@ -278,8 +278,6 @@ MESSAGE(FATAL_ERROR "++ HDF5 not found!")
 ENDIF()
 
 #-------------------------------- FFMPEG       ---------------------------------
-include(CheckFunctionExists)
-CHECK_FUNCTION_EXISTS(pow EXTRA_LIBM_NOT_NEEDED)
 
 find_package(FFMPEG REQUIRED COMPONENTS  avformat avcodec swscale avutil )
 IF(FFMPEG_FOUND)
@@ -362,12 +360,12 @@ IF(Boost_FOUND AND HDF5_FOUND AND LZ4_FOUND AND FFMPEG_FOUND AND TIFF_FOUND)
   ADD_SUBDIRECTORY(src) # source code of the library
 
   #tests
-  if(NOT READY_4_BUNDLE)
+#  if(NOT READY_4_BUNDLE)
     message(STATUS "\n\n++ WARNING: READY_4_BUNDLE implies skipping the tests!")
     ADD_SUBDIRECTORY(tests)
     enable_testing()
     include("CTestLists.txt")
-  endif()
+ # endif()
 
   
 ELSE()

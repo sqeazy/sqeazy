@@ -23,6 +23,18 @@ ELSE(WIN32)
   set_target_properties(ext_hdf5 PROPERTIES IMPORTED_LOCATION "${HDF5_LIBRARIES}") 
 
   add_definitions(-DBOOST_TEST_DYN_LINK)
+
+  #ATTENTION:
+  ##boost unit test framework has some defects if we wanna bind against shared and/or static libs
+  ##that's why we bind against the dynamic loaded libraries primarily
+  SET(Boost_USE_STATIC_LIBS OFF)
+  FIND_PACKAGE (Boost 1.55 COMPONENTS unit_test_framework filesystem system REQUIRED QUIET)
+  IF(Boost_FOUND)
+    MESSAGE("++ [tests] Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES} : ${Boost_LIBRARIES}")
+    INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+  else()
+    MESSAGE(FATAL_ERROR "++ Boost not found!")
+  endif()
   
   set(SQY_LIB ${PROJECT_NAME})
 ENDIF(WIN32)
@@ -59,7 +71,7 @@ add_executable(test_sqeazy_utils_impl test_sqeazy_utils_impl.cpp)
 target_link_libraries(test_sqeazy_utils_impl ${Boost_LIBRARIES} )
 
 add_executable(test_sqeazy_header_impl test_sqeazy_header_impl.cpp)
-target_link_libraries(test_sqeazy_header_impl ${SQY_LIB} ${Boost_LIBRARIES})
+target_link_libraries(test_sqeazy_header_impl ${Boost_LIBRARIES})
 
 add_executable(test_background_schemes test_background_schemes.cpp)
 target_link_libraries(test_background_schemes ${SQY_LIB} ${Boost_LIBRARIES})

@@ -6,7 +6,7 @@ function(COPY_IN copydest files)
   
   #message("++ [COPY_IN] received target dir ${copydest} and ${flist}")
   
-    
+  
   foreach(_ITEM IN LISTS flist)
     
     get_filename_component(FNAME ${_ITEM} NAME)
@@ -47,20 +47,21 @@ function(COPY_IN_FORTARGET copydest _tgt files)
   foreach(_ITEM IN LISTS flist)
     
     get_filename_component(FNAME ${_ITEM} NAME)
-    get_filename_component(RDIR ${_ITEM} REALPATH)
-    get_filename_component(RDIRFNAME ${RDIR} NAME)
 
-    #message("++ [COPY_IN] ${_ITEM} :\n ${RDIR} -> ${destdir}/${FNAME}")
-    add_custom_command(TARGET bundle_copy_${_tgt} PRE_BUILD
-                     COMMAND ${CMAKE_COMMAND} -E
-                     copy ${RDIR} ${destdir}/${FNAME})
-		   
-    # file(COPY ${RDIR} DESTINATION ${destdir})
-    # file(RENAME ${destdir}/${RDIRFNAME} ${destdir}/${FNAME})
+    if(NOT ${FNAME} MATCHES ".*${CMAKE_STATIC_LIBRARY_SUFFIX}")
+      get_filename_component(RDIR ${_ITEM} REALPATH)
+      get_filename_component(RDIRFNAME ${RDIR} NAME)
 
+      #message("++ [COPY_IN] ${_ITEM} :\n ${RDIR} -> ${destdir}/${FNAME}")
+      add_custom_command(TARGET bundle_copy_${_tgt} PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E
+        copy ${RDIR} ${destdir}/${FNAME})
+
+      unset(RDIR CACHE)
+      unset(RDIRFNAME CACHE)
+    endif()
     unset(FNAME CACHE)
-    unset(RDIR CACHE)
-    unset(RDIRFNAME CACHE)
+    
   endforeach()
 
 endfunction(COPY_IN_FORTARGET)
@@ -89,30 +90,27 @@ function(BUNDLE tgt destdir)
 
       if(EXISTS ${_LIB})
 	# message("<< [BUNDLE ${_LIB}] is a target that exists")
-	list(APPEND TGT_LIB_FILES ${_LIB} )
+	set(LIB_2_ADD ${_LIB} )
       else()
 	# message("<< [BUNDLE ${_LIB}] is a target that does not exist")
 	get_property(_LIB_IMP_LOC TARGET ${_LIB} PROPERTY IMPORTED_LOCATION)
 	get_property(_LIB_IMP_LIB TARGET ${_LIB} PROPERTY IMPORTED_IMPLIB)
-	list(APPEND TGT_LIB_FILES ${_LIB_IMP_LOC} ${_LIB_IMP_LIB} )
+	set(LIB_2_ADD ${_LIB_IMP_LOC};${_LIB_IMP_LIB} )
       endif()
     else()
 
       if(EXISTS ${_LIB})
 	# message("<< [BUNDLE ${_LIB}] is not a target that exists")
-	list(APPEND TGT_LIB_FILES ${_LIB} )
-      else()
-	# message("<< [BUNDLE ${_LIB}] is not a target that does not exist!!")
+	set(LIB_2_ADD ${_LIB} )
       endif()
       
     endif()
-  endforeach()
 
-  # if(NOT EXISTS ${destdir})
-  #   #TODO: build system time create
-  #   #http://stackoverflow.com/questions/3702115/creating-a-directory-in-cmake#3702233
-  #   file(MAKE_DIRECTORY ${destdir})
-  # endif()
+    if(NOT ${LIB_2_ADD} MATCHES ".*\.${CMAKE_STATIC_LIBRARY_SUFFIX}")
+      list(APPEND TGT_LIB_FILES ${LIB_2_ADD} )
+    endif()
+    unset(LIB_2_ADD)
+  endforeach()
 
   add_custom_target(bundle_directory_${tgt}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${destdir})
@@ -145,19 +143,19 @@ function(BUNDLE tgt destdir)
     RUNTIME_OUTPUT_DIRECTORY "${destdir}"
     )
 
-	message("++ [BUNDLE] link directories: ${destdir}")
+  message("++ [BUNDLE] link directories: ${destdir}")
   link_directories(${destdir})
   message("++ [BUNDLE] link bundle to : ")
+  
   foreach(_PATH IN LISTS TGT_LIBS)
     get_filename_component(_FNAME ${_PATH} NAME)
-    #message("++ [BUNDLE] :: ${_FNAME}")
-	if(WIN32)
-    list(APPEND DEPS_FNAME_LIST ${destdir}\\${_FNAME})
-	message("++\t ${destdir}\\${_FNAME}")
-	else()
-	list(APPEND DEPS_FNAME_LIST ${_FNAME})
-	message("++\t ${_FNAME}")
-	endif()
+    if(WIN32)
+      list(APPEND DEPS_FNAME_LIST ${destdir}\\${_FNAME})
+      message("++\t ${destdir}\\${_FNAME}")
+    else()
+      list(APPEND DEPS_FNAME_LIST ${_FNAME})
+      message("++\t ${_FNAME}")
+    endif()
   endforeach()
 
   
