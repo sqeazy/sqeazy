@@ -145,20 +145,20 @@ function(BUNDLE tgt destdir)
 
   message("++ [BUNDLE] link directories: ${destdir}")
   link_directories(${destdir})
-  message("++ [BUNDLE] link bundle to : ")
   
+  set(bundle_deps_to_print "")
   foreach(_PATH IN LISTS TGT_LIBS)
     get_filename_component(_FNAME ${_PATH} NAME)
     if(WIN32)
       list(APPEND DEPS_FNAME_LIST ${destdir}\\${_FNAME})
-      message("++\t ${destdir}\\${_FNAME}")
+      list(APPEND bundle_deps_to_print "${destdir}\\${_FNAME}")
     else()
       list(APPEND DEPS_FNAME_LIST ${_FNAME})
-      message("++\t ${_FNAME}")
+      list(APPEND bundle_deps_to_print "${_FNAME}")
     endif()
   endforeach()
 
-  
+  message("++ [BUNDLE] link bundle to : ${bundle_deps_to_print}")
   target_link_libraries(bundle_${tgt} ${DEPS_FNAME_LIST})
 
 
