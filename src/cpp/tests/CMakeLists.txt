@@ -28,7 +28,7 @@ ELSE(WIN32)
   ##boost unit test framework has some defects if we wanna bind against shared and/or static libs
   ##that's why we bind against the dynamic loaded libraries primarily
   SET(Boost_USE_STATIC_LIBS OFF)
-  FIND_PACKAGE (Boost 1.55 COMPONENTS unit_test_framework filesystem system REQUIRED QUIET)
+  FIND_PACKAGE (Boost 1.55 COMPONENTS regex unit_test_framework filesystem system REQUIRED QUIET)
   IF(Boost_FOUND)
     MESSAGE("++ [tests] Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES} : ${Boost_LIBRARIES}")
     INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
