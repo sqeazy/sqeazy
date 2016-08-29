@@ -1,17 +1,19 @@
-#define BOOST_TEST_MODULE TEST_LZ4_ENCODING_IMPL
+#define BOOST_TEST_MODULE TEST_SQEAZY_HEADER_IMPL
 #include "boost/test/unit_test.hpp"
+
 #include <numeric>
 #include <typeinfo>
+#include <vector>
+#include <iostream>
+#include <sstream>
+#include <bitset>
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
-#include <vector>
-#include <iostream>
-#include <sstream>
+
 #include "array_fixtures.hpp"
-#include <bitset>
 #include "sqeazy_header.hpp"
 
 namespace bpt = boost::property_tree;
