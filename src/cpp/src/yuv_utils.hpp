@@ -471,11 +471,6 @@ namespace sqeazy {
 
   template <typename string_it>
   static bool is_y4m_buffer(string_it _begin, string_it _end){
-
-    // static const std::regex tag_present("YUV4MPEG2.*",std::regex::egrep);
-    // static const std::regex width_present(".*[:space:]W[0-9]+[:space:].*",std::regex::egrep);
-    // static const std::regex height_present(".*[:space:]H[0-9]+[:space:].*",std::regex::egrep);
-    // static const std::regex fps_present(".*[:space:]F[0-9]+:.*",std::regex::egrep);
     
     bool value =	sqeazy::matches(_begin, _end,"YUV4MPEG2.*");
     bool width_found =  sqeazy::matches(_begin, _end,".*W[0-9]+.*");
