@@ -87,7 +87,6 @@ function(BUNDLE tgt destdir)
   foreach(_LIB IN LISTS TGT_LIBS)
 
     if(TARGET ${_LIB} )
-
       if(EXISTS ${_LIB})
 	# message("<< [BUNDLE ${_LIB}] is a target that exists")
 	set(LIB_2_ADD ${_LIB} )
@@ -146,20 +145,20 @@ function(BUNDLE tgt destdir)
   message("++ [BUNDLE] link directories: ${destdir}")
   link_directories(${destdir})
   
-  set(bundle_deps_to_print "")
+
   foreach(_PATH IN LISTS TGT_LIBS)
     get_filename_component(_FNAME ${_PATH} NAME)
     if(WIN32)
       list(APPEND DEPS_FNAME_LIST ${destdir}\\${_FNAME})
-      list(APPEND bundle_deps_to_print "${destdir}\\${_FNAME}")
     else()
-      list(APPEND DEPS_FNAME_LIST ${_FNAME})
-      list(APPEND bundle_deps_to_print "${_FNAME}")
+      if(NOT ${_FNAME} MATCHES ".*(lib|l)(m|dl|pthread)")
+	list(APPEND DEPS_FNAME_LIST ${_FNAME})
+      endif()
     endif()
   endforeach()
-
-  message("++ [BUNDLE] link bundle to : ${bundle_deps_to_print}")
-  target_link_libraries(bundle_${tgt} ${DEPS_FNAME_LIST})
+  
+  message("++ [BUNDLE] link bundle to : ${DEPS_FNAME_LIST}")
+  target_link_libraries(bundle_${tgt} ${DEPS_FNAME_LIST} pthread m dl)
 
 
 endfunction(BUNDLE)

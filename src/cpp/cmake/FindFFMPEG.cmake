@@ -55,10 +55,6 @@ INCLUDE (CheckFunctionExists)
 set( CMAKE_FIND_LIBRARY_SUFFIXES_SAV ${CMAKE_FIND_LIBRARY_SUFFIXES} )
 
 if( ${FFMPEG_USE_STATIC_LIBS} )
-  # if(UNIX)
-  #   LIST (APPEND FFMPEG_LIBRARIES x264;x265)
-  # endif()
-
   set( CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX} )
 else()
   set( CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_SHARED_LIBRARY_SUFFIX} )
@@ -237,27 +233,69 @@ else(PKG_CONFIG_FOUND AND NOT FFMPEG_IGNORE_PKG_CONFIG)
   ENDFOREACH (_FFMPEG_COMPONENT ${FFMPEG_FIND_COMPONENTS})
 endif(PKG_CONFIG_FOUND AND NOT FFMPEG_IGNORE_PKG_CONFIG)
 
-## POST_INCLUDES
+#revert CMAKE_FIND_LIBRARY_SUFFIXES
+set( CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES_SAV} )
 
-if( ${FFMPEG_USE_STATIC_LIBS} )
+
+## POST_INCLUDES
+if( ${FFMPEG_USE_STATIC_LIBS} OR NOT ${BUILD_SHARED_LIBS} )
   if(UNIX)
+    set(FFMPEG_DEPENDENCIES x264;x265;pthread;bz2;z;lzma;va;swresample;m;dl)
+
+    foreach(_DEP IN LISTS FFMPEG_DEPENDENCIES)
+      find_library(${_DEP}_STATIC_LIBRARY_PATH NAMES lib${_DEP}${CMAKE_STATIC_LIBRARY_SUFFIX})
+      find_library(${_DEP}_DYNAMIC_LIBRARY_PATH NAMES ${_DEP} lib${_DEP} lib${_DEP}${CMAKE_SHARED_LIBRARY_SUFFIX})
+
+      set(_DEP_INCLUDED FALSE)
+      
+      if(EXISTS ${${_DEP}_STATIC_LIBRARY_PATH} )
+
+	get_filename_component(${_DEP}_RDIR ${${_DEP}_STATIC_LIBRARY_PATH} ABSOLUTE)
+	get_filename_component(${_DEP}_RDIRFNAME ${${_DEP}_RDIR} DIRECTORY)
+
+
+	if(NOT (${${_DEP}_STATIC_LIBRARY_PATH} MATCHES ".*lib(pthread|bz2|m|dl)${CMAKE_STATIC_LIBRARY_SUFFIX}"))
+	  link_directories(${${_DEP}_RDIRFNAME})
+	  add_library(${_DEP} STATIC IMPORTED)
+	  set_target_properties(${_DEP} PROPERTIES IMPORTED_LOCATION ${${_DEP}_RDIR})
+	  mark_as_advanced(${_DEP})
+	  LIST (APPEND FFMPEG_LIBRARIES ${_DEP})
+	  set(_DEP_INCLUDED TRUE)
+	  message("++ [FindFFMPEG] static ${_DEP} added ${${_DEP}_STATIC_LIBRARY_PATH}")
+	endif()
+
+	
+      endif()
+      
+      if(EXISTS ${${_DEP}_DYNAMIC_LIBRARY_PATH})
+	get_filename_component(${_DEP}_RDIR ${${_DEP}_DYNAMIC_LIBRARY_PATH} ABSOLUTE)
+	get_filename_component(${_DEP}_RDIRFNAME ${${_DEP}_RDIR} DIRECTORY)
+
+
+
+	if(NOT ${_DEP_INCLUDED})
+	  add_library(${_DEP} SHARED IMPORTED)
+	  link_directories(${${_DEP}_RDIRFNAME})
+	  set_target_properties(${_DEP} PROPERTIES IMPORTED_LOCATION ${${_DEP}_RDIR})
+	  mark_as_advanced(${_DEP})
+	  LIST (APPEND FFMPEG_LIBRARIES ${_DEP})
+	  set(_DEP_INCLUDED TRUE)
+	  message("++ [FindFFMPEG] shared ${_DEP} added ${${_DEP}_DYNAMIC_LIBRARY_PATH}")
+	endif()
+
+      endif()
+
+      if(NOT ${_DEP_INCLUDED})
+	message(WARNING "unable to locate lib${_DEP}, considered a dependency of requested FFMPEG targets")
+      endif()
+
+    endforeach()
     
-    LIST (APPEND FFMPEG_LIBRARIES x264;pthread;bz2;z;lzma;va;swresample;dl)
-    find_library(X265_LIBRARY libx265${CMAKE_STATIC_LIBRARY_SUFFIX} x265)
-    if(EXISTS ${X265_LIBRARY})
-      get_filename_component(X265_RDIR ${X265_LIBRARY} REALPATH)
-      get_filename_component(X265_RDIRFNAME ${X265_RDIR} NAME)
-      link_directories(${X265_RDIRFNAME})
-      add_library(x265 STATIC IMPORTED)
-      set_target_properties(x265 PROPERTIES IMPORTED_LOCATION ${X265_LIBRARY})
-      mark_as_advanced(x265)
-      LIST (APPEND FFMPEG_LIBRARIES x265;numa)
-    endif()
-    include(CheckFunctionExists)
-    CHECK_FUNCTION_EXISTS(pow EXTRA_LIBM_NOT_NEEDED)
-    if(NOT EXTRA_LIBM_NOT_NEEDED)
-      LIST (APPEND FFMPEG_LIBRARIES m)
-    endif()
+    # include(CheckFunctionExists)
+    # CHECK_FUNCTION_EXISTS(pow EXTRA_LIBM_NOT_NEEDED)
+    # if(NOT EXTRA_LIBM_NOT_NEEDED)
+    #   LIST (APPEND FFMPEG_LIBRARIES m)
+    # endif()
   endif()
 endif()
 
@@ -375,8 +413,6 @@ IF (NOT _FFMPEG_CHECK_COMPONENTS)
  SET (_FFMPEG_FPHSA_ADDITIONAL_ARGS HANDLE_COMPONENTS)
 ENDIF (NOT _FFMPEG_CHECK_COMPONENTS)
 
-#revert CMAKE_FIND_LIBRARY_SUFFIXES
-set( CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES_SAV} )
 
 
 FIND_PACKAGE_HANDLE_STANDARD_ARGS (Ffmpeg REQUIRED_VARS FFMPEG_ROOT_DIR

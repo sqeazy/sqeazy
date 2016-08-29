@@ -208,12 +208,14 @@ if(${READY_4_BUNDLE})
   SET(LZ4_USE_STATIC_LIBS ON)
   SET(FFMPEG_USE_STATIC_LIBS ON)
   SET(FFMPEG_IGNORE_PKG_CONFIG ON)
+  set(HDF5_USE_STATIC_LIBRARIES ON)
 endif()
 
 ################################# DEPENDENCIES #################################
 
 #-------------------------------- LZ4          ---------------------------------
-FIND_PACKAGE(LZ4 REQUIRED QUIET)
+FIND_PACKAGE(LZ4 REQUIRED # QUIET
+  )
 if(LZ4_FOUND)
   INCLUDE_DIRECTORIES(${LZ4_INCLUDE_DIRS})
   LINK_DIRECTORIES(${LZ4_LIBRARY_DIRS})
@@ -361,13 +363,9 @@ IF(Boost_FOUND AND HDF5_FOUND AND LZ4_FOUND AND FFMPEG_FOUND AND TIFF_FOUND)
   ADD_SUBDIRECTORY(src) # source code of the library
 
   #tests
-#  if(NOT READY_4_BUNDLE)
-    message(STATUS "\n\n++ WARNING: READY_4_BUNDLE implies skipping the tests!")
-    ADD_SUBDIRECTORY(tests)
-    enable_testing()
-    include("CTestLists.txt")
- # endif()
-
+  ADD_SUBDIRECTORY(tests)
+  enable_testing()
+  include("CTestLists.txt")
   
 ELSE()
   MESSAGE(FATAL_ERROR "++ required dependencies not found, sqeazy cannot be build")
