@@ -5,11 +5,13 @@
 #include <iostream>
 #include <bitset>
 #include <map>
+#include <thread>
+#include <chrono>
 #include "array_fixtures.hpp"
 #include "../bench/bench_utils.hpp"
 
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/thread/thread.hpp> 
+// #include <boost/date_time/posix_time/posix_time.hpp>
+// #include <boost/thread/thread.hpp> 
 
 typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 
@@ -17,7 +19,7 @@ BOOST_FIXTURE_TEST_SUITE( measurements, uint16_cube_of_8 )
 
 BOOST_AUTO_TEST_CASE( success )
 {
-  
+
   sqeazy_bench::bcase<value_type> testme; 
   
   BOOST_CHECK_EQUAL(testme.has_run(),false);
@@ -28,7 +30,7 @@ BOOST_AUTO_TEST_CASE( success )
   BOOST_CHECK_EQUAL(testme2.filename.empty(),false);
 
 
-  boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
   testme2.stop(1024);
   BOOST_CHECK_MESSAGE(testme2.time_in_microseconds()>0.,"success received " << testme2.time_in_microseconds() << " ms");
@@ -46,7 +48,7 @@ BOOST_AUTO_TEST_CASE( copied )
   BOOST_CHECK_EQUAL(testme2.has_run(),false);
   BOOST_CHECK_EQUAL(testme2.filename.empty(),false);
   
-  boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
   testme2.stop(1024);
 
   
@@ -71,8 +73,8 @@ BOOST_AUTO_TEST_CASE( load )
   sqeazy_bench::bcase<value_type> const_case("/tmp/something", &constant_cube[0], dims);
   sqeazy_bench::bcase<value_type> inc_case("/tmp/something", &incrementing_cube[0], dims);
   
-sqeazy_bench::bsuite<value_type> testme(2); 
-boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+  sqeazy_bench::bsuite<value_type> testme(2); 
+ std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
   const_case.stop(42);
   inc_case.stop(42);
