@@ -205,10 +205,10 @@ if(${READY_4_BUNDLE})
   #implies that all find_package calls will primarily look for static libs
   set(BUILD_SHARED_LIBS OFF)
   set(Boost_USE_STATIC_LIBS ON)
+  set(LZ4_USE_STATIC_LIBS ON)
   
   if(NOT APPLE)
     
-    set(LZ4_USE_STATIC_LIBS ON)
     set(FFMPEG_USE_STATIC_LIBS ON)
     set(FFMPEG_IGNORE_PKG_CONFIG ON)
     set(HDF5_USE_STATIC_LIBRARIES ON)
