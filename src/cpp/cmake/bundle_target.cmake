@@ -48,12 +48,12 @@ function(COPY_IN_FORTARGET copydest _tgt files)
     
     get_filename_component(FNAME ${_ITEM} NAME)
     get_filename_component(FNAME_EXT ${_ITEM} EXT)
-    MESSAGE(STATUS "[BUNDLE::COPY_IN_FORTARGET] ${_ITEM}")
+
     if(NOT ${FNAME_EXT} STREQUAL ${CMAKE_STATIC_LIBRARY_SUFFIX})
       get_filename_component(RDIR ${_ITEM} REALPATH)
       get_filename_component(RDIRFNAME ${RDIR} NAME)
       
-      message("++ [BUNDLE::COPY_IN_FORTARGET] ${_ITEM} :\n ${RDIR} -> ${destdir}/${FNAME}")
+      # message("++ [BUNDLE::COPY_IN_FORTARGET] ${_ITEM} :\n ${RDIR} -> ${destdir}/${FNAME}")
       add_custom_command(TARGET bundle_copy_${_tgt} PRE_BUILD
         COMMAND ${CMAKE_COMMAND} -E
         copy ${RDIR} ${destdir}/${FNAME})
