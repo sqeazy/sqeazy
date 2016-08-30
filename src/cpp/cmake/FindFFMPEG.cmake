@@ -54,6 +54,10 @@ INCLUDE (CheckFunctionExists)
 #Check whether to search static or dynamic libs
 set( CMAKE_FIND_LIBRARY_SUFFIXES_SAV ${CMAKE_FIND_LIBRARY_SUFFIXES} )
 
+if(${BUILD_SHARED_LIBS} MATCHES OFF)
+  set(FFMPEG_USE_STATIC_LIBS TRUE)
+endif()
+
 if( ${FFMPEG_USE_STATIC_LIBS} )
   set( CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX} )
 else()
@@ -143,10 +147,11 @@ if(PKG_CONFIG_FOUND AND NOT FFMPEG_IGNORE_PKG_CONFIG)
     endif()
   endforeach()
 
+  
   pkg_search_module(LOCAL_FFMPEG ${MY_PKGCONFIG_FINDARGS} ${comp_with_fixed_names})
   
   if(LOCAL_FFMPEG_FOUND)
-
+ 
     foreach(_LDIR IN LISTS LOCAL_FFMPEG_LIBRARY_DIRS)
       link_directories(${_LDIR})
     endforeach()
@@ -164,7 +169,22 @@ if(PKG_CONFIG_FOUND AND NOT FFMPEG_IGNORE_PKG_CONFIG)
 	list(FIND FFMPEG_LIBRARIES ${_COMP} _COMP_INDEX)
 	list(GET FFMPEG_LIBRARIES ${_COMP_INDEX} FFMPEG_${_FFMPEG_COMPONENT_UPPER}_LIBRARY)
 
-	MARK_AS_ADVANCED (FFMPEG_${_FFMPEG_COMPONENT_UPPER}_LIBRARY)
+	find_library(${_COMP}_PATH ${_COMP})
+	if(${${_COMP}_PATH} MATCHES ".*${CMAKE_SHARED_LIBRARY_SUFFIX}")
+	  message(STATUS "[FindFFMPEG] shared ${_COMP} found inside ${LOCAL_FFMPEG_LIBRARIES} (${${_COMP}_PATH})")
+	  add_library(${_COMP} SHARED IMPORTED)
+	  set_target_properties(${_COMP} PROPERTIES LINK_FLAGS "${LOCAL_FFMPEG_LDFLAGS}")
+	else()
+	  message(STATUS "[FindFFMPEG] static ${_COMP} found inside ${LOCAL_FFMPEG_LIBRARIES} (${${_COMP}_PATH})")
+	  add_library(${_COMP} STATIC IMPORTED)
+	  set_target_properties(${_COMP} PROPERTIES LINK_FLAGS "${LOCAL_FFMPEG_STATIC_LDFLAGS}")
+	endif()
+	set_target_properties(${_COMP} PROPERTIES LINKER_LANGUAGE C)
+	set_target_properties(${_COMP} PROPERTIES IMPORTED_LOCATION ${${_COMP}_PATH})
+	
+
+	mark_as_advanced (FFMPEG_${_FFMPEG_COMPONENT_UPPER}_LIBRARY)
+	mark_as_advanced (${_COMP})
       else()
 	SET (FFMPEG_${_FFMPEG_COMPONENT_UPPER}_FOUND FALSE)
 	IF (_FFMPEG_CHECK_COMPONENTS)
@@ -196,14 +216,12 @@ else(PKG_CONFIG_FOUND AND NOT FFMPEG_IGNORE_PKG_CONFIG)
 
 
     FIND_LIBRARY (${_FFMPEG_LIBRARY_BASE}
-      NAMES ${_FFMPEG_COMPONENT}
+      NAMES ${_FFMPEG_COMPONENT} NAMES_PER_DIR
       HINTS ${FFMPEG_ROOT_DIR}
-      PATH_SUFFIXES bin lib
+      PATH_SUFFIXES bin lib lib64
       DOC "Ffmpeg ${_FFMPEG_COMPONENT} library")
 
-    MARK_AS_ADVANCED (${_FFMPEG_LIBRARY_BASE})
 
-    SET (FFMPEG_${_FFMPEG_COMPONENT_UPPER}_FOUND TRUE)
 
     if(NOT FFMPEG_FIND_QUIETLY)
       message("** [FindFFMPEG] found ${_FFMPEG_LIBRARY_BASE}, setting FFMPEG_${_FFMPEG_COMPONENT_UPPER}_FOUND")
@@ -212,13 +230,29 @@ else(PKG_CONFIG_FOUND AND NOT FFMPEG_IGNORE_PKG_CONFIG)
     
     #add what was found to global variables
     IF (${_FFMPEG_LIBRARY_BASE})
-      # setup the FFMPEG_<COMPONENT>_LIBRARIES variable
+
+      SET (FFMPEG_${_FFMPEG_COMPONENT_UPPER}_FOUND TRUE)
+      
+      if(${${_FFMPEG_LIBRARY_BASE}} MATCHES ".*${CMAKE_STATIC_LIBRARY_SUFFIX}")
+	add_library(${_FFMPEG_COMPONENT} STATIC IMPORTED)
+	message("** [FindFFMPEG] exporting target ${_FFMPEG_COMPONENT} as static library")
+      else()
+	add_library(${_FFMPEG_COMPONENT} SHARED IMPORTED)
+	message("** [FindFFMPEG] exporting target ${_FFMPEG_COMPONENT} as shared library")
+      endif()
+      
+      set_target_properties(${_FFMPEG_COMPONENT} PROPERTIES LINKER_LANGUAGE C)
+      set_target_properties(${_FFMPEG_COMPONENT} PROPERTIES IMPORTED_LOCATION ${_FFMPEG_LIBRARY_BASE})
+
+      mark_as_advanced(${_FFMPEG_COMPONENT})
+      MARK_AS_ADVANCED (${_FFMPEG_LIBRARY_BASE})
+      
       SET (FFMPEG_${_FFMPEG_COMPONENT_UPPER}_LIBRARIES ${${_FFMPEG_LIBRARY_BASE}})
       LIST (APPEND FFMPEG_LIBRARIES ${FFMPEG_${_FFMPEG_COMPONENT_UPPER}_LIBRARIES})
       LIST (APPEND _FFMPEG_ALL_LIBS ${${_FFMPEG_LIBRARY_BASE}})
     ELSE (${_FFMPEG_LIBRARY_BASE})
       SET (FFMPEG_${_FFMPEG_COMPONENT_UPPER}_FOUND FALSE)
-
+      message("** [FindFFMPEG] target ${_FFMPEG_COMPONENT} not found")
       IF (_FFMPEG_CHECK_COMPONENTS)
 	LIST (APPEND _FFMPEG_MISSING_LIBRARIES ${_FFMPEG_LIBRARY_BASE})
       ENDIF (_FFMPEG_CHECK_COMPONENTS)
@@ -238,10 +272,16 @@ set( CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES_SAV} )
 
 
 ## POST_INCLUDES
-if( ${FFMPEG_USE_STATIC_LIBS} OR NOT ${BUILD_SHARED_LIBS} )
+if( ${FFMPEG_USE_STATIC_LIBS})
   if(UNIX)
-    set(FFMPEG_DEPENDENCIES x264;x265;pthread;bz2;z;lzma;va;swresample;m;dl)
-
+    if(APPLE)
+      set(FFMPEG_DEPENDENCIES x264;x265;pthread;bz2;z;lzma;m;dl)
+      set(FFMPEG_DEPEND_STATIC_BLACKLIST "pthread|bz2|m|dl")
+    else()
+      set(FFMPEG_DEPENDENCIES x264;x265;pthread;bz2;z;lzma;va;m;dl)
+      set(FFMPEG_DEPEND_STATIC_BLACKLIST "pthread|bz2|m|dl")
+    endif()
+    
     foreach(_DEP IN LISTS FFMPEG_DEPENDENCIES)
       find_library(${_DEP}_STATIC_LIBRARY_PATH NAMES lib${_DEP}${CMAKE_STATIC_LIBRARY_SUFFIX})
       find_library(${_DEP}_DYNAMIC_LIBRARY_PATH NAMES ${_DEP} lib${_DEP} lib${_DEP}${CMAKE_SHARED_LIBRARY_SUFFIX})
@@ -254,10 +294,12 @@ if( ${FFMPEG_USE_STATIC_LIBS} OR NOT ${BUILD_SHARED_LIBS} )
 	get_filename_component(${_DEP}_RDIRFNAME ${${_DEP}_RDIR} DIRECTORY)
 
 
-	if(NOT (${${_DEP}_STATIC_LIBRARY_PATH} MATCHES ".*lib(pthread|bz2|m|dl)${CMAKE_STATIC_LIBRARY_SUFFIX}"))
+	if(NOT (${${_DEP}_STATIC_LIBRARY_PATH} MATCHES ".*lib(${FFMPEG_DEPEND_STATIC_BLACKLIST})${CMAKE_STATIC_LIBRARY_SUFFIX}"))
 	  link_directories(${${_DEP}_RDIRFNAME})
 	  add_library(${_DEP} STATIC IMPORTED)
 	  set_target_properties(${_DEP} PROPERTIES IMPORTED_LOCATION ${${_DEP}_RDIR})
+	  set_target_properties(${_DEP} PROPERTIES LINKER_LANGUAGE C)
+	  
 	  mark_as_advanced(${_DEP})
 	  LIST (APPEND FFMPEG_LIBRARIES ${_DEP})
 	  set(_DEP_INCLUDED TRUE)
@@ -277,6 +319,8 @@ if( ${FFMPEG_USE_STATIC_LIBS} OR NOT ${BUILD_SHARED_LIBS} )
 	  add_library(${_DEP} SHARED IMPORTED)
 	  link_directories(${${_DEP}_RDIRFNAME})
 	  set_target_properties(${_DEP} PROPERTIES IMPORTED_LOCATION ${${_DEP}_RDIR})
+	  set_target_properties(${_DEP} PROPERTIES LINKER_LANGUAGE C)
+	  
 	  mark_as_advanced(${_DEP})
 	  LIST (APPEND FFMPEG_LIBRARIES ${_DEP})
 	  set(_DEP_INCLUDED TRUE)
