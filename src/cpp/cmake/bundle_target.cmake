@@ -47,12 +47,13 @@ function(COPY_IN_FORTARGET copydest _tgt files)
   foreach(_ITEM IN LISTS flist)
     
     get_filename_component(FNAME ${_ITEM} NAME)
-
-    if(NOT ${FNAME} MATCHES ".*${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    get_filename_component(FNAME_EXT ${_ITEM} EXT)
+    MESSAGE(STATUS "[BUNDLE::COPY_IN_FORTARGET] ${_ITEM}")
+    if(NOT ${FNAME_EXT} STREQUAL ${CMAKE_STATIC_LIBRARY_SUFFIX})
       get_filename_component(RDIR ${_ITEM} REALPATH)
       get_filename_component(RDIRFNAME ${RDIR} NAME)
-
-      #message("++ [COPY_IN] ${_ITEM} :\n ${RDIR} -> ${destdir}/${FNAME}")
+      
+      message("++ [BUNDLE::COPY_IN_FORTARGET] ${_ITEM} :\n ${RDIR} -> ${destdir}/${FNAME}")
       add_custom_command(TARGET bundle_copy_${_tgt} PRE_BUILD
         COMMAND ${CMAKE_COMMAND} -E
         copy ${RDIR} ${destdir}/${FNAME})
@@ -107,7 +108,11 @@ function(BUNDLE tgt destdir)
       
     endif()
 
-    if(NOT ${LIB_2_ADD} MATCHES ".*\.${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    get_filename_component(LIB_2_ADD_SUFFIX ${LIB_2_ADD} EXT)
+    if(${LIB_2_ADD_SUFFIX} STREQUAL ${CMAKE_STATIC_LIBRARY_SUFFIX})
+      #message("<< [BUNDLE ${_LIB}] NOT added to copy-in files (${LIB_2_ADD},${LIB_2_ADD_SUFFIX},${CMAKE_STATIC_LIBRARY_SUFFIX})")
+    else()
+      #message("<< [BUNDLE ${_LIB}] added to copy-in files with ${LIB_2_ADD}")
       list(APPEND TGT_LIB_FILES ${LIB_2_ADD} )
     endif()
     unset(LIB_2_ADD)
