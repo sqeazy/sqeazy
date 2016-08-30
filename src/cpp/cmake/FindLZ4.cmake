@@ -19,35 +19,40 @@ if( ${LZ4_USE_STATIC_LIBS} OR NOT ${BUILD_SHARED_LIBS})
   if (NOT LZ4_FIND_QUIETLY)
     message("** [FindLZ4] searching for static lib")
   endif ()
-  add_library(lz4 STATIC IMPORTED)
-  set( CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX} )
+  set(LZ4_SEARCH_NAMES lz4${CMAKE_STATIC_LIBRARY_SUFFIX} liblz4${CMAKE_STATIC_LIBRARY_SUFFIX})
 else()
-  add_library(lz4 STATIC SHARED)
-  set( CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_SHARED_LIBRARY_SUFFIX} )
+  set(LZ4_SEARCH_NAMES lz4${CMAKE_SHARED_LIBRARY_SUFFIX} liblz4${CMAKE_SHARED_LIBRARY_SUFFIX})
 endif()
+
+if (NOT LZ4_FIND_QUIETLY)
+  message("** [FindLZ4] search for ${LZ4_SEARCH_NAMES}")
+endif ()
 
 
 if(IS_DIRECTORY ${LZ4_ROOT})
 
   
   IF(WIN32) #assumes MSVC
-    find_library(LZ4_LIB_PATH NAMES lz4 liblz4 # lz4.dll liblz4.lib lz4.lib liblz4.dll
-      NAMES_PER_DIR HINTS ${LZ4_ROOT} PATHS ${LZ4_ROOT} PATH_SUFFIXES lib bin NO_DEFAULT_PATH)
-    IF(NOT LZ4_LIB_PATH)
-      FILE(GLOB REC_PATHS ${LZ4_ROOT}/bin/liblz4* ${LZ4_ROOT}/liblz4* ${LZ4_ROOT}/lib/liblz4* ${LZ4_ROOT}/lib/lz4*)
-      FOREACH(FPATH ${REC_PATHS})
-	IF(${FPATH} MATCHES ".*lz4.dll")
-	  SET(LZ4_LIB_PATH ${FPATH})
-	ENDIF()
-	IF(${FPATH} MATCHES ".*lz4.lib")
-	  SET(LZ4_LIB_PATH ${FPATH})
-	ENDIF()
-	IF(${FPATH} MATCHES ".*lz4.a")
-	  SET(LZ4_LIB_PATH ${FPATH})
-	ENDIF()
-      ENDFOREACH(FPATH)
+    find_library(LZ4_LIB_PATH NAMES ${LZ4_SEARCH_NAMES} NAMES_PER_DIR
+      HINTS ${LZ4_ROOT}
+      PATHS ${LZ4_ROOT}
+      PATH_SUFFIXES lib bin
+      NO_DEFAULT_PATH)
+    # IF(NOT LZ4_LIB_PATH)
+    #   FILE(GLOB REC_PATHS ${LZ4_ROOT}/bin/liblz4* ${LZ4_ROOT}/liblz4* ${LZ4_ROOT}/lib/liblz4* ${LZ4_ROOT}/lib/lz4*)
+    #   FOREACH(FPATH ${REC_PATHS})
+    # 	IF(${FPATH} MATCHES ".*lz4.dll")
+    # 	  SET(LZ4_LIB_PATH ${FPATH})
+    # 	ENDIF()
+    # 	IF(${FPATH} MATCHES ".*lz4.lib")
+    # 	  SET(LZ4_LIB_PATH ${FPATH})
+    # 	ENDIF()
+    # 	IF(${FPATH} MATCHES ".*lz4.a")
+    # 	  SET(LZ4_LIB_PATH ${FPATH})
+    # 	ENDIF()
+    #   ENDFOREACH(FPATH)
       
-    ENDIF()
+    # ENDIF()
     find_path(LZ4_INC_PATH lz4.h HINTS ${LZ4_ROOT} PATHS ${LZ4_ROOT} PATH_SUFFIXES inc include NO_DEFAULT_PATH)
     IF(NOT LZ4_INC_PATH)
       FILE(GLOB REC_PATHS ${LZ4_ROOT}/lz4*.h ${LZ4_ROOT}/include/lz4*.h ${LZ4_ROOT}/inc/lz4*.h)
@@ -62,8 +67,7 @@ if(IS_DIRECTORY ${LZ4_ROOT})
     
     
     find_library(LZ4_LIB_PATH
-      NAMES lz4 liblz4
-      NAMES_PER_DIR
+      NAMES ${LZ4_SEARCH_NAMES} NAMES_PER_DIR
       HINTS ${LZ4_ROOT}
       PATHS ${LZ4_ROOT}
       PATH_SUFFIXES lib lib64 bin
@@ -82,14 +86,32 @@ if(IS_DIRECTORY ${LZ4_ROOT})
   
 else(IS_DIRECTORY ${LZ4_ROOT})    
 
-  find_library(LZ4_LIB_PATH NAMES lz4 liblz4 PATH_SUFFIXES lib lib64 bin )
+  find_library(LZ4_LIB_PATH NAMES ${LZ4_SEARCH_NAMES} NAMES_PER_DIR PATH_SUFFIXES lib lib64 inc include bin)
   
-  find_path(LZ4_INC_PATH lz4.h HINTS ${LZ4_LIB_PATH} ${LZ4_LIB_PATH}/.. PATH_SUFFIXES lib lib64 inc include bin)
+  find_path(LZ4_INC_PATH lz4.h PATH_SUFFIXES lib lib64 inc include bin)
   
   if (NOT LZ4_FIND_QUIETLY)
     message( "** [FindLZ4] Found: ${LZ4_LIB_PATH} ${LZ4_INC_PATH} without LZ4_ROOT")
   endif ()
 
+  if(EXISTS ${LZ4_INC_PATH})
+    if(NOT EXISTS ${LZ4_LIB_PATH})
+      get_filename_component(ROOT_SEARCH_PATH ${LZ4_INC_PATH} DIRECTORY)
+      unset(LZ4_LIB_PATH)
+      unset(LZ4_LIB_PATH-NOTFOUND)
+      message( "** [FindLZ4] trying ${ROOT_SEARCH_PATH}/{lib lib64 bin}")
+      find_library(LAST_CHANCE_PATH NAMES ${LZ4_SEARCH_NAMES} NAMES_PER_DIR
+	PATHS ${ROOT_SEARCH_PATH}
+	PATH_SUFFIXES lib lib64 inc include bin
+	HINTS ${ROOT_SEARCH_PATH}
+	)
+      message( "** [FindLZ4] last chance ${LAST_CHANCE_PATH}")
+      if(EXISTS ${LAST_CHANCE_PATH})
+	set(LZ4_LIB_PATH ${LAST_CHANCE_PATH})
+      endif()
+    endif()
+  endif()
+  
 endif(IS_DIRECTORY ${LZ4_ROOT})
 
 
@@ -111,6 +133,14 @@ if (LZ4_INC_PATH AND LZ4_LIB_PATH)
     get_filename_component(LZ4_LIB_DIRNAME ${LZ4_LIB_ABSPATH} DIRECTORY)
     link_directories(${LZ4_LIB_DIRNAME})
   endif()
+
+  if(${LZ4_LIB_PATH} MATCHES ".*${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    add_library(lz4 STATIC IMPORTED)
+  else()
+    add_library(lz4 SHARED IMPORTED)
+  endif()
+
+  set_target_properties(lz4 PROPERTIES LINKER_LANGUAGE C)
   set_target_properties(lz4 PROPERTIES IMPORTED_LOCATION ${LZ4_LIBRARY})
 else ()
 
