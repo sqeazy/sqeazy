@@ -207,13 +207,11 @@ if(${READY_4_BUNDLE})
   set(Boost_USE_STATIC_LIBS ON)
   set(LZ4_USE_STATIC_LIBS ON)
   set(HDF5_USE_STATIC_LIBRARIES ON)
+  set(FFMPEG_USE_STATIC_LIBS ON)
   
-  if(NOT APPLE)
-   
-    set(FFMPEG_USE_STATIC_LIBS ON)
-    set(FFMPEG_IGNORE_PKG_CONFIG ON)
-
-  endif()
+  # if(NOT APPLE)
+  #   set(FFMPEG_IGNORE_PKG_CONFIG ON)
+  # endif()
 endif()
 
 ################################# DEPENDENCIES #################################
