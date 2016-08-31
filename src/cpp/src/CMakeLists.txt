@@ -67,31 +67,10 @@ else()
 endif()
 
 SET(SQY_SRC_TARGETS ${PROJECT_NAME})
-
-
-# #STATIC LIBRARY
-# if(EXISTS ${LZ4_STATIC_LIB})
-#   add_library(${PROJECT_NAME}_static STATIC sqeazy.cpp)
-#   set_target_properties(${PROJECT_NAME}_static PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED YES)
-#   set_target_properties(${PROJECT_NAME}_static PROPERTIES COMPILE_FLAGS "-I${HDF5_INCLUDE_DIRS}")
-#   SET_TARGET_PROPERTIES(${PROJECT_NAME}_static PROPERTIES PUBLIC_HEADER "${PROJECT_SOURCE_DIR}/inc/sqeazy.h;${PROJECT_SOURCE_DIR}/inc/H5PLextern.h")
-#   add_library(ext_lz4_static STATIC IMPORTED)
-#   set_target_properties(ext_lz4_static PROPERTIES IMPORTED_LOCATION "${LZ4_STATIC_LIB}")
-#   MESSAGE(STATUS "defining ext_lz4_static as ${LIB_STATIC_LIB}")
-
-#   #just here to reset ${Boost_LIBRARIES}
-#   #REMINDER: it would be nice to use Boost_USE_STATIC_LIBS for the shared lib as well (requires an fPIC enabled installed boost)
-#   #set(Boost_USE_STATIC_LIBS ON)
-#   #FIND_PACKAGE (Boost 1.42 QUIET COMPONENTS system REQUIRED)
-  
-#   target_link_libraries(${PROJECT_NAME}_static ext_lz4_static ${HDF5_LIBRARIES} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES}) 
-#   IF(UNIX)
-#     SET_TARGET_PROPERTIES(${PROJECT_NAME}_static PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
-#   ENDIF(UNIX)
-#   SET(SQY_SRC_TARGETS ${SQY_SRC_TARGETS} ${PROJECT_NAME}_static)
-# else()
-#   message(WARNING "static lz4 library not found, static libsqeazy cannot be built")
-# endif()
+if(DEFINED FFMPEG_EXTRA_LINK_FLAGS)
+  message(STATUS "[src] linking against ffmpeg, adding linker flags ${FFMPEG_EXTRA_LINK_FLAGS}")
+  set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS ${FFMPEG_EXTRA_LINK_FLAGS})
+endif()
 
 
 
@@ -125,5 +104,11 @@ set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES ${BUNDLE_DIR})
 
 bundle(${PROJECT_NAME} ${BUNDLE_DIR})
 
+if(DEFINED FFMPEG_EXTRA_LINK_FLAGS)
+  message(STATUS "[src] adding linker flags ${FFMPEG_EXTRA_LINK_FLAGS} to bundle_${PROJECT_NAME}")
+  set_property(TARGET bundle_${PROJECT_NAME} APPEND_STRING PROPERTY LINK_FLAGS ${FFMPEG_EXTRA_LINK_FLAGS})
+endif()
+
 add_custom_target(bundle DEPENDS bundle_${PROJECT_NAME} )
+
 set_target_properties(bundle PROPERTIES EXCLUDE_FROM_ALL TRUE)
