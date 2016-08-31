@@ -79,6 +79,7 @@ function(BUNDLE tgt destdir)
 
   ## introspect target
   get_property(TGT_LIBS TARGET ${tgt} PROPERTY LINK_LIBRARIES)
+  get_property(TGT_LDFLAGS TARGET ${tgt} PROPERTY LINK_FLAGS)
   get_property(TGT_SRC TARGET ${tgt} PROPERTY SOURCES)
   get_property(TGT_HDR TARGET ${tgt} PROPERTY PUBLIC_HEADER)
   #get_property(TGT_ONAME TARGET ${tgt} PROPERTY OUTPUT_NAME)
@@ -159,14 +160,21 @@ function(BUNDLE tgt destdir)
     if(WIN32)
       list(APPEND DEPS_FNAME_LIST ${destdir}\\${_FNAME})
     else()
-      if(NOT ${_FNAME} MATCHES ".*(lib|l)(m|dl|pthread)")
+      if(NOT ${_FNAME} MATCHES ".*(lib|l)(m|dl|pthread)")#TODO: is this necessary, might only be required on Linux
 	list(APPEND DEPS_FNAME_LIST ${_PATH})
       endif()
     endif()
   endforeach()
   
   message("++ [BUNDLE] link bundle to : ${DEPS_FNAME_LIST}")
-  target_link_libraries(bundle_${tgt} ${DEPS_FNAME_LIST} pthread m dl)
-
+  if(UNIX)
+    if(APPLE)
+      target_link_libraries(bundle_${tgt} ${DEPS_FNAME_LIST})
+    else()
+      target_link_libraries(bundle_${tgt} ${DEPS_FNAME_LIST} pthread m dl)#TODO: is this necessary, might only be required on Linux
+    endif()
+  else()
+    target_link_libraries(bundle_${tgt} ${DEPS_FNAME_LIST})
+  endif()
 
 endfunction(BUNDLE)
