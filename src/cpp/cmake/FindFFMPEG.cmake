@@ -46,7 +46,6 @@ function(REGEX_REMOVE_ITEM VALUES REGEX_STR OUTPUT)
 
     if(${_MATCHRESULT} MATCHES ${REGEX_STR})
       list(REMOVE_ITEM VALUES ${_ITEM})
-      break()
     endif()
     unset(_MATCHRESULT)
   endforeach()
@@ -84,46 +83,46 @@ ENDIF ()
 
 FIND_PATH (FFMPEG_ROOT_DIR
   NAMES include/ffmpegcodec/avcodec.h
-        include/ffmpegdevice/avdevice.h
-        include/ffmpegfilter/avfilter.h
-        include/ffmpegutil/avutil.h
-        include/libswscale/swscale.h
+  include/ffmpegdevice/avdevice.h
+  include/ffmpegfilter/avfilter.h
+  include/ffmpegutil/avutil.h
+  include/libswscale/swscale.h
   PATHS ${EXT_FFMPEG_ROOT_DIR}
   DOC "FFMPEG root directory")
 
- if(NOT FFMPEG_FIND_QUIETLY)
-      message("** [FindFFMPEG] found root path ${FFMPEG_ROOT_DIR}")
+if(NOT FFMPEG_FIND_QUIETLY)
+  message("** [FindFFMPEG] found root path ${FFMPEG_ROOT_DIR}")
 endif()
 
-  
+
 FIND_PATH (FFMPEG_INCLUDE_DIR
   NAMES ffmpegcodec/avcodec.h
-        ffmpegdevice/avdevice.h
-        ffmpegfilter/avfilter.h
-        ffmpegutil/avutil.h
-        libswscale/swscale.h
+  ffmpegdevice/avdevice.h
+  ffmpegfilter/avfilter.h
+  ffmpegutil/avutil.h
+  libswscale/swscale.h
   HINTS ${FFMPEG_ROOT_DIR}
   PATH_SUFFIXES include inc
   DOC "FFMPEG include directory")
 
 if(NOT FFMPEG_FIND_QUIETLY)
-      message("** [FindFFMPEG] found include path ${FFMPEG_INCLUDE_DIR}")
+  message("** [FindFFMPEG] found include path ${FFMPEG_INCLUDE_DIR}")
 endif()
 SET (FFMPEG_INCLUDE_DIRS ${FFMPEG_INCLUDE_DIR})
 
 # PREPARE COMPONENTS ###########################################################
- 
-  
+
+
 if (NOT FFMPEG_FIND_COMPONENTS)
 
   set (FFMPEG_FIND_COMPONENTS avdevice avformat avfilter avcodec swresample swscale avutil postproc)
 endif (NOT FFMPEG_FIND_COMPONENTS)
 
 if(NOT FFMPEG_FIND_QUIETLY)
-      message("** [FindFFMPEG] searching for ${FFMPEG_FIND_COMPONENTS}")
+  message("** [FindFFMPEG] searching for ${FFMPEG_FIND_COMPONENTS}")
 endif()
 
-# PKG_CONFIG (Linux only) ######################################################
+# PKG_CONFIG (Unix only) ######################################################
 set(MY_PKGCONFIG_FINDARGS "")
 if(FFMPEG_FIND_QUIETLY)
   set(MY_PKGCONFIG_FINDARGS QUIET)
@@ -149,7 +148,7 @@ if(PKG_CONFIG_FOUND AND NOT FFMPEG_IGNORE_PKG_CONFIG)
   pkg_search_module(LOCAL_FFMPEG ${MY_PKGCONFIG_FINDARGS} ${comp_with_fixed_names})
   
   if(LOCAL_FFMPEG_FOUND)
- 
+    
     foreach(_LDIR IN LISTS LOCAL_FFMPEG_LIBRARY_DIRS)
       link_directories(${_LDIR})
     endforeach()
@@ -158,16 +157,8 @@ if(PKG_CONFIG_FOUND AND NOT FFMPEG_IGNORE_PKG_CONFIG)
       include_directories(${_IDIR})
     endforeach()
 
-    ## clean LDFLAGS from component
-    if(UNIX)
-      string(REPLACE " " ";"  _LOCAL_FFMPEG_STATIC_LDFLAGS "${LOCAL_FFMPEG_STATIC_LDFLAGS}")
-      string(REPLACE " " ";"  _LOCAL_FFMPEG_LDFLAGS "${LOCAL_FFMPEG_LDFLAGS}")
-      foreach(_COMP ${FFMPEG_FIND_COMPONENTS})
-	REGEX_REMOVE_ITEM("${_LOCAL_FFMPEG_LDFLAGS}" ".*${_COMP}" _LOCAL_FFMPEG_LDFLAGS)
-	REGEX_REMOVE_ITEM("${_LOCAL_FFMPEG_STATIC_LDFLAGS}" ".*${_COMP}" _LOCAL_FFMPEG_STATIC_LDFLAGS)
-      endforeach()
-    endif(UNIX)
-  
+
+    
     foreach(_COMP ${FFMPEG_FIND_COMPONENTS})
       STRING (TOUPPER ${_COMP} _FFMPEG_COMPONENT_UPPER)
       
@@ -182,11 +173,11 @@ if(PKG_CONFIG_FOUND AND NOT FFMPEG_IGNORE_PKG_CONFIG)
 	  message(STATUS "[FindFFMPEG] shared ${_COMP} found inside ${LOCAL_FFMPEG_LIBRARIES} (${${_COMP}_PATH})")
 	  add_library(${_COMP} SHARED IMPORTED)
 	  
-	  string(REPLACE ";" " " FFMPEG_EXTRA_LINK_FLAGS "${_LOCAL_FFMPEG_LDFLAGS}")
+	  string(REPLACE ";" " " FFMPEG_EXTRA_LINK_FLAGS "${LOCAL_FFMPEG_LDFLAGS}")
 	else()
 	  message(STATUS "[FindFFMPEG] static ${_COMP} found inside ${LOCAL_FFMPEG_LIBRARIES} (${${_COMP}_PATH})")
 	  add_library(${_COMP} STATIC IMPORTED)
-	  string(REPLACE ";" " " FFMPEG_EXTRA_LINK_FLAGS "${_LOCAL_FFMPEG_STATIC_LDFLAGS}")
+	  string(REPLACE ";" " " FFMPEG_EXTRA_LINK_FLAGS "${LOCAL_FFMPEG_STATIC_LDFLAGS}")
 	endif()
 	set_target_properties(${_COMP} PROPERTIES
 	  INTERFACE_INCLUDE_DIRECTORIES ${FFMPEG_INCLUDE_DIR}
@@ -214,14 +205,15 @@ if(PKG_CONFIG_FOUND AND NOT FFMPEG_IGNORE_PKG_CONFIG)
     
     LIST (APPEND FFMPEG_LIBRARIES ${LOCAL_FFMPEG_LIBRARIES})
     LIST (APPEND _FFMPEG_ALL_LIBS ${LOCAL_FFMPEG_LIBRARIES})
-  else()
+  else(LOCAL_FFMPEG_FOUND)
     foreach(_COMP ${FFMPEG_FIND_COMPONENTS})
       STRING (TOUPPER ${_FFMPEG_COMPONENT} _FFMPEG_COMPONENT_UPPER)
       SET (FFMPEG_${_FFMPEG_COMPONENT_UPPER}_FOUND FALSE)
-	IF (_FFMPEG_CHECK_COMPONENTS)
-	  LIST (APPEND _FFMPEG_MISSING_LIBRARIES ${_FFMPEG_LIBRARY_BASE})
-	endif()
-  endif()
+      IF (_FFMPEG_CHECK_COMPONENTS)
+	LIST (APPEND _FFMPEG_MISSING_LIBRARIES ${_FFMPEG_LIBRARY_BASE})
+      endif(_FFMPEG_CHECK_COMPONENTS)
+    endforeach()
+  endif(LOCAL_FFMPEG_FOUND)
   
 else(PKG_CONFIG_FOUND AND NOT FFMPEG_IGNORE_PKG_CONFIG)
 
@@ -300,12 +292,6 @@ endif(PKG_CONFIG_FOUND AND NOT FFMPEG_IGNORE_PKG_CONFIG)
 
 #revert CMAKE_FIND_LIBRARY_SUFFIXES
 set( CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES_SAV} )
-message(STATUS "[FindFFMPEG] defined FFMPEG_EXTRA_LINK_FLAGS: ${FFMPEG_EXTRA_LINK_FLAGS}")
-foreach (_COMP ${FFMPEG_FIND_COMPONENTS})
-  string(REGEX REPLACE " .[a-zA-Z]{1,4}${_COMP} " " " FFMPEG_EXTRA_LINK_FLAGS "${FFMPEG_EXTRA_LINK_FLAGS}" )
-endforeach()
-message(STATUS "[FindFFMPEG] cleaned FFMPEG_EXTRA_LINK_FLAGS: ${FFMPEG_EXTRA_LINK_FLAGS}")
-mark_as_advanced (FFMPEG_EXTRA_LINK_FLAGS)
 
 ## POST_INCLUDES
 if( ${FFMPEG_USE_STATIC_LIBS})
@@ -334,11 +320,13 @@ if( ${FFMPEG_USE_STATIC_LIBS})
 
 	if(NOT (${${_DEP}_STATIC_LIBRARY_PATH} MATCHES ".*lib(${FFMPEG_DEPEND_STATIC_BLACKLIST})${CMAKE_STATIC_LIBRARY_SUFFIX}"))
 	  link_directories(${${_DEP}_RDIRFNAME})
-	  add_library(${_DEP} STATIC IMPORTED)
-	  set_target_properties(${_DEP} PROPERTIES IMPORTED_LOCATION ${${_DEP}_RDIR})
-	  set_target_properties(${_DEP} PROPERTIES LINKER_LANGUAGE C)
-	  
-	  mark_as_advanced(${_DEP})
+	  if(NOT TARGET ${_DEP})
+	    add_library(${_DEP} STATIC IMPORTED)
+	    set_target_properties(${_DEP} PROPERTIES IMPORTED_LOCATION ${${_DEP}_RDIR})
+	    set_target_properties(${_DEP} PROPERTIES LINKER_LANGUAGE C)
+	    
+	    mark_as_advanced(${_DEP})
+	  endif()
 	  LIST (APPEND FFMPEG_LIBRARIES ${_DEP})
 	  set(_DEP_INCLUDED TRUE)
 	  message("++ [FindFFMPEG] static ${_DEP} added ${${_DEP}_STATIC_LIBRARY_PATH}")
@@ -354,12 +342,13 @@ if( ${FFMPEG_USE_STATIC_LIBS})
 
 
 	if(NOT ${_DEP_INCLUDED})
-	  add_library(${_DEP} SHARED IMPORTED)
 	  link_directories(${${_DEP}_RDIRFNAME})
-	  set_target_properties(${_DEP} PROPERTIES IMPORTED_LOCATION ${${_DEP}_RDIR})
-	  set_target_properties(${_DEP} PROPERTIES LINKER_LANGUAGE C)
-	  
-	  mark_as_advanced(${_DEP})
+	  if(NOT TARGET ${_DEP})
+	    add_library(${_DEP} SHARED IMPORTED)
+	    set_target_properties(${_DEP} PROPERTIES IMPORTED_LOCATION ${${_DEP}_RDIR})
+	    set_target_properties(${_DEP} PROPERTIES LINKER_LANGUAGE C)
+	    mark_as_advanced(${_DEP})
+	  endif()
 	  LIST (APPEND FFMPEG_LIBRARIES ${_DEP})
 	  set(_DEP_INCLUDED TRUE)
 	  message("++ [FindFFMPEG] shared ${_DEP} added ${${_DEP}_DYNAMIC_LIBRARY_PATH}")
@@ -380,6 +369,24 @@ if( ${FFMPEG_USE_STATIC_LIBS})
     # endif()
   endif()
 endif()
+
+
+## clean LDFLAGS from components and dependencies, on UNIX only yet
+string(REPLACE " " ";" FFMPEG_EXTRA_LINK_FLAG_LIST  "${FFMPEG_EXTRA_LINK_FLAGS}")
+
+foreach(_FOUND_LIB IN LISTS FFMPEG_LIBRARIES)
+  get_filename_component(_LIB_STEM ${_FOUND_LIB} NAME_WE)
+  if(${_LIB_STEM} MATCHES "lib.*")
+    string(REPLACE "lib" "" _LIB_STEM "${_LIB_STEM}")
+  endif()
+  REGEX_REMOVE_ITEM("${FFMPEG_EXTRA_LINK_FLAG_LIST}" "..${_LIB_STEM}$" FFMPEG_EXTRA_LINK_FLAG_LIST)
+endforeach()
+string(REPLACE ";" " " FFMPEG_EXTRA_LINK_FLAGS  "${FFMPEG_EXTRA_LINK_FLAG_LIST}")
+
+message(STATUS "[FindFFMPEG] defining FFMPEG_EXTRA_LINK_FLAGS to ${FFMPEG_EXTRA_LINK_FLAGS}")
+
+mark_as_advanced (FFMPEG_EXTRA_LINK_FLAGS)
+
 
 IF (DEFINED _FFMPEG_MISSING_COMPONENTS AND _FFMPEG_CHECK_COMPONENTS)
   IF (NOT FFMPEG_FIND_QUIETLY)
@@ -429,11 +436,11 @@ ENDIF (FFMPEG_EXECUTABLE)
 IF (WIN32)
   FIND_PROGRAM (LIB_EXECUTABLE NAMES lib
     HINTS "$ENV{VS120COMNTOOLS}/../../VC/bin"
-          "$ENV{VS110COMNTOOLS}/../../VC/bin"
-          "$ENV{VS100COMNTOOLS}/../../VC/bin"
-          "$ENV{VS90COMNTOOLS}/../../VC/bin"
-          "$ENV{VS71COMNTOOLS}/../../VC/bin"
-          "$ENV{VS80COMNTOOLS}/../../VC/bin"
+    "$ENV{VS110COMNTOOLS}/../../VC/bin"
+    "$ENV{VS100COMNTOOLS}/../../VC/bin"
+    "$ENV{VS90COMNTOOLS}/../../VC/bin"
+    "$ENV{VS71COMNTOOLS}/../../VC/bin"
+    "$ENV{VS80COMNTOOLS}/../../VC/bin"
     DOC "Library manager")
 
   MARK_AS_ADVANCED (LIB_EXECUTABLE)
@@ -474,7 +481,7 @@ SET (_FFMPEG_BINARY_DIR_HINTS bin)
 
 IF (_FFMPEG_REQUISITES)
   FIND_FILE (FFMPEG_BINARY_DIR NAMES ${_FFMPEG_REQUISITES}
-	  HINTS ${FFMPEG_ROOT_DIR}
+    HINTS ${FFMPEG_ROOT_DIR}
     PATH_SUFFIXES ${_FFMPEG_BINARY_DIR_HINTS} NO_DEFAULT_PATH)
 ENDIF (_FFMPEG_REQUISITES)
 
@@ -483,7 +490,7 @@ IF (FFMPEG_BINARY_DIR AND _FFMPEG_UPDATE_BINARY_DIR)
   UNSET (FFMPEG_BINARY_DIR CACHE)
 
   IF (_FFMPEG_BINARY_DIR)
-	GET_FILENAME_COMPONENT (FFMPEG_BINARY_DIR ${_FFMPEG_BINARY_DIR} PATH)
+    GET_FILENAME_COMPONENT (FFMPEG_BINARY_DIR ${_FFMPEG_BINARY_DIR} PATH)
   ENDIF (_FFMPEG_BINARY_DIR)
 ENDIF (FFMPEG_BINARY_DIR AND _FFMPEG_UPDATE_BINARY_DIR)
 
@@ -492,7 +499,7 @@ SET (FFMPEG_BINARY_DIR ${FFMPEG_BINARY_DIR} CACHE PATH "Ffmpeg binary directory"
 MARK_AS_ADVANCED (FFMPEG_INCLUDE_DIR FFMPEG_BINARY_DIR)
 
 IF (NOT _FFMPEG_CHECK_COMPONENTS)
- SET (_FFMPEG_FPHSA_ADDITIONAL_ARGS HANDLE_COMPONENTS)
+  SET (_FFMPEG_FPHSA_ADDITIONAL_ARGS HANDLE_COMPONENTS)
 ENDIF (NOT _FFMPEG_CHECK_COMPONENTS)
 
 

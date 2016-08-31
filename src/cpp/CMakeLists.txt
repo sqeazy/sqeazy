@@ -284,7 +284,7 @@ ENDIF()
 
 #-------------------------------- FFMPEG       ---------------------------------
 
-find_package(FFMPEG REQUIRED COMPONENTS  avformat avcodec swscale avutil swresample)
+find_package(FFMPEG REQUIRED COMPONENTS avformat avcodec swscale avutil swresample)
 IF(FFMPEG_FOUND)
   INCLUDE_DIRECTORIES(${FFMPEG_INCLUDE_DIRS})
   LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
