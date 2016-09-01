@@ -42,6 +42,9 @@ INCLUDE (CheckFunctionExists)
 function(REGEX_REMOVE_ITEM VALUES REGEX_STR OUTPUT)
   
   foreach(_ITEM IN LISTS VALUES)
+    if("${_ITEM}" STRLESS " ")
+      continue()
+    endif()
     string(REGEX MATCH "${REGEX_STR}" _MATCHRESULT ${_ITEM})
 
     if(${_MATCHRESULT} MATCHES ${REGEX_STR})
