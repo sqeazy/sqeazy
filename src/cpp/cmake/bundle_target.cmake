@@ -200,6 +200,9 @@ function(BUNDLE tgt destdir)
 	  LIST (APPEND DEPS_FNAME_LIST ${_DEP})
 	  set(_DEP_INCLUDED TRUE)
 	  message("++ [BUNDLE] static ${_DEP} added ${${_DEP}_STATIC_LIBRARY_PATH}")
+	  string(REPLACE " " ";" TGT_LDFLAGS "${TGT_LDFLAGS}")
+	  REGEX_REMOVE_ITEM("${TGT_LDFLAGS}" ".*${_DEP}$" TGT_LDFLAGS)
+	  string(REPLACE ";" " " TGT_LDFLAGS "${TGT_LDFLAGS}")
 	  
 	else()
 	  
