@@ -145,7 +145,7 @@ function(BUNDLE tgt destdir)
   set_target_properties(bundle_${tgt} PROPERTIES INSTALL_RPATH ./)
   set_target_properties(bundle_${tgt} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
   set_target_properties(bundle_${tgt} PROPERTIES EXCLUDE_FROM_ALL TRUE)
-  set_property(TARGET bundle_${tgt} PROPERTY LINK_FLAGS ${TGT_LDFLAGS})
+
   
   set_target_properties(bundle_${tgt}
     PROPERTIES
@@ -221,6 +221,9 @@ function(BUNDLE tgt destdir)
 	      LIST (APPEND DEPS_FNAME_LIST ${_DEP})
 	      set(_DEP_INCLUDED TRUE)
 	      message("++ [BUNDLE] shared ${_DEP} added ${${_DEP}_DYNAMIC_LIBRARY_PATH}")
+	      string(REPLACE " " ";" TGT_LDFLAGS "${TGT_LDFLAGS}")
+	      REGEX_REMOVE_ITEM("${TGT_LDFLAGS}" ".*${_DEP}$" TGT_LDFLAGS)
+	      string(REPLACE ";" " " TGT_LDFLAGS "${TGT_LDFLAGS}")
 	    endif()
 	  else()
 	    message(WARNING "++ [BUNDLE] ${_DEP} not found on system")
@@ -271,7 +274,8 @@ function(BUNDLE tgt destdir)
 
 
   endif()
-  
+
+  set_property(TARGET bundle_${tgt} PROPERTY LINK_FLAGS ${TGT_LDFLAGS})
   message("++ [BUNDLE] link bundle to : ${DEPS_FNAME_LIST}")
   if(UNIX)
     if(APPLE)
