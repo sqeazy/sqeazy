@@ -145,7 +145,8 @@ function(BUNDLE tgt destdir)
   set_target_properties(bundle_${tgt} PROPERTIES INSTALL_RPATH ./)
   set_target_properties(bundle_${tgt} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
   set_target_properties(bundle_${tgt} PROPERTIES EXCLUDE_FROM_ALL TRUE)
-    
+  set_property(TARGET bundle_${tgt} PROPERTY LINK_FLAGS ${TGT_LDFLAGS})
+  
   set_target_properties(bundle_${tgt}
     PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY "${destdir}"
@@ -169,110 +170,103 @@ function(BUNDLE tgt destdir)
   ## treat ffmpeg dependencies in a special way
   if(UNIX)
     if( ${FFMPEG_USE_STATIC_LIBS})
-      if(UNIX AND NOT APPLE)
-	message(STATUS "[BUNDLE] adding LDFLAGS ${TGT_LDFLAGS}")
-	set_property(TARGET bundle_${tgt} APPEND PROPERTY LINK_FLAGS ${TGT_LDFLAGS})
+      
+
+      if(NOT SQY_MUST_INCLUDE_LIBS)
+	set(SQY_MUST_INCLUDE_LIBS x264;x265)
       endif()
-  
-      #TODO: remove this? as it might be handled by FFMPEG_EXTRA_LINK_FLAGS
-      #      this stuff should be resolved by the client
-      if(NOT DEFINED FORCE_STATIC_LIB_INCLUDE)
 
-	if(NOT SQY_MUST_INCLUDE_LIBS)
-	  set(SQY_MUST_INCLUDE_LIBS x264;x265)
-	endif()
+      message(STATUS "[BUNDLE] trying to resolve dependencies for ${SQY_MUST_INCLUDE_LIBS}")
+      
+      foreach(_DEP IN LISTS SQY_MUST_INCLUDE_LIBS)
+	find_library(${_DEP}_STATIC_LIBRARY_PATH NAMES lib${_DEP}${CMAKE_STATIC_LIBRARY_SUFFIX})
+	find_library(${_DEP}_DYNAMIC_LIBRARY_PATH NAMES ${_DEP} lib${_DEP} lib${_DEP}${CMAKE_SHARED_LIBRARY_SUFFIX})
 
-	message(STATUS "[Bundle] trying to resolve dependencies for ${SQY_MUST_INCLUDE_LIBS}")
+	set(_DEP_INCLUDED FALSE)
 	
-	foreach(_DEP IN LISTS SQY_MUST_INCLUDE_LIBS)
-	  find_library(${_DEP}_STATIC_LIBRARY_PATH NAMES lib${_DEP}${CMAKE_STATIC_LIBRARY_SUFFIX})
-	  find_library(${_DEP}_DYNAMIC_LIBRARY_PATH NAMES ${_DEP} lib${_DEP} lib${_DEP}${CMAKE_SHARED_LIBRARY_SUFFIX})
+	if(EXISTS ${${_DEP}_STATIC_LIBRARY_PATH} )
 
-	  set(_DEP_INCLUDED FALSE)
+	  get_filename_component(${_DEP}_RDIR ${${_DEP}_STATIC_LIBRARY_PATH} ABSOLUTE)
+	  get_filename_component(${_DEP}_RDIRFNAME ${${_DEP}_RDIR} DIRECTORY)
+
+	  link_directories(${${_DEP}_RDIRFNAME})
+	  if(NOT TARGET ${_DEP})
+	    add_library(${_DEP} STATIC IMPORTED)
+	    set_target_properties(${_DEP} PROPERTIES IMPORTED_LOCATION ${${_DEP}_RDIR})
+	    set_target_properties(${_DEP} PROPERTIES LINKER_LANGUAGE C)
+	    
+	    mark_as_advanced(${_DEP})
+	  endif()
+	  LIST (APPEND DEPS_FNAME_LIST ${_DEP})
+	  set(_DEP_INCLUDED TRUE)
+	  message("++ [BUNDLE] static ${_DEP} added ${${_DEP}_STATIC_LIBRARY_PATH}")
 	  
-	  if(EXISTS ${${_DEP}_STATIC_LIBRARY_PATH} )
-
-	    get_filename_component(${_DEP}_RDIR ${${_DEP}_STATIC_LIBRARY_PATH} ABSOLUTE)
+	else()
+	  
+	  if(EXISTS ${${_DEP}_DYNAMIC_LIBRARY_PATH})
+	    get_filename_component(${_DEP}_RDIR ${${_DEP}_DYNAMIC_LIBRARY_PATH} ABSOLUTE)
 	    get_filename_component(${_DEP}_RDIRFNAME ${${_DEP}_RDIR} DIRECTORY)
 
-	    link_directories(${${_DEP}_RDIRFNAME})
-	    if(NOT TARGET ${_DEP})
-	      add_library(${_DEP} STATIC IMPORTED)
-	      set_target_properties(${_DEP} PROPERTIES IMPORTED_LOCATION ${${_DEP}_RDIR})
-	      set_target_properties(${_DEP} PROPERTIES LINKER_LANGUAGE C)
-	      
-	      mark_as_advanced(${_DEP})
-	    endif()
-	    LIST (APPEND DEPS_FNAME_LIST ${_DEP})
-	    set(_DEP_INCLUDED TRUE)
-	    message("++ [Bundle] static ${_DEP} added ${${_DEP}_STATIC_LIBRARY_PATH}")
-	    
-	  else()
-	    
-	    if(EXISTS ${${_DEP}_DYNAMIC_LIBRARY_PATH})
-	      get_filename_component(${_DEP}_RDIR ${${_DEP}_DYNAMIC_LIBRARY_PATH} ABSOLUTE)
-	      get_filename_component(${_DEP}_RDIRFNAME ${${_DEP}_RDIR} DIRECTORY)
-
-	      if(NOT ${_DEP_INCLUDED})
-		link_directories(${${_DEP}_RDIRFNAME})
-		if(NOT TARGET ${_DEP})
-		  add_library(${_DEP} SHARED IMPORTED)
-		  set_target_properties(${_DEP} PROPERTIES IMPORTED_LOCATION ${${_DEP}_RDIR})
-		  set_target_properties(${_DEP} PROPERTIES LINKER_LANGUAGE C)
-		  mark_as_advanced(${_DEP})
-		endif()
-		LIST (APPEND DEPS_FNAME_LIST ${_DEP})
-		set(_DEP_INCLUDED TRUE)
-		message("++ [Bundle] shared ${_DEP} added ${${_DEP}_DYNAMIC_LIBRARY_PATH}")
+	    if(NOT ${_DEP_INCLUDED})
+	      link_directories(${${_DEP}_RDIRFNAME})
+	      if(NOT TARGET ${_DEP})
+		add_library(${_DEP} SHARED IMPORTED)
+		set_target_properties(${_DEP} PROPERTIES IMPORTED_LOCATION ${${_DEP}_RDIR})
+		set_target_properties(${_DEP} PROPERTIES LINKER_LANGUAGE C)
+		mark_as_advanced(${_DEP})
 	      endif()
-	    else()
-	      message(WARNING "++ [BUNDLE] ${_DEP} not found on system")
+	      LIST (APPEND DEPS_FNAME_LIST ${_DEP})
+	      set(_DEP_INCLUDED TRUE)
+	      message("++ [BUNDLE] shared ${_DEP} added ${${_DEP}_DYNAMIC_LIBRARY_PATH}")
 	    endif()
+	  else()
+	    message(WARNING "++ [BUNDLE] ${_DEP} not found on system")
 	  endif()
-	  
-	  if(NOT ${_DEP_INCLUDED})
-	    message(WARNING "unable to locate lib${_DEP}, considered a dependency of requested FFMPEG targets")
-	  endif()
-
-	endforeach()
-	
-	# include(CheckFunctionExists)
-	# CHECK_FUNCTION_EXISTS(pow EXTRA_LIBM_NOT_NEEDED)
-	# if(NOT EXTRA_LIBM_NOT_NEEDED)
-	#   LIST (APPEND FFMPEG_LIBRARIES m)
-	# endif()
-      endif()
-
-      ## many/most Linux OS deploy their static libraries being compiled with -fPIE
-      ## it doesn't make too much sense to try and include them for the distribution of libsqeazy
-      ## the following tries to replace all static libraries with dynamic ones
-      if(NOT APPLE)
-	
-	if(NOT SQY_BLACKLIST_STATIC_LIBS)
-	  set(SQY_BLACKLIST_STATIC_LIBS "z;bz2;pthread;m;dl")
-	else()
-	  string(REPLACE " " ";" SQY_BLACKLIST_STATIC_LIBS "${}SQY_BLACKLIST_STATIC_LIBS")
 	endif()
 	
-	message("++ [BUNDLE] replacing blacklisted static libs ${SQY_BLACKLIST_STATIC_LIBS} in ${DEPS_FNAME_LIST}")
-	foreach(_BLACKLIB IN LISTS SQY_BLACKLIST_STATIC_LIBS)
-	  foreach(_DEP IN LISTS DEPS_FNAME_LIST)
-	    if(${_DEP} MATCHES "-l${_BLACKLIB}$" OR ${_DEP} MATCHES ".*lib${_BLACKLIB}${CMAKE_STATIC_LIBRARY_SUFFIX}")
-	      message("++ [BUNDLE] found ${_BLACKLIB} in ${_DEP}")
-	      list(REMOVE_ITEM DEPS_FNAME_LIST ${_DEP})
-	      list(FIND DEPS_FNAME_LIST ${CMAKE_SHARED_LIBRARY_PREFIX}${_BLACKLIB}${CMAKE_SHARED_LIBRARY_SUFFIX} _BLACKLIB_INDEX)
-	      if(${_BLACKLIB_INDEX} LESS 0)
-		list(APPEND DEPS_FNAME_LIST ${CMAKE_SHARED_LIBRARY_PREFIX}${_BLACKLIB}${CMAKE_SHARED_LIBRARY_SUFFIX})
-	      endif()
-	    else()
-	      continue()
-	    endif()
-	  endforeach()
-	endforeach()
-	
-      endif(NOT APPLE)
+	if(NOT ${_DEP_INCLUDED})
+	  message(WARNING "unable to locate lib${_DEP}, considered a dependency of requested FFMPEG targets")
+	endif()
 
-    endif()
+      endforeach()
+      
+      # include(CheckFunctionExists)
+      # CHECK_FUNCTION_EXISTS(pow EXTRA_LIBM_NOT_NEEDED)
+      # if(NOT EXTRA_LIBM_NOT_NEEDED)
+      #   LIST (APPEND FFMPEG_LIBRARIES m)
+      # endif()
+    endif(${FFMPEG_USE_STATIC_LIBS})
+
+    ## many/most Linux OS deploy their static libraries being compiled with -fPIE
+    ## it doesn't make too much sense to try and include them for the distribution of libsqeazy
+    ## the following tries to replace all static libraries with dynamic ones
+    if(NOT APPLE)
+      
+      if(NOT SQY_BLACKLIST_STATIC_LIBS)
+	set(SQY_BLACKLIST_STATIC_LIBS "z;bz2;pthread;m;dl")
+      else()
+	string(REPLACE " " ";" SQY_BLACKLIST_STATIC_LIBS "${}SQY_BLACKLIST_STATIC_LIBS")
+      endif()
+      
+      message("++ [BUNDLE] replacing blacklisted static libs ${SQY_BLACKLIST_STATIC_LIBS} in ${DEPS_FNAME_LIST}")
+      foreach(_BLACKLIB IN LISTS SQY_BLACKLIST_STATIC_LIBS)
+	foreach(_DEP IN LISTS DEPS_FNAME_LIST)
+	  if(${_DEP} MATCHES "-l${_BLACKLIB}$" OR ${_DEP} MATCHES ".*lib${_BLACKLIB}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+	    message("++ [BUNDLE] found ${_BLACKLIB} in ${_DEP}")
+	    list(REMOVE_ITEM DEPS_FNAME_LIST ${_DEP})
+	    list(FIND DEPS_FNAME_LIST ${CMAKE_SHARED_LIBRARY_PREFIX}${_BLACKLIB}${CMAKE_SHARED_LIBRARY_SUFFIX} _BLACKLIB_INDEX)
+	    if(${_BLACKLIB_INDEX} LESS 0)
+	      list(APPEND DEPS_FNAME_LIST ${CMAKE_SHARED_LIBRARY_PREFIX}${_BLACKLIB}${CMAKE_SHARED_LIBRARY_SUFFIX})
+	    endif()
+	  else()
+	    continue()
+	  endif()
+	endforeach()
+      endforeach()
+      
+    endif(NOT APPLE)
+
+
   endif()
   
   message("++ [BUNDLE] link bundle to : ${DEPS_FNAME_LIST}")
