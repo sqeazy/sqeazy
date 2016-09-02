@@ -145,7 +145,7 @@ function(BUNDLE tgt destdir)
   set_target_properties(bundle_${tgt} PROPERTIES INSTALL_RPATH ./)
   set_target_properties(bundle_${tgt} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
   set_target_properties(bundle_${tgt} PROPERTIES EXCLUDE_FROM_ALL TRUE)
-
+  
   
   set_target_properties(bundle_${tgt}
     PROPERTIES
@@ -171,6 +171,21 @@ function(BUNDLE tgt destdir)
     endif()
   endforeach()
 
+  if ( MSVC )	
+  message(STATUS "[BUNDLE] setting output_directory to ${destdir}")
+    set_target_properties( bundle_${tgt} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${destdir})
+    set_target_properties( bundle_${tgt} PROPERTIES LIBRARY_OUTPUT_DIRECTORY_DEBUG ${destdir} )
+    set_target_properties( bundle_${tgt} PROPERTIES LIBRARY_OUTPUT_DIRECTORY_RELEASE ${destdir} )
+	set_target_properties( bundle_${tgt} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${destdir})
+    set_target_properties( bundle_${tgt} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${destdir} )
+    set_target_properties( bundle_${tgt} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${destdir} )
+	set_target_properties( bundle_${tgt} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${destdir})
+    set_target_properties( bundle_${tgt} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${destdir} )
+    set_target_properties( bundle_${tgt} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${destdir} )
+  
+    # etc for the other available configuration types (MinSizeRel, RelWithDebInfo)
+  endif ( MSVC )
+  
   ## treat ffmpeg dependencies in a special way
   if(UNIX)
     if( ${FFMPEG_USE_STATIC_LIBS})
