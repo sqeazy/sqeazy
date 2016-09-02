@@ -45,6 +45,7 @@ def jnaerator_platform = {
     }
   }
 
+  return plat_path
 }
 
 task create_build_dir << {
@@ -56,6 +57,9 @@ task create_build_dir << {
 
 def build_cmake_args = {
 
+
+
+  
   def native_build_type = project.hasProperty("sqy_build_type") ? sqy_build_type : "Release"
   def sqy_x = project.hasProperty("sqy_experimental") ? sqy_experimental : "0"
   def path_to_lz4 = project.hasProperty("lz4_path") ? lz4_path : ""
@@ -72,11 +76,14 @@ def build_cmake_args = {
   if(sqy_x != "0"){
     local_args << "-DSQY_EXPERIMENTAL=ON"
   }
+
+
     
   if(path_to_lz4){
     
     local_args << "-DLZ4_ROOT=" + path_to_lz4
   }
+
 
   if(path_to_ffmpeg){
     //TODO: see if path exists
@@ -104,12 +111,15 @@ def build_cmake_args = {
        } */
   }
 
+
+  
   if(path_to_boost){
     //TODO: see if path exists
     local_args << "-DBOOST_ROOT=" + path_to_boost 
   }
 
-  
+
+  return local_args
 }
 // cmake task:
 task cmake(type:Exec) {
@@ -152,9 +162,11 @@ task cmake(type:Exec) {
     executable path_to_cmake_app
     
   }
-	
-  args build_cmake_args()
-  
+
+
+  def some_args = build_cmake_args()
+  args some_args
+
   args file(native_source_dir).absolutePath
 	
  
@@ -238,7 +250,8 @@ task cmake_4_bundle(type:Exec) {
     executable path_to_cmake_app
     
   }
-	
+
+
   args build_cmake_args()
 
   args "-DREADY_4_BUNDLE=ON"
@@ -383,7 +396,7 @@ task fetch_version {
 			].join(" ")
 
 	def curl_ret = cmdstring.execute()
-	//	println "${curl_ret.text}"
+
       }
 
   
