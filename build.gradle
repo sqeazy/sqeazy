@@ -299,7 +299,7 @@ task zip_bundle(type:Zip) {
   destinationDir file(native_build_dir+'/bundle') // directory that you want your archive to be placed in
   archiveName 'sqeazy_bundle.zip'
 
-  def outputs_exp = file(native_build_dir+'/bundle/').absolutePath+archiveName
+  def outputs_exp = file(native_build_dir+'/bundle/').absolutePath+'/'+archiveName
   outputs.files outputs_exp
 }
 
@@ -611,6 +611,7 @@ ctest.dependsOn make
 build_native.dependsOn ctest
 
 //bundle native libraries for bintray upload
+cmake_4_bundle.dependsOn create_build_dir
 make_bundle.dependsOn cmake_4_bundle
 zip_bundle.dependsOn make_bundle
 upload_bundle.dependsOn zip_bundle
