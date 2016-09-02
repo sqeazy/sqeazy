@@ -53,14 +53,14 @@ function(COPY_IN_FORTARGET copydest _tgt files)
       get_filename_component(RDIR ${_ITEM} REALPATH)
       get_filename_component(RDIRFNAME ${RDIR} NAME)
       
-      # message("++ [BUNDLE::COPY_IN_FORTARGET] ${_ITEM} :\n ${RDIR} -> ${destdir}/${FNAME}")
+      #message("++ [BUNDLE::COPY_IN_FORTARGET] ${_ITEM} :\n ${RDIR} -> ${destdir}/${FNAME}")
       add_custom_command(TARGET bundle_copy_${_tgt} PRE_BUILD
         COMMAND ${CMAKE_COMMAND} -E
         copy ${RDIR} ${destdir}/${FNAME})
 
       unset(RDIR CACHE)
       unset(RDIRFNAME CACHE)
-    endif()
+	endif()
     unset(FNAME CACHE)
     
   endforeach()
@@ -110,7 +110,7 @@ function(BUNDLE tgt destdir)
       
     endif()
 
-    get_filename_component(LIB_2_ADD_SUFFIX ${LIB_2_ADD} EXT)
+	#get_filename_component(LIB_2_ADD_SUFFIX ${LIB_2_ADD} EXT)
     # if(${LIB_2_ADD_SUFFIX} STREQUAL ${CMAKE_STATIC_LIBRARY_SUFFIX})
     #message("<< [BUNDLE ${_LIB}] NOT added to copy-in files (${LIB_2_ADD},${LIB_2_ADD_SUFFIX},${CMAKE_STATIC_LIBRARY_SUFFIX})")
     # else()
@@ -124,7 +124,7 @@ function(BUNDLE tgt destdir)
     COMMAND ${CMAKE_COMMAND} -E make_directory ${destdir})
   
   # cmake build system setup copy_in
-  #message("++ [BUNDLE] copy-in for ${tgt}: ${TGT_LIB_FILES}")
+  message("++ [BUNDLE] copy-in for ${tgt}: ${TGT_LIB_FILES}")
   copy_in_fortarget(${destdir} ${tgt} "${TGT_LIB_FILES}")
   if(TGT_HDR)
     copy_in_fortarget(${destdir} ${tgt} "${TGT_HDR}")
@@ -161,7 +161,11 @@ function(BUNDLE tgt destdir)
   foreach(_PATH IN LISTS TGT_LIBS)
     get_filename_component(_FNAME ${_PATH} NAME)
     if(WIN32)
-      list(APPEND DEPS_FNAME_LIST ${destdir}\\${_FNAME})
+	  if(EXISTS ${destdir}/${_FNAME})
+		list(APPEND DEPS_FNAME_LIST ${destdir}/${_FNAME})
+	  else()	
+		list(APPEND DEPS_FNAME_LIST ${_PATH})
+	  endif()
     else()
       list(APPEND DEPS_FNAME_LIST ${_PATH})
     endif()

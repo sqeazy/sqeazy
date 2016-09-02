@@ -199,7 +199,7 @@ ENDIF(UNIX)
 
 
 #lz4 is needed for the entire project, so let's include it here
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake )
 
 if(${READY_4_BUNDLE})
   #implies that all find_package calls will primarily look for static libs
@@ -245,17 +245,42 @@ endif()
 
 #-------------------------------- HDF5         ---------------------------------
 #needed for FindHDF5 as it expects an ENVIRONMENT variable called HDF5_ROOT as hint to the HDF5 path
+IF(EXISTS ${HDF5_DIR})
+	set(HDF5_ROOT ${HDF5_DIR})
+ENDIF()
+
+IF(EXISTS ENV{HDF5_ROOT})
+	set(HDF5_ROOT ENV{HDF5_ROOT})
+	endif()	
+
 IF(EXISTS ${HDF5_ROOT})
   SET(ENV{HDF5_ROOT} ${HDF5_ROOT})
+  set(ENV{HDF5_ROOT_DIR_HINT} ${HDF5_ROOT})
 ENDIF(EXISTS ${HDF5_ROOT})
 
-FIND_PACKAGE(HDF5 1.8 QUIET REQUIRED CXX HL)
+
+if(EXISTS ${HDF5_ROOT}/cmake/FindHDF5.cmake)
+	list(APPEND CMAKE_MODULE_PATH ${HDF5_ROOT}/cmake)
+endif()
+
+if(${HDF5_USE_STATIC_LIBRARIES})
+	set(FIND_HDF5_MODE static)
+else()
+	set(FIND_HDF5_MODE shared)
+endif()	
+
+message(STATUS "calling FindHDF5 with ${HDF5_ROOT}")
+FIND_PACKAGE(HDF5 1.8 QUIET REQUIRED CXX HL ${FIND_HDF5_MODE})
 IF(HDF5_FOUND)
   INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIRS})
   #only required for hdf5 1.8.16 and newer
   #http://hdf-forum.184993.n3.nabble.com/Re-linking-HDF5-with-VS2015-C-64-bit-only-works-with-static-libraries-td4028678.html
+  
+  
   if(WIN32)
-    add_definitions(/DH5_BUILT_AS_DYNAMIC_LIB=1)
+	if(NOT ${HDF5_USE_STATIC_LIBRARIES})
+		add_definitions(/DH5_BUILT_AS_DYNAMIC_LIB=1)
+	endif()
   else()
     add_definitions(-DH5_BUILT_AS_DYNAMIC_LIB=1)
   endif()
@@ -276,7 +301,18 @@ IF(HDF5_FOUND)
   IF(DEFINED HDF5_LIBRARY_DIRS)
 	LINK_DIRECTORIES(${HDF5_LIBRARY_DIRS}) 
   ENDIF()
-
+  
+  if(NOT HDF5_LIBRARIES)
+  message(STATUS "FindHDF5 didn't fill HDF5_LIBRARIES (${HDF5_LIBRARIES}), trying to fill based on known targets")
+	set(REQUIRED_H5_TARGETS hdf5_hl_cpp;hdf5_hl;hdf5_cpp;hdf5)
+	foreach(_stub IN LISTS REQUIRED_H5_TARGETS)
+		if(TARGET ${_stub}-${FIND_HDF5_MODE})
+			list(APPEND HDF5_LIBRARIES ${_stub}-${FIND_HDF5_MODE})
+		else()
+			message(WARNING "${_stub}-${FIND_HDF5_MODE} not known as possible target")
+		endif()
+	endforeach()
+  endif()
   MESSAGE("++ hdf5 found at ${HDF5_INCLUDE_DIRS} ${HDF5_LIBRARY_DIRS} : ${HDF5_LIBRARIES}")
 ELSE()
 MESSAGE(FATAL_ERROR "++ HDF5 not found!")
