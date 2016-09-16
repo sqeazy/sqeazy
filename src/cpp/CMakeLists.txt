@@ -337,7 +337,7 @@ IF(HDF5_FOUND)
   endif()
   
 
-  if(DEFINED UNIX AND ${HDF5_USE_STATIC_LIBRARIES})
+  if(DEFINED UNIX AND DEFINED HDF5_USE_STATIC_LIBRARIES)
     #many Linux distros distribute static libs without -fPIC
     #if they are linked into libsqeazy, an error will be thrown
     set(HDF5_LIBRARIES_CLONE ${HDF5_LIBRARIES})
@@ -367,6 +367,9 @@ IF(FFMPEG_FOUND)
   LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
 
   MESSAGE("++ FFMPEG found at ${FFMPEG_INCLUDE_DIRS} ${FFMPEG_ROOT_DIR}/lib ${FFMPEG_LIBRARIES}")
+  if(DEFINED FFMPEG_USE_STATIC_LIBS OR DEFINED FFMPEG_EXTRA_LINK_FLAGS)
+    MESSAGE("++                 ${FFMPEG_EXTRA_LINK_FLAGS}")
+  endif()
 ELSE()
   MESSAGE(WARNING "++ FFMPEG not found!")
 ENDIF()
