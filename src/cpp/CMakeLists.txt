@@ -325,7 +325,7 @@ IF(HDF5_FOUND)
   ENDIF()
   
   if(NOT HDF5_LIBRARIES)
-  message(STATUS "FindHDF5 didn't fill HDF5_LIBRARIES (${HDF5_LIBRARIES}), trying to fill based on known targets")
+  message(STATUS "FindHDF5 didn't fill HDF5_LIBRARIES (${HDF5_LIBRARIES}), trying to fill it based on known targets")
 	set(REQUIRED_H5_TARGETS hdf5_hl_cpp;hdf5_hl;hdf5_cpp;hdf5)
 	foreach(_stub IN LISTS REQUIRED_H5_TARGETS)
 		if(TARGET ${_stub}-${FIND_HDF5_MODE})
@@ -334,6 +334,25 @@ IF(HDF5_FOUND)
 			message(WARNING "${_stub}-${FIND_HDF5_MODE} not known as possible target")
 		endif()
 	endforeach()
+  endif()
+  
+
+  if(DEFINED UNIX AND ${HDF5_USE_STATIC_LIBRARIES})
+    #many Linux distros distribute static libs without -fPIC
+    #if they are linked into libsqeazy, an error will be thrown
+    set(HDF5_LIBRARIES_CLONE ${HDF5_LIBRARIES})
+    foreach(_H5_LIB IN LISTS HDF5_LIBRARIES_CLONE)
+      if(${_H5_LIB} MATCHES ".*lib(m|dl).a$")
+	message(STATUS "removing ${_H5_LIB} from HDF5_LIBRARIES")
+	list(REMOVE_ITEM HDF5_LIBRARIES ${_H5_LIB})
+	get_filename_component(_H5_FSTEM ${_H5_LIB} NAME_WE)
+	string(REGEX REPLACE "^lib" "" _H5_LIBID ${_H5_FSTEM})
+	list(APPEND HDF5_LIBRARIES ${_H5_LIBID})
+
+      endif()
+    endforeach()
+
+    list(REMOVE_DUPLICATES HDF5_LIBRARIES)
   endif()
   MESSAGE("++ hdf5 found at ${HDF5_INCLUDE_DIRS} ${HDF5_LIBRARY_DIRS} : ${HDF5_LIBRARIES}")
 ELSE()
