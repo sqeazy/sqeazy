@@ -246,31 +246,53 @@ endif()
 #-------------------------------- HDF5         ---------------------------------
 #needed for FindHDF5 as it expects an ENVIRONMENT variable called HDF5_ROOT as hint to the HDF5 path
 IF(EXISTS ${HDF5_DIR})
-	set(HDF5_ROOT ${HDF5_DIR})
+  set(HDF5_ROOT ${HDF5_DIR})
 ENDIF()
 
-IF(EXISTS ENV{HDF5_ROOT})
-	set(HDF5_ROOT ENV{HDF5_ROOT})
-	endif()	
+IF(EXISTS $ENV{HDF5_DIR})
+  set(HDF5_ROOT $ENV{HDF5_DIR})
+ENDIF()
+
+
+IF(EXISTS $ENV{HDF5_ROOT})
+  set(HDF5_ROOT $ENV{HDF5_ROOT})
+endif()	
+
+set(HDF5_NEW_FINDMODULE False)
 
 IF(EXISTS ${HDF5_ROOT})
-  SET(ENV{HDF5_ROOT} ${HDF5_ROOT})
-  set(ENV{HDF5_ROOT_DIR_HINT} ${HDF5_ROOT})
+
+  set($ENV{HDF5_ROOT} ${HDF5_ROOT})
+  set($ENV{HDF5_DIR} ${HDF5_ROOT})
+  set(HDF5_DIR ${HDF5_ROOT})
+  set($ENV{HDF5_ROOT_DIR_HINT} ${HDF5_ROOT})
+
+  if(EXISTS ${HDF5_ROOT}/share/cmake/FindHDF5.cmake)
+    list(APPEND CMAKE_MODULE_PATH ${HDF5_ROOT}/share/cmake)
+    set(HDF5_NEW_FINDMODULE True)
+  endif()
+  
+  if(EXISTS ${HDF5_ROOT}/cmake/FindHDF5.cmake)
+    list(APPEND CMAKE_MODULE_PATH ${HDF5_ROOT}/cmake)
+    set(HDF5_NEW_FINDMODULE True)
+  endif()
+
+message(STATUS "calling FindHDF5 with ${HDF5_ROOT}")
 ENDIF(EXISTS ${HDF5_ROOT})
 
 
-if(EXISTS ${HDF5_ROOT}/cmake/FindHDF5.cmake)
-	list(APPEND CMAKE_MODULE_PATH ${HDF5_ROOT}/cmake)
-endif()
-
 if(${HDF5_USE_STATIC_LIBRARIES})
-	set(FIND_HDF5_MODE static)
+  set(FIND_HDF5_MODE static)
 else()
-	set(FIND_HDF5_MODE shared)
+  set(FIND_HDF5_MODE shared)
 endif()	
 
-message(STATUS "calling FindHDF5 with ${HDF5_ROOT}")
-FIND_PACKAGE(HDF5 1.8 QUIET REQUIRED CXX HL ${FIND_HDF5_MODE})
+FIND_PACKAGE(HDF5 1.8  QUIET REQUIRED COMPONENTS CXX HL )
+if(${HDF5_NEW_FINDMODULE} EQUAL True)
+  message(STATUS "detected FindHDF5.cmake introduced with 1.8.16")
+  FIND_PACKAGE(HDF5 1.8 QUIET REQUIRED COMPONENTS CXX HL NO_MODULE  ${FIND_HDF5_MODE})
+endif()
+
 IF(HDF5_FOUND)
   INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIRS})
   #only required for hdf5 1.8.16 and newer
