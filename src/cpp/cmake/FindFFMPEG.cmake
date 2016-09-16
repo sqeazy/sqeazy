@@ -296,87 +296,6 @@ endif(PKG_CONFIG_FOUND AND NOT FFMPEG_IGNORE_PKG_CONFIG)
 #revert CMAKE_FIND_LIBRARY_SUFFIXES
 set( CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES_SAV} )
 
-## POST_INCLUDES
-# if( ${FFMPEG_USE_STATIC_LIBS})
-#   if(UNIX)
-#     #TODO: remove this? as it might be handled by FFMPEG_EXTRA_LINK_FLAGS
-#     #      this stuff should be resolved by the client
-        
-#     if(APPLE)
-#       set(FFMPEG_DEPENDENCIES x264;x265;pthread;bz2;z;lzma;m;dl)
-#       set(FFMPEG_DEPEND_STATIC_BLACKLIST "pthread|bz2|m|dl")
-#     else()
-#       set(FFMPEG_DEPENDENCIES x264;x265;pthread;bz2;z;lzma;va;m;dl)
-#       set(FFMPEG_DEPEND_STATIC_BLACKLIST "pthread|bz2|m|dl")
-#     endif()
-
-#     message(STATUS "[FindFFMPEG] trying to resolve dependencies for ${FFMPEG_DEPENDENCIES}")
-    
-#     foreach(_DEP IN LISTS FFMPEG_DEPENDENCIES)
-#       find_library(${_DEP}_STATIC_LIBRARY_PATH NAMES lib${_DEP}${CMAKE_STATIC_LIBRARY_SUFFIX})
-#       find_library(${_DEP}_DYNAMIC_LIBRARY_PATH NAMES ${_DEP} lib${_DEP} lib${_DEP}${CMAKE_SHARED_LIBRARY_SUFFIX})
-
-#       set(_DEP_INCLUDED FALSE)
-      
-#       if(EXISTS ${${_DEP}_STATIC_LIBRARY_PATH} )
-
-# 	get_filename_component(${_DEP}_RDIR ${${_DEP}_STATIC_LIBRARY_PATH} ABSOLUTE)
-# 	get_filename_component(${_DEP}_RDIRFNAME ${${_DEP}_RDIR} DIRECTORY)
-
-
-# 	if(NOT (${${_DEP}_STATIC_LIBRARY_PATH} MATCHES ".*lib(${FFMPEG_DEPEND_STATIC_BLACKLIST})${CMAKE_STATIC_LIBRARY_SUFFIX}"))
-# 	  link_directories(${${_DEP}_RDIRFNAME})
-# 	  if(NOT TARGET ${_DEP})
-# 	    add_library(${_DEP} STATIC IMPORTED)
-# 	    set_target_properties(${_DEP} PROPERTIES IMPORTED_LOCATION ${${_DEP}_RDIR})
-# 	    set_target_properties(${_DEP} PROPERTIES LINKER_LANGUAGE C)
-	    
-# 	    mark_as_advanced(${_DEP})
-# 	  endif()
-# 	  LIST (APPEND FFMPEG_LIBRARIES ${_DEP})
-# 	  set(_DEP_INCLUDED TRUE)
-# 	  message("++ [FindFFMPEG] static ${_DEP} added ${${_DEP}_STATIC_LIBRARY_PATH}")
-# 	endif()
-
-	
-#       endif()
-      
-#       if(EXISTS ${${_DEP}_DYNAMIC_LIBRARY_PATH})
-# 	get_filename_component(${_DEP}_RDIR ${${_DEP}_DYNAMIC_LIBRARY_PATH} ABSOLUTE)
-# 	get_filename_component(${_DEP}_RDIRFNAME ${${_DEP}_RDIR} DIRECTORY)
-
-
-
-# 	if(NOT ${_DEP_INCLUDED})
-# 	  link_directories(${${_DEP}_RDIRFNAME})
-# 	  if(NOT TARGET ${_DEP})
-# 	    add_library(${_DEP} SHARED IMPORTED)
-# 	    set_target_properties(${_DEP} PROPERTIES IMPORTED_LOCATION ${${_DEP}_RDIR})
-# 	    set_target_properties(${_DEP} PROPERTIES LINKER_LANGUAGE C)
-# 	    mark_as_advanced(${_DEP})
-# 	  endif()
-# 	  LIST (APPEND FFMPEG_LIBRARIES ${_DEP})
-# 	  set(_DEP_INCLUDED TRUE)
-# 	  message("++ [FindFFMPEG] shared ${_DEP} added ${${_DEP}_DYNAMIC_LIBRARY_PATH}")
-# 	endif()
-
-#       endif()
-
-#       if(NOT ${_DEP_INCLUDED})
-# 	message(WARNING "unable to locate lib${_DEP}, considered a dependency of requested FFMPEG targets")
-#       endif()
-
-#     endforeach()
-    
-#     # include(CheckFunctionExists)
-#     # CHECK_FUNCTION_EXISTS(pow EXTRA_LIBM_NOT_NEEDED)
-#     # if(NOT EXTRA_LIBM_NOT_NEEDED)
-#     #   LIST (APPEND FFMPEG_LIBRARIES m)
-#     # endif()
-#   endif()
-# endif()
-
-
 ## clean LDFLAGS from components and dependencies, on UNIX only yet
 string(REPLACE " " ";" FFMPEG_EXTRA_LINK_FLAG_LIST  "${FFMPEG_EXTRA_LINK_FLAGS}")
 
@@ -387,6 +306,8 @@ foreach(_FOUND_LIB IN LISTS FFMPEG_LIBRARIES)
   endif()
   REGEX_REMOVE_ITEM("${FFMPEG_EXTRA_LINK_FLAG_LIST}" "..${_LIB_STEM}$" FFMPEG_EXTRA_LINK_FLAG_LIST)
 endforeach()
+
+list(REMOVE_DUPLICATES FFMPEG_EXTRA_LINK_FLAG_LIST)
 string(REPLACE ";" " " FFMPEG_EXTRA_LINK_FLAGS  "${FFMPEG_EXTRA_LINK_FLAG_LIST}")
 
 message(STATUS "[FindFFMPEG] defining FFMPEG_EXTRA_LINK_FLAGS to ${FFMPEG_EXTRA_LINK_FLAGS}")
