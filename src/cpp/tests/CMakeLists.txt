@@ -39,21 +39,24 @@ ELSE(WIN32)
   set(SQY_LIB ${PROJECT_NAME})
 ENDIF(WIN32)
 
-message(STATUS "[tests] ${Boost_LIBRARIES} ")
+# if(DEFINED FFMPEG_EXTRA_LINK_FLAGS)
+#   set(SQY_LIB ${SQY_LIB} ${FFMPEG_EXTRA_LINK_FLAGS})
+# endif()
+if(DEFINED READY_4_BUNDLE)
+  set(SQY_LIB ${SQY_LIB} ${FFMPEG_LIBRARIES} )
+endif()
+
+message(STATUS "[tests] linking against ${SQY_LIB} ${Boost_LIBRARIES} ")
 add_executable(test_string_parsers_impl test_string_parsers_impl.cpp)
 target_link_libraries(test_string_parsers_impl ${Boost_LIBRARIES})
 
 add_executable(test_string_shapers_impl test_string_shapers_impl.cpp)
 target_link_libraries(test_string_shapers_impl ${Boost_LIBRARIES})
 
-add_executable(test_diff_schemes test_diff_schemes.cpp)
-target_link_libraries(test_diff_schemes ${SQY_LIB} ${Boost_LIBRARIES})
 
 add_executable(test_diff_scheme_impl test_diff_scheme_impl.cpp)
 target_link_libraries(test_diff_scheme_impl ${Boost_LIBRARIES})
 
-add_executable(test_bitswap_schemes test_bitswap_schemes.cpp)
-target_link_libraries(test_bitswap_schemes ${SQY_LIB} ${Boost_LIBRARIES})
 
 add_executable(test_bitswap_scheme_impl test_bitswap_scheme_impl.cpp)
 target_link_libraries(test_bitswap_scheme_impl ${Boost_LIBRARIES})
@@ -73,11 +76,9 @@ target_link_libraries(test_sqeazy_utils_impl ${Boost_LIBRARIES} )
 add_executable(test_sqeazy_header_impl test_sqeazy_header_impl.cpp)
 target_link_libraries(test_sqeazy_header_impl ${Boost_LIBRARIES})
 
-add_executable(test_background_schemes test_background_schemes.cpp)
-target_link_libraries(test_background_schemes ${SQY_LIB} ${Boost_LIBRARIES})
-
 add_executable(test_background_scheme_impl test_background_scheme_impl.cpp)
-target_link_libraries(test_background_scheme_impl ${SQY_LIB} ${Boost_LIBRARIES})
+target_link_libraries(test_background_scheme_impl # ${SQY_LIB}
+  ${Boost_LIBRARIES})
 
 
 add_executable(test_hist_impl test_hist_impl.cpp)
@@ -87,21 +88,27 @@ add_executable(test_bench_utils_impl test_bench_utils_impl.cpp)
 
 add_executable(test_lz4_encoding test_lz4_encoding.cpp)
 add_executable(test_hdf5_interface test_hdf5_interface.cpp)
-#set_target_properties(test_hdf5_interface PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src ")
+
 
 add_executable(test_pipeline_interface test_pipeline_interface.cpp)
-#set_target_properties(test_pipeline_interface PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src ")
+
 
 
 if(EXISTS ${LZ4_STATIC_LIB})
   #if static libsqeazy exists, it will contain lz4, no need to link against it yet another time
-  target_link_libraries(test_lz4_encoding ${PROJECT_NAME}_static ${Boost_LIBRARIES})
-  target_link_libraries(test_hdf5_interface ${PROJECT_NAME}_static ${Boost_LIBRARIES})
-  target_link_libraries(test_pipeline_interface ${PROJECT_NAME}_static ${Boost_LIBRARIES})
+  if(NOT DEFINED READY_4_BUNDLE)
+    target_link_libraries(test_lz4_encoding ${PROJECT_NAME}_static ${Boost_LIBRARIES})
+    target_link_libraries(test_hdf5_interface ${PROJECT_NAME}_static ${Boost_LIBRARIES})
+    target_link_libraries(test_pipeline_interface ${PROJECT_NAME}_static ${Boost_LIBRARIES})
+  else()
+    target_link_libraries(test_lz4_encoding ${PROJECT_NAME}_static ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES})
+    target_link_libraries(test_hdf5_interface ${PROJECT_NAME}_static ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES})
+    target_link_libraries(test_pipeline_interface ${PROJECT_NAME}_static ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES})
+  endif()
 else()
-  target_link_libraries(test_lz4_encoding ${PROJECT_NAME} ${Boost_LIBRARIES} ${LZ4_LIBRARY})
-  target_link_libraries(test_hdf5_interface ${PROJECT_NAME} ${Boost_LIBRARIES} ${LZ4_LIBRARY} ${HDF5_LIBRARIES})
-  target_link_libraries(test_pipeline_interface ${PROJECT_NAME} ${Boost_LIBRARIES} ${LZ4_LIBRARY})
+  target_link_libraries(test_lz4_encoding ${SQY_LIB} ${Boost_LIBRARIES} ${LZ4_LIBRARY})
+  target_link_libraries(test_hdf5_interface ${SQY_LIB} ${Boost_LIBRARIES} ${LZ4_LIBRARY} ${HDF5_LIBRARIES})
+  target_link_libraries(test_pipeline_interface ${SQY_LIB} ${Boost_LIBRARIES} ${LZ4_LIBRARY})
 endif()
 
 
@@ -123,6 +130,15 @@ target_link_libraries(test_quantiser_impl ${Boost_LIBRARIES})
 add_executable(test_yuv_utils test_yuv_utils.cpp)
 target_link_libraries(test_yuv_utils ${Boost_LIBRARIES})
 
+
+add_executable(test_background_schemes test_background_schemes.cpp)
+target_link_libraries(test_background_schemes ${SQY_LIB} ${Boost_LIBRARIES})
+
+add_executable(test_diff_schemes test_diff_schemes.cpp)
+target_link_libraries(test_diff_schemes ${SQY_LIB} ${Boost_LIBRARIES})
+
+add_executable(test_bitswap_schemes test_bitswap_schemes.cpp)
+target_link_libraries(test_bitswap_schemes ${SQY_LIB} ${Boost_LIBRARIES})
 
 
 IF(TIFF_FOUND)
@@ -148,67 +164,54 @@ IF(FFMPEG_FOUND)
 	LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
     endif()
 	
-  add_library(ext_avcodec SHARED IMPORTED)
-  set_target_properties(ext_avcodec PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVCODEC_LIBRARY}")
-
-  add_library(ext_avutil SHARED IMPORTED)
-  set_target_properties(ext_avutil PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVUTIL_LIBRARY}")
-
-  add_library(ext_avformat SHARED IMPORTED)
-  set_target_properties(ext_avformat PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVFORMAT_LIBRARY}")
-
-  add_library(ext_swscale SHARED IMPORTED)
-  set_target_properties(ext_swscale PROPERTIES IMPORTED_LOCATION "${FFMPEG_SWSCALE_LIBRARY}")
+  SET(SQY_FFMPEG_Libraries ${FFMPEG_LIBRARIES})
   
-  
-  SET(SQY_FFMPEG_Libraries ${FFMPEG_AVCODEC_LIBRARY} ${FFMPEG_AVUTIL_LIBRARY} ${FFMPEG_AVFORMAT_LIBRARY} ${FFMPEG_SWSCALE_LIBRARY})
-
   if(NOT EXTRA_LIBM_NOT_NEEDED)
 	set(SQY_FFMPEG_Libraries ${SQY_FFMPEG_Libraries} m)
   endif()
+
+  if(DEFINED FFMPEG_EXTRA_LINK_FLAGS)
+	set(SQY_FFMPEG_Libraries ${SQY_FFMPEG_Libraries} ${FFMPEG_EXTRA_LINK_FLAGS})
+  endif()
+
   
   add_executable(test_avcodec_sandbox test_avcodec_sandbox.cpp)
-  target_link_libraries(test_avcodec_sandbox ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${FFMPEG_LIBRARIES})
+  target_link_libraries(test_avcodec_sandbox ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries})
 
   add_executable(deprecated_pipeline_select_impl deprecated_pipeline_select_impl.cpp)
-  target_link_libraries(deprecated_pipeline_select_impl ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} ${TIFF_LIBRARY} ${LZ4_LIBRARY} ${FFMPEG_LIBRARIES})
-#  set_target_properties(deprecated_pipeline_select_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src ")
+  target_link_libraries(deprecated_pipeline_select_impl ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} ${TIFF_LIBRARY} ${LZ4_LIBRARY} ${SQY_FFMPEG_Libraries})
+
 
   add_executable(deprecated_pipeline_impl deprecated_pipeline_impl.cpp)
-  target_link_libraries(deprecated_pipeline_impl ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} ${LZ4_LIBRARY} ${FFMPEG_LIBRARIES})
+  target_link_libraries(deprecated_pipeline_impl ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} ${LZ4_LIBRARY} ${SQY_FFMPEG_Libraries})
 
   add_executable(test_hevc_scheme_impl test_hevc_scheme_impl.cpp)
-  target_link_libraries(test_hevc_scheme_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${FFMPEG_LIBRARIES})
+  target_link_libraries(test_hevc_scheme_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries})
 
   add_executable(test_h264_scheme_impl test_h264_scheme_impl.cpp)
-  target_link_libraries(test_h264_scheme_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${FFMPEG_LIBRARIES})
+  target_link_libraries(test_h264_scheme_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries})
 
   add_executable(test_video_utils_impl test_video_utils_impl.cpp)
-  target_link_libraries(test_video_utils_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${FFMPEG_LIBRARIES})
+  target_link_libraries(test_video_utils_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries})
 
-#  set_target_properties(test_hevc_scheme_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")  
+
 
   add_executable(test_hevc_scheme_utils test_hevc_scheme_utils.cpp)
-  target_link_libraries(test_hevc_scheme_utils ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${FFMPEG_LIBRARIES})
-#  set_target_properties(test_hevc_scheme_utils PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")  
+  target_link_libraries(test_hevc_scheme_utils ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries})
+
 
   add_executable(test_sqeazy_pipelines_impl test_sqeazy_pipelines_impl.cpp)
-  target_link_libraries(test_sqeazy_pipelines_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${FFMPEG_LIBRARIES} ${LZ4_LIBRARY})
+  target_link_libraries(test_sqeazy_pipelines_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries} ${LZ4_LIBRARY})
 
   add_executable(test_hdf5_impl test_hdf5_impl.cpp)
-#  set_target_properties(test_hdf5_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src ")
-  target_link_libraries(test_hdf5_impl ${HDF5_LIBRARIES} ${Boost_LIBRARIES} ${LZ4_LIBRARY} ${FFMPEG_LIBRARIES})
+  target_link_libraries(test_hdf5_impl ${HDF5_LIBRARIES} ${Boost_LIBRARIES} ${LZ4_LIBRARY} ${SQY_FFMPEG_Libraries})
 
 ELSE(FFMPEG_FOUND)
   MESSAGE(">> [tests] libavcodec not found. skipping test_avcodec_sandbox ...")
 ENDIF(FFMPEG_FOUND)
 
-# FIND_PACKAGE (Boost 1.42 QUIET COMPONENTS system filesystem unit_test_framework thread date_time REQUIRED)
+
 target_link_libraries(test_bench_utils_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY})
-#set_target_properties(test_bench_utils_impl PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")  
-
-
-
 
 ENDIF(TIFF_FOUND)
 
