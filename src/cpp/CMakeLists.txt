@@ -271,13 +271,24 @@ IF(EXISTS ${HDF5_ROOT})
     list(APPEND CMAKE_MODULE_PATH ${HDF5_ROOT}/share/cmake)
     set(HDF5_NEW_FINDMODULE True)
   endif()
-  
+    
   if(EXISTS ${HDF5_ROOT}/cmake/FindHDF5.cmake)
     list(APPEND CMAKE_MODULE_PATH ${HDF5_ROOT}/cmake)
+	list(APPEND CMAKE_PREFIX_PATH ${HDF5_ROOT}/cmake)
+    set(HDF5_NEW_FINDMODULE True)
+  endif()
+  
+  if(IS_DIRECTORY ${HDF5_ROOT}\\cmake)
+	list(APPEND CMAKE_MODULE_PATH "${HDF5_ROOT}\\cmake")
+	list(APPEND CMAKE_PREFIX_PATH "${HDF5_ROOT}\\cmake")
     set(HDF5_NEW_FINDMODULE True)
   endif()
 
-message(STATUS "calling FindHDF5 with ${HDF5_ROOT}")
+if(IS_DIRECTORY ${HDF5_ROOT})  
+message(STATUS "calling FindHDF5 with ${HDF5_ROOT} (HDF5_NEW_FINDMODULE: ${HDF5_NEW_FINDMODULE})")
+else()
+message(FATAL_ERROR "calling FindHDF5 with non-existing ${HDF5_ROOT}")
+endif()
 ENDIF(EXISTS ${HDF5_ROOT})
 
 
@@ -287,13 +298,32 @@ else()
   set(FIND_HDF5_MODE shared)
 endif()	
 
-FIND_PACKAGE(HDF5 1.8  QUIET REQUIRED COMPONENTS CXX HL )
-if(${HDF5_NEW_FINDMODULE} EQUAL True)
+FIND_PACKAGE(HDF5 1.8 QUIET REQUIRED COMPONENTS CXX HL )
+if(NOT "${HDF5_NEW_FINDMODULE}" MATCHES "False")
+  #unset(HDF5_FOUND)
   message(STATUS "detected FindHDF5.cmake introduced with 1.8.16")
-  FIND_PACKAGE(HDF5 1.8 QUIET REQUIRED COMPONENTS CXX HL NO_MODULE  ${FIND_HDF5_MODE})
+  #FIND_PACKAGE(HDF5 ${HDF5_VERSION} NAMES hdf5 COMPONENTS CXX HL ${FIND_HDF5_MODE})
+  FIND_PACKAGE(HDF5 1.8 QUIET REQUIRED COMPONENTS CXX HL ${FIND_HDF5_MODE} NAMES hdf5 )
+else()
+  message(STATUS "FindHDF5.cmake undetected below ${HDF5_ROOT}, ${HDF5_VERSION}, (HDF5_NEW_FINDMODULE: ${HDF5_NEW_FINDMODULE})")
 endif()
 
 IF(HDF5_FOUND)
+
+if(NOT HDF5_INCLUDE_DIRS OR NOT IS_DIRECTORY ${HDF5_INCLUDE_DIRS})
+  
+	find_file 	(HDF5_H5PUBLIC_H "H5public.h"
+		HINTS ${HDF5_ROOT}
+		PATHS ${HDF5_ROOT}
+		PATH_SUFFIXES
+			include
+				)
+if(EXISTS ${HDF5_H5PUBLIC_H})
+get_filename_component(HDF5_INCLUDE_DIRS "${HDF5_H5PUBLIC_H}" DIRECTORY)
+endif()
+endif()
+
+
   INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIRS})
   #only required for hdf5 1.8.16 and newer
   #http://hdf-forum.184993.n3.nabble.com/Re-linking-HDF5-with-VS2015-C-64-bit-only-works-with-static-libraries-td4028678.html
