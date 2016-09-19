@@ -165,8 +165,9 @@ task cmake(type:Exec) {
 
 
   def some_args = build_cmake_args()
+  
+  
   args some_args
-
   args file(native_source_dir).absolutePath
 	
  
@@ -179,18 +180,16 @@ task make(type:Exec) {
   description 'compile native code'
   
   inputs.dir file(native_build_dir).absolutePath
-
+  def path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake"
   workingDir native_build_dir
   
   if (Os.isFamily(Os.FAMILY_WINDOWS))
       {
-	   
-	executable project_root+'\\run_cmake_build.bat'
-	//executable 'cmake.exe'
-	//args '--build .'
-	//args '--config Release'
-	//args '--target ALL_BUILD'
-	 
+	   path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake.exe"
+	//executable project_root+'\\run_cmake_build.bat'
+	
+	commandLine 'cmd', '/c', path_to_cmake_app,'--build','.','--target','ALL_BUILD','--config','Release'
+	
 	outputs.file '.\\build\\cpp\\src\\libsqeazy.dll'
       } 
       else if (Os.isFamily(Os.FAMILY_MAC))
@@ -269,24 +268,30 @@ task make_bundle(type:Exec) {
   
   inputs.dir file(native_build_dir).absolutePath
 
+  def path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake"
   workingDir native_build_dir
   
   if (Os.isFamily(Os.FAMILY_WINDOWS))
       {
-	outputs.file '.\\build\\cpp\\bundle\\libsqeazy.dll'
-	executable project_root+'\\run_cmake_bundle.bat'
-	/* executable 'cmake.exe'
-	   args ' --build . --target bundle --config Release' */
+	  path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake.exe"
+		outputs.file '.\\build\\cpp\\bundle\\libsqeazy.dll'
+		
+		commandLine 'cmd', '/c', path_to_cmake_app,'--build','.','--target','bundle','--config','Release'
+				
       } 
-      else if (Os.isFamily(Os.FAMILY_MAC))
+      
+	if (Os.isFamily(Os.FAMILY_MAC))
   {
+  workingDir native_build_dir
     outputs.file './build/cpp/bundle/libsqeazy.dylib'
     executable 'make'
     args 'bundle'
 
   } 
-  else if (Os.isFamily(Os.FAMILY_UNIX))
+  
+  if (Os.isFamily(Os.FAMILY_UNIX))
   {
+  
     outputs.file './build/cpp/bundle/libsqeazy.so'
     executable 'make'
     args 'bundle'
