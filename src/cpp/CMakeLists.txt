@@ -20,6 +20,10 @@ if(NOT(${CMAKE_VERSION} VERSION_LESS "3.3.0"))
 cmake_policy(SET CMP0054 NEW)
 endif()
 
+if(NOT CMAKE_BUILD_TYPE)
+	set(CMAKE_BUILD_TYPE Release)
+endif()	
+
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
  
@@ -205,6 +209,10 @@ if(${READY_4_BUNDLE})
   #implies that all find_package calls will primarily look for static libs
   set(BUILD_SHARED_LIBS OFF)
   set(Boost_USE_STATIC_LIBS ON)
+  #TODO: unclear if that might also hold for UNIX derivates
+  if(MSVC)
+	set(Boost_USE_STATIC_RUNTIME ON)
+  endif()
   set(LZ4_USE_STATIC_LIBS ON)
   set(HDF5_USE_STATIC_LIBRARIES ON)
   set(FFMPEG_USE_STATIC_LIBS ON)
