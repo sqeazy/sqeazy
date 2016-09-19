@@ -1,0 +1,1 @@
+gradle.exe upload_bundle -Pboost_path=C:\Users\steinbac\software\boost\1_59_0_static -Ptiff_path=C:\Users\steinbac\software\tiff\4.0.6 -Pffmpeg_path=C:\Users\steinbac\software\ffmpeg\3.0.2-static -Plz4_path=C:\Users\steinbac\software\lz4\master -Phdf5_path=C:\Users\steinbac\software\hdf5\1.8.17-static -Pcmake_app_path=C:\Users\steinbac\software\cmake\3.5.2\bin\cmake.exe 
