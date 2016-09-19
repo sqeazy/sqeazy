@@ -182,7 +182,7 @@ function(BUNDLE tgt destdir)
 	set_target_properties( bundle_${tgt} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${destdir})
     set_target_properties( bundle_${tgt} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${destdir} )
     set_target_properties( bundle_${tgt} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${destdir} )
-  
+	target_compile_options(bundle_${tgt} PUBLIC "/MT")
     # etc for the other available configuration types (MinSizeRel, RelWithDebInfo)
   endif ( MSVC )
   
