@@ -59,6 +59,7 @@ endfunction()
 # SETUP VARIABLES #############################################################
 set( CMAKE_FIND_LIBRARY_SUFFIXES_SAV ${CMAKE_FIND_LIBRARY_SUFFIXES} )
 
+#TODO: is this really necessary?
 if( ${FFMPEG_USE_STATIC_LIBS})
   set( CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX} )
 else()
@@ -224,20 +225,16 @@ else(PKG_CONFIG_FOUND AND NOT FFMPEG_IGNORE_PKG_CONFIG)
     STRING (TOUPPER ${_FFMPEG_COMPONENT} _FFMPEG_COMPONENT_UPPER)
     SET (_FFMPEG_LIBRARY_BASE FFMPEG_${_FFMPEG_COMPONENT_UPPER}_LIBRARY)
 
-
     #tries to obtain FFMPEG_COMPONENT_LIBRARY
-
-
+	
     FIND_LIBRARY (${_FFMPEG_LIBRARY_BASE}
-      NAMES ${_FFMPEG_COMPONENT} NAMES_PER_DIR
+      NAMES ${_FFMPEG_COMPONENT} lib${_FFMPEG_COMPONENT} ${_FFMPEG_COMPONENT}${CMAKE_STATIC_LIBRARY_SUFFIX} lib${_FFMPEG_COMPONENT}${CMAKE_STATIC_LIBRARY_SUFFIX} NAMES_PER_DIR
       HINTS ${FFMPEG_ROOT_DIR}
       PATH_SUFFIXES bin lib lib64
       DOC "Ffmpeg ${_FFMPEG_COMPONENT} library")
 
-
-
     if(NOT FFMPEG_FIND_QUIETLY)
-      message("** [FindFFMPEG] found ${_FFMPEG_LIBRARY_BASE}, setting FFMPEG_${_FFMPEG_COMPONENT_UPPER}_FOUND")
+      message("** [FindFFMPEG] found ${_FFMPEG_COMPONENT} ${_FFMPEG_LIBRARY_BASE} ${${_FFMPEG_LIBRARY_BASE}}, setting FFMPEG_${_FFMPEG_COMPONENT_UPPER}_FOUND")
 
     endif()
     
@@ -255,6 +252,8 @@ else(PKG_CONFIG_FOUND AND NOT FFMPEG_IGNORE_PKG_CONFIG)
 	else()
 	  if(NOT WIN32)
 	    set(FFMPEG_EXTRA_LINK_FLAGS "-lXv -lX11 -lXext -lva -lva-x11 -lva -lxcb -lxcb-shm -lxcb -lxcb-xfixes -lxcb-render -lxcb-shape -lxcb -lxcb-shape -lxcb -lX11 -lasound -lSDL -lpthread -lx265 -lx264 -lm -llzma -lbz2 -lz -pthread -lXv -lX11 -lXext -lva -lva-x11 -lva -lxcb -lxcb-shm -lxcb -lxcb-xfixes -lxcb-render -lxcb-shape -lxcb -lxcb-shape -lxcb -lX11 -lasound -lSDL -lpthread -lx265 -lx264 -lm -llzma -lbz2 -lz -pthread -lm")
+	  else()
+		set(FFMPEG_EXTRA_LINK_FLAGS "ws2_32.lib Secur32.lib x265.lib libx264.lib psapi.lib advapi32.lib shell32.lib")
 	  endif()
 	endif()
       else()
@@ -308,7 +307,9 @@ foreach(_FOUND_LIB IN LISTS FFMPEG_LIBRARIES)
 endforeach()
 
 if(NOT APPLE)
-  list(REMOVE_DUPLICATES FFMPEG_EXTRA_LINK_FLAG_LIST)
+  if(FFMPEG_EXTRA_LINK_FLAG_LIST)
+	list(REMOVE_DUPLICATES FFMPEG_EXTRA_LINK_FLAG_LIST)
+  endif()
 endif()
 string(REPLACE ";" " " FFMPEG_EXTRA_LINK_FLAGS  "${FFMPEG_EXTRA_LINK_FLAG_LIST}")
 
