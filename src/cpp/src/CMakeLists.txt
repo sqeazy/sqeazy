@@ -10,40 +10,6 @@ IF(WIN32)
   
 ENDIF()
 
-# FIND_PACKAGE(LZ4 REQUIRED QUIET)
-if(LZ4_FOUND)
-  
-	IF(WIN32)
-		IF(EXISTS ${LZ4_STATIC_LIB})
-			add_library(ext_lz4 STATIC IMPORTED )
-			set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_STATIC_LIB}")
-		ELSE()
-		IF(EXISTS ${LZ4_SHARED_LIB})
-			add_library(ext_lz4 SHARED IMPORTED )
-			set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}")
-			STRING(REPLACE dll lib LZ4_SHARED_IMPLIB ${LZ4_SHARED_LIB})
-			set_target_properties(ext_lz4 PROPERTIES IMPORTED_IMPLIB "${LZ4_SHARED_IMPLIB}")
-		#TODO: #add HDF5_cxx_libraries in a similar fashion
-		ENDIF(EXISTS ${LZ4_SHARED_LIB})
-		ENDIF()
-	ELSE(WIN32)
-		IF(EXISTS ${LZ4_STATIC_LIB})
-			add_library(ext_lz4 STATIC IMPORTED )
-			set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}")
-		ELSE()
-			IF(EXISTS ${LZ4_SHARED_LIB})
-				add_library(ext_lz4 SHARED IMPORTED )
-				set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}")
-			ENDIF()
-		ENDIF()
-	ENDIF(WIN32)
-
-else(LZ4_FOUND)
-
-message(WARNING "-- [src/cpp/src] lz4 not found!")
-
-endif(LZ4_FOUND)
-
 ########################################### GLOBAL DEFINES ######################################################
 #SET(LIST_ADDITIONAL_COMPILE_FLAGS "")
 
