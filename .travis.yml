@@ -34,7 +34,7 @@ before_install:
   #############################################################################
   # HDF5                                                                       #
   #############################################################################
-  - travis_retry wget --no-check-certificate https://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.16/src/hdf5-1.8.16.tar.bz2
+  - travis_retry wget --no-check-certificate https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.16/src/hdf5-1.8.16.tar.bz2
   - tar xf hdf5-1.8.16.tar.bz2
   - cd hdf5-1.8.16/
   - ./configure --enable-cxx --prefix=/usr
