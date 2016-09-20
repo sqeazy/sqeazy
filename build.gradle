@@ -456,8 +456,8 @@ task bake_bindings(type:JavaExec) {
 		    '-f',
 		    '-o',dist_dir,
 		    '-rootPackage','src',
-		    '-package','sqeazy.bindings',
-		    '-dependencies','avcodec,avformat,avutil,hdf5,hdf5_cpp,hdf5_hl,boost_filesystem,boost_system,lz4,swscale'
+		    '-package','sqeazy.bindings'// ,
+		    // '-dependencies','avcodec,avformat,avutil,hdf5,hdf5_cpp,hdf5_hl,boost_filesystem,boost_system,lz4,swscale'
 		   ]
 
   //adding platform identifiers
