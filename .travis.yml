@@ -85,8 +85,8 @@ before_install:
   - tar xf boost.tar.bz2
   - cd boost_1_*/
   - if [[ ! -e /usr/lib/libboost_date_time.so ]]; then
-      sudo ./bootstrap.sh --with-toolset=gcc --with-libraries=date_time,system,filesystem,test,thread,program_options,regex &&
-      sudo ./b2 -j2 &&
+      ./bootstrap.sh --with-toolset=gcc --with-libraries=date_time,system,filesystem,test,thread,program_options,regex &&
+      ./b2 -j2 &&
       sudo ./b2 install &&
       echo "boost installed in /usr" &&
       ls -lrth /usr/lib*/libboost*;
