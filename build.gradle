@@ -345,9 +345,13 @@ task upload_bundle(type:Exec) {
   def arch = jnaerator_platform()
   def fname = file(zip_bundle.outputs.files[0]).getName()
   def url = 'https://api.bintray.com/content/psteinb/sqeazy/'+arch+'/'+project.version+'/'+arch+'/'+project.version+'/'+fname+'?publish=1'
-  
-  args '-T'+fname,'-u'+bintray_user+':'+bintray_key, url
-   
+
+  if(hasProperty('bintray_user') && hasProperty('bintray_key') ){
+    args '-T'+fname,'-u'+bintray_user+':'+bintray_key, url
+  }
+  else {
+    println 'bintray_user and bintray_key not found, unable to create URL in upload_bundle'
+  }
   
 }
 
