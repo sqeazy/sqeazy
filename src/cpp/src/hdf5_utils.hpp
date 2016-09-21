@@ -776,10 +776,12 @@ namespace sqeazy {
       std::vector<unsigned> cd_values;
       
       std::string grp_path = extract_group_path(_dname);
-      const bool ds_exists = has_h5_item(grp_path);
-      bool open_group = ds_exists || (grp_path[0] == '/' && grp_path.size() == 1);
-      H5::Group grp(open_group ? file_->openGroup(grp_path) : file_->createGroup(grp_path));
+      bool grp_exists = has_h5_item(grp_path);
+      bool open_group = grp_exists || (grp_path[0] == '/' && grp_path.size() == 1);
       
+      H5::Group grp(open_group ? file_->openGroup(grp_path) : file_->createGroup(grp_path));
+
+      bool ds_exists = has_h5_item(_dname);
       H5::DataSet dataset_(ds_exists ? grp.openDataSet( _dname.c_str() )  : grp.createDataSet( _dname, 
 											       hdf5_compiletime_dtype<T>::instance(),
 											       dataspace_, 
