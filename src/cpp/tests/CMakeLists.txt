@@ -47,6 +47,10 @@ if(DEFINED READY_4_BUNDLE)
 endif()
 
 message(STATUS "[tests] linking against ${SQY_LIB} ${Boost_LIBRARIES} ")
+
+add_executable(test_compass_impl test_compass_impl.cpp)
+target_link_libraries(test_compass_impl ${Boost_LIBRARIES})
+
 add_executable(test_string_parsers_impl test_string_parsers_impl.cpp)
 target_link_libraries(test_string_parsers_impl ${Boost_LIBRARIES})
 
