@@ -261,7 +261,7 @@ task cmake_4_bundle(type:Exec) {
 
   args build_cmake_args()
 
-  args "-DREADY_4_BUNDLE=ON"
+  args "-DBUNDLE_SQEAZY=ON"
   
   args file(native_source_dir).absolutePath
 	

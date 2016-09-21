@@ -48,7 +48,7 @@ INSTALL(TARGETS ${SQY_SRC_TARGETS}
 
 
 ########################################### SQY ######################################################
-if(NOT READY_4_BUNDLE)
+if(NOT BUNDLE_SQEAZY OR NOT ${BUNDLE_SQEAZY})
   add_executable(sqy sqy.cpp)
 
   set_target_properties(sqy PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -62,17 +62,16 @@ if(NOT READY_4_BUNDLE)
 endif()
 
 ########################################### DEPLOYMENT LIBSQY ######################################################
-include(${PROJECT_SOURCE_DIR}/cmake/bundle_target.cmake)
+if(BUNDLE_SQEAZY OR ${BUNDLE_SQEAZY})
+  
+  include(${PROJECT_SOURCE_DIR}/cmake/bundle_target.cmake)
 
-set(BUNDLE_DIR ${PROJECT_BINARY_DIR}/bundle CACHE STRING "directory to put sqeazy bundle into")
-set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES ${BUNDLE_DIR})
+  set(BUNDLE_DIR ${PROJECT_BINARY_DIR}/bundle CACHE STRING "directory to put sqeazy bundle into")
+  set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES ${BUNDLE_DIR})
 
-bundle(${PROJECT_NAME} ${BUNDLE_DIR})
+  bundle(${PROJECT_NAME} ${BUNDLE_DIR})
 
-# if(${FFMPEG_USE_STATIC_LIBS})
-#   set_property(TARGET bundle_${PROJECT_NAME} APPEND_STRING PROPERTY LINK_FLAGS " ${FFMPEG_EXTRA_LINK_FLAGS}")
-# endif()
+  add_custom_target(bundle DEPENDS bundle_${PROJECT_NAME} )
 
-add_custom_target(bundle DEPENDS bundle_${PROJECT_NAME} )
-
-set_target_properties(bundle PROPERTIES EXCLUDE_FROM_ALL TRUE)
+  set_target_properties(bundle PROPERTIES EXCLUDE_FROM_ALL TRUE)
+endif()
