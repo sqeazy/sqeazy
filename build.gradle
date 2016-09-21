@@ -10,6 +10,8 @@ apply plugin: 'maven-publish'
 
 version '0.2.1'
 
+def native_group = 'native'
+def bundle_group = 'bundle'
 
 def project_root = file(".").absolutePath
 def native_build_dir = './build/cpp'
@@ -48,12 +50,6 @@ def jnaerator_platform = {
   return plat_path
 }
 
-task create_build_dir << {
-
-  description 'create custom build directory '+native_build_dir
-  
-  new File(native_build_dir).mkdirs()
-}
 
 def build_cmake_args = {
 
@@ -121,10 +117,21 @@ def build_cmake_args = {
 
   return local_args
 }
+
+task create_build_dir << {
+
+  description 'create custom build directory '+native_build_dir
+  group native_group
+  
+  new File(native_build_dir).mkdirs()
+}
+
+
 // cmake task:
 task cmake(type:Exec) {
 
   description 'invoke cmake to build native libs in '+native_build_dir
+  group native_group
   
   workingDir native_build_dir
   
@@ -212,6 +219,7 @@ task make(type:Exec) {
 task cmake_4_bundle(type:Exec) {
 
   description 'invoke cmake to build sqeazy bundle in '+native_build_dir
+  group bundle_group
   
   workingDir native_build_dir
   
@@ -265,6 +273,7 @@ task cmake_4_bundle(type:Exec) {
 task make_bundle(type:Exec) {
 
   description 'use cmake to bundle libsqeazy.* and all first order dependencies'
+  group bundle_group
   
   inputs.dir file(native_build_dir).absolutePath
 
@@ -276,7 +285,7 @@ task make_bundle(type:Exec) {
 	  path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake.exe"
 		outputs.file '.\\build\\cpp\\bundle\\libsqeazy.dll'
 		
-		commandLine 'cmd', '/c', path_to_cmake_app,'--build','.','--target','bundle','--config','Release'
+		commandLine 'cmd', '/c', path_to_cmake_app,'--build','.','--target',bundle_group,'--config','Release'
 				
       } 
       
@@ -285,7 +294,7 @@ task make_bundle(type:Exec) {
   workingDir native_build_dir
     outputs.file './build/cpp/bundle/libsqeazy.dylib'
     executable 'make'
-    args 'bundle'
+    args bundle_group
 
   } 
   
@@ -294,7 +303,7 @@ task make_bundle(type:Exec) {
   
     outputs.file './build/cpp/bundle/libsqeazy.so'
     executable 'make'
-    args 'bundle'
+    args bundle_group
   }
 
 }
@@ -302,6 +311,7 @@ task make_bundle(type:Exec) {
 task zip_bundle(type:Zip) {
 
   description 'zip the libsqeazy.* bundle'
+  group bundle_group
   
   def zinpath = file(native_build_dir).absolutePath+'/bundle'
 
@@ -324,6 +334,7 @@ task zip_bundle(type:Zip) {
 task upload_bundle(type:Exec) {
 
   description 'upload the libsqeazy* bundle to bintray for the current platform'
+  group bundle_group
   
   inputs.files zip_bundle.outputs.files
   def outputs_exp = file(native_build_dir+'/bundle/').absolutePath
@@ -359,6 +370,7 @@ task upload_bundle(type:Exec) {
 task fetch_version {
 
   description 'download all known libsqeazy* bundles from bintray'
+  group bundle_group
   
   def version_to_fetch = project.hasProperty("version_to_fetch") ? version_to_fetch : project.version
 
@@ -414,7 +426,8 @@ task fetch_version {
 task unpack_for_bake(type: Copy){
 
   description 'unpack libsqeazy* bundles from bintray to '+dist_dir
-
+  group bundle_group
+  
   def ftree = fileTree(dist_dir).include('*.zip')
   ftree.getFiles().each { File bundle ->
     from zipTree(bundle)
@@ -435,8 +448,9 @@ task unpack_for_bake(type: Copy){
 // Build java bindings base on all 
 task bake_bindings(type:JavaExec) {
 
-
   description 'use libsqeazy* bundles in '+dist_dir+' to build a fat jnaerator jar'
+  group bundle_group
+  
   classpath = files('tools/jnaerator-0.13-SNAPSHOT-shaded.jar')
   //http://stackoverflow.com/questions/29530261/how-to-use-jnaerator-with-multiple-dynamic-libraries-under-one-header/29549769#29549769
 
@@ -496,13 +510,19 @@ task bake_bindings(type:JavaExec) {
 
 task advertise_pie(type: Copy) {
 
+  description 'unpack build/sqeazy.jar to distribution '+dist_dir+' directory'
+  group bundle_group
+  
   from zipTree("build/sqeazy.jar")
   into dist_dir
   
 }
 
 task finish_pie(type: Jar) {
-
+  
+  description 'collect contents of '+dist_dir+' (most likely native libs from all supported platforms) and put them in a common .jar file'
+  group bundle_group
+  
   from dist_dir
   include "**"
   exclude "*.zip"
@@ -515,6 +535,10 @@ task finish_pie(type: Jar) {
 // Build java bindings:
 task java_bindings(type:JavaExec) {
 
+  description 'call jnaerator and build the java interface to sqeazy'
+  group native_group
+  
+  
   if (Os.isFamily(Os.FAMILY_WINDOWS)) {
     inputs.files './src/cpp/inc/sqeazy.h', './build/cpp/src/libsqeazy.dll'
   } 
@@ -572,12 +596,16 @@ task java_bindings(type:JavaExec) {
   sqeazy_header.absolutePath
   	
   
-  classpath = files('tools/jnaerator.jar')
+  classpath = files('tools/jnaerator-0.13-SNAPSHOT-shaded.jar')
 	
 }
 
 // make task:
 task ctest(type:Exec) {
+
+  description 'run the native tests with ctest'
+  group native_group
+
   
   inputs.dir file(native_build_dir).absolutePath
   workingDir native_build_dir
@@ -599,7 +627,8 @@ task ctest(type:Exec) {
 
 task build_native <<  {
 
-  println 'sqeazy native build successful'
+  description 'empty task to collect all native build steps under'
+  group native_group
   
 }
 
@@ -632,22 +661,34 @@ make.dependsOn cmake
 ctest.dependsOn make
 build_native.dependsOn ctest
 
+//java tasks
+java_bindings.dependsOn build_native
+java_bindings.dependsOn sqeazy_available
+compileJava.dependsOn java_bindings
+test.dependsOn compileJava
+
 //bundle native libraries for bintray upload
 cmake_4_bundle.dependsOn create_build_dir
 make_bundle.dependsOn cmake_4_bundle
 zip_bundle.dependsOn make_bundle
 upload_bundle.dependsOn zip_bundle
 
-//fetch all bintray entries for version and build the sqeazy pie
+
+//fetch all bintray entries for specified version and build the sqeazy pie
 unpack_for_bake.dependsOn fetch_version
 bake_bindings.dependsOn unpack_for_bake
 advertise_pie.dependsOn bake_bindings
 finish_pie.dependsOn advertise_pie
 
-//java tasks
-java_bindings.dependsOn sqeazy_available
-compileJava.dependsOn java_bindings
-test.dependsOn compileJava
+assemble.dependsOn.remove("finish_pie")
+assemble.dependsOn.remove("avertise_pie")
+assemble.dependsOn.remove("bake_bindings")
+assemble.dependsOn.remove("unpack_for_bake")
+
+check.dependsOn.remove("finish_pie")
+check.dependsOn.remove("avertise_pie")
+check.dependsOn.remove("bake_bindings")
+check.dependsOn.remove("unpack_for_bake")
 
 
 //***********************************************************************************
