@@ -76,7 +76,7 @@ before_install:
   #############################################################################
   - sudo add-apt-repository -y ppa:cwchien/gradle
   - sudo apt-get -qq update
-  - sudo apt-get install gradle-2.11
+  - sudo apt-get install gradle-3.0
   - gradle --version
 
 script:
