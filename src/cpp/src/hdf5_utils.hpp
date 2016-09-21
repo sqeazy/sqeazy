@@ -725,11 +725,11 @@ namespace sqeazy {
       H5::PredType type_to_store = hdf5_runtime_dtype::instance(hdr.raw_type());
 
       std::string grp_path = extract_group_path(_dname);
-      const bool ds_exists = has_h5_item(grp_path);
-      bool open_group = ds_exists || (grp_path[0] == '/' && grp_path.size() == 1);
+      const bool grp_exists = has_h5_item(grp_path);
+      bool open_group = grp_exists || (grp_path[0] == '/' && grp_path.size() == 1);
       H5::Group grp(open_group ? file_->openGroup(grp_path) : file_->createGroup(grp_path));
 
-
+      bool ds_exists = has_h5_item(_dname);
       H5::DataSet dataset_(ds_exists ? grp.openDataSet( _dname.c_str() ) : grp.createDataSet( _dname, 
 											      type_to_store,
 											      dataspace_, 
@@ -860,11 +860,12 @@ namespace sqeazy {
       }
 
       std::string grp_path = extract_group_path(_dname);
-      const bool ds_exists = has_h5_item(grp_path);
-      bool open_group = ds_exists || (grp_path[0] == '/' && grp_path.size() == 1);
+      const bool grp_exists = has_h5_item(grp_path);
+      bool open_group = grp_exists || (grp_path[0] == '/' && grp_path.size() == 1);
       H5::Group grp(open_group ? file_->openGroup(grp_path) : file_->createGroup(grp_path));
 
       //FIXME: what if _dname exists?
+      bool ds_exists = has_h5_item(_dname);
       H5::DataSet dataset_(ds_exists ? grp.openDataSet( _dname.c_str() )  : grp.createDataSet( _dname, 
 											       hdf5_compiletime_dtype<T>::instance(),
 											       dataspace_, 
