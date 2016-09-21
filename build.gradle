@@ -623,6 +623,8 @@ task ctest(type:Exec) {
     executable 'ctest'
   }
 
+  args '--output-on-failure'
+  
 }
 
 task build_native <<  {
