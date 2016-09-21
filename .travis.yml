@@ -1,6 +1,10 @@
 sudo: required
 dist: trusty
 
+cache:
+  directories:
+  - /usr
+  
 language: java
 jdk:
   - oraclejdk8
@@ -15,9 +19,17 @@ before_install:
   - git clone https://git.ffmpeg.org/ffmpeg.git ffmpeg_repo
   - cd ffmpeg_repo
   - git checkout n3.0.2
-  - ./configure --prefix=/usr --enable-libx265 --enable-libx264 --enable-gpl --enable-shared --disable-indevs --disable-outdevs
-  - make -j2
-  - sudo make install
+  if [[ ! -e /usr/lib/libavcodec.so ]];
+  then
+    ./configure --prefix=/usr --enable-libx265 --enable-libx264 --enable-gpl --enable-shared --disable-indevs --disable-outdevs
+    make -j2
+    sudo make install
+    echo "ffmpeg installed in /usr"
+    ls -lrth /usr/lib*/libav*
+  else
+    echo "ffmpeg found in /usr"
+    ls -lrth /usr/lib*/libav*
+  fi
   - cd .. && sudo rm -rf ffmpeg_repo
   - ffmpeg -version
 
@@ -27,7 +39,16 @@ before_install:
   - travis_retry wget --no-check-certificate https://github.com/Cyan4973/lz4/archive/r131.tar.gz
   - tar xf r131.tar.gz
   - cd lz4-r131/lib
-  - sudo make install PREFIX=/usr
+  if [[ ! -e /usr/lib/liblz4.so ]];
+  then
+    sudo make install PREFIX=/usr
+    echo "lz4 installed in /usr"
+    ls -lrth /usr/lib*/liblz*
+
+  else
+    echo "lz4 found in /usr"
+    ls -lrth /usr/lib*/liblz*
+  fi
   - cd ../.. && sudo rm -rf lz4-r131
   - ls -lrth /usr/include/lz4.h
 
@@ -37,9 +58,16 @@ before_install:
   - travis_retry wget --no-check-certificate https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.16/src/hdf5-1.8.16.tar.bz2
   - tar xf hdf5-1.8.16.tar.bz2
   - cd hdf5-1.8.16/
-  - ./configure --enable-cxx --enable-hl --prefix=/usr
-  - make -j2
-  - sudo make install
+  if [[ ! -e /usr/lib/libhdf5_hl.so || ! -e /usr/lib/libhdf5_hl_cpp.so ]];
+   ./configure --enable-cxx --enable-hl --prefix=/usr
+   make -j2
+   sudo make install
+    echo "hdf5 installed in /usr"
+   ls -lrth /usr/lib*/libhdf5*
+  else
+    echo "hdf5 found in /usr"
+    ls -lrth /usr/lib*/libhdf5*
+  fi
   - cd .. && sudo rm -rf hdf5-1.8.16/
   - h5ls --version
 
@@ -65,9 +93,17 @@ before_install:
   - travis_retry wget --no-check-certificate -O boost.tar.bz2 http://sourceforge.net/projects/boost/files/boost/1.58.0/boost_1_58_0.tar.bz2/download
   - tar xf boost.tar.bz2
   - cd boost_1_*/
-  - sudo ./bootstrap.sh --with-toolset=gcc --with-libraries=date_time,system,filesystem,test,thread,program_options,regex
-  - sudo ./b2 -j2
-  - sudo ./b2 install
+  if [[ ! -e /usr/lib/libboost_date_time.so ]];
+  then
+    sudo ./bootstrap.sh --with-toolset=gcc --with-libraries=date_time,system,filesystem,test,thread,program_options,regex
+    sudo ./b2 -j2
+    sudo ./b2 install
+    echo "boost installed in /usr"
+    ls -lrth /usr/lib*/libboost*
+  else
+    echo "boost found in /usr"
+    ls -lrth /usr/lib*/libboost*
+  endif
   - cd .. && sudo rm -rf boost_1_*/
   
 
