@@ -1,81 +1,57 @@
 #ifndef _COMPASS_HPP_
 #define _COMPASS_HPP_
 
+#include <type_traits>
 #include <cstdint>
-#include "cpuid.h"
+#include "compass_detail.hpp"
 
 namespace compass {
 
   namespace compiletime {
-
-    struct gnu_tag  {};
-    struct llvm_tag {};
-    struct msvc_tag {};
     
-    static constexpr bool is_gnu(){
+    static const bool is_gnu(){
 
-#ifdef __GNUC__
-      return true;
-#else
-      return false;
-#endif
+      using current_platform_t = platform::type;
+      
+      bool value = std::is_same<current_platform_t,gnu_tag>::value;
+      return value;
       
     }
 
-    static constexpr bool is_llvm(){
+    static const bool is_llvm(){
 
-#ifdef __clang__
-      return true;
-#else
-      return false;
-#endif
-      
+      using current_platform_t = platform::type;
+      bool value = std::is_same<current_platform_t,llvm_tag>::value;
+      return value;
+
     }
 
-    static constexpr bool is_msvc(){
+    static const bool is_msvc(){
 
-#ifdef _MSC_BUILD
-      return true;
-#else
-      return false;
-#endif
-      
+      using current_platform_t = platform::type;
+      bool value = std::is_same<current_platform_t,msvc_tag>::value;
+      return value;
+
     }
 
   };
 
-  namespace ct = compiletime;
+  
   
   namespace runtime {
 
 
-    static bool detail_works(compiletime::gnu_tag) {
-
-      std::uint32_t regs[4] = {0,0,0,0};
-      int cpuid_rvalue = __get_cpuid(0,&regs[0],&regs[1],&regs[2],&regs[3]);
-      
-      if(cpuid_rvalue > 0)
-	return true;
-      else
-	return false;
-      
-    }
-    
-    
     static bool works() {
 
-      //TODO: infer platform at compile-time here
-      #ifdef __GNUC__
-      return detail_works(ct::gnu_tag());
-      #else
-      return false;
-      #endif
+      using current_platform_t = ct::platform::type;
+      return detail::works(current_platform_t());
       
     }
+
+    
     
   };
 
-  namespace rt = compiletime;
 
 };
 
