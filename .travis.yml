@@ -17,13 +17,13 @@ before_install:
   - cd ffmpeg_repo
   - git checkout n3.0.2
   - if [[ -e /usr/lib/libavcodec.so ]]; then
-      echo "ffmpeg found in /usr" && ls -lrth /usr/lib*/libav*;
+      echo "ffmpeg found in /usr" && find /usr/ -name "libav*so";
     else
       ./configure --prefix=/usr --enable-libx265 --enable-libx264 --enable-gpl --enable-shared --disable-indevs --disable-outdevs &&
       make -j2 &&
       sudo make install &&
       echo "ffmpeg installed in /usr" &&
-      ls -lrth /usr/lib*/libav*;
+      find /usr/ -name "libav*so";
     fi
   - cd .. && sudo rm -rf ffmpeg_repo
   - ffmpeg -version
@@ -37,9 +37,9 @@ before_install:
   - if [[ ! -e /usr/lib/liblz4.so ]]; then
       sudo make install PREFIX=/usr &&
       echo "lz4 installed in /usr" &&
-      ls -lrth /usr/lib*/liblz*;
+      find /usr/ -name "liblz4*so";
     else
-      echo "lz4 found in /usr" && ls -lrth /usr/lib*/liblz*;
+      echo "lz4 found in /usr" && find /usr/ -name "liblz4*so";
     fi
   - cd ../.. && sudo rm -rf lz4-r131
   - ls -lrth /usr/include/lz4.h
@@ -55,9 +55,9 @@ before_install:
       make -j2 &&
       sudo make install &&
       echo "hdf5 installed in /usr" &&
-      ls -lrth /usr/lib*/libhdf5*;
+      find /usr/ -name "libhdf*so";
     else
-      echo "hdf5 found in /usr" && ls -lrth /usr/lib*/libhdf5*;
+      echo "hdf5 found in /usr" && find /usr/ -name "libhdf*so";
     fi
   - cd .. && sudo rm -rf hdf5-1.8.16/
   - h5ls --version
@@ -85,13 +85,13 @@ before_install:
   - tar xf boost.tar.bz2
   - cd boost_1_*/
   - if [[ ! -e /usr/lib/libboost_date_time.so ]]; then
-      ./bootstrap.sh --with-toolset=gcc --with-libraries=date_time,system,filesystem,test,thread,program_options,regex &&
+      ./bootstrap.sh --with-toolset=gcc --with-libraries=date_time,system,filesystem,test,thread,program_options,regex --prefix=/usr &&
       ./b2 -j2 &&
       sudo ./b2 install &&
       echo "boost installed in /usr" &&
-      ls -lrth /usr/lib*/libboost*;
+      find /usr/ -name "libboost_*so";
     else
-      echo "boost found in /usr" && ls -lrth /usr/lib*/libboost*;
+      echo "boost found in /usr" && find /usr/ -name "libboost_*so";
     fi
   - cd .. && sudo rm -rf boost_1_*/
   
