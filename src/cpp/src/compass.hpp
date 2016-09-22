@@ -3,6 +3,7 @@
 
 #include <type_traits>
 #include <cstdint>
+#include <string>
 #include "compass_detail.hpp"
 
 namespace compass {
@@ -48,7 +49,13 @@ namespace compass {
       
     }
 
-    
+    static std::string vendor() {
+
+      using current_platform_t = ct::platform::type;
+      return detail::vendor(current_platform_t());
+      
+    }
+
     
   };
 

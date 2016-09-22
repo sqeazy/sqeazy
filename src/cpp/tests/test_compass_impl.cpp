@@ -5,8 +5,7 @@
 
 #include <vector>
 #include <iostream>
-#include <algorithm> // for copy
-#include <iterator> // for ostream_iterator
+
 
 
 
@@ -17,6 +16,14 @@ BOOST_AUTO_TEST_CASE( compass_works_at_runtime ){
   auto value = compass::runtime::works();
 
   BOOST_CHECK(value);
+  
+}
+
+BOOST_AUTO_TEST_CASE( compass_yields_vendor_name ){
+
+  auto value = compass::runtime::vendor();
+  //  std::cout << "this machine was made by " << value << "\n";
+  BOOST_CHECK_NE(value.size(),0);
   
 }
 BOOST_AUTO_TEST_SUITE_END()

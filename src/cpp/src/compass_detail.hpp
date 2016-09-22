@@ -2,6 +2,7 @@
 #define _COMPASS_DETAIL_H_
 
 #include "cpuid.h"
+#include <string>
 
 namespace compass {
   namespace compiletime {
@@ -56,6 +57,47 @@ namespace compass {
       
       }
 
+
+      static std::string vendor(compiletime::gnu_tag) {
+
+	std::uint32_t regs[4] = {0,0,0,0};
+	int cpuid_rvalue = __get_cpuid(0,
+				       &regs[0],//eax
+				       &regs[1],//ebx
+				       &regs[2],//ecx
+				       &regs[3] //edx
+				       );
+
+	std::string vendor_name;
+	vendor_name.resize(3*4);
+	
+	std::copy(reinterpret_cast<char*>(&regs[1]),reinterpret_cast<char*>(&regs[1])+4,
+		  vendor_name.begin());
+	std::copy(reinterpret_cast<char*>(&regs[3]),reinterpret_cast<char*>(&regs[3])+4,
+		  vendor_name.begin()+4);
+	std::copy(reinterpret_cast<char*>(&regs[2]),reinterpret_cast<char*>(&regs[2])+4,
+		  vendor_name.begin()+8);
+	
+	if(cpuid_rvalue > 0)
+	  return vendor_name;
+	else
+	  return "";
+      
+      }
+    
+      static std::string vendor(compiletime::llvm_tag) {
+
+	return "";//not implemented yet
+      
+      }
+
+      static std::string vendor(compiletime::msvc_tag) {
+
+	return "";//not implemented yet
+      
+      }
+
+      
     };
   };
   
