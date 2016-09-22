@@ -32,6 +32,7 @@ before_install:
   # FFMPEG                                                                    #
   #############################################################################
   - sudo add-apt-repository -y ppa:mc3man/trusty-media
+  - sudo apt-get -qq update
   - sudo apt-get install -y libx264-dev x264  libx265-dev x265 libtiff5-dev 
   - git clone https://git.ffmpeg.org/ffmpeg.git ffmpeg_repo
   - cd ffmpeg_repo
