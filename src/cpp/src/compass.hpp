@@ -4,10 +4,13 @@
 #include <type_traits>
 #include <cstdint>
 #include <string>
+#include <thread>
 #include "compass_detail.hpp"
 
 namespace compass {
 
+  
+  
   namespace compiletime {
     
     static const bool is_gnu(){
@@ -56,6 +59,19 @@ namespace compass {
       
     }
 
+    static int ncores() {
+
+      return std::thread::hardware_concurrency();
+      
+    }
+
+    template <typename feature_t>
+    static bool has(feature_t) {
+
+      using current_platform_t = ct::platform::type;
+      return detail::has(feature_t(),current_platform_t());
+      
+    }
     
   };
 
