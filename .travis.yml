@@ -92,7 +92,7 @@ before_install:
       ls -lrth /usr/lib*/libboost*;
     else
       echo "boost found in /usr" && ls -lrth /usr/lib*/libboost*;
-    if
+    fi
   - cd .. && sudo rm -rf boost_1_*/
   
 
