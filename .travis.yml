@@ -33,7 +33,7 @@ before_install:
   #############################################################################
   - travis_retry wget --no-check-certificate https://github.com/Cyan4973/lz4/archive/r131.tar.gz
   - tar xf r131.tar.gz
-  - cd lz4-r131/lib
+  - cd lz4-r131
   - if [[ ! -e /usr/lib/liblz4.so ]]; then
       sudo PREFIX=/usr SHELL="/bin/bash -x" make install  &&
       echo "lz4 installed in /usr" &&
