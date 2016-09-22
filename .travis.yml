@@ -120,9 +120,20 @@ before_install:
   - env
   
 script:
+  - pwd
   - ls -lrth
+  - ls -lrth /
   - if [[ -e ./let_me_build_that_for_you.sh ]]; then
-       ./let_me_build_that_for_you.sh;
-    else
-       cd sqeazy/sqeazy && ./let_me_build_that_for_you.sh;
-       fi
+       ./let_me_build_that_for_you.sh && exit $?;
+    fi
+  - if [[ -e sqeazy/let_me_build_that_for_you.sh ]]; then
+       cd sqeazy &&
+       ./let_me_build_that_for_you.sh && exit $?;
+    fi
+  - if [[ -e sqeazy/sqeazy/let_me_build_that_for_you.sh ]]; then
+       cd sqeazy/sqeazy &&
+       ./let_me_build_that_for_you.sh && exit $?;
+    fi
+  - sudo updatedb && locate let_me_build_that_for_you.sh
+
+    
