@@ -249,6 +249,7 @@ FIND_PACKAGE (Boost 1.55 COMPONENTS program_options regex system filesystem unit
 IF(Boost_FOUND)
   MESSAGE("++ Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES} : ${Boost_LIBRARIES}")
   INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+  link_directories(${Boost_LIBRARY_DIRS})
 else()
   MESSAGE(FATAL_ERROR "++ Boost not found!")
 endif()
