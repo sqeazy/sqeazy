@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE( open_close ){
 
 BOOST_AUTO_TEST_CASE( load_dataset_anew ){
   
-  sqeazy::h5_file testme(tfile);
+  sqeazy::h5_file testme(tpath);
   BOOST_CHECK(testme.ready());
   H5::DataSet tds = testme.load_h5_dataset(dname);
   BOOST_REQUIRE_NE(tds.getStorageSize(),0);
@@ -186,7 +186,7 @@ BOOST_AUTO_TEST_CASE( load_dataset ){
 
   std::vector<int> from_disk(30,0);
   
-  sqeazy::h5_file testme(tfile);
+  sqeazy::h5_file testme(tpath);
   BOOST_CHECK(testme.ready());
 
   int rvalue = testme.read_nd_dataset(dname,from_disk,dims);
@@ -204,7 +204,7 @@ BOOST_AUTO_TEST_CASE( write_dataset ){
   if(bfs::exists(test_output_path))
     bfs::remove(test_output_path);
 
-  sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
+  sqeazy::h5_file testme(test_output_path, H5F_ACC_TRUNC);
   BOOST_CHECK(testme.ready());
 
   int rvalue = testme.write_nd_dataset(dname,retrieved,dims);

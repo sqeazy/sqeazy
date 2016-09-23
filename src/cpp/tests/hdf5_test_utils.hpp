@@ -12,8 +12,8 @@ int stored_sizeof_in_h5_file(const std::string& _fname, const std::string& _dnam
   int value = -1;
     
   try{
-    H5File file(_fname, H5F_ACC_RDONLY);
-    DataSet dataset(file.openDataSet( _dname ));
+    H5File file(_fname.c_str(), H5F_ACC_RDONLY);
+    DataSet dataset(file.openDataSet( _dname.c_str() ));
     H5T_class_t type_class = dataset.getTypeClass();
     if( type_class == H5T_INTEGER )
       {
@@ -55,8 +55,8 @@ void dataset_shape_in_h5_file(const std::string& _fname, const std::string& _dna
   std::vector<hsize_t> temp;
     
   try{
-    H5File file(_fname, H5F_ACC_RDONLY);
-    DataSet dataset(file.openDataSet( _dname ));
+    H5File file(_fname.c_str() , H5F_ACC_RDONLY);
+    DataSet dataset(file.openDataSet( _dname.c_str() ));
     DataSpace dataspace(dataset.getSpace());
     temp.resize(dataspace.getSimpleExtentNdims());
 
@@ -99,8 +99,8 @@ bool dataset_in_h5_file(const std::string& _fname, const std::string& _dname = "
   bool value = false;
 
   try{
-    H5File file(_fname, H5F_ACC_RDONLY);
-    DataSet dataset(file.openDataSet( _dname ));
+    H5File file(_fname.c_str(), H5F_ACC_RDONLY);
+    DataSet dataset(file.openDataSet( _dname.c_str()));
 
     value = dataset.getInMemDataSize() > 0;
     
@@ -138,8 +138,8 @@ bool sqy_used_in_h5_file(const std::string& _fname, const std::string& _dname = 
   bool value = false;
 
   try{
-    H5File file(_fname, H5F_ACC_RDONLY);
-    DataSet dataset(file.openDataSet( _dname ));
+    H5File file(_fname.c_str(), H5F_ACC_RDONLY);
+    DataSet dataset(file.openDataSet( _dname.c_str()));
 
     unsigned        numfilt;
     size_t     nelmts={1}, namelen={1};
@@ -222,7 +222,7 @@ int h5_compress_ushort_dataset(
       // handle the errors appropriately
 
       // Create a new file using the default property lists. 
-      H5File file(_fname, H5F_ACC_TRUNC);
+      H5File file(_fname.c_str(), H5F_ACC_TRUNC);
 
       // Create the data space for the dataset.
       DataSpace dataspace(_shape.size(), &dims[0]);
@@ -249,7 +249,7 @@ int h5_compress_ushort_dataset(
       //			   //config for dynamic bzip2 filter: cd_values[1] = {6};
 
       // Create the dataset.      
-      DataSet*  dataset = new DataSet(file.createDataSet( _dname, 
+      DataSet*  dataset = new DataSet(file.createDataSet( _dname.c_str(), 
 							  PredType::NATIVE_USHORT,
 							  dataspace, 
 							  plist) );
@@ -325,8 +325,8 @@ int h5_decompress_ushort_dataset(
     // -----------------------------------------------
 
     // Open the file and the dataset in the file.
-    H5File			file(_fname, H5F_ACC_RDONLY);
-    DataSet			dataset(file.openDataSet( _dname ));
+    H5File			file(_fname.c_str(), H5F_ACC_RDONLY);
+    DataSet			dataset(file.openDataSet( _dname.c_str()));
     DSetCreatPropList	plist(dataset.getCreatePlist ());
 
     int		numfilt = plist.getNfilters();

@@ -21,7 +21,7 @@ struct helpers_fixture {
   
   std::string	dname;
   std::string	test_output_name;
-  bfs::path	test_output_path;
+  bfs::path	 	test_output_path;
 
   std::vector<unsigned short> retrieved;
   std::vector<size_t> dims;

@@ -458,7 +458,7 @@ namespace sqeazy {
       std::string link_h5_tail = _linkpath.substr(_linkpath.rfind("/")+1);
 
       bool open_group = has_h5_item(link_h5_head) || (link_h5_head[0] == '/' && link_h5_head.size() == 1);
-      H5::Group grp(open_group ? file_->openGroup(link_h5_head) : file_->createGroup(link_h5_head));
+      H5::Group grp(open_group ? file_->openGroup(link_h5_head.c_str()) : file_->createGroup(link_h5_head.c_str()));
       
       bfs::path dest_tail = dest_fs_path.filename();
       bfs::path dest_rel_path = make_relative(path_,_dest_file.path_);
@@ -486,7 +486,7 @@ namespace sqeazy {
       
       H5::DataSet* ds = 0;
       try {
-	ds = new H5::DataSet(file_->openDataSet( _dname ));
+	ds = new H5::DataSet(file_->openDataSet( _dname.c_str() ));
       }
       catch(H5::Exception & error){
 	return rvalue;
@@ -507,7 +507,7 @@ namespace sqeazy {
  
       H5::DataSet* ds = 0;
       try {
-	ds = new H5::DataSet(file_->openDataSet( _dname ));
+	ds = new H5::DataSet(file_->openDataSet( _dname.c_str() ));
       }
       catch(H5::Exception & error){
 	return rvalue;
@@ -531,7 +531,7 @@ namespace sqeazy {
  
       H5::DataSet* ds = 0;
       try {
-	ds = new H5::DataSet(file_->openDataSet( _dname ));
+	ds = new H5::DataSet(file_->openDataSet( _dname.c_str() ));
       }
       catch(H5::Exception & error){
 	return rvalue;
@@ -577,7 +577,7 @@ namespace sqeazy {
  
       H5::DataSet* ds = 0;
       try {
-	ds = new H5::DataSet(file_->openDataSet( _dname ));
+	ds = new H5::DataSet(file_->openDataSet( _dname.c_str() ));
       }
       catch(H5::Exception & error){
 	return;
@@ -743,10 +743,10 @@ namespace sqeazy {
       std::string grp_path = extract_group_path(_dname);
       const bool grp_exists = has_h5_item(grp_path);
       bool open_group = grp_exists || (grp_path[0] == '/' && grp_path.size() == 1);
-      H5::Group grp(open_group ? file_->openGroup(grp_path) : file_->createGroup(grp_path));
+      H5::Group grp(open_group ? file_->openGroup(grp_path.c_str()) : file_->createGroup(grp_path.c_str()));
 
       bool ds_exists = has_h5_item(_dname);
-      H5::DataSet dataset_(ds_exists ? grp.openDataSet( _dname.c_str() ) : grp.createDataSet( _dname, 
+      H5::DataSet dataset_(ds_exists ? grp.openDataSet( _dname.c_str() ) : grp.createDataSet( _dname.c_str(), 
 											      type_to_store,
 											      dataspace_, 
 											      plist) );
@@ -795,10 +795,10 @@ namespace sqeazy {
       bool grp_exists = has_h5_item(grp_path);
       bool open_group = grp_exists || (grp_path[0] == '/' && grp_path.size() == 1);
       
-      H5::Group grp(open_group ? file_->openGroup(grp_path) : file_->createGroup(grp_path));
+      H5::Group grp(open_group ? file_->openGroup(grp_path.c_str()) : file_->createGroup(grp_path.c_str()));
 
       bool ds_exists = has_h5_item(_dname);
-      H5::DataSet dataset_(ds_exists ? grp.openDataSet( _dname.c_str() )  : grp.createDataSet( _dname, 
+      H5::DataSet dataset_(ds_exists ? grp.openDataSet( _dname.c_str() )  : grp.createDataSet( _dname.c_str(), 
 											       hdf5_compiletime_dtype<T>::instance(),
 											       dataspace_, 
 											       plist) );
@@ -878,11 +878,11 @@ namespace sqeazy {
       std::string grp_path = extract_group_path(_dname);
       const bool grp_exists = has_h5_item(grp_path);
       bool open_group = grp_exists || (grp_path[0] == '/' && grp_path.size() == 1);
-      H5::Group grp(open_group ? file_->openGroup(grp_path) : file_->createGroup(grp_path));
+      H5::Group grp(open_group ? file_->openGroup(grp_path.c_str()) : file_->createGroup(grp_path.c_str()));
 
       //FIXME: what if _dname exists?
       bool ds_exists = has_h5_item(_dname);
-      H5::DataSet dataset_(ds_exists ? grp.openDataSet( _dname.c_str() )  : grp.createDataSet( _dname, 
+      H5::DataSet dataset_(ds_exists ? grp.openDataSet( _dname.c_str() )  : grp.createDataSet( _dname.c_str(), 
 											       hdf5_compiletime_dtype<T>::instance(),
 											       dataspace_, 
 											       plist) );
@@ -945,9 +945,9 @@ namespace sqeazy {
       
       std::string grp_path = extract_group_path(_dname);      
       bool open_group = has_h5_item(grp_path) || (grp_path[0] == '/' && grp_path.size() == 1);
-      H5::Group grp(open_group ? file_->openGroup(grp_path) : file_->createGroup(grp_path));
+      H5::Group grp(open_group ? file_->openGroup(grp_path.c_str()) : file_->createGroup(grp_path.c_str()));
   
-      H5::DataSet ds(grp.createDataSet( _dname, 
+      H5::DataSet ds(grp.createDataSet( _dname.c_str(), 
 					hdf5_compiletime_dtype<T>::instance(),
 					dsp, 
 					plist) );
@@ -1013,7 +1013,7 @@ namespace sqeazy {
 	// 			 cd_values.size(),
 	// 			 &cd_values[0]);
 	// Create the dataset.      
-	H5::DataSet*  dataset = new H5::DataSet(file.createDataSet( _dname, 
+	H5::DataSet*  dataset = new H5::DataSet(file.createDataSet( _dname.c_str(), 
 								    hdf5_compiletime_dtype<data_type>::instance(),
 								    dataspace, 
 								    plist) );
@@ -1154,7 +1154,7 @@ namespace sqeazy {
 
     try{
       H5::H5File file(_fname, H5F_ACC_RDONLY);
-      H5::DataSet ds(file.openDataSet( _dname ));
+      H5::DataSet ds(file.openDataSet( _dname.c_str() ));
       H5::DSetCreatPropList	plist(ds.getCreatePlist ());
       
       //check if type found is correct
