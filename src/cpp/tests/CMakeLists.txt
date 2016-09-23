@@ -29,6 +29,7 @@ endif(Boost_FOUND)
 #   set(SQY_LIB ${SQY_LIB} ${FFMPEG_EXTRA_LINK_FLAGS})
 # endif()
 set(SQY_LIB ${PROJECT_NAME})
+
 if(DEFINED READY_4_BUNDLE)
   set(SQY_LIB ${SQY_LIB} ${FFMPEG_LIBRARIES} )
 endif()
@@ -203,6 +204,8 @@ target_link_libraries(test_bench_utils_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY})
 ENDIF(TIFF_FOUND)
 
 #http://stackoverflow.com/questions/14474659/cmake-how-to-have-a-target-for-copying-files
+
+if(NOT WIN32)
 #required by the yuv_utils
 FILE(COPY ${PROJECT_SOURCE_DIR}/tests/mini_example_w92_h128.yuv DESTINATION ${PROJECT_BINARY_DIR}/tests/)
 FILE(COPY ${PROJECT_SOURCE_DIR}/tests/mini_example.y4m DESTINATION ${PROJECT_BINARY_DIR}/tests/)
@@ -210,3 +213,12 @@ FILE(COPY ${PROJECT_SOURCE_DIR}/tests/mini_example.y4m DESTINATION ${PROJECT_BIN
 #required by the hdf5 tests
 FILE(COPY ${PROJECT_SOURCE_DIR}/tests/hdf5_create_sample.h5 DESTINATION ${PROJECT_BINARY_DIR}/tests/)
 FILE(RENAME ${PROJECT_BINARY_DIR}/tests/hdf5_create_sample.h5 ${PROJECT_BINARY_DIR}/tests/sample.h5)
+else()
+#required by the yuv_utils
+FILE(COPY ${PROJECT_SOURCE_DIR}/tests/mini_example_w92_h128.yuv DESTINATION ${PROJECT_BINARY_DIR}/tests/${CMAKE_BUILD_TYPE})
+FILE(COPY ${PROJECT_SOURCE_DIR}/tests/mini_example.y4m DESTINATION ${PROJECT_BINARY_DIR}/tests/${CMAKE_BUILD_TYPE})
+
+#required by the hdf5 tests
+FILE(COPY ${PROJECT_SOURCE_DIR}/tests/hdf5_create_sample.h5 DESTINATION ${PROJECT_BINARY_DIR}/tests/${CMAKE_BUILD_TYPE})
+FILE(RENAME ${PROJECT_BINARY_DIR}/tests/${CMAKE_BUILD_TYPE}/hdf5_create_sample.h5 ${PROJECT_BINARY_DIR}/tests/${CMAKE_BUILD_TYPE}/sample.h5)
+endif()
