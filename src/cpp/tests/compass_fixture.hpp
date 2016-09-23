@@ -11,7 +11,7 @@ struct host_reference
   std::string	hostname		;
   
   std::string 	expected_vendor		;
-  std::string 	expected_model 		;
+  std::string 	expected_brand 		;
   bool 		expected_has_sse	;
   bool 		expected_has_sse2	;
   bool 		expected_has_sse3	;
@@ -23,7 +23,7 @@ struct host_reference
   host_reference():
     hostname(boost::asio::ip::host_name()),
     expected_vendor  (""),
-    expected_model   (""),
+    expected_brand   (""),
     expected_has_sse (false),
     expected_has_sse2(false),
     expected_has_sse3(false),
@@ -35,7 +35,7 @@ struct host_reference
     
     if(hostname.find("schorle") != std::string::npos){
       expected_vendor = "intel";
-      expected_model  = "i7-3520M";
+      expected_brand  = "Intel(R) Core(TM) i7-3520M CPU @ 2.90GHz";
       expected_has_sse = true ;
       expected_has_sse2= true ;
       expected_has_sse3= true ;
@@ -44,7 +44,20 @@ struct host_reference
       expected_has_avx2= false ;
       expected_ncores = 4;
     }
-    
+
+    //travis host
+    if(hostname.find("-gce-") != std::string::npos){
+      expected_vendor = "intel";
+      expected_brand  = "Intel(R) Xeon(R) CPU @ 2.30GHz";
+      expected_has_sse = true ;
+      expected_has_sse2= true ;
+      expected_has_sse3= true ;
+      expected_has_sse4= true ;
+      expected_has_avx = true ;
+      expected_has_avx2= true ;
+      expected_ncores = 2;
+    }
+
   }
   
 };
