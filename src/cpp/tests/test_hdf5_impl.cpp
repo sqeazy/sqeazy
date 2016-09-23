@@ -88,7 +88,9 @@ BOOST_AUTO_TEST_CASE( extract_group ){
 
 BOOST_AUTO_TEST_CASE( open_close ){
   
-  sqeazy::h5_file testme(tfile);
+  
+  sqeazy::h5_file testme(tpath);
+  
   BOOST_CHECK(testme.ready());
   H5::DataSet tds = testme.load_h5_dataset(dname);
   BOOST_REQUIRE_NE(tds.getStorageSize(),0);

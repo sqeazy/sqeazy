@@ -300,6 +300,21 @@ namespace sqeazy {
       
     }
 
+	h5_file(const bfs::path& _path, unsigned _flag = H5F_ACC_RDONLY):
+      path_(_path),
+      file_(0),
+      flag_(_flag),
+      ready_(false)
+    {
+#ifndef _SQY_DEBUG_
+      H5::Exception::dontPrint();
+#endif
+
+      open(path_.string(), _flag);
+      static sqeazy::loaded_hdf5_plugin now;
+      
+    }
+	
     h5_file(const h5_file& _rhs):
       path_(_rhs.path_),
       file_(0),
@@ -332,7 +347,7 @@ namespace sqeazy {
 
       
       try {
-	file_ = new H5::H5File(_fname, flag);
+	file_ = new H5::H5File(_fname.c_str(), flag);
       }
       catch(H5::FileIException & local_error)
 	{
@@ -344,9 +359,10 @@ namespace sqeazy {
 	ready_= false;
       }
 
-      path_ = _fname;
-      flag_ = flag;
+	  if(path_.string() != _fname)
+		path_ = _fname;
       
+	  flag_ = flag;
       ready_= true;
       
       return ready_;
@@ -399,7 +415,7 @@ namespace sqeazy {
 
 
       try {
-	value = H5::DataSet(this->file_->openDataSet( _dname ));
+	value = H5::DataSet(this->file_->openDataSet( _dname.c_str() ));
       }
       catch(H5::DataSetIException & error){
 	error;//placeholder
