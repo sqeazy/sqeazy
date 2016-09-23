@@ -1,6 +1,9 @@
 sudo: required
 dist: trusty
 
+cache:
+  directories:
+  - /usr
   
 language: java
 jdk:
@@ -8,42 +11,44 @@ jdk:
 
 before_install:
   #############################################################################
+  # LZ4                                                                       #
+  #############################################################################
+  - sudo apt-get -qq update
+  - sudo apt-get install -y cmake wget bzip2 libbz2-dev make yasm nasm cpuid
+  - travis_retry wget --no-check-certificate https://github.com/Cyan4973/lz4/archive/r131.tar.gz
+  - tar xf r131.tar.gz
+  - cd lz4-r131
+  - if [[ ! -e /usr/lib/liblz4.so ]]; then
+      sudo PREFIX=/usr SHELL="/bin/bash -x" make install  &&
+      echo "lz4 installed in /usr" &&
+      find /usr/lib/ -name "liblz4*so";
+    else
+      echo "lz4 found in /usr";
+    fi
+  - cd ../.. && sudo rm -rf lz4-r131
+  - nm /usr/lib/liblz4.so
+
+  #############################################################################
   # FFMPEG                                                                    #
   #############################################################################
   - sudo add-apt-repository -y ppa:mc3man/trusty-media
   - sudo apt-get -qq update
-  - sudo apt-get install -y libx264-dev x264  libx265-dev x265 cmake libtiff5-dev wget bzip2 libbz2-dev make  yasm nasm
+  - sudo apt-get install -y libx264-dev x264  libx265-dev x265 libtiff5-dev 
   - git clone https://git.ffmpeg.org/ffmpeg.git ffmpeg_repo
   - cd ffmpeg_repo
   - git checkout n3.0.2
   - if [[ -e /usr/lib/libavcodec.so ]]; then
-      echo "ffmpeg found in /usr" && ls -lrth /usr/lib*/libav*;
+      echo "ffmpeg found in /usr" && find /usr/lib/ -name "libav*so";
     else
       ./configure --prefix=/usr --enable-libx265 --enable-libx264 --enable-gpl --enable-shared --disable-indevs --disable-outdevs &&
       make -j2 &&
       sudo make install &&
-      echo "ffmpeg installed in /usr" &&
-      ls -lrth /usr/lib*/libav*;
+      echo "ffmpeg installed in /usr";
     fi
   - cd .. && sudo rm -rf ffmpeg_repo
   - ffmpeg -version
 
-  #############################################################################
-  # LZ4                                                                       #
-  #############################################################################
-  - travis_retry wget --no-check-certificate https://github.com/Cyan4973/lz4/archive/r131.tar.gz
-  - tar xf r131.tar.gz
-  - cd lz4-r131/lib
-  - if [[ ! -e /usr/lib/liblz4.so ]]; then
-      sudo make install PREFIX=/usr &&
-      echo "lz4 installed in /usr" &&
-      ls -lrth /usr/lib*/liblz*;
-    else
-      echo "lz4 found in /usr" && ls -lrth /usr/lib*/liblz*;
-    fi
-  - cd ../.. && sudo rm -rf lz4-r131
-  - ls -lrth /usr/include/lz4.h
-
+  
   #############################################################################
   # HDF5                                                                       #
   #############################################################################
@@ -55,9 +60,9 @@ before_install:
       make -j2 &&
       sudo make install &&
       echo "hdf5 installed in /usr" &&
-      ls -lrth /usr/lib*/libhdf5*;
+      find /usr/lib/ -name "libhdf*so";
     else
-      echo "hdf5 found in /usr" && ls -lrth /usr/lib*/libhdf5*;
+      echo "hdf5 found in /usr" && find /usr/lib/ -name "libhdf*so";
     fi
   - cd .. && sudo rm -rf hdf5-1.8.16/
   - h5ls --version
@@ -85,14 +90,14 @@ before_install:
   - tar xf boost.tar.bz2
   - cd boost_1_*/
   - if [[ ! -e /usr/lib/libboost_date_time.so ]]; then
-      sudo ./bootstrap.sh --with-toolset=gcc --with-libraries=date_time,system,filesystem,test,thread,program_options,regex &&
-      sudo ./b2 -j2 &&
+      ./bootstrap.sh --with-toolset=gcc --with-libraries=date_time,system,filesystem,test,thread,program_options,regex --prefix=/usr &&
+      ./b2 -j2 &&
       sudo ./b2 install &&
       echo "boost installed in /usr" &&
-      ls -lrth /usr/lib*/libboost*;
+      find /usr/lib/ -name "libboost_*so";
     else
-      echo "boost found in /usr" && ls -lrth /usr/lib*/libboost*;
-    endif
+      echo "boost found in /usr" && find /usr/lib/ -name "libboost_*so";
+    fi
   - cd .. && sudo rm -rf boost_1_*/
   
 
@@ -104,15 +109,30 @@ before_install:
   - sudo apt-get install gradle-3.0
   - gradle --version
 
-cache:
-  directories:
-  - /usr
-
+  #############################################################################
+  # GENERAL CHECKS                                                            #
+  #############################################################################
+  - ls -lrth /usr/include/lz4.h /usr/lib/liblz4.so
+  - ls -lrth /usr/include/boost /usr/lib/libboost*.so
+  - ls -lrth /usr/include/hdf* /usr/lib/libhdf*.so
+  - ls -lrth /usr/include/libav* /usr/lib/libav*.so
+  - nm /usr/lib/liblz4.so
+  - env
+  - hostname
+  - cpuid
   
 script:
-  - ls -lrth
+  - pwd
+  - ls ${TRAVIS_BUILD_DIR}
+  - if [[ -d ./sqeazy ]]; then
+       cd sqeazy;
+    fi
+  - if [[ -d ./sqeazy ]]; then
+      cd sqeazy;
+    fi
   - if [[ -e ./let_me_build_that_for_you.sh ]]; then
-       ./let_me_build_that_for_you.sh;
-    else
-       cd sqeazy/sqeazy && ./let_me_build_that_for_you.sh;
-       fi
+       export LD_LIBRARY_PATH=/usr/lib:$LD_LIBRARY_PATH &&
+       ./let_me_build_that_for_you.sh && ldd build/cpp/src/libsqeazy.so && exit $?;
+    fi
+
+    
