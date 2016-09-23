@@ -3,45 +3,32 @@ INCLUDE_DIRECTORIES(.)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/include)
 
-##LZ4, HDF5. TIFF
-IF(WIN32)
 
-  add_library(ext_lz4 STATIC IMPORTED)
-  set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_STATIC_LIB}")
-  
-  add_library(ext_hdf5 SHARED IMPORTED)
-  set_target_properties(ext_hdf5 PROPERTIES IMPORTED_LOCATION "${HDF5_LIBRARIES}")
-	
-  set(SQY_LIB ${PROJECT_NAME}_static)
-  
-ELSE(WIN32)
 
-  add_library(ext_lz4 SHARED IMPORTED)
-  set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}")
+#ATTENTION:
+#boost unit test framework has some defects if we wanna bind against shared and/or static libs
+##that's why we bind against the dynamic loaded libraries primarily
+SET(Boost_USE_STATIC_LIBS OFF)
+FIND_PACKAGE (Boost 1.55 COMPONENTS regex unit_test_framework filesystem system REQUIRED QUIET)
+if(Boost_FOUND)
+	MESSAGE("++ [tests] Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES} : ${Boost_LIBRARIES}")
+	INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+	link_directories(${Boost_LIBRARY_DIRS})
+	IF(MSVC)
+	add_definitions(/DBOOST_TEST_DYN_LINK)
 
-  add_library(ext_hdf5 SHARED IMPORTED)
-  set_target_properties(ext_hdf5 PROPERTIES IMPORTED_LOCATION "${HDF5_LIBRARIES}") 
+	ELSE(MSVC)
+	add_definitions(-DBOOST_TEST_DYN_LINK)
+	ENDIF(MSVC)	
+else(Boost_FOUND)
+	MESSAGE(FATAL_ERROR "++ Boost not found!")
+endif(Boost_FOUND)
 
-  add_definitions(-DBOOST_TEST_DYN_LINK)
-
-  #ATTENTION:
-  ##boost unit test framework has some defects if we wanna bind against shared and/or static libs
-  ##that's why we bind against the dynamic loaded libraries primarily
-  SET(Boost_USE_STATIC_LIBS OFF)
-  FIND_PACKAGE (Boost 1.55 COMPONENTS regex unit_test_framework filesystem system REQUIRED QUIET)
-  IF(Boost_FOUND)
-    MESSAGE("++ [tests] Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES} : ${Boost_LIBRARIES}")
-    INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-  else()
-    MESSAGE(FATAL_ERROR "++ Boost not found!")
-  endif()
-  
-  set(SQY_LIB ${PROJECT_NAME})
-ENDIF(WIN32)
 
 # if(DEFINED FFMPEG_EXTRA_LINK_FLAGS)
 #   set(SQY_LIB ${SQY_LIB} ${FFMPEG_EXTRA_LINK_FLAGS})
 # endif()
+set(SQY_LIB ${PROJECT_NAME})
 if(DEFINED READY_4_BUNDLE)
   set(SQY_LIB ${SQY_LIB} ${FFMPEG_LIBRARIES} )
 endif()
@@ -166,11 +153,11 @@ IF(FFMPEG_FOUND)
 	
   SET(SQY_FFMPEG_Libraries ${FFMPEG_LIBRARIES})
   
-  if(NOT EXTRA_LIBM_NOT_NEEDED)
-	set(SQY_FFMPEG_Libraries ${SQY_FFMPEG_Libraries} m)
-  endif()
+  #if(NOT EXTRA_LIBM_NOT_NEEDED)
+	#set(SQY_FFMPEG_Libraries ${SQY_FFMPEG_Libraries} m)
+  #endif()
 
-  if(DEFINED FFMPEG_EXTRA_LINK_FLAGS)
+  if(DEFINED FFMPEG_EXTRA_LINK_FLAGS AND DEFINED FFMPEG_USE_STATIC_LIBS)
 	set(SQY_FFMPEG_Libraries ${SQY_FFMPEG_Libraries} ${FFMPEG_EXTRA_LINK_FLAGS})
   endif()
 
