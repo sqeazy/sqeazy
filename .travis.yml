@@ -14,7 +14,7 @@ before_install:
   # LZ4                                                                       #
   #############################################################################
   - sudo apt-get -qq update
-  - sudo apt-get install -y cmake wget bzip2 libbz2-dev make  yasm nasm
+  - sudo apt-get install -y cmake wget bzip2 libbz2-dev make yasm nasm cpuid
   - travis_retry wget --no-check-certificate https://github.com/Cyan4973/lz4/archive/r131.tar.gz
   - tar xf r131.tar.gz
   - cd lz4-r131
@@ -118,6 +118,8 @@ before_install:
   - ls -lrth /usr/include/libav* /usr/lib/libav*.so
   - nm /usr/lib/liblz4.so
   - env
+  - hostname
+  - cpuid
   
 script:
   - pwd
