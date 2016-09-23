@@ -121,19 +121,16 @@ before_install:
   
 script:
   - pwd
-  - ls -lrth
-  - ls -lrth /
+  - ls ${TRAVIS_BUILD_DIR}
+  - if [[ -d ./sqeazy ]]; then
+       cd sqeazy;
+    fi
+  - if [[ -d ./sqeazy ]]; then
+      cd sqeazy;
+    fi
   - if [[ -e ./let_me_build_that_for_you.sh ]]; then
-       ./let_me_build_that_for_you.sh && exit $?;
+       export LD_LIBRARY_PATH=/usr/lib:$LD_LIBRARY_PATH &&
+       ./let_me_build_that_for_you.sh && ldd build/cpp/src/libsqeazy.so && exit $?;
     fi
-  - if [[ -e sqeazy/let_me_build_that_for_you.sh ]]; then
-       cd sqeazy &&
-       ./let_me_build_that_for_you.sh && exit $?;
-    fi
-  - if [[ -e sqeazy/sqeazy/let_me_build_that_for_you.sh ]]; then
-       cd sqeazy/sqeazy &&
-       ./let_me_build_that_for_you.sh && exit $?;
-    fi
-  - sudo updatedb && locate let_me_build_that_for_you.sh
 
     
