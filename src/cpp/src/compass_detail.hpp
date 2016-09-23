@@ -1,46 +1,23 @@
 #ifndef _COMPASS_DETAIL_H_
 #define _COMPASS_DETAIL_H_
 
-#include "cpuid.h"
 #include <string>
-
-namespace compass {
-
-  namespace feature {
-
-    struct sse {};
-    struct sse2 {};
-    struct sse3 {};
-    struct sse4 {};
-
-    struct avx {};
-    struct avx2 {};
-
-  };
-
-  
-  namespace compiletime {
-
-    struct gnu_tag  {};
-    struct llvm_tag {};
-    struct msvc_tag {};
-
-    struct platform {
+#include "compass_tags.hpp"
 
 #ifdef __GNUC__
-      typedef gnu_tag type;
+#include "compass_gnu_impl.hpp"
 #endif
 
 #ifdef __clang__
-      typedef llvm_tag type;
+#include "compass_llvm_impl.hpp"
 #endif
       
 #ifdef __MSC_BUILD__
-      typedef msvc_tag type;
+#include "compass_msvc_impl.hpp"
 #endif
-      
-    };
-  };
+
+namespace compass {
+  
 
   namespace ct = compiletime;
   
