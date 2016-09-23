@@ -336,16 +336,17 @@ endif()
 
 
   INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIRS})
+  
   #only required for hdf5 1.8.16 and newer
-  #http://hdf-forum.184993.n3.nabble.com/Re-linking-HDF5-with-VS2015-C-64-bit-only-works-with-static-libraries-td4028678.html
+  #https://lists.hdfgroup.org/pipermail/hdf-forum_lists.hdfgroup.org/2016-March/009294.html  
   
-  
-  if(WIN32)
-	if(NOT ${HDF5_USE_STATIC_LIBRARIES})
+  if(${FIND_HDF5_MODE} MATCHES "shared")
+	message(STATUS "adding preprocessor definition H5_BUILT_AS_DYNAMIC_LIB=1")
+	if(MSVC)
 		add_definitions(/DH5_BUILT_AS_DYNAMIC_LIB=1)
+	else()
+		add_definitions(-DH5_BUILT_AS_DYNAMIC_LIB=1)
 	endif()
-  else()
-    add_definitions(-DH5_BUILT_AS_DYNAMIC_LIB=1)
   endif()
   
   #to discard compiler warnings in Debug mode
@@ -361,9 +362,13 @@ endif()
   ENDIF()
   
   ADD_DEFINITIONS(${HDF5_DEFINITIONS})
-  IF(DEFINED HDF5_LIBRARY_DIRS)
+  if(DEFINED HDF5_LIBRARY_DIRS)
 	LINK_DIRECTORIES(${HDF5_LIBRARY_DIRS}) 
-  ENDIF()
+  else()
+	  if(IS_DIRECTORY ${HDF5_ROOT}/lib)
+		LINK_DIRECTORIES(${HDF5_ROOT}/lib) 
+	  endif()
+  endif()
   
   if(NOT HDF5_LIBRARIES)
   message(STATUS "FindHDF5 didn't fill HDF5_LIBRARIES (${HDF5_LIBRARIES}), trying to fill it based on known targets")
