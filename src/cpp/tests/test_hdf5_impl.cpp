@@ -199,7 +199,9 @@ BOOST_AUTO_TEST_CASE( load_dataset ){
 
 BOOST_AUTO_TEST_CASE( write_dataset ){
 
-    
+  if(bfs::exists(test_output_path))
+    bfs::remove(test_output_path);
+
   sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
   BOOST_CHECK(testme.ready());
 
@@ -207,13 +209,13 @@ BOOST_AUTO_TEST_CASE( write_dataset ){
   BOOST_REQUIRE(rvalue == 0);
   BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
 
-  if(bfs::exists(test_output_path))
-    bfs::remove(test_output_path);
 }
 
 BOOST_AUTO_TEST_CASE( write_dataset_to_group ){
 
-    
+  if(bfs::exists(test_output_path))
+    bfs::remove(test_output_path);
+
   sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
   BOOST_CHECK(testme.ready());
 
@@ -223,11 +225,13 @@ BOOST_AUTO_TEST_CASE( write_dataset_to_group ){
   BOOST_REQUIRE(rvalue == 0);
   BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname_with_group));
 
-  if(bfs::exists(test_output_path))
-    bfs::remove(test_output_path);
+  
 }
 
 BOOST_AUTO_TEST_CASE( write_multiple_datasets ){
+
+  if(bfs::exists(test_output_path))
+    bfs::remove(test_output_path);
 
   sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
   BOOST_CHECK(testme.ready());
@@ -250,11 +254,12 @@ BOOST_AUTO_TEST_CASE( write_multiple_datasets ){
   BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname2));
   BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
 
-  if(bfs::exists(test_output_path))
-    bfs::remove(test_output_path);
 }
 
 BOOST_AUTO_TEST_CASE( write_multiple_datasets_to_groups ){
+
+  if(bfs::exists(test_output_path))
+    bfs::remove(test_output_path);
 
   sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
   BOOST_CHECK(testme.ready());
@@ -278,11 +283,12 @@ BOOST_AUTO_TEST_CASE( write_multiple_datasets_to_groups ){
   BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname2));
   BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname1));
 
-  if(bfs::exists(test_output_path))
-    bfs::remove(test_output_path);
 }
 
 BOOST_AUTO_TEST_CASE( roundtrip_multiple_datasets_in_groups ){
+
+	if(bfs::exists(test_output_path))
+		bfs::remove(test_output_path);
 
   sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
   BOOST_CHECK(testme.ready());
@@ -335,8 +341,7 @@ BOOST_AUTO_TEST_CASE( roundtrip_multiple_datasets_in_groups ){
 				  shuffled.begin(), shuffled.end()
 				  );
   
-  if(bfs::exists(test_output_path))
-    bfs::remove(test_output_path);
+  
 }
 
 BOOST_AUTO_TEST_CASE( write_dataset_with_filter ){
@@ -372,6 +377,11 @@ BOOST_AUTO_TEST_CASE( write_dataset_with_filter ){
 
 BOOST_AUTO_TEST_CASE( read_write_dataset_with_filter ){
 
+if(bfs::exists(test_output_path))
+    bfs::remove(test_output_path);
+
+  if(bfs::exists(no_filter_path))
+    bfs::remove(no_filter_path);
 
   bfs::path no_filter_path = "no_filter.h5";
   sqeazy::h5_file no_filter(no_filter_path.string(), H5F_ACC_TRUNC);
@@ -402,15 +412,18 @@ BOOST_AUTO_TEST_CASE( read_write_dataset_with_filter ){
   BOOST_REQUIRE_EQUAL_COLLECTIONS(written_shape.begin(),written_shape.end(),dims.begin(),dims.end());
   BOOST_REQUIRE_EQUAL_COLLECTIONS(written.begin(),written.end(),retrieved.begin(),retrieved.end());
   
-  if(bfs::exists(test_output_path))
-    bfs::remove(test_output_path);
-
-  if(bfs::exists(no_filter_path))
-    bfs::remove(no_filter_path);
+  
 }
 
 
 BOOST_AUTO_TEST_CASE( write_compressed_dataset ){
+
+  if(bfs::exists(test_output_path))
+    bfs::remove(test_output_path);
+
+  if(bfs::exists(one_go_path))
+    bfs::remove(one_go_path);
+
 
   //write in one go
   bfs::path one_go_path = "one_go_write.h5";
@@ -450,16 +463,17 @@ BOOST_AUTO_TEST_CASE( write_compressed_dataset ){
   BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
   BOOST_REQUIRE_CLOSE_FRACTION(float(bfs::file_size(one_go_path)), float(bfs::file_size(test_output_path)),0.1);
 
-  if(bfs::exists(test_output_path))
-    bfs::remove(test_output_path);
-
-  if(bfs::exists(one_go_path))
-    bfs::remove(one_go_path);
 
 }
 
 BOOST_AUTO_TEST_CASE( roundtrip_compressed_dataset ){
 
+  
+  if(bfs::exists(test_output_path))
+    bfs::remove(test_output_path);
+
+  if(bfs::exists(one_go_path))
+    bfs::remove(one_go_path);
   
 
   //write in one go
@@ -532,12 +546,6 @@ BOOST_AUTO_TEST_CASE( roundtrip_compressed_dataset ){
   BOOST_REQUIRE_EQUAL_COLLECTIONS(retrieved.begin(),retrieved.end(),encoded_on_write.begin(),encoded_on_write.end());
   BOOST_REQUIRE_EQUAL_COLLECTIONS(written_compressed.begin(),written_compressed.end(),encoded_on_write.begin(),encoded_on_write.end());
 
-  
-  if(bfs::exists(test_output_path))
-    bfs::remove(test_output_path);
-
-  if(bfs::exists(one_go_path))
-    bfs::remove(one_go_path);
 
 }
 
@@ -570,373 +578,5 @@ BOOST_AUTO_TEST_CASE( roundtrip_bswap1_lz4_as_reference ){
 
 }
 
-// BOOST_AUTO_TEST_CASE( roundtrip_lz4_as_reference ){
-
-//   int rvalue = 0;
-//   sqeazy::image_header hdr(sqeazy::lz4_pipe::raw_type(),
-// 			   dims,
-// 			   sqeazy::lz4_pipe::static_name());
-//   unsigned long max_size_compressed = sqeazy::lz4_pipe::static_max_bytes_encoded(retrieved.size()*sizeof(std::uint16_t),
-// 										 hdr.size());
-//   std::vector<char> compressed(max_size_compressed);
-//   unsigned long compressed_bytes = 0;
-//   rvalue = sqeazy::lz4_pipe::compress(&retrieved[0], &compressed[0], dims, compressed_bytes);
-
-//   std::vector<char> to_decompress(compressed.begin(), compressed.begin() + compressed_bytes);
-//   // compressed.resize(compressed_bytes);
-  
-//   BOOST_REQUIRE_EQUAL(rvalue,0);
-
-//   std::vector<std::uint16_t> decompressed(retrieved.size());
-//   rvalue = sqeazy::lz4_pipe::decompress(&to_decompress[0], &decompressed[0], compressed_bytes);
-//   BOOST_REQUIRE_EQUAL(rvalue,0);
-//   BOOST_REQUIRE_EQUAL_COLLECTIONS(retrieved.begin(),retrieved.end(),decompressed.begin(),decompressed.end());
-
-// }
-
-
-// BOOST_AUTO_TEST_CASE( roundtrip_dataset_with_filter ){
-
-    
-//   sqeazy::loaded_hdf5_plugin now;
-//   sqeazy::h5_file* testme = new sqeazy::h5_file(test_output_name, H5F_ACC_TRUNC);
-
-//   int rvalue = testme->write_nd_dataset(dname,
-// 				       retrieved,
-// 				       dims,
-// 				       sqeazy::bswap1_lz4_pipe());
-
-//   delete testme;
-//   BOOST_REQUIRE(rvalue == 0);
-//   BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
-
-//   std::vector<std::uint16_t> read;
-//   std::vector<unsigned int> shape;
-
-//   sqeazy::h5_file testme_ro(test_output_name);
-//   rvalue = testme_ro.read_nd_dataset(dname, read, shape);
-
-//   BOOST_REQUIRE_EQUAL(rvalue,0);
-//   BOOST_REQUIRE_EQUAL(shape.size(), dims.size());
-//   BOOST_REQUIRE_EQUAL(read.size(), retrieved.size());
-//   BOOST_REQUIRE_EQUAL_COLLECTIONS(read.begin(), read.end(), retrieved.begin(), retrieved.end());
-  
-//   if(bfs::exists(test_output_path))
-//     bfs::remove(test_output_path);
-
-// }
-
-// BOOST_AUTO_TEST_CASE( loading_to_wrong_type_produces_error ){
-
-//   std::vector<std::uint16_t> to_store(64,42);
-    
-//   sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
-
-//   int rvalue = testme.write_nd_dataset(dname,
-// 				       to_store,
-// 				       dims,
-// 				       sqeazy::bswap1_lz4_pipe());
-  
-//   BOOST_REQUIRE(rvalue == 0);
-//   BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
-
-  
-//   std::vector<unsigned char> retrieved;
-//   std::vector<unsigned int> shape;
-
-//   sqeazy::h5_file testme_ro(test_output_name);
-//   rvalue = testme_ro.read_nd_dataset(dname, retrieved, shape);
-
-//   BOOST_REQUIRE_EQUAL(rvalue,1);
-  
-//   if(bfs::exists(test_output_path))
-//     bfs::remove(test_output_path);
-// }
-
-// BOOST_AUTO_TEST_SUITE_END()
-
-
-  
-// BOOST_FIXTURE_TEST_SUITE( hdf5_functions_on_uint16, uint16_cube_of_8 )
-
-
-// BOOST_AUTO_TEST_CASE( write_h5_no_filter ){
-
-//   const bfs::path test_output_name = "hdf5_uint16_no_filter.h5";
-//   std::string dname = boost::unit_test::framework::current_test_case().p_name;
-
-//   int rvalue = sqeazy::write_h5<std::uint16_t>(test_output_name.string(), dname, &constant_cube[0], dims);
-
-//   BOOST_REQUIRE_EQUAL(rvalue,0);
-//   BOOST_CHECK(bfs::exists(test_output_name));
-//   BOOST_REQUIRE(dataset_in_h5_file(test_output_name.string(),dname));
-
-//   std::vector<int> stored_shape;
-  
-//   dataset_shape_in_h5_file(test_output_name.string(),dname,stored_shape);
-//   BOOST_REQUIRE_EQUAL_COLLECTIONS(dims.begin(), dims.end(),
-// 				  stored_shape.begin(), stored_shape.end());
-//   BOOST_REQUIRE(stored_sizeof_in_h5_file(test_output_name.string(), dname) == 2);
-  
-//   bfs::remove(test_output_name);
-  
-// }
-
-// BOOST_AUTO_TEST_CASE( roundtrip_h5_no_filter ){
-
-//   const bfs::path test_output_name = "hdf5_uint16_no_filter.h5";
-//   std::string dname = boost::unit_test::framework::current_test_case().p_name;
-
-//   int rvalue = sqeazy::write_h5<std::uint16_t>(test_output_name.string(), dname, &constant_cube[0], dims);
-
-//   BOOST_REQUIRE_EQUAL(rvalue,0);
-  
-//   std::vector<int> read_shape;
-//   to_play_with.clear();
-
-//   rvalue = sqeazy::read_h5<std::uint16_t>(test_output_name.string(), dname, to_play_with, read_shape);
-//   BOOST_REQUIRE_EQUAL(rvalue,0);
-//   BOOST_REQUIRE_EQUAL_COLLECTIONS(dims.begin(), dims.end(),
-// 				  read_shape.begin(), read_shape.end());
-  
-//   bfs::remove(test_output_name);
-// }
-
-// BOOST_AUTO_TEST_SUITE_END()
-
-// BOOST_FIXTURE_TEST_SUITE( hdf5_uint8_suite, uint8_cube_of_8 )
-
-// BOOST_AUTO_TEST_CASE( write_h5_no_filter ){
-
-//   const bfs::path test_output_name = "hdf5_uint8_no_filter.h5";
-//   std::string dname = boost::unit_test::framework::current_test_case().p_name;
-
-//   int rvalue = sqeazy::write_h5<unsigned char>(test_output_name.string(), dname, &constant_cube[0], dims);
-
-
-//   BOOST_REQUIRE_EQUAL(rvalue,0);
-//   BOOST_CHECK(bfs::exists(test_output_name));
-//   BOOST_REQUIRE(dataset_in_h5_file(test_output_name.string(),dname));
-
-//   std::vector<int> stored_shape;
-  
-//   dataset_shape_in_h5_file(test_output_name.string(),dname,stored_shape);
-//   BOOST_REQUIRE_EQUAL_COLLECTIONS(dims.begin(), dims.end(),
-// 				  stored_shape.begin(), stored_shape.end());
-//   BOOST_REQUIRE(stored_sizeof_in_h5_file(test_output_name.string(), dname) == 1);
-  
-//   bfs::remove(test_output_name);
-  
-// }
-
-// BOOST_AUTO_TEST_SUITE_END()
-
-
-// BOOST_FIXTURE_TEST_SUITE( hdf5_filter_available, uint16_cube_of_8 )
-
-// BOOST_AUTO_TEST_CASE( filter_available ){
-
-//   sqeazy::loaded_hdf5_plugin now;
-//   htri_t avail;
-//   avail = H5Zfilter_avail(H5Z_FILTER_SQY);
-
-//   BOOST_CHECK(avail);
-  
-// }
-
-// BOOST_AUTO_TEST_CASE( filter_supports_encoding ){
-
-//   sqeazy::loaded_hdf5_plugin now;
-//   unsigned filter_config = 0;
-//   H5Zget_filter_info (H5Z_FILTER_SQY, &filter_config);
-  
-//   BOOST_CHECK(filter_config & H5Z_FILTER_CONFIG_ENCODE_ENABLED);
-  
-// }
-
-// BOOST_AUTO_TEST_CASE( filter_supports_decoding ){
-
-//   sqeazy::loaded_hdf5_plugin now;
-//   unsigned filter_config = 0;
-//   H5Zget_filter_info (H5Z_FILTER_SQY, &filter_config);
-  
-//   BOOST_CHECK(filter_config & H5Z_FILTER_CONFIG_DECODE_ENABLED);
-  
-// }
-
-
-// BOOST_AUTO_TEST_SUITE_END()
-
-// BOOST_FIXTURE_TEST_SUITE( index_files, indexed_helpers )
-
-
-
-// BOOST_AUTO_TEST_CASE( create_all_from_scratch ){
-
-//   sqeazy::h5_file index(index_file_path.string(),H5F_ACC_TRUNC);
-  
-//   sqeazy::h5_file dest(dataset_paths[0].string(),H5F_ACC_TRUNC);
-//   int rvalue = dest.write_nd_dataset(dataset_names[0],retrieved,dims);
-
-//   BOOST_REQUIRE(rvalue == 0);
-//   BOOST_REQUIRE(dest.has_h5_item(dataset_names[0]));
-//   BOOST_REQUIRE(!dest.is_external_link(dataset_names[0]));
-//   BOOST_REQUIRE_GT(bfs::file_size(dataset_paths[0]),retrieved.size()*sizeof(uint16_t));
-  
-//   dest.close();
-
-//   std::string link_tail = dataset_names[0].substr(dataset_names[0].rfind("/")+1);
-//   std::string link_head = dataset_names[0].substr(0,dataset_names[0].rfind("/"));
-
-//   std::string dest_tail = link_tail;
-//   std::string dest_head = link_head;
-
-//   dest.open(dataset_paths[0].string());
-//   BOOST_REQUIRE(dest.has_h5_item(dataset_names[0]));
-
-    
-//   index.setup_link(dataset_names[0],dest,dataset_names[0]);
-
-//   BOOST_REQUIRE(index.has_h5_item(dataset_names[0]));  
-//   BOOST_REQUIRE(index.is_external_link(dataset_names[0]));
-//   clean_up();
-// }
-
-// BOOST_AUTO_TEST_CASE( load_dataset_through_index ){
-  
-//   sqeazy::h5_file index(index_file_path.string(),H5F_ACC_TRUNC);
-//   sqeazy::h5_file dest(dataset_paths[0].string(),H5F_ACC_TRUNC);
-//   int rvalue = dest.write_nd_dataset(dataset_names[0],retrieved,dims);
-  
-  
-//   BOOST_REQUIRE(rvalue == 0);
-//   dest.close();
-  
-//   dest.open(dataset_paths[0].string());
-//   index.setup_link(dataset_names[0],dest,dataset_names[0]);
-//   index.setup_link("/dangling_link",dest,"/does_not_exist");
-
-//   index.close();
-
-//   index = sqeazy::h5_file(index_file_path.string(),H5F_ACC_RDONLY);
-  
-//   BOOST_REQUIRE_NO_THROW(index.load_h5_dataset(dataset_names[0]));
-//   H5::DataSet tds = index.load_h5_dataset("/dangling_link");
-//   if(H5_VERSION_GE(1,8,14))
-//     BOOST_CHECK_LT(tds.getId(),0);
-//   else
-//     BOOST_CHECK_EQUAL(tds.getId(),0);
-
-  
-//   tds = index.load_h5_dataset(dataset_names[0]);
-//   BOOST_REQUIRE_NE(tds.getStorageSize(),0);
-
-//   std::vector<unsigned> dims_from_link;
-//   index.shape(dims_from_link,dataset_names[0]);
-
-//   BOOST_REQUIRE_EQUAL_COLLECTIONS(dims.begin(), dims.end(),dims_from_link.begin(), dims_from_link.end());
-//   clean_up();
-// }
-
-// BOOST_AUTO_TEST_CASE( roundtrip_through_index_from_scratch ){
-
-//   sqeazy::h5_file index(index_file_path.string(),H5F_ACC_TRUNC);
-  
-//   sqeazy::h5_file dest(dataset_paths[0].string(),H5F_ACC_TRUNC);
-//   int rvalue = dest.write_nd_dataset(dataset_names[0],retrieved,dims);
-
-//   BOOST_REQUIRE(rvalue == 0);
-//   BOOST_REQUIRE(dest.has_h5_item(dataset_names[0]));
-//   BOOST_REQUIRE_GT(bfs::file_size(dataset_paths[0]),retrieved.size()*sizeof(uint16_t));
-  
-//   dest.close();
-
-//   std::string link_tail = dataset_names[0].substr(dataset_names[0].rfind("/")+1);
-//   std::string link_head = dataset_names[0].substr(0,dataset_names[0].rfind("/"));
-
-//   std::string dest_tail = link_tail;
-//   std::string dest_head = link_head;
-
-//   dest.open(dataset_paths[0].string());
-//   BOOST_REQUIRE(dest.has_h5_item(dataset_names[0]));
-
-    
-//   rvalue = index.setup_link(dataset_names[0],dest,dataset_names[0]);
-//   index.close();
-
-//   index.open(index_file_path.string());
-//   BOOST_REQUIRE(rvalue == 0);
-
-
-//   std::vector<uint16_t> reloaded_retrieved(retrieved.size(),0) ;
-//   std::vector<uint32_t> reloaded_dims(dims.size(),0) ;
-
-//   rvalue = index.read_nd_dataset(dataset_names[0],reloaded_retrieved,reloaded_dims);
-//   BOOST_REQUIRE(rvalue == 0);
-//   BOOST_REQUIRE_EQUAL_COLLECTIONS(dims.begin(), dims.end(),
-// 				  reloaded_dims.begin(), reloaded_dims.end());
-//   BOOST_REQUIRE_EQUAL_COLLECTIONS(retrieved.begin(), retrieved.end(),
-// 				  reloaded_retrieved.begin(), reloaded_retrieved.end());
-  
-//   clean_up();
-// }
-// BOOST_AUTO_TEST_SUITE_END()
-
-
-
-// BOOST_FIXTURE_TEST_SUITE( make_relative_suite, indexed_helpers )
-
-// BOOST_AUTO_TEST_CASE( simple_top_down ){
-
-//   sqeazy::h5_file dummy(dataset_paths[0].string(),H5F_ACC_TRUNC);
-//   const bfs::path top = index_file_path;
-//   const bfs::path down = dataset_paths[0];
-
-//   bfs::path relative = sqeazy::make_relative(top,down);
-//   BOOST_CHECK_MESSAGE(bfs::exists(relative), "relative ("<< relative.string() <<") does not exist!\n");
-//   BOOST_REQUIRE(relative == dataset_paths[0]);
-//   clean_up();
-// }
-
-// BOOST_AUTO_TEST_CASE( simple_down_top ){
-
-
-//   sqeazy::h5_file idx(index_file_path.string(),H5F_ACC_TRUNC);
-//   const bfs::path top = bfs::absolute(index_file_path);
-//   const bfs::path down = bfs::absolute(dataset_paths[0]);
-    
-//   bfs::path relative = down.parent_path();
-//   relative /= sqeazy::make_relative(down,top);
-
-//   BOOST_CHECK_MESSAGE(bfs::exists(relative), "relative ("<< relative.string() <<") does not exist!\n");
-//   bfs::path  expected = "..";
-//   expected /= index_file_path.filename();
-//   relative = sqeazy::make_relative(down,top);
-//   BOOST_REQUIRE(relative == expected);
-//   clean_up();
-// }
-
-// BOOST_AUTO_TEST_CASE( simple_top_down_absolute ){
-//   sqeazy::h5_file dummy(dataset_paths[0].string(),H5F_ACC_TRUNC);
-//   const bfs::path top = bfs::absolute(index_file_path);
-//   const bfs::path down = bfs::absolute(dataset_paths[0]);
-
-//   bfs::path relative = sqeazy::make_relative(top,down);
-//   BOOST_CHECK_MESSAGE(bfs::exists(relative), "relative ("<< relative.string() <<") does not exist!\n");
-//   BOOST_REQUIRE(relative == dataset_paths[0]);
-//   clean_up();
-// }
-
-// BOOST_AUTO_TEST_CASE( simple_top_down_with_dir ){
-//   sqeazy::h5_file dummy(dataset_paths[0].string(),H5F_ACC_TRUNC);
-  
-//   const bfs::path top = ".";
-//   const bfs::path down = bfs::absolute(dataset_paths[0]);
-
-//   bfs::path relative = sqeazy::make_relative(top,down);
-//   BOOST_CHECK_MESSAGE(bfs::exists(relative), "relative ("<< relative.string() <<") does not exist!\n");
-//   BOOST_REQUIRE(relative == dataset_paths[0]);
-//   clean_up();
-// }
 
 BOOST_AUTO_TEST_SUITE_END()
