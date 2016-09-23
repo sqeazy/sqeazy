@@ -1,48 +1,13 @@
-#ifndef _COMPASS_DETAIL_H_
-#define _COMPASS_DETAIL_H_
+#ifndef _COMPASS_GNU_IMPL_H_
+#define _COMPASS_GNU_IMPL_H_
 
 #include "cpuid.h"
 #include <string>
 
+#include "compass_tags.hpp"
+
 namespace compass {
 
-  namespace feature {
-
-    struct sse {};
-    struct sse2 {};
-    struct sse3 {};
-    struct sse4 {};
-
-    struct avx {};
-    struct avx2 {};
-
-  };
-
-  
-  namespace compiletime {
-
-    struct gnu_tag  {};
-    struct llvm_tag {};
-    struct msvc_tag {};
-
-    struct platform {
-
-#ifdef __GNUC__
-      typedef gnu_tag type;
-#endif
-
-#ifdef __clang__
-      typedef llvm_tag type;
-#endif
-      
-#ifdef __MSC_BUILD__
-      typedef msvc_tag type;
-#endif
-      
-    };
-  };
-
-  namespace ct = compiletime;
   
   namespace runtime {
 
@@ -60,18 +25,6 @@ namespace compass {
       
       }
     
-      static bool works(compiletime::llvm_tag) {
-
-	return false;//not implemented yet
-      
-      }
-
-      static bool works(compiletime::msvc_tag) {
-
-	return false;//not implemented yet
-      
-      }
-
 
       static std::string vendor(compiletime::gnu_tag) {
 
@@ -100,18 +53,6 @@ namespace compass {
       
       }
     
-      static std::string vendor(compiletime::llvm_tag) {
-
-	return "";//not implemented yet
-      
-      }
-
-      static std::string vendor(compiletime::msvc_tag) {
-
-	return "";//not implemented yet
-      
-      }
-
       
       static bool has(feature::sse , ct::gnu_tag){
 	std::uint32_t regs[4] = {0,0,0,0};
@@ -128,14 +69,6 @@ namespace compass {
 	std::uint32_t bit25 = (1<<25);
 	bool value = (regs[3] & bit25) > 0;
 	return value;
-      }
-
-      static bool has(feature::sse , ct::llvm_tag){
-	return false;
-      }
-
-      static bool has(feature::sse , ct::msvc_tag){
-	return false;
       }
 
       static bool has(feature::sse2 , ct::gnu_tag){
@@ -155,14 +88,6 @@ namespace compass {
 	return value;
       }
 
-      static bool has(feature::sse2 , ct::llvm_tag){
-	return false;
-      }
-
-      static bool has(feature::sse2 , ct::msvc_tag){
-	return false;
-      }
-
       static bool has(feature::sse3 , ct::gnu_tag){
 	std::uint32_t regs[4] = {0,0,0,0};
 	int cpuid_rvalue = __get_cpuid(1,
@@ -180,13 +105,6 @@ namespace compass {
 	return value;
       }
 
-      static bool has(feature::sse3 , ct::llvm_tag){
-	return false;
-      }
-
-      static bool has(feature::sse3 , ct::msvc_tag){
-	return false;
-      }
 
       static bool has(feature::sse4 , ct::gnu_tag){
 	std::uint32_t regs[4] = {0,0,0,0};
@@ -208,14 +126,6 @@ namespace compass {
 	return value;
       }
 
-      static bool has(feature::sse4 , ct::llvm_tag){
-	return false;
-      }
-
-      static bool has(feature::sse4 , ct::msvc_tag){
-	return false;
-      }
-
       static bool has(feature::avx , ct::gnu_tag){
 	std::uint32_t regs[4] = {0,0,0,0};
 	int cpuid_rvalue = __get_cpuid(1,
@@ -235,15 +145,6 @@ namespace compass {
 	return value;
       }
 
-      static bool has(feature::avx , ct::llvm_tag){
-	return false;
-      }
-
-      static bool has(feature::avx , ct::msvc_tag){
-	return false;
-      }
-
-      
       static bool has(feature::avx2 , ct::gnu_tag){
 	std::uint32_t regs[4] = {0,0,0,0};
 	int cpuid_rvalue = __get_cpuid(7,
@@ -261,19 +162,10 @@ namespace compass {
 	return value;
       }
 
-      static bool has(feature::avx2 , ct::llvm_tag){
-	return false;
-      }
-
-      static bool has(feature::avx2 , ct::msvc_tag){
-	return false;
-      }
-
-      
     };
   };
   
   namespace rt = runtime;
   
 };
-#endif /* _COMPASS_DETAIL_H_ */
+#endif /* _COMPASS_GNU_IMPL_H_ */

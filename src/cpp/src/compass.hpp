@@ -73,9 +73,9 @@ namespace compass {
       
     }
     
-  };
+  };//namespace runtime
 
-
-};
+  
+};//namespace compass
 
 #endif /* _COMPASS_H_ */

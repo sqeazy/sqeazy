@@ -1,7 +1,6 @@
 #ifndef _COMPASS_TAGS_H_
 #define _COMPASS_TAGS_H_
 
-#include "cpuid.h"
 #include <string>
 
 namespace compass {
