@@ -1,6 +1,10 @@
 #ifndef _SQEAZY_H5_FILTER_HPP_
 #define _SQEAZY_H5_FILTER_HPP_
 
+//Windows debug builds throw an automatic memory dump
+//HDF forces me to write the plugin in a way so that I have to
+//commit a controlled memory leak
+//2016-09-26: still unable to switch this behavior off with MSVC 14 2015
 #ifdef _WIN32
 #ifdef _SQY_DEBUG
 #define CRTDBG_MAP_ALLOC
