@@ -22,6 +22,7 @@ struct helpers_fixture {
   std::string	dname;
   std::string	test_output_name;
   bfs::path	 	test_output_path;
+  bfs::path	 	no_filter_path;
 
   std::vector<unsigned short> retrieved;
   std::vector<size_t> dims;
@@ -34,6 +35,7 @@ struct helpers_fixture {
     dname("IntArray"),
     test_output_name("hdf5_helpers.h5"),
     test_output_path(test_output_name),
+    no_filter_path("no_filter.h5"),
     retrieved(),
     dims(3,8)
   {
@@ -61,6 +63,12 @@ struct helpers_fixture {
     
     for(unsigned i = 0;i<retrieved.size();++i)
       retrieved[i] = i;
+
+    
+    if(bfs::exists(test_output_path))
+      bfs::remove(test_output_path);
+    if(bfs::exists(no_filter_path))
+      bfs::remove(no_filter_path);
 
   }
 
