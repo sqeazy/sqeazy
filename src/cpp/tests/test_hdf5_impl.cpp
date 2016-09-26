@@ -475,7 +475,8 @@ BOOST_AUTO_TEST_CASE( write_compressed_dataset ){
   BOOST_REQUIRE(dataset_in_h5_file(test_output_name,dname));
   BOOST_REQUIRE_CLOSE_FRACTION(float(bfs::file_size(one_go_path)), float(bfs::file_size(test_output_path)),0.1);
 
-
+  delete testme;
+  
 }
 
 BOOST_AUTO_TEST_CASE( roundtrip_compressed_dataset ){
