@@ -1,11 +1,5 @@
 #define BOOST_TEST_MODULE TEST_HDF5_IMPLEMENTATION
 
-#ifdef _WIN32
-#ifdef _SQY_DEBUG
-#define _CRTDBG_MAP_ALLOC 1
-#endif
-#endif
-
 #include "boost/test/unit_test.hpp"
 #include <numeric>
 #include <vector>
@@ -351,6 +345,7 @@ BOOST_AUTO_TEST_CASE( write_dataset_with_filter ){
 					   dims);
 
   BOOST_REQUIRE(rvalue == 0);
+  
   //does the write occur here? or at destruction of the object
   
   sqeazy::h5_file testme(test_output_path, H5F_ACC_TRUNC);
