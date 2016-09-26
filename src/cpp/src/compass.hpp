@@ -6,6 +6,7 @@
 #include <string>
 #include <thread>
 #include "compass_detail.hpp"
+#include "compass_tags.hpp"
 
 namespace compass {
 

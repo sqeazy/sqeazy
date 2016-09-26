@@ -27,6 +27,10 @@ namespace compass {
 	return false;
       }
 
+	  static bool has(feature::sse2, ct::msvc_tag) {
+		  return false;
+	  }
+
       static bool has(feature::sse3 , ct::msvc_tag){
 	return false;
       }

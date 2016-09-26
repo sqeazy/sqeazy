@@ -32,7 +32,7 @@ struct host_reference
     expected_has_avx2(false),
     expected_ncores  (-1)
   {
-    
+	  
     if(hostname.find("schorle") != std::string::npos){
       expected_vendor = "intel";
       expected_brand  = "Intel(R) Core(TM) i7-3520M CPU @ 2.90GHz";
@@ -58,6 +58,18 @@ struct host_reference
       expected_ncores = 2;
     }
 
+	//windows machine
+	if (hostname.find("scicomp-pc-3") != std::string::npos) {
+		expected_vendor = "intel";
+		expected_brand = "Intel(R) Xeon(R) CPU @ 2.30GHz";
+		expected_has_sse = true;
+		expected_has_sse2 = true;
+		expected_has_sse3 = true;
+		expected_has_sse4 = true;
+		expected_has_avx = true;
+		expected_has_avx2 = true;
+		expected_ncores = 4;
+	}
   }
   
 };
