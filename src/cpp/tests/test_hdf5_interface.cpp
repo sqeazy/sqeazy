@@ -182,6 +182,7 @@ BOOST_FIXTURE_TEST_SUITE( hdf5_file_io, helpers_fixture )
 
 BOOST_AUTO_TEST_CASE( write_no_filter ){
 
+  
   uint16_cube_of_8 data;
   
   int rvalue = 0;
@@ -198,13 +199,14 @@ BOOST_AUTO_TEST_CASE( write_no_filter ){
   BOOST_REQUIRE_GT(bfs::file_size(test_output_path),0);
   BOOST_REQUIRE_GT(float(bfs::file_size(test_output_path)),float(data.size_in_byte));
     
-  bfs::remove(test_output_name);
+
 }
 
 BOOST_AUTO_TEST_CASE( roundtrip_no_filter ){
 
-  uint16_cube_of_8 data;
   
+  uint16_cube_of_8 data;
+
   int rvalue = 0;
 
   BOOST_CHECK_NO_THROW(rvalue = SQY_h5_write_UI16(test_output_name.c_str(),
@@ -226,14 +228,14 @@ BOOST_AUTO_TEST_CASE( roundtrip_no_filter ){
   BOOST_REQUIRE_EQUAL(rvalue,0);
   BOOST_REQUIRE_EQUAL_COLLECTIONS(data.to_play_with.begin(), data.to_play_with.end(),
 				  data.constant_cube.begin(), data.constant_cube.end());
-  bfs::remove(test_output_name);
+  
 }
 
 BOOST_AUTO_TEST_CASE( write_filter ){
 
+
   uint16_cube_of_8 data;
 
-  bfs::path no_filter_path = "no_filter.h5";
   
   int rvalue = SQY_h5_write_UI16(no_filter_path.string().c_str(),
 				 dname.c_str(),
@@ -257,14 +259,12 @@ BOOST_AUTO_TEST_CASE( write_filter ){
   BOOST_REQUIRE(bfs::exists(test_output_path));
   BOOST_REQUIRE_GT(bfs::file_size(test_output_path),0);
   BOOST_REQUIRE_LT(bfs::file_size(test_output_path),bfs::file_size(no_filter_path));
-
-    
-  bfs::remove(test_output_name);
-  bfs::remove(no_filter_path);
+   
 }
 
 BOOST_AUTO_TEST_CASE( roundtrip_filter ){
 
+ 
   uint16_cube_of_8 data;
   
   int rvalue = SQY_h5_write_UI16(test_output_name.c_str(),
@@ -290,16 +290,15 @@ BOOST_AUTO_TEST_CASE( roundtrip_filter ){
 				  data.constant_cube.begin(), data.constant_cube.end());
   
   
-  bfs::remove(test_output_name);
+  
 
 }
 
 BOOST_AUTO_TEST_CASE( write_compressed_data ){
 
+ 
   uint16_cube_of_8 data;
 
-  bfs::path no_filter_path = "no_filter.h5";
-  
   int rvalue = SQY_h5_write_UI16(no_filter_path.string().c_str(),
 				 dname.c_str(),
 				 &data.constant_cube[0],
@@ -344,8 +343,7 @@ BOOST_AUTO_TEST_CASE( write_compressed_data ){
 				  data.constant_cube.begin(), data.constant_cube.end());
 
   
-  bfs::remove(test_output_name);
-  bfs::remove(no_filter_path);
+ 
 }
 
 

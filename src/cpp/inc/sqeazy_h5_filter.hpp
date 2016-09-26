@@ -1,6 +1,21 @@
 #ifndef _SQEAZY_H5_FILTER_HPP_
 #define _SQEAZY_H5_FILTER_HPP_
 
+//Windows debug builds throw an automatic memory dump
+//HDF forces me to write the plugin in a way so that I have to
+//commit a controlled memory leak
+//2016-09-26: still unable to switch this behavior off with MSVC 14 2015
+#ifdef _WIN32
+#ifdef _SQY_DEBUG
+#define CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+_CrtSetDbgFlag(0);
+VLDDisable();
+#endif
+#endif
+
+
 #include "hdf5.h"
 
 #include "sqeazy_definitions.hpp"
@@ -75,12 +90,12 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
 	  std::cerr << "unable to build pipeline from " << hdr.pipeline() << "\n";
 	}
 	else{
-	auto pipe = sqy::dypeline_from_uint8::from_string(hdr.pipeline());
+	  auto pipe = sqy::dypeline_from_uint8::from_string(hdr.pipeline());
       
-	ret = pipe.decode(c_input,
-			  reinterpret_cast<std::uint8_t*>(outbuf),
-			  in_shape,
-			  out_shape);
+	  ret = pipe.decode(c_input,
+			    reinterpret_cast<std::uint8_t*>(outbuf),
+			    in_shape,
+			    out_shape);
 	}
       }
     }
@@ -174,15 +189,17 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
     {
     
       delete [] *(char**)_buf;//do we know the size of _buf?
-    *_buf = outbuf;
-    *_buf_size = outbuflen;
-    value = outbuflen;
 
-  }
+      *_buf = outbuf;
+      *_buf_size = outbuflen;
+      value = outbuflen;
+
+    }
   else{
     //failed 
     //by hdf5 convention, return 0
     delete [] outbuf;
+
     value = 0;
   }
   
@@ -195,15 +212,15 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
 static const H5Z_filter_t H5Z_FILTER_SQY = 01307;
 
 static const H5Z_class2_t H5Z_SQY[1] = {{
-  H5Z_CLASS_T_VERS, /* H5Z_class_t version */
-  H5Z_FILTER_SQY, /* Filter id number */
-  1, /* encoder_present flag (set to true) */
-  1, /* decoder_present flag (set to true) */
-  "HDF5 sqy filter; see https://bitbucket.org/sqeazy/sqeazy",  /* Filter info */
-  NULL, /* The "can apply" callback (TODO: what is that?) */
-  NULL, /* The "set local" callback (TODO: what is that?) */
-  (H5Z_func_t) H5Z_filter_sqy,  /* The filter function */
-}};
+    H5Z_CLASS_T_VERS, /* H5Z_class_t version */
+    H5Z_FILTER_SQY, /* Filter id number */
+    1, /* encoder_present flag (set to true) */
+    1, /* decoder_present flag (set to true) */
+    "HDF5 sqy filter; see https://github.org/sqeazy/sqeazy",  /* Filter info */
+    NULL, /* The "can apply" callback (TODO: what is that?) */
+    NULL, /* The "set local" callback (TODO: what is that?) */
+    (H5Z_func_t) H5Z_filter_sqy,  /* The filter function */
+  }};
 
 // declare hdf5 plugin info functions
 SQY_FUNCTION_PREFIX H5PL_type_t   H5PLget_plugin_type(){return H5PL_TYPE_FILTER;};

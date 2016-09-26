@@ -1,4 +1,7 @@
 #define SQEAZY_CPP_
+
+#include "boost/filesystem.hpp"
+
 #include "sqeazy.h"
 
 #include "sqeazy_header.hpp"
@@ -13,6 +16,7 @@
 
 
 namespace sqy = sqeazy;
+namespace bfs = boost::filesystem;
 
 /*
 *	Sqeazy - Fast and flexible volume compression library
@@ -477,7 +481,8 @@ int SQY_h5_query_sizeof(const char* fname,
   H5::Exception::dontPrint();
 #endif
   
-  sqy::h5_file loaded(fname);
+  bfs::path lpath = fname;
+  sqy::h5_file loaded(lpath);
   if(!loaded.ready())
     return rvalue;
   else{
@@ -496,8 +501,8 @@ int SQY_h5_query_dtype(const char* fname,
 #ifndef _SQY_DEBUG_
   H5::Exception::dontPrint();
 #endif
-
-  sqy::h5_file loaded(fname);
+  bfs::path lpath = fname;
+  sqy::h5_file loaded(lpath);
   if(!loaded.ready())
     return 1;
   else{
@@ -521,7 +526,8 @@ int SQY_h5_query_ndims(const char* fname,
   #ifndef _SQY_DEBUG_
   H5::Exception::dontPrint();
 #endif
-  sqy::h5_file loaded(fname);
+  bfs::path lpath = fname;
+  sqy::h5_file loaded(lpath);
   if(!loaded.ready())
     return rvalue;
   else{
@@ -546,7 +552,8 @@ int SQY_h5_query_shape(const char* fname,
   #ifndef _SQY_DEBUG_
   H5::Exception::dontPrint();
 #endif
-  sqy::h5_file loaded(fname);
+  bfs::path lpath = fname;
+  sqy::h5_file loaded(lpath);
   if(!loaded.ready())
     return rvalue;
   else{
@@ -574,7 +581,8 @@ int SQY_h5_write_UI16(const char* fname,
 #endif
   
   bfs::path src_p = fname;
-  sqy::h5_file loaded(fname, bfs::exists(src_p) ? H5F_ACC_RDWR : H5F_ACC_TRUNC);
+    
+  sqy::h5_file loaded(src_p, bfs::exists(src_p) ? H5F_ACC_RDWR : H5F_ACC_TRUNC);
 
   if(!loaded.ready())
     return rvalue;
@@ -612,7 +620,7 @@ int SQY_h5_write(const char* fname,
 #endif
 
   bfs::path src_p = fname;
-  sqy::h5_file loaded(fname, bfs::exists(src_p) ? H5F_ACC_RDWR : H5F_ACC_TRUNC);
+  sqy::h5_file loaded(src_p, bfs::exists(src_p) ? H5F_ACC_RDWR : H5F_ACC_TRUNC);
 
   if(!loaded.ready())
     return rvalue;
@@ -634,7 +642,9 @@ int SQY_h5_read_UI16(const char* fname,
 #ifndef _SQY_DEBUG_
   H5::Exception::dontPrint();
 #endif
-  sqy::h5_file loaded(fname);
+  bfs::path lpath = fname;
+  sqy::h5_file loaded(lpath);
+  
   if(!loaded.ready())
     return rvalue;
   if(!loaded.has_h5_item(dname))
@@ -659,11 +669,12 @@ int SQY_h5_link(const char* pSrcFileName,
   //  H5::Exception::dontPrint();
   
   bfs::path src_p = pSrcFileName;
-  sqy::h5_file src(pSrcFileName, bfs::exists(src_p) ? H5F_ACC_RDWR : H5F_ACC_TRUNC);
+  sqy::h5_file src(src_p, bfs::exists(src_p) ? H5F_ACC_RDWR : H5F_ACC_TRUNC);
   std::stringstream src_path("");
   src_path << pSrcLinkPath << "/" << pSrcLinkName;
 
-  sqy::h5_file dest(pTargetFile);
+  bfs::path dst_p = pTargetFile;
+  sqy::h5_file dest(dst_p);
   std::stringstream dest_path("");
   dest_path << pTargetDatasetPath << "/" << pTargetDatasetName;
 

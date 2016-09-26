@@ -3,7 +3,10 @@ dist: trusty
 
 cache:
   directories:
-  - /usr
+  - /usr/lib
+  - /usr/include
+  - /usr/share
+  - /usr/bin
   
 language: java
 jdk:
