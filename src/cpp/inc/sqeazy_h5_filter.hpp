@@ -1,6 +1,17 @@
 #ifndef _SQEAZY_H5_FILTER_HPP_
 #define _SQEAZY_H5_FILTER_HPP_
 
+#ifdef _WIN32
+#ifdef _SQY_DEBUG
+#define CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+_CrtSetDbgFlag(0);
+VLDDisable();
+#endif
+#endif
+
+
 #include "hdf5.h"
 
 #include "sqeazy_definitions.hpp"

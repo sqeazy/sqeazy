@@ -159,8 +159,13 @@ IF( CMAKE_GENERATOR STREQUAL Xcode )
 ENDIF()					     
 
 if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
+if(NOT MSVC)
   add_definitions(-DSQY_TRACE=1)
   ADD_DEFINITIONS(-D_SQY_DEBUG_=1)
+else()
+  add_definitions(/DSQY_TRACE=1)
+  ADD_DEFINITIONS(/D_SQY_DEBUG_=1)
+endif()
 endif()
 
 if(SQY_VERBOSE)
