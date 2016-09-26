@@ -34,6 +34,7 @@ if(DEFINED READY_4_BUNDLE)
   set(SQY_LIB ${SQY_LIB} ${FFMPEG_LIBRARIES} )
 endif()
 
+
 message(STATUS "[tests] linking against ${SQY_LIB} ${Boost_LIBRARIES} ")
 add_executable(test_string_parsers_impl test_string_parsers_impl.cpp)
 target_link_libraries(test_string_parsers_impl ${Boost_LIBRARIES})
