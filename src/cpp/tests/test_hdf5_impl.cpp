@@ -365,7 +365,7 @@ BOOST_AUTO_TEST_CASE( write_dataset_with_filter ){
   BOOST_REQUIRE(rvalue == 0);
   //does the write occur here? or at destruction of the object
   
-  sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
+  sqeazy::h5_file testme(test_output_path, H5F_ACC_TRUNC);
 
   rvalue = testme.write_nd_dataset(dname,
 				   retrieved,

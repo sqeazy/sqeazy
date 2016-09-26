@@ -86,7 +86,13 @@ BOOST_AUTO_TEST_CASE( encode_header_correct_typeid )
   bpt::ptree tree;
 
   BOOST_CHECK_NO_THROW(bpt::read_json(header_stream, tree));
-  BOOST_CHECK_EQUAL(tree.get<std::string>("raw.type"),typeid(value_type).name());
+
+  std::string received = tree.get<std::string>("raw.type");
+#ifdef _WIN32
+  if (received.find("_") != std::string::npos)
+	  received.replace(received.find("_"),1," ");
+#endif
+  BOOST_CHECK_EQUAL(received,typeid(value_type).name());
   
 }
 

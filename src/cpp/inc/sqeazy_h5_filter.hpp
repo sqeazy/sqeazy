@@ -199,7 +199,7 @@ static const H5Z_class2_t H5Z_SQY[1] = {{
   H5Z_FILTER_SQY, /* Filter id number */
   1, /* encoder_present flag (set to true) */
   1, /* decoder_present flag (set to true) */
-  "HDF5 sqy filter; see https://bitbucket.org/sqeazy/sqeazy",  /* Filter info */
+  "HDF5 sqy filter; see https://github.org/sqeazy/sqeazy",  /* Filter info */
   NULL, /* The "can apply" callback (TODO: what is that?) */
   NULL, /* The "set local" callback (TODO: what is that?) */
   (H5Z_func_t) H5Z_filter_sqy,  /* The filter function */
