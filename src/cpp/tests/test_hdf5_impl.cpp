@@ -208,8 +208,6 @@ BOOST_AUTO_TEST_CASE( load_dataset ){
 
 BOOST_AUTO_TEST_CASE( write_dataset ){
 
-  if(bfs::exists(test_output_path))
-    bfs::remove(test_output_path);
 
   sqeazy::h5_file testme(test_output_path, H5F_ACC_TRUNC);
   BOOST_CHECK(testme.ready());
@@ -222,8 +220,6 @@ BOOST_AUTO_TEST_CASE( write_dataset ){
 
 BOOST_AUTO_TEST_CASE( write_dataset_to_group ){
 
-  if(bfs::exists(test_output_path))
-    bfs::remove(test_output_path);
 
   sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
   BOOST_CHECK(testme.ready());
@@ -239,8 +235,6 @@ BOOST_AUTO_TEST_CASE( write_dataset_to_group ){
 
 BOOST_AUTO_TEST_CASE( write_multiple_datasets ){
 
-  if(bfs::exists(test_output_path))
-    bfs::remove(test_output_path);
 
   sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
   BOOST_CHECK(testme.ready());
@@ -267,8 +261,6 @@ BOOST_AUTO_TEST_CASE( write_multiple_datasets ){
 
 BOOST_AUTO_TEST_CASE( write_multiple_datasets_to_groups ){
 
-  if(bfs::exists(test_output_path))
-    bfs::remove(test_output_path);
 
   sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
   BOOST_CHECK(testme.ready());
@@ -296,8 +288,6 @@ BOOST_AUTO_TEST_CASE( write_multiple_datasets_to_groups ){
 
 BOOST_AUTO_TEST_CASE( roundtrip_multiple_datasets_in_groups ){
 
-	if(bfs::exists(test_output_path))
-		bfs::remove(test_output_path);
 
   sqeazy::h5_file testme(test_output_name, H5F_ACC_TRUNC);
   BOOST_CHECK(testme.ready());
@@ -355,15 +345,6 @@ BOOST_AUTO_TEST_CASE( roundtrip_multiple_datasets_in_groups ){
 
 BOOST_AUTO_TEST_CASE( write_dataset_with_filter ){
 
-  bfs::path no_filter_path = "no_filter.h5";
-  
-  if(bfs::exists(test_output_path))
-    bfs::remove(test_output_path);
-
-  if(bfs::exists(no_filter_path))
-    bfs::remove(no_filter_path);
-  
-
   sqeazy::h5_file no_filter(no_filter_path.string(), H5F_ACC_TRUNC);
   int rvalue = no_filter.write_nd_dataset(dname,
 					   retrieved,
@@ -386,18 +367,11 @@ BOOST_AUTO_TEST_CASE( write_dataset_with_filter ){
 
 BOOST_AUTO_TEST_CASE( read_write_dataset_with_filter ){
 
-	bfs::path no_filter_path = "no_filter.h5";
-	if(bfs::exists(test_output_path))
-		bfs::remove(test_output_path);
-
-	if(bfs::exists(no_filter_path))
-		bfs::remove(no_filter_path);
-
 
   sqeazy::h5_file no_filter(no_filter_path.string(), H5F_ACC_TRUNC);
   int rvalue = no_filter.write_nd_dataset(dname,
-					   retrieved,
-					   dims);
+					  retrieved,
+					  dims);
 
   BOOST_REQUIRE(rvalue == 0);
   //does the write occur here? or at destruction of the object
@@ -428,11 +402,8 @@ BOOST_AUTO_TEST_CASE( read_write_dataset_with_filter ){
 
 BOOST_AUTO_TEST_CASE( write_compressed_dataset ){
 
-	bfs::path one_go_path = "one_go_write.h5";
-
-  if(bfs::exists(test_output_path))
-    bfs::remove(test_output_path);
-
+  bfs::path one_go_path = "one_go_write.h5";
+  
   if(bfs::exists(one_go_path))
     bfs::remove(one_go_path);
 
@@ -481,17 +452,12 @@ BOOST_AUTO_TEST_CASE( write_compressed_dataset ){
 
 BOOST_AUTO_TEST_CASE( roundtrip_compressed_dataset ){
 
-	bfs::path one_go_path = "one_go_write.h5";
-
-  if(bfs::exists(test_output_path))
-    bfs::remove(test_output_path);
+  bfs::path one_go_path = "one_go_write.h5";
 
   if(bfs::exists(one_go_path))
     bfs::remove(one_go_path);
   
-
   //write in one go
-
   sqeazy::h5_file* one_go = new sqeazy::h5_file(one_go_path.string(), H5F_ACC_TRUNC);
   int rvalue = one_go->write_nd_dataset(dname,
 				   retrieved,
