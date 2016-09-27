@@ -35,6 +35,7 @@ add_test(NAME bench_utils_impl COMMAND test_bench_utils_impl)
 add_test(NAME volume_fixtures COMMAND test_volume_fixtures)
 add_test(NAME yuv_utils COMMAND test_yuv_utils WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
 add_test(NAME quantiser_impl COMMAND test_quantiser_impl)
+add_test(NAME compass_impl COMMAND test_compass_impl)
 
 add_test(NAME hdf5_interface COMMAND test_hdf5_interface)
 
