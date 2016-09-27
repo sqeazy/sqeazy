@@ -4,12 +4,13 @@
 #include <string>
 #include "compass_tags.hpp"
 
-#ifdef __GNUC__
-#include "ct/compass_gnu_impl.hpp"
-#endif
 
 #ifdef __clang__
 #include "ct/compass_llvm_impl.hpp"
+#else
+#ifdef __GNUC__
+#include "ct/compass_gnu_impl.hpp"
+#endif
 #endif
       
 #ifdef _MSC_BUILD

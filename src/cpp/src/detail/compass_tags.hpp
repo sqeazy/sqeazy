@@ -31,13 +31,14 @@ namespace compass {
 
     struct toolchain {
 
+#ifdef __clang__
+      typedef llvm_tag type;
+#else
 #ifdef __GNUC__
       typedef gnu_tag type;
 #endif
-
-#ifdef __clang__
-      typedef llvm_tag type;
 #endif
+
       
 #ifdef _MSC_BUILD
       typedef msvc_tag type;
