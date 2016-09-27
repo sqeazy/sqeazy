@@ -5,26 +5,31 @@
 
 namespace compass {
 
+  
   namespace feature {
-
+    
+    //SIMD instruction sets
+    //128bit wide
     struct sse {};
     struct sse2 {};
     struct sse3 {};
     struct sse4 {};
 
+    //256bit wide
     struct avx {};
     struct avx2 {};
 
+    
   };
 
   
   namespace compiletime {
-
+    
     struct gnu_tag  {};
     struct llvm_tag {};
     struct msvc_tag {};
 
-    struct platform {
+    struct toolchain {
 
 #ifdef __GNUC__
       typedef gnu_tag type;
@@ -39,6 +44,31 @@ namespace compass {
 #endif
       
     };
+
+    //architectures
+    struct x86_tag {};
+    struct arm_tag {};
+    
+    
+    struct platform {
+
+#if __x86_64 || __x86_64__ || __i386 || i386 || __i386__
+      typedef x86_tag type;
+#endif
+      
+      //32 or 64bit?
+      const static int bitness = sizeof(void*)*CHAR_BIT;
+      
+    };
+
+    
+    //cpuid register locations
+    static const int eax = 0;
+    static const int ebx = 1;
+    static const int ecx = 2;
+    static const int edx = 3;
+
+    
   };
 
   namespace ct = compiletime;

@@ -14,25 +14,25 @@ namespace compass {
     
     static const bool is_gnu(){
 
-      using current_platform_t = platform::type;
+      using current_toolchain_t = toolchain::type;
       
-      bool value = std::is_same<current_platform_t,gnu_tag>::value;
+      bool value = std::is_same<current_toolchain_t,gnu_tag>::value;
       return value;
       
     }
 
     static const bool is_llvm(){
 
-      using current_platform_t = platform::type;
-      bool value = std::is_same<current_platform_t,llvm_tag>::value;
+      using current_toolchain_t = toolchain::type;
+      bool value = std::is_same<current_toolchain_t,llvm_tag>::value;
       return value;
 
     }
 
     static const bool is_msvc(){
 
-      using current_platform_t = platform::type;
-      bool value = std::is_same<current_platform_t,msvc_tag>::value;
+      using current_toolchain_t = toolchain::type;
+      bool value = std::is_same<current_toolchain_t,msvc_tag>::value;
       return value;
 
     }
