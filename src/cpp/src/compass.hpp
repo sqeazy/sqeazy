@@ -5,11 +5,9 @@
 #include <cstdint>
 #include <string>
 #include <thread>
-#include "compass_detail.hpp"
-#include "compass_tags.hpp"
+#include "detail/compass_detail.hpp"
 
 namespace compass {
-
   
   
   namespace compiletime {
