@@ -52,7 +52,7 @@ namespace compass {
     
     struct platform {
 
-#if __x86_64 || __x86_64__ || __i386 || i386 || __i386__
+#if __x86_64 || __x86_64__ || __i386 || i386 || __i386__ || _M_IX86 == 600 | _M_X64 == 100
       typedef x86_tag type;
 #endif
       
