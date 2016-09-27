@@ -34,7 +34,7 @@ namespace compass {
       typedef llvm_tag type;
 #endif
       
-#ifdef __MSC_BUILD__
+#ifdef _MSC_BUILD
       typedef msvc_tag type;
 #endif
       

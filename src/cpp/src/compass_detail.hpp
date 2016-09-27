@@ -12,7 +12,7 @@
 #include "compass_llvm_impl.hpp"
 #endif
       
-#ifdef __MSC_BUILD__
+#ifdef _MSC_BUILD
 #include "compass_msvc_impl.hpp"
 #endif
 
