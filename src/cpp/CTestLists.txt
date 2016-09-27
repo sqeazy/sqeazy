@@ -35,7 +35,13 @@ add_test(NAME bench_utils_impl COMMAND test_bench_utils_impl)
 add_test(NAME volume_fixtures COMMAND test_volume_fixtures)
 add_test(NAME yuv_utils COMMAND test_yuv_utils WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
 add_test(NAME quantiser_impl COMMAND test_quantiser_impl)
+
+cmake_host_system_information(RESULT CURRENT_HOSTNAME QUERY HOSTNAME)
+
+if(${CURRENT_HOSTNAME} MATCHES ".*(schorle|-gce-|scicomp-pc-3|recovery-station).*")
+message(">> hostname (${CURRENT_HOSTNAME}): added compass test ")
 add_test(NAME compass_impl COMMAND test_compass_impl)
+endif()
 
 add_test(NAME hdf5_interface COMMAND test_hdf5_interface)
 
