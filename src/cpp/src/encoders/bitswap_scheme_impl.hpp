@@ -8,7 +8,7 @@
 #include "dynamic_stage.hpp"
 #include "string_parsers.hpp"
 
-#ifdef __SSE4_2__
+#ifdef COMPASS_HAS_SSE4
 #include "bitplane_reorder_sse.hpp"
 #endif
 
@@ -92,7 +92,12 @@ namespace sqeazy {
 	std::copy(_input+max_size,_input+_length,_output+max_size);
 
       int err = 0;
-      if(sqeazy::platform::use_vectorisation::value && num_bits_per_plane==1 && sizeof(raw_type)>1){
+      if(sqeazy::platform::use_vectorisation::value &&
+	 compass::runtime::has(compass::feature::sse4()) &&
+	 num_bits_per_plane==1 &&
+	 sizeof(raw_type)>1)
+	{
+	  
 #ifdef _SQY_VERBOSE_
 	std::cout << "[bitswap_scheme::encode]\tusing see method\n";
 #endif
