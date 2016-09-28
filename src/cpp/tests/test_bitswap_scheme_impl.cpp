@@ -334,16 +334,16 @@ BOOST_AUTO_TEST_CASE( setbits_on_integertype )
 {
   std::uint16_t zero = 0;
   std::uint16_t one = 1;
-  BOOST_CHECK(sqeazy::setbits_of_integertype(zero, one, 5u, 1u) == 1 << 5);
+  BOOST_CHECK(sqeazy::detail::setbits_of_integertype(zero, one, 5u, 1u) == 1 << 5);
 
   std::uint16_t max_char = 0xff;
-  BOOST_CHECK(sqeazy::setbits_of_integertype(max_char, one, 10u, 1u) == (max_char + (1 << 10)));
+  BOOST_CHECK(sqeazy::detail::setbits_of_integertype(max_char, one, 10u, 1u) == (max_char + (1 << 10)));
 
-  BOOST_CHECK(sqeazy::setbits_of_integertype(max_char, zero, 4u, 4u) == 0xf);
+  BOOST_CHECK(sqeazy::detail::setbits_of_integertype(max_char, zero, 4u, 4u) == 0xf);
   
   std::uint16_t three = 3;
   //three is truncated if it maps to more than 16 bits (here)
-  BOOST_CHECK(sqeazy::setbits_of_integertype(zero, three, 15u, 2u) == 0x8000);
+  BOOST_CHECK(sqeazy::detail::setbits_of_integertype(zero, three, 15u, 2u) == 0x8000);
 }
 
 
@@ -510,7 +510,7 @@ BOOST_AUTO_TEST_CASE( setbits_on_integertype )
 }
 
 
-BOOST_AUTO_TEST_CASE( roundtrip_ramp )
+BOOST_AUTO_TEST_CASE( roundtrip_ramp_8 )
 {
   using namespace sqeazy;
 
@@ -546,9 +546,9 @@ BOOST_AUTO_TEST_CASE( roundtrip_ramp )
 }
 
 
-BOOST_AUTO_TEST_SUITE_END()
+//BOOST_AUTO_TEST_SUITE_END()
 
-BOOST_AUTO_TEST_CASE( roundtrip_ramp )
+BOOST_AUTO_TEST_CASE( roundtrip_ramp_16 )
 {
   using namespace sqeazy;
 
