@@ -4,6 +4,7 @@
 #include <string>
 #include "compass_tags.hpp"
 
+//compiletime code
 
 #ifdef __clang__
 #include "ct/compass_llvm_impl.hpp"
@@ -16,6 +17,10 @@
 #ifdef _MSC_BUILD
 #include "ct/compass_msvc_impl.hpp"
 #endif
+
+#include "ct/compass_preprocessor_impl.hpp"
+
+//runtime code
 
 #include "rt/compass_x86_impl.hpp"
 
