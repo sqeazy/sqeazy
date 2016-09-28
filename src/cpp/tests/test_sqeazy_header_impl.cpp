@@ -1,17 +1,19 @@
-#define BOOST_TEST_MODULE TEST_LZ4_ENCODING_IMPL
+#define BOOST_TEST_MODULE TEST_SQEAZY_HEADER_IMPL
 #include "boost/test/unit_test.hpp"
+
 #include <numeric>
 #include <typeinfo>
+#include <vector>
+#include <iostream>
+#include <sstream>
+#include <bitset>
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
-#include <vector>
-#include <iostream>
-#include <sstream>
+
 #include "array_fixtures.hpp"
-#include <bitset>
 #include "sqeazy_header.hpp"
 
 namespace bpt = boost::property_tree;
@@ -84,7 +86,13 @@ BOOST_AUTO_TEST_CASE( encode_header_correct_typeid )
   bpt::ptree tree;
 
   BOOST_CHECK_NO_THROW(bpt::read_json(header_stream, tree));
-  BOOST_CHECK_EQUAL(tree.get<std::string>("raw.type"),typeid(value_type).name());
+
+  std::string received = tree.get<std::string>("raw.type");
+#ifdef _WIN32
+  if (received.find("_") != std::string::npos)
+	  received.replace(received.find("_"),1," ");
+#endif
+  BOOST_CHECK_EQUAL(received,typeid(value_type).name());
   
 }
 
@@ -157,12 +165,12 @@ BOOST_AUTO_TEST_CASE( encode_header_correct_values_of_dims_corner_cases )
   sqeazy::image_header hdr(value_type(),dims);
 
   std::string hstr = hdr.str();
-  std::vector<unsigned long> extracted_dims_2(sqeazy::image_header::unpack_shape(hstr.c_str(), hstr.size()));
+  std::vector<std::size_t> extracted_dims_2(sqeazy::image_header::unpack_shape(hstr.c_str(), hstr.size()));
   BOOST_CHECK_EQUAL_COLLECTIONS(dims.begin(), dims.end(), extracted_dims_2.begin(), extracted_dims_2.end());
   
   std::string header_plus_separator = hdr.str();
   header_plus_separator += "|";
-  std::vector<unsigned long> extracted_dims_3 = sqeazy::image_header::unpack_shape(header_plus_separator.c_str(), header_plus_separator.size());
+  std::vector<std::size_t> extracted_dims_3 = sqeazy::image_header::unpack_shape(header_plus_separator.c_str(), header_plus_separator.size());
   BOOST_CHECK_EQUAL_COLLECTIONS(dims.begin(), dims.end(), extracted_dims_3.begin(), extracted_dims_3.end());
 
   std::vector<unsigned> ramp_shape(dims);

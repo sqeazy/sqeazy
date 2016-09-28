@@ -90,7 +90,7 @@ namespace sqeazy {
 
     std::string header_;
     
-    std::vector<unsigned long> raw_shape_;
+    std::vector<std::size_t> raw_shape_;
     std::string pipeline_;
     std::string raw_type_name_;
     std::intmax_t compressed_size_byte_;
@@ -130,7 +130,7 @@ namespace sqeazy {
       raw_type_name_(typeid(void).name()),
       compressed_size_byte_(0)
     {
-
+		
     }
 
     /**
@@ -194,7 +194,12 @@ namespace sqeazy {
       // converted to a string. Note that the "debug" node is automatically
       // created if it doesn't exist.
       tree.put("pipename", _pipe_name);
-      tree.put("raw.type", typeid(raw_type).name());
+	  std::string raw_type_name = typeid(raw_type).name();
+	  auto space_pos = raw_type_name.find(" ");
+	  if (space_pos != std::string::npos)
+		  raw_type_name.replace(space_pos, 1, "_");
+
+      tree.put("raw.type", raw_type_name);
       tree.put("raw.rank",_dims.size());
 	       
       for(unsigned i = 0;i<_dims.size();++i)
@@ -238,6 +243,7 @@ namespace sqeazy {
       raw_type_name_(typeid(value_type).name()),
       compressed_size_byte_(_payload_bytes)
     {
+		
 
       if(!_payload_bytes){
 	compressed_size_byte_ = std::accumulate(raw_shape_.begin(), raw_shape_.end(),sizeof(value_type),std::multiplies<unsigned long>());
@@ -265,7 +271,7 @@ namespace sqeazy {
       raw_type_name_(typeid(value_type).name()),
       compressed_size_byte_(_payload_bytes)
     {
-
+				
       if(!_payload_bytes){
 	compressed_size_byte_ = std::accumulate(raw_shape_.begin(), raw_shape_.end(),sizeof(value_type),std::multiplies<unsigned long>());
       }
@@ -356,7 +362,10 @@ namespace sqeazy {
       
       value.pipeline_ = tree.get("pipename", "");
       value.raw_type_name_ = tree.get("raw.type", typeid(void).name());
-      
+
+	  if (value.raw_type_name_.find("_") != std::string::npos)
+		  value.raw_type_name_.replace(value.raw_type_name_.find("_"), 1, " ");
+
       unsigned rank = tree.get("raw.rank", (unsigned)0);//TODO: could be replaced by (tend - tbegin)
       value.raw_shape_.reserve(rank);
 
@@ -394,7 +403,7 @@ namespace sqeazy {
 
       
       image_header rhs;
-            
+	  
       try{
 	rhs = unpack(_str.begin(), _str.end());
       }
@@ -417,8 +426,8 @@ header_ = "";
 
 
       image_header rhs;
-      
-      
+	  	  
+
       try{
 	rhs = unpack(_begin,_end);
       }
@@ -434,12 +443,12 @@ header_ = "";
 
 
     
-    unsigned size() const {
+    std::size_t size() const {
 
       return header_.size();
     }
 
-     std::vector<unsigned long> const * shape() const {
+     std::vector<std::size_t> const * shape() const {
       return &raw_shape_;
     }
 
@@ -563,7 +572,7 @@ header_ = "";
 
     }
     
-    static const std::vector<unsigned long> unpack_shape(const char* _buffer, const unsigned& _size) {
+    static const std::vector<std::size_t> unpack_shape(const char* _buffer, const unsigned& _size) {
       
       image_header unpacked = unpack(_buffer,_buffer + _size);
       return unpacked.raw_shape_;
@@ -584,7 +593,7 @@ header_ = "";
       // }
 
       image_header unpacked = unpack(_buffer, _buffer+_size);
-      return unpacked.raw_shape_.size();
+      return static_cast<int>(unpacked.raw_shape_.size());
     }
 
     static const std::string unpack_type(const char* _buffer, const unsigned& _size) {

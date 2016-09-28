@@ -1,45 +1,77 @@
 sudo: required
 dist: trusty
 
+cache:
+  directories:
+  - /home/travis/sw
+  
 language: java
 jdk:
   - oraclejdk8
 
 before_install:
+  
+  - if [[ ! -d /home/travis/sw ]];then mkdir /home/travis/sw ;fi
+  - ls -lrth /home/travis/sw
+  - export PATH=/home/travis/sw/bin:${PATH}
+  - export LD_LIBRARY_PATH=/home/travis/sw/lib:${LD_LIBRARY_PATH}
+  - export PKG_CONFIG_PATH=/home/travis/sw/lib/pkgconfig:${PKG_CONFIG_PATH}
+  #############################################################################
+  # LZ4                                                                       #
+  #############################################################################
+  - sudo apt-get -qq update
+  - sudo apt-get install -y cmake wget bzip2 libbz2-dev make yasm nasm cpuid
+  - travis_retry wget --no-check-certificate https://github.com/Cyan4973/lz4/archive/r131.tar.gz
+  - tar xf r131.tar.gz
+  - pwd
+  - cd lz4-r131
+  - if [[ ! -e /home/travis/sw/lib/liblz4.so ]]; then
+      pwd &&
+      sudo PREFIX=/home/travis/sw SHELL="/bin/bash -x" make install  &&
+      echo "lz4 installed in /home/travis/sw" &&
+      find /home/travis/sw/lib/ -name "liblz4*so";
+    else
+      echo "lz4 found in /home/travis/sw";
+    fi
+  - cd ../.. && sudo rm -rf lz4-r131
+  - nm /home/travis/sw/lib/liblz4.so
+
   #############################################################################
   # FFMPEG                                                                    #
   #############################################################################
   - sudo add-apt-repository -y ppa:mc3man/trusty-media
   - sudo apt-get -qq update
-  - sudo apt-get install -y libx264-dev x264  libx265-dev x265 cmake libtiff5-dev wget bzip2 libbz2-dev make  yasm nasm
+  - sudo apt-get install -y libx264-dev x264  libx265-dev x265 libtiff5-dev 
   - git clone https://git.ffmpeg.org/ffmpeg.git ffmpeg_repo
   - cd ffmpeg_repo
   - git checkout n3.0.2
-  - ./configure --prefix=/usr --enable-libx265 --enable-libx264 --enable-gpl --enable-shared
-  - make -j2
-  - sudo make install
+  - if [[ -e /home/travis/sw/lib/libavcodec.so ]]; then
+      echo "ffmpeg found in /home/travis/sw" && find /home/travis/sw/lib/ -name "libav*so";
+    else
+      ./configure --prefix=/home/travis/sw --enable-libx265 --enable-libx264 --enable-gpl --enable-shared --disable-indevs --disable-outdevs &&
+      make -j2 &&
+      sudo make install &&
+      echo "ffmpeg installed in /home/travis/sw";
+    fi
   - cd .. && sudo rm -rf ffmpeg_repo
   - ffmpeg -version
 
-  #############################################################################
-  # LZ4                                                                       #
-  #############################################################################
-  - travis_retry wget --no-check-certificate https://github.com/Cyan4973/lz4/archive/r131.tar.gz
-  - tar xf r131.tar.gz
-  - cd lz4-r131/lib
-  - sudo make install PREFIX=/usr
-  - cd ../.. && sudo rm -rf lz4-r131
-  - ls -lrth /usr/include/lz4.h
-
+  
   #############################################################################
   # HDF5                                                                       #
   #############################################################################
-  - travis_retry wget --no-check-certificate https://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.16/src/hdf5-1.8.16.tar.bz2
+  - travis_retry wget --no-check-certificate https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.16/src/hdf5-1.8.16.tar.bz2
   - tar xf hdf5-1.8.16.tar.bz2
   - cd hdf5-1.8.16/
-  - ./configure --enable-cxx --prefix=/usr
-  - make -j2
-  - sudo make install
+  - if [[ ! -e /home/travis/sw/lib/libhdf5_hl.so || ! -e /home/travis/sw/lib/libhdf5_hl_cpp.so ]]; then
+      ./configure --enable-cxx --enable-hl --prefix=/home/travis/sw &&
+      make -j2 &&
+      sudo make install &&
+      echo "hdf5 installed in /home/travis/sw" &&
+      find /home/travis/sw/lib/ -name "libhdf*so";
+    else
+      echo "hdf5 found in /home/travis/sw" && find /home/travis/sw/lib/ -name "libhdf*so";
+    fi
   - cd .. && sudo rm -rf hdf5-1.8.16/
   - h5ls --version
 
@@ -53,7 +85,7 @@ before_install:
       cd $CMAKE_ROOT &&
       travis_retry wget --no-check-certificate http://www.cmake.org/files/v3.3/cmake-3.3.2-Linux-x86_64.tar.gz &&
       tar -xzf cmake-3.3.2-Linux-x86_64.tar.gz &&
-      sudo cp -r cmake-3.3.2-Linux-x86_64/* /usr/ &&
+      sudo cp -r cmake-3.3.2-Linux-x86_64/* /home/travis/sw/ &&
       rm -rf cmake-3.3.2-Linux-x86_64.tar.gz cmake-3.3.2-Linux-x86_64 &&
       cd -;
     fi
@@ -65,9 +97,15 @@ before_install:
   - travis_retry wget --no-check-certificate -O boost.tar.bz2 http://sourceforge.net/projects/boost/files/boost/1.58.0/boost_1_58_0.tar.bz2/download
   - tar xf boost.tar.bz2
   - cd boost_1_*/
-  - sudo ./bootstrap.sh --with-toolset=gcc --with-libraries=date_time,system,filesystem,test,thread,program_options,regex
-  - sudo ./b2 -j2
-  - sudo ./b2 install
+  - if [[ ! -e /home/travis/sw/lib/libboost_date_time.so ]]; then
+      ./bootstrap.sh --with-toolset=gcc --with-libraries=date_time,system,filesystem,test,thread,program_options,regex --prefix=/home/travis/sw &&
+      ./b2 -j2 &&
+      sudo ./b2 install &&
+      echo "boost installed in /home/travis/sw" &&
+      find /home/travis/sw/lib/ -name "libboost_*so";
+    else
+      echo "boost found in /home/travis/sw" && find /home/travis/sw/lib/ -name "libboost_*so";
+    fi
   - cd .. && sudo rm -rf boost_1_*/
   
 
@@ -76,18 +114,35 @@ before_install:
   #############################################################################
   - sudo add-apt-repository -y ppa:cwchien/gradle
   - sudo apt-get -qq update
-  - sudo apt-get install gradle-2.11
+  - sudo apt-get install gradle-3.0
   - gradle --version
 
+  #############################################################################
+  # GENERAL CHECKS                                                            #
+  #############################################################################
+  - ls -lrth /home/travis/sw/include/lz4.h /home/travis/sw/lib/liblz4.so
+  - ls -lrth /home/travis/sw/include/boost /home/travis/sw/lib/libboost*.so
+  - ls -lrth /home/travis/sw/include/hdf* /home/travis/sw/lib/libhdf*.so
+  - ls -lrth /home/travis/sw/include/libav* /home/travis/sw/lib/libav*.so
+  - nm /home/travis/sw/lib/liblz4.so
+  - env
+  - hostname
+  - cpuid
+  
 script:
-  - ls -lrth
+  - pwd
+  - ls ${TRAVIS_BUILD_DIR}
+  - if [[ -d ./sqeazy ]]; then
+       cd sqeazy;
+    fi
+  - if [[ -d ./sqeazy ]]; then
+      cd sqeazy;
+    fi
   - if [[ -e ./let_me_build_that_for_you.sh ]]; then
-       ./let_me_build_that_for_you.sh;
-    else
-       cd sqeazy/sqeazy && ./let_me_build_that_for_you.sh;
-       fi
-       
-  
+       export LD_LIBRARY_PATH=/home/travis/sw/lib:$LD_LIBRARY_PATH &&
+       export PATH=/home/travis/sw/bin:$PATH &&
+       export PKG_CONFIG_PATH=/home/travis/sw/lib/pkgconfig:${PKG_CONFIG_PATH} &&
+       ./let_me_build_that_for_you.sh && ldd build/cpp/src/libsqeazy.so && exit $?;
+    fi
 
-  
-
+    

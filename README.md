@@ -7,6 +7,73 @@
 A fast and flexible compression library for 2D/3D/ND volume data (currently only 3D is supported).
 The core library is written in C++ with bindings for C, Java (to be implemented), and Python (to be implemented). Binaries are provided for Win (working for the native library), OSX (working for the native library, but not all tests pass), and Linux (works, native library and java bindings).
 
+## Using Sqeazy Java interface from binary distribution (experimental)
+
+Sqeazy is hosted on bintray. In order to use it, do:
+
+### If gradle is your build system
+
+Add the following to your `build.gradle`:
+
+```
+repositories 
+{
+	//...
+	maven { url  "https://dl.bintray.com/psteinb/maven"  }
+}
+
+dependencies {
+	//...
+    compile 'net.sqeazy:sqeazy:0.1'
+}
+```
+
+### If maven is your build system
+
+```
+<repositories>
+	...
+	<repository>
+		<id>sqeazy</id>
+		<url>https://dl.bintray.com/psteinb/maven</url>
+	</repository>
+</repositories>
+
+<dependencies>
+	...
+	<dependency>
+		<groupId>net.sqeazy</groupId>
+		<artifactId>sqeazy</artifactId>
+		<version>0.1</version>
+		<type>pom</type>
+	</dependency>
+</dependencies>
+```
+
+
+### To use sqeazy in Java do
+
+```
+import sqeazy.bindings.SqeazyLibrary;
+import org.bridj.Pointer;
+
+public class Library {
+
+    public boolean isSqeazyAvailable() {
+
+	final Pointer<Integer> version = Pointer.allocateInts(3);
+	SqeazyLibrary.SQY_Version_Triple(version);
+
+	int sum = version.get(0) + version.get(1) + version.get(2);
+	if(sum>0)
+	    return true;
+	else
+	    return false;
+    }
+
+}
+```
+
 # Building it
 
 As mentioned above, sqeazy comes in a whole bag of varieties. The native application and library is build using cmake. The grand project layout, compilation for java and packaging is performed with gradle.

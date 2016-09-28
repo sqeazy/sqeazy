@@ -1,1 +1,1 @@
-gradle.exe build
+gradle.exe build_native -Psqy_build_type=Release -Plz2_path=C:\Users\steinbac\software\lz4\master -Pffmpeg_path=C:\Users\steinbac\software\ffmpeg\3.0.1 -Phdf5_path=C:\Users\steinbac\software\hdf5\1.8.16 -Ptiff_path=C:\Users\steinbac\software\tiff\4.0.6 -Pboost_path=C:\Users\steinbac\software\boost\1_59_0_static C:\Users\steinbac\development\sqeazy\src\cpp

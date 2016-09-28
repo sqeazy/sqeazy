@@ -20,21 +20,27 @@ if(NOT(${CMAKE_VERSION} VERSION_LESS "3.3.0"))
 cmake_policy(SET CMP0054 NEW)
 endif()
 
+if(NOT CMAKE_BUILD_TYPE)
+	set(CMAKE_BUILD_TYPE Release)
+endif()	
+
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
  
-# version number
+# Project information
 SET (SQEAZY_NAME "Sqeazy - Fast and Flexible Volume Compression Library")
 SET (SQEAZY_CODENAME "${PROJECT_NAME}")
-SET (SQEAZY_COPYRIGHT_YEARS "2014")
+SET (SQEAZY_COPYRIGHT_YEARS "2016")
 SET (SQEAZY_VERSION_MAJOR 0)
-SET (SQEAZY_VERSION_MINOR 0)
-SET (SQEAZY_VERSION_PATCH 0)
+SET (SQEAZY_VERSION_MINOR 2)
+SET (SQEAZY_VERSION_PATCH 1)
 SET (SQEAZY_VERSION "${SQEAZY_VERSION_MAJOR}.${SQEAZY_VERSION_MINOR}.${SQEAZY_VERSION_PATCH}")
 SET (SQEAZY_VENDOR_ID "mpi cbg")
 SET (SQEAZY_VENDOR_NAME "Max Planck Institute of Molecular Cell Biology and Genetics ")
 SET (SQEAZY_VENDOR_URL "www.mpi-cbg.de")
 SET (SQEAZY_ID "${SQEAZY_VENDOR_ID}.${PROJECT_NAME}")
+
+option(BUNDLE_SQEAZY "compile sqeazy ready for bundling" OFF)
 
 # trying to setup paths so this package can be picked up
 set(INSTALL_BIN_DIR bin CACHE PATH "Installation directory for executables")
@@ -48,15 +54,13 @@ IF(UNIX)
   ELSE(APPLE)
     set(INSTALL_SHARE_DIR lib/CMake/${PROJECT_NAME} CACHE PATH "Installation directory for shared files")
   ENDIF(APPLE)
-    #the following was tested with OSX 10.8.5 and Xcode 5.0.2
-    #seems to me that under apple the rpath is not stripped automatically when doing the install
-    #under linux it is
-    #SET(CMAKE_SKIP_RPATH ON)
 ELSE(UNIX)
+  
   IF(WIN32 AND NOT CYGWIN)
     set(INSTALL_SHARE_DIR CMake CACHE PATH "Installation directory for shared files")
+	
   ELSE(WIN32 AND NOT CYGWIN)
-    MESSAGE(FATAL_ERROR ">> UNKNOWN ARCHITECTURE .. unable to set share dir")
+    MESSAGE(FATAL_ERROR "UNKNOWN ARCHITECTURE .. unable to set share dir")
   ENDIF(WIN32 AND NOT CYGWIN)
 ENDIF(UNIX)
  
@@ -68,15 +72,14 @@ foreach(p BIN LIB INCLUDE SHARE)
   endif()
 endforeach()
 
-include_directories("${PROJECT_SOURCE_DIR}/inc")
 
 # set project build type
 IF(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
    SET(CMAKE_BUILD_TYPE Release)
 ENDIF(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
-MESSAGE(STATUS ">> Setting up ${CMAKE_BUILD_TYPE} build")
+MESSAGE(STATUS "Setting up ${CMAKE_BUILD_TYPE} build")
 
-
+check_cxx_compiler_flag(-Wl,-Bsymbolic HAS_BSYMBOLIC_COMPILERFLAG)
 check_cxx_compiler_flag(-ftree-vectorize HAS_GCC_TREE_VECTORIZE_COMPILERFLAG)
 check_cxx_compiler_flag(-march=native HAS_MARCH_COMPILERFLAG)
 check_cxx_compiler_flag(-ffast-math HAS_FAST_MATH_COMPILERFLAG)
@@ -137,11 +140,16 @@ ENDIF()
 
 
 IF(UNIX OR APPLE)
-IF(HAS_MARCH_COMPILERFLAG)
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
-ELSE()
-  MESSAGE(WARNING "Compiler does not support -march=native!")
-ENDIF()
+  IF(HAS_MARCH_COMPILERFLAG)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+  ELSE()
+    MESSAGE(WARNING "Compiler does not support -march=native!")
+  ENDIF()
+
+  # if(HAS_BSYMBOLIC_COMPILERFLAG)
+  #   SET(CMAKE_LINK_FLAGS "${CMAKE_LINK_FLAGS} -Wl,-Bsymbolic")
+  #   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wl,-Bsymbolic")
+  # endif()
 ENDIF()
 
 #TODO: look into preference of libc++ over other std libraries
@@ -149,6 +157,20 @@ IF( CMAKE_GENERATOR STREQUAL Xcode )
     SET( CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++11" )
     SET( CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++" )
 ENDIF()					     
+
+if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
+if(NOT MSVC)
+  add_definitions(-DSQY_TRACE=1)
+  ADD_DEFINITIONS(-D_SQY_DEBUG_=1)
+else()
+  add_definitions(/DSQY_TRACE=1)
+  ADD_DEFINITIONS(/D_SQY_DEBUG_=1)
+endif()
+endif()
+
+if(SQY_VERBOSE)
+  ADD_DEFINITIONS(-D_SQY_VERBOSE_=1)
+endif(SQY_VERBOSE)
 
 
 IF(HAS_FAST_MATH_COMPILERFLAG)
@@ -162,17 +184,17 @@ SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${HOST_COMPILER_DEBUG_FLAGS}
 SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${HOST_COMPILER_DEBUG_FLAGS} ")
 
 IF(CMAKE_BUILD_TYPE STREQUAL Release)
-  MESSAGE(STATUS ">> using ${CMAKE_BUILD_TYPE} build flags: ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
+  MESSAGE(STATUS "using ${CMAKE_BUILD_TYPE} build flags: ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
 ELSE()
-  MESSAGE(STATUS ">> using ${CMAKE_BUILD_TYPE} build flags: ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
+  MESSAGE(STATUS "using ${CMAKE_BUILD_TYPE} build flags: ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
 ENDIF()
 
 IF(SQY_EXPERIMENTAL) 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_SQY_X_=1")
 set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -D_SQY_X_=1")
-MESSAGE(STATUS ">> appended experimental flags: ${CMAKE_CXX_FLAGS}")
+MESSAGE(STATUS "appended experimental flags: ${CMAKE_CXX_FLAGS}")
 else(SQY_EXPERIMENTAL)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_SQY_X_=0")
 set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -D_SQY_X_=0")
@@ -181,57 +203,312 @@ endif(SQY_EXPERIMENTAL)
 IF(UNIX)
 check_cxx_compiler_flag(-std=c++11 HAS_CPP11_COMPILERFLAG)
 ELSE(UNIX)
-  
   SET(HAS_CPP11_COMPILERFLAG "NOT NEEDED")
 ENDIF(UNIX)
 
+
 #lz4 is needed for the entire project, so let's include it here
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake )
 
-FIND_PACKAGE(LZ4 REQUIRED)
-IF(LZ4_FOUND)
-INCLUDE_DIRECTORIES(${LZ4_INCLUDE_DIRS})
-LINK_DIRECTORIES(${LZ4_LIBRARY_DIRS}) 
-ENDIF()
+if(${BUNDLE_SQEAZY})
+  #implies that all find_package calls will primarily look for static libs
+  set(BUILD_SHARED_LIBS OFF)
+  set(Boost_USE_STATIC_LIBS ON)
+  #TODO: unclear if that might also hold for UNIX derivates
+  if(MSVC)
+	set(Boost_USE_STATIC_RUNTIME ON)
+  endif()
+  set(LZ4_USE_STATIC_LIBS ON)
+  set(HDF5_USE_STATIC_LIBRARIES ON)
+  set(FFMPEG_USE_STATIC_LIBS ON)
+  
+  # if(NOT APPLE)
+  #   set(FFMPEG_IGNORE_PKG_CONFIG ON)
+  # endif()
+endif()
 
-# add subdirectories
-# src
-ADD_SUBDIRECTORY(src) # source code of the library
+################################# DEPENDENCIES #################################
 
-# bench
-# IF(UNIX OR APPLE)
-#   IF(HAS_CPP11_COMPILERFLAG)
-#     ADD_SUBDIRECTORY(bench) # source code of the benchmark suite
-#     export(TARGETS bench ${PROJECT_NAME} FILE "${PROJECT_BINARY_DIR}/sqeazy-targets.cmake")
-#   ELSE()
-#     MESSAGE(WARNING ">> unable to build benchmark suite due to missing C++11 support")
-#   ENDIF()
-# ELSE()
-#   ADD_SUBDIRECTORY(bench) # source code of the benchmark suite
-#   export(TARGETS bench ${PROJECT_NAME} FILE "${PROJECT_BINARY_DIR}/sqeazy-targets.cmake")
-# ENDIF()
+#-------------------------------- LZ4          ---------------------------------
+FIND_PACKAGE(LZ4 REQUIRED # QUIET
+  )
+if(LZ4_FOUND)
+  INCLUDE_DIRECTORIES(${LZ4_INCLUDE_DIRS})
+  LINK_DIRECTORIES(${LZ4_LIBRARY_DIRS})
+  MESSAGE("++ lz4 found at ${LZ4_INCLUDE_DIRS} ${LZ4_LIBRARY_DIRS} : ${LZ4_LIBRARY}")
+else()
+  MESSAGE(FATAL_ERROR "++ lz4 not found!")
+endif()
 
-# test
+#-------------------------------- BOOST        ---------------------------------
 IF(WIN32)
   SET(Boost_USE_STATIC_LIBS ON)
   SET(Boost_USE_MULTITHREADED ON)
+  if(NOT DEFINED BUNDLE_SQEAZY OR NOT ${BUNDLE_SQEAZY})
+	set(Boost_USE_STATIC_RUNTIME    OFF)
+  endif()
 ENDIF()
-FIND_PACKAGE (Boost 1.55 COMPONENTS system filesystem unit_test_framework thread REQUIRED)
+
+
+FIND_PACKAGE (Boost 1.55 COMPONENTS program_options regex system filesystem unit_test_framework REQUIRED QUIET)
 IF(Boost_FOUND)
-  MESSAGE(STATUS "Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES}")
+  MESSAGE("++ Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES} : ${Boost_LIBRARIES}")
+  INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+  link_directories(${Boost_LIBRARY_DIRS})
+else()
+  MESSAGE(FATAL_ERROR "++ Boost not found!")
+endif()
+
+#-------------------------------- HDF5         ---------------------------------
+#needed for FindHDF5 as it expects an ENVIRONMENT variable called HDF5_ROOT as hint to the HDF5 path
+IF(EXISTS ${HDF5_DIR})
+  set(HDF5_ROOT ${HDF5_DIR})
+ENDIF()
+
+IF(EXISTS $ENV{HDF5_DIR})
+  set(HDF5_ROOT $ENV{HDF5_DIR})
+ENDIF()
+
+
+IF(EXISTS $ENV{HDF5_ROOT})
+  set(HDF5_ROOT $ENV{HDF5_ROOT})
+endif()	
+
+set(HDF5_NEW_FINDMODULE False)
+
+IF(EXISTS ${HDF5_ROOT})
+
+  set($ENV{HDF5_ROOT} ${HDF5_ROOT})
+  set($ENV{HDF5_DIR} ${HDF5_ROOT})
+  set(HDF5_DIR ${HDF5_ROOT})
+  set($ENV{HDF5_ROOT_DIR_HINT} ${HDF5_ROOT})
+
+  if(EXISTS ${HDF5_ROOT}/share/cmake/FindHDF5.cmake)
+    list(APPEND CMAKE_MODULE_PATH "${HDF5_ROOT}/share/cmake")
+    list(APPEND CMAKE_PREFIX_PATH "${HDF5_ROOT}/share/cmake")
+    set(HDF5_NEW_FINDMODULE True)
+  endif()
+    
+  if(EXISTS ${HDF5_ROOT}/cmake/FindHDF5.cmake)
+    list(APPEND CMAKE_MODULE_PATH "${HDF5_ROOT}/cmake")
+    list(APPEND CMAKE_PREFIX_PATH "${HDF5_ROOT}/cmake")
+    set(HDF5_NEW_FINDMODULE True)
+  endif()
+  
+  if(IS_DIRECTORY ${HDF5_ROOT}\\cmake)
+	list(APPEND CMAKE_MODULE_PATH "${HDF5_ROOT}\\cmake")
+	list(APPEND CMAKE_PREFIX_PATH "${HDF5_ROOT}\\cmake")
+    set(HDF5_NEW_FINDMODULE True)
+  endif()
+
+if(IS_DIRECTORY ${HDF5_ROOT})  
+message(STATUS "calling FindHDF5 with ${HDF5_ROOT} (HDF5_NEW_FINDMODULE: ${HDF5_NEW_FINDMODULE})\n-- CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}\n-- CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
+else()
+message(FATAL_ERROR "calling FindHDF5 with non-existing ${HDF5_ROOT}")
+endif()
+ENDIF(EXISTS ${HDF5_ROOT})
+
+
+if(${HDF5_USE_STATIC_LIBRARIES})
+  set(FIND_HDF5_MODE static)
+else()
+  set(FIND_HDF5_MODE shared)
+endif()	
+
+FIND_PACKAGE(HDF5 1.8 QUIET REQUIRED COMPONENTS CXX HL )
+if(NOT "${HDF5_NEW_FINDMODULE}" MATCHES "False")
+  #unset(HDF5_FOUND)
+  message(STATUS "detected FindHDF5.cmake introduced with 1.8.16")
+  #FIND_PACKAGE(HDF5 ${HDF5_VERSION} NAMES hdf5 COMPONENTS CXX HL ${FIND_HDF5_MODE})
+  FIND_PACKAGE(HDF5 QUIET REQUIRED COMPONENTS CXX HL ${FIND_HDF5_MODE} NAMES hdf5 )
+else()
+  message(STATUS "FindHDF5.cmake undetected below ${HDF5_ROOT}, ${HDF5_VERSION}, (HDF5_NEW_FINDMODULE: ${HDF5_NEW_FINDMODULE})")
+endif()
+
+IF(HDF5_FOUND)
+
+if(NOT HDF5_INCLUDE_DIRS OR NOT IS_DIRECTORY ${HDF5_INCLUDE_DIRS})
+  
+	find_file 	(HDF5_H5PUBLIC_H "H5public.h"
+		HINTS ${HDF5_ROOT}
+		PATHS ${HDF5_ROOT}
+		PATH_SUFFIXES
+			include
+				)
+if(EXISTS ${HDF5_H5PUBLIC_H})
+get_filename_component(HDF5_INCLUDE_DIRS "${HDF5_H5PUBLIC_H}" DIRECTORY)
+endif()
+endif()
+
+
+  INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIRS})
+  
+  #only required for hdf5 1.8.16 and newer
+  #https://lists.hdfgroup.org/pipermail/hdf-forum_lists.hdfgroup.org/2016-March/009294.html  
+  
+  if(${FIND_HDF5_MODE} MATCHES "shared")
+	message(STATUS "adding preprocessor definition H5_BUILT_AS_DYNAMIC_LIB=1")
+	if(MSVC)
+		add_definitions(/DH5_BUILT_AS_DYNAMIC_LIB=1)
+	else()
+		add_definitions(-DH5_BUILT_AS_DYNAMIC_LIB=1)
+	endif()
+  endif()
+  
+  #to discard compiler warnings in Debug mode
+  IF(${CMAKE_BUILD_TYPE} MATCHES "Debug")
+    SET(FORTIFY_INDEX "")
+    list(FIND HDF5_DEFINITIONS "-D_FORTIFY_SOURCE=2" FORTIFY_INDEX)
+    
+    IF(${FORTIFY_INDEX} GREATER -1)
+      list(REMOVE_AT HDF5_DEFINITIONS ${FORTIFY_INDEX})
+      list(APPEND HDF5_DEFINITIONS -D_FORTIFY_SOURCE=0)
+    ENDIF()
+
+  ENDIF()
+  
+  ADD_DEFINITIONS(${HDF5_DEFINITIONS})
+  if(DEFINED HDF5_LIBRARY_DIRS)
+	LINK_DIRECTORIES(${HDF5_LIBRARY_DIRS}) 
+  else()
+	  if(IS_DIRECTORY ${HDF5_ROOT}/lib)
+		LINK_DIRECTORIES(${HDF5_ROOT}/lib) 
+	  endif()
+  endif()
+  
+  if(NOT HDF5_LIBRARIES)
+  message(STATUS "FindHDF5 didn't fill HDF5_LIBRARIES (${HDF5_LIBRARIES}), trying to fill it based on known targets")
+	set(REQUIRED_H5_TARGETS hdf5_hl_cpp;hdf5_hl;hdf5_cpp;hdf5)
+	foreach(_stub IN LISTS REQUIRED_H5_TARGETS)
+		if(TARGET ${_stub}-${FIND_HDF5_MODE})
+			list(APPEND HDF5_LIBRARIES ${_stub}-${FIND_HDF5_MODE})
+		else()
+			message(WARNING "${_stub}-${FIND_HDF5_MODE} not known as possible target")
+		endif()
+	endforeach()
+  endif()
+  
+
+  if(DEFINED UNIX AND DEFINED HDF5_USE_STATIC_LIBRARIES)
+    #many Linux distros distribute static libs without -fPIC
+    #if they are linked into libsqeazy, an error will be thrown
+    set(HDF5_LIBRARIES_CLONE ${HDF5_LIBRARIES})
+    foreach(_H5_LIB IN LISTS HDF5_LIBRARIES_CLONE)
+      if(${_H5_LIB} MATCHES ".*lib(m|dl).a$")
+	message(STATUS "removing ${_H5_LIB} from HDF5_LIBRARIES")
+	list(REMOVE_ITEM HDF5_LIBRARIES ${_H5_LIB})
+	get_filename_component(_H5_FSTEM ${_H5_LIB} NAME_WE)
+	string(REGEX REPLACE "^lib" "" _H5_LIBID ${_H5_FSTEM})
+	list(APPEND HDF5_LIBRARIES ${_H5_LIBID})
+
+      endif()
+    endforeach()
+
+    list(REMOVE_DUPLICATES HDF5_LIBRARIES)
+  endif()
+  MESSAGE("++ hdf5 found at ${HDF5_INCLUDE_DIRS} ${HDF5_LIBRARY_DIRS} : ${HDF5_LIBRARIES}")
+ELSE()
+MESSAGE(FATAL_ERROR "++ HDF5 not found!")
+ENDIF()
+
+#-------------------------------- FFMPEG       ---------------------------------
+
+find_package(FFMPEG REQUIRED COMPONENTS avformat avcodec swscale avutil swresample)
+IF(FFMPEG_FOUND)
+  INCLUDE_DIRECTORIES(${FFMPEG_INCLUDE_DIRS})
+  LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
+
+  MESSAGE("++ FFMPEG found at ${FFMPEG_INCLUDE_DIRS} ${FFMPEG_ROOT_DIR}/lib ${FFMPEG_LIBRARIES}")
+  if(DEFINED FFMPEG_USE_STATIC_LIBS OR DEFINED FFMPEG_EXTRA_LINK_FLAGS)
+    MESSAGE("++                 ${FFMPEG_EXTRA_LINK_FLAGS}")
+  endif()
+ELSE()
+  MESSAGE(WARNING "++ FFMPEG not found!")
+ENDIF()
+
+
+#-------------------------------- TIFF       ---------------------------------
+
+if(TIFF_ROOT)
+	if(EXISTS ${TIFF_ROOT})
+		list(APPEND CMAKE_PREFIX_PATH ${TIFF_ROOT})
+	else()
+		message(FATAL_ERROR "provided TIFF_ROOT ${TIFF_ROOT} does not exist")
+	endif()
+endif()
+
+if(DEFINED TIFF_ROOT)
+	if(EXISTS ${TIFF_ROOT})
+	  list(APPEND CMAKE_PREFIX_PATH ${TIFF_ROOT})
+	else()
+	  message(FATAL_ERROR "provided TIFF_ROOT ${TIFF_ROOT} does not exist")
+	endif()
+endif()
+
+FIND_PACKAGE(TIFF REQUIRED QUIET)
+IF(TIFF_FOUND)
+  include_directories(${TIFF_INCLUDE_DIR})
+  get_filename_component(TIFF_LIB_PATH ${TIFF_LIBRARY} ABSOLUTE)
+  get_filename_component(TIFF_LIB_ABSPATH ${TIFF_LIB_PATH} DIRECTORY)
+  link_directories(${TIFF_LIB_ABSPATH})
+  
+  SET(TIFF_DYN_LIB ${TIFF_LIBRARY})
+  SET(TIFF_STATIC_LIB "")
+  
+  IF(WIN32)
+    message("++ [tests] using ${TIFF_INCLUDE_DIR} ${TIFF_LIBRARY}")
+	
+  ELSE(WIN32)
+
+    IF(APPLE)
+      IF("${TIFF_LIBRARY}" MATCHES ".*.so$")
+	STRING(REPLACE .so .dylib TIFF_DYN_LIB ${TIFF_LIBRARY})
+	#Homebrew ships a static library that fails to contain important symbols
+	#STRING(REPLACE .dylib .a TIFF_STATIC_LIB ${TIFF_DYN_LIB})
+      ENDIF()
+    ELSE()
+      STRING(REPLACE .so .a TIFF_STATIC_LIB ${TIFF_DYN_LIB})
+    ENDIF()
+
+    #FIXME: static includes of libtiff showed missing symbols (mostly deflate, there must be a depenency to libz or something)
+    # IF(EXISTS ${TIFF_STATIC_LIB})
+    #   add_library(ext_tiff STATIC IMPORTED)
+    #   set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_STATIC_LIB}")
+    # ELSE()
+      IF(EXISTS ${TIFF_DYN_LIB})
+	add_library(ext_tiff SHARED IMPORTED)
+	set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_DYN_LIB}")
+      ENDIF()
+    # ENDIF()
+    
+  ENDIF(WIN32)
+  
+ENDIF(TIFF_FOUND)
+
+
+
+
+################################## add source ##################################
+
+IF(Boost_FOUND AND HDF5_FOUND AND LZ4_FOUND AND FFMPEG_FOUND AND TIFF_FOUND)
+
+  include_directories("${PROJECT_SOURCE_DIR}/inc")
+  
+  #library and app
+  ADD_SUBDIRECTORY(src) # source code of the library
+
+  #tests
   ADD_SUBDIRECTORY(tests)
   enable_testing()
   include("CTestLists.txt")
+  
 ELSE()
-  MESSAGE(WARNING ">> Boost libraries not found, unable to compile tests (skipping)")
+  MESSAGE(FATAL_ERROR "++ required dependencies not found, sqeazy cannot be build")
 ENDIF()
 
-#needed for FindHDF5 as it expects an ENVIRONMENT variable called HDF5_ROOT as hint to the HDF5 path
-IF(EXISTS ${HDF5_ROOT})
-  SET(ENV{HDF5_ROOT} ${HDF5_ROOT})
-ENDIF(EXISTS ${HDF5_ROOT})
 
-# export stuff
+################################ EXPORT/INSTALL ################################
+
 export(PACKAGE ${PROJECT_NAME})
 # Create the sqeazy-config.cmake and sqeazy-config-version files
 file(RELATIVE_PATH REL_INCLUDE_DIR "${INSTALL_SHARE_DIR}"
