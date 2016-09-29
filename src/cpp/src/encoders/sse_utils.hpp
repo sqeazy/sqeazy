@@ -50,20 +50,28 @@ namespace sqeazy {
 
       std::bitset<16> operator()(const __m128i& _block) const {
 
-	//0x8000, 0x8000, 0x8000, ...
-	__m128i temp = _mm_blendv_epi8(_block,
-				       _mm_set1_epi8(0),
-				       _mm_set1_epi16(0x00ff)
-				       );
-	//0x80!!, 0x80!!, 0x80!!, ...
-	std::bitset<16> result = _mm_movemask_epi8(temp);
-	//result: 1!1!...
+	__m128i shuffle_by = _mm_set_epi8(15	, 13	,
+					  11	, 9	,
+					  7	, 5	,
+					  3 	, 1 	,
+					  0xff	, 0xff	,
+					  0xff	, 0xff	,
+					  0xff	, 0xff	,
+					  0xff	, 0xff
+					  );
 	
-	std::bitset<16> value;
-	for(int i = 0;i<8;++i){
-	  if(result.test(2*i))
-	    value.set(i);
-	}
+	__m128i temp = _mm_shuffle_epi8(_block,
+					shuffle_by);
+	
+	// __m128i mask = _mm_set_epi32(0xffffffff,
+	// 			     0xffffffff,
+	// 			     0,
+	// 			     0);
+	
+	// temp = _mm_and_si128(temp, mask);
+	
+	std::bitset<16> value = _mm_movemask_epi8(temp);
+	
 	return value;
 
       }
