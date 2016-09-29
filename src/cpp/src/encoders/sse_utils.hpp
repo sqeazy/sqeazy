@@ -37,9 +37,8 @@ namespace sqeazy {
 
       std::bitset<16> operator()(const __m128i& _block) const {
 
-	std::bitset<16> result(_mm_movemask_epi8(_block));
-	return result;
-
+	return gather_msb<std::uint8_t>()(_block);
+	
       }
       
     };
@@ -50,27 +49,23 @@ namespace sqeazy {
 
       std::bitset<16> operator()(const __m128i& _block) const {
 
-	__m128i shuffle_by = _mm_set_epi8(15	, 13	,
-					  11	, 9	,
-					  7	, 5	,
-					  3 	, 1 	,
+	__m128i shuffle_by = _mm_set_epi8(0xff	, 0xff	,
 					  0xff	, 0xff	,
 					  0xff	, 0xff	,
-					  0xff	, 0xff	,
-					  0xff	, 0xff
+					  0xff	, 0xff  ,
+					  1	, 3	,
+					  5	, 7	,
+					  9	, 11	,
+					  13 	, 15
 					  );
 	
 	__m128i temp = _mm_shuffle_epi8(_block,
 					shuffle_by);
+
+	const int result = _mm_movemask_epi8(temp);//result contains collapsed MSBs
 	
-	// __m128i mask = _mm_set_epi32(0xffffffff,
-	// 			     0xffffffff,
-	// 			     0,
-	// 			     0);
-	
-	// temp = _mm_and_si128(temp, mask);
-	
-	std::bitset<16> value = _mm_movemask_epi8(temp);
+	std::bitset<16> value = result;
+	value <<= 8;
 	
 	return value;
 
@@ -78,7 +73,32 @@ namespace sqeazy {
       
     };
 
-    
+    template<>
+    struct gather_msb<std::int16_t> {
+
+      std::bitset<16> operator()(const __m128i& _block) const {
+	return gather_msb<std::uint16_t>()(_block);
+      }
+      
+    };
+
+    template<>
+    struct gather_msb<std::uint32_t> {
+
+      std::bitset<16> operator()(const __m128i& _block) const {
+	std::bitset<16> value =  _mm_movemask_ps(_mm_castsi128_ps(_block));
+	value <<= 12;
+	return value;
+      }
+    };
+
+    template<>
+    struct gather_msb<std::int32_t> {
+
+      std::bitset<16> operator()(const __m128i& _block) const {
+	return gather_msb<std::uint32_t>()(_block);
+      }
+    };
     
     template<typename T>
     struct shift_left_m128i {

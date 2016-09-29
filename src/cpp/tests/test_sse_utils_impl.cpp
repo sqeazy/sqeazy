@@ -130,10 +130,36 @@ BOOST_AUTO_TEST_CASE( gather_msb_16_order_right ){
   std::bitset<16> received = op(input);
 
   BOOST_CHECK_EQUAL(received.count(),msb_is_1_16.size()-1);
-  BOOST_CHECK_EQUAL(received.test(15),false);
-  BOOST_CHECK_EQUAL(received.test(14),true);
+  BOOST_CHECK_EQUAL(received.test(8),false);
+  BOOST_CHECK_EQUAL(received.test(9),true);
 }
 
+BOOST_AUTO_TEST_CASE( gather_msb_16_pattern_right ){
+
+  msb_is_1_16 = {0x8000, 0, 0, 0x8000, 0x8000, 0x8000, 0, 0 };
+  __m128i input = _mm_load_si128(reinterpret_cast<const __m128i*>(&msb_is_1_16[0]));
+
+  sqeazy::detail::gather_msb<std::uint16_t> op;
+  
+  std::bitset<16> received = op(input);
+
+  BOOST_CHECK_EQUAL(received.count(),4);
+  
+  for(std::uint32_t i = 0;i<msb_is_1_16.size();++i)
+    BOOST_CHECK_MESSAGE(received.test(16-i-1) == (msb_is_1_16[i] > 0),
+			i << ": bit " << received.test(16-i-1) << " versus input " << msb_is_1_16[i] );
+}
+
+BOOST_AUTO_TEST_CASE( gather_msb_32 ){
+
+  
+  __m128i input = _mm_load_si128(reinterpret_cast<const __m128i*>(&msb_is_1_32[0]));
+
+  sqeazy::detail::gather_msb<std::uint32_t> op;
+  std::bitset<16> received = op(input);
+
+  BOOST_CHECK_EQUAL(received.count(),msb_is_1_32.size());
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 
