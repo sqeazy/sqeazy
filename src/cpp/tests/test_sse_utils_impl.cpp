@@ -23,15 +23,21 @@ struct sse_fixture {
   
   static const int size = 128/8;
   std::vector<std::uint8_t> msb_is_1;
+
+  std::vector<std::uint16_t> msb_is_1_16;
+  std::vector<std::uint32_t> msb_is_1_32;
+  
   std::vector<std::uint8_t> msb_lsb_both_1;
   std::vector<std::uint8_t> half_msb_is_1;
   std::vector<std::uint8_t> half_msb_lsb_both_1;
   
   sse_fixture():
-    msb_is_1(size,0x80),
-    msb_lsb_both_1(size,0x90),
-    half_msb_is_1(size,0x80),
-    half_msb_lsb_both_1(size,0x90)
+    msb_is_1(size,0x80),//10000000
+    msb_is_1_16(128/16,0x8000),//10000000
+    msb_is_1_32(128/32,0x80000000),//10000000
+    msb_lsb_both_1(size,0x90),//10010000
+    half_msb_is_1(size,0x80),//10000000
+    half_msb_lsb_both_1(size,0x90)//10010000
   {
     std::fill(half_msb_is_1.begin(), half_msb_is_1.begin() + size/2,0);
     std::fill(half_msb_lsb_both_1.begin(), half_msb_lsb_both_1.begin() + size/2,0);
@@ -42,6 +48,7 @@ struct sse_fixture {
 };
 
 
+  
 BOOST_FIXTURE_TEST_SUITE( to_32bit , sse_fixture )
 
 BOOST_AUTO_TEST_CASE( from_16_to_4_bits ){
@@ -78,5 +85,142 @@ BOOST_AUTO_TEST_CASE( from_8_to_4_bits ){
   BOOST_CHECK_LT(rcount,icount);
   BOOST_CHECK_EQUAL(rcount,4);
 }
+
+BOOST_AUTO_TEST_CASE( gather_msb_8 ){
+
+  
+  __m128i input = _mm_load_si128(reinterpret_cast<const __m128i*>(&msb_is_1[0]));
+
+  sqeazy::detail::gather_msb<std::uint8_t> op;
+  std::bitset<16> received = op(input);
+
+  BOOST_CHECK_EQUAL(received.count(),msb_is_1.size());
+}
+
+BOOST_AUTO_TEST_CASE( gather_msb_8_order_right ){
+
+  msb_is_1.back() = 0;
+  __m128i input = _mm_load_si128(reinterpret_cast<const __m128i*>(&msb_is_1[0]));
+
+  sqeazy::detail::gather_msb<std::uint8_t> op;
+  std::bitset<16> received = op(input);
+
+  BOOST_CHECK_EQUAL(received.count(),msb_is_1.size()-1);
+  BOOST_CHECK_EQUAL(received.test(15),false);
+  BOOST_CHECK_EQUAL(received.test(14),true);
+}
+
+BOOST_AUTO_TEST_CASE( gather_msb_16 ){
+
+  
+  __m128i input = _mm_load_si128(reinterpret_cast<const __m128i*>(&msb_is_1_16[0]));
+
+  sqeazy::detail::gather_msb<std::uint16_t> op;
+  std::bitset<16> received = op(input);
+
+  BOOST_CHECK_EQUAL(received.count(),msb_is_1_16.size());
+}
+
+BOOST_AUTO_TEST_CASE( gather_msb_16_order_right ){
+
+  msb_is_1_16.back() = 0;
+  __m128i input = _mm_load_si128(reinterpret_cast<const __m128i*>(&msb_is_1_16[0]));
+
+  sqeazy::detail::gather_msb<std::uint16_t> op;
+  std::bitset<16> received = op(input);
+
+  BOOST_CHECK_EQUAL(received.count(),msb_is_1_16.size()-1);
+  BOOST_CHECK_EQUAL(received.test(15),false);
+  BOOST_CHECK_EQUAL(received.test(14),true);
+}
+
+
+BOOST_AUTO_TEST_SUITE_END()
+
+template<typename in_type>
+struct bitplane_fixture {
+
+  typedef in_type type;
+  
+  std::vector<in_type> input	;
+  std::vector<in_type> output	;
+  std::vector<in_type> expected	;
+  __m128i first_block;
+  
+  bitplane_fixture():
+    input(),
+    output(),
+    expected(),
+    first_block()
+  {
+    
+    input.resize(32/sizeof(in_type));
+    std::fill(input.begin(), input.end(),
+	      0x8 << ((sizeof(in_type) -1)*4)
+	      );
+    
+    output.resize(input.size());
+    expected.resize(input.size());
+
+    for(std::uint32_t i = 0;i < (input.size()/(sizeof(in_type)*CHAR_BIT)); ++i)
+      expected[i] = ~(in_type(0));
+
+    first_block = _mm_load_si128(reinterpret_cast<const __m128i*>(input.data()));
+  }
+  
+};
+
+namespace sqd = sqeazy::detail;
+
+using bitplane_fixture_16 = bitplane_fixture<std::uint16_t>;
+using bitplane_fixture_8 = bitplane_fixture<std::uint8_t>;
+
+BOOST_FIXTURE_TEST_SUITE( with_16bit , bitplane_fixture_16 )
+
+BOOST_AUTO_TEST_CASE( construct ){
+
+  sqd::bitshuffle<type> instance;
+  
+  BOOST_CHECK_NE(instance.segments.empty(),true);
+  BOOST_CHECK_NE(instance.segments[0].any(),true);
+  
+}
+
+
+BOOST_AUTO_TEST_CASE( gather_msb_range ){
+  sqd::bitshuffle<type> instance;
+  
+  std::bitset<128> result = instance.gather_msb_range(first_block, 1);
+
+  BOOST_CHECK_NE(result.any(),false);
+  
+}
+
+
+BOOST_AUTO_TEST_CASE( fill_anything ){
+
+  sqd::bitshuffle<type> instance;
+  
+  BOOST_CHECK_EQUAL(instance.empty(),true);
+  BOOST_CHECK_EQUAL(instance.full(),false);
+  BOOST_CHECK_EQUAL(instance.any(),false);
+
+  auto consumed = instance.consume(input.begin()+input.size()-1,
+				   input.end());
+  std::size_t diff = consumed-(input.begin()+input.size()-1);
+  BOOST_CHECK_EQUAL(diff,0);
+  
+  
+  consumed = instance.consume(input.begin(),
+			      input.end());
+  
+  BOOST_CHECK_NE(consumed-input.begin(),0);
+  BOOST_CHECK(consumed == input.end());
+  
+  BOOST_CHECK_NE(instance.empty(),true);
+  BOOST_CHECK_EQUAL(instance.any(),true);
+}
+
+
 
 BOOST_AUTO_TEST_SUITE_END()

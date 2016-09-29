@@ -3,6 +3,8 @@
 
 #include <stdexcept>
 #include <climits>
+#include <array>
+#include <bitset>
 
 #include <xmmintrin.h>
 #include <smmintrin.h>
@@ -10,7 +12,66 @@
 namespace sqeazy {
 
   namespace detail {
-  
+
+    template<typename T>
+    struct gather_msb {
+
+      std::bitset<16> operator()(const __m128i& _block) const {return std::bitset<16>();}
+      
+    };
+
+    template<>
+    struct gather_msb<std::uint8_t> {
+
+      std::bitset<16> operator()(const __m128i& _block) const {
+
+	std::bitset<16> result(_mm_movemask_epi8(_block));
+	return result;
+
+      }
+      
+    };
+
+    template<>
+    struct gather_msb<std::int8_t> {
+
+      std::bitset<16> operator()(const __m128i& _block) const {
+
+	std::bitset<16> result(_mm_movemask_epi8(_block));
+	return result;
+
+      }
+      
+    };
+
+
+    template<>
+    struct gather_msb<std::uint16_t> {
+
+      std::bitset<16> operator()(const __m128i& _block) const {
+
+	//0x8000, 0x8000, 0x8000, ...
+	__m128i temp = _mm_blendv_epi8(_block,
+				       _mm_set1_epi8(0),
+				       _mm_set1_epi16(0x00ff)
+				       );
+	//0x80!!, 0x80!!, 0x80!!, ...
+	std::bitset<16> result = _mm_movemask_epi8(temp);
+	//result: 1!1!...
+	
+	std::bitset<16> value;
+	for(int i = 0;i<8;++i){
+	  if(result.test(2*i))
+	    value.set(i);
+	}
+	return value;
+
+      }
+      
+    };
+
+    
+    
     template<typename T>
     struct shift_left_m128i {
       __m128i operator()(const __m128i& _block, int num_bits) const {return _block;}
@@ -440,7 +501,7 @@ namespace sqeazy {
 
     */
     template <>
-    struct to_32bit_field<unsigned short>
+    struct to_32bit_field<std::uint16_t>
     {
       static const __m128i conversion(const __m128i& _block){
 	return _mm_cvtepu16_epi32(_block);
@@ -448,7 +509,7 @@ namespace sqeazy {
     };
 
     template <>
-    struct to_32bit_field<short>
+    struct to_32bit_field<std::int16_t>
     {
       static const __m128i conversion(const __m128i& _block){
 	return _mm_cvtepi16_epi32(_block);
@@ -469,7 +530,7 @@ namespace sqeazy {
 
     */
     template <>
-    struct to_32bit_field<unsigned char>
+    struct to_32bit_field<std::uint8_t>
     {
       static const __m128i conversion(const __m128i& _block){
 	return _mm_cvtepu8_epi32(_block);
@@ -477,14 +538,120 @@ namespace sqeazy {
     };
 
     template <>
-    struct to_32bit_field<char>
+    struct to_32bit_field<std::int8_t>
     {
       static const __m128i conversion(const __m128i& _block){
 	return _mm_cvtepi8_epi32(_block);
       }
     };
 
-  }
 
-}
+    template<typename in_type, std::uint32_t n_bits_per_segment = 1>
+    struct bitshuffle
+    {
+
+      static const int in_type_width = sizeof(in_type)*CHAR_BIT;
+      static const int simd_width = 128;
+      static const int simd_width_bytes = simd_width/CHAR_BIT;
+      static const int n_in_type_per_simd = simd_width/in_type_width;
+      static const int n_segments = in_type_width/n_bits_per_segment;
+
+      static_assert(n_bits_per_segment <= in_type_width,
+		    "sqeazy::detail::bitshuffle received more n_bits_per_segment that given type yields");
+      
+      
+      std::array<std::bitset<simd_width>, n_segments> segments;
+      std::uint32_t n_bits_consumed;
+
+      bitshuffle():
+	segments(),
+	n_bits_consumed(0){}
+
+
+      bool empty() const {
+	return n_bits_consumed == 0;
+      }
+
+      bool full() const {
+	return n_bits_consumed == simd_width;
+      }
+
+      bool any() const {
+	bool value = false;
+	for(auto & bits : segments )
+	  value = value || bits.any() ;
+	
+	return value;
+      }
+
+      std::bitset<128> gather_msb_range(__m128i block, int n_bits){
+
+	std::bitset<128> value;
+
+	// int left_shift = sizeof(int) - sizeof(in_type);
+	// //aquire the leading bits of int32 blocks in m128
+	// //m128 consists of 4 32bit integers that originate from T-bitwidth blocks
+	// __m128i v_first_items =  _mm_slli_si128(
+	// 					//convert to 32bits in order to get only the first (items 0,1,2,3 in _block) half of m128i
+	// 					to_32bit_field<in_type>::conversion(block),
+	// 					left_shift //left shift by n bytes to move the bits towards the MSB
+	// 					); 
+
+	// //invert the sequence of v_first_items
+	// v_first_items = _mm_shuffle_epi32(v_first_items, _MM_SHUFFLE(0,1,2,3));
+    
+	// __m128 first_part = *reinterpret_cast<__m128*>(&v_first_items);
+
+	// //collect the msb per 32bit item into result
+	// value = _mm_movemask_ps (first_part); 
+
+	
+	return value;
+      }
+
+      template <typename iterator_t>
+      iterator_t consume(iterator_t _begin, iterator_t _end){
+
+	if(sizeof(decltype(*_begin)) != sizeof(in_type))
+	  return _begin;
+
+	std::size_t size = _end - _begin;
+	
+	if(size*sizeof(in_type) < simd_width_bytes)
+	  return _begin;
+
+	
+	iterator_t value = _begin;
+	const int step_size = simd_width/in_type_width;
+	__m128i current;
+	shift_left_m128i<in_type> left_shifter;
+	
+	for(;value!=_end;value+=step_size){
+	  current = _mm_load_si128(reinterpret_cast<const __m128i*>(&value));
+
+	  for(int s = 0;s<n_segments;++s){
+	    //left shift
+	    current = left_shifter(current,n_bits_per_segment);
+
+	    //extract msb(s)
+	    std::bitset<128> extracted = gather_msb_range(current,n_bits_per_segment);
+
+	    //update segment
+	    segments[s] |= (extracted >> (n_bits_per_segment*n_in_type_per_simd));
+	    
+	    n_bits_consumed += n_bits_per_segment;
+	    if(full())
+	      return value;
+	  }
+	    
+	}
+		
+	return value;
+      }
+      
+    };
+    
+  }//detail
+
+}//sqeazy
 #endif
