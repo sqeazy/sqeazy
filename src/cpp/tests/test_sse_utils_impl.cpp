@@ -199,18 +199,18 @@ struct bitplane_fixture {
   std::vector<in_type> input	;
   std::vector<in_type> output	;
   std::vector<in_type> expected	;
-  __m128i first_block;
+  __m128i input_block;
   
   bitplane_fixture():
     input(),
     output(),
     expected(),
-    first_block()
+    input_block()
   {
     
     input.resize(32/sizeof(in_type));
     std::fill(input.begin(), input.end(),
-	      0x8 << ((sizeof(in_type) -1)*4)
+	      1 << ((sizeof(in_type)*CHAR_BIT) -1 )
 	      );
     
     output.resize(input.size());
@@ -219,7 +219,7 @@ struct bitplane_fixture {
     for(std::uint32_t i = 0;i < (input.size()/(sizeof(in_type)*CHAR_BIT)); ++i)
       expected[i] = ~(in_type(0));
 
-    first_block = _mm_load_si128(reinterpret_cast<const __m128i*>(input.data()));
+    input_block = _mm_load_si128(reinterpret_cast<const __m128i*>(input.data()));
   }
   
 };
@@ -244,9 +244,13 @@ BOOST_AUTO_TEST_CASE( construct ){
 BOOST_AUTO_TEST_CASE( gather_msb_range ){
   sqd::bitshuffle<type> instance;
   
-  std::bitset<128> result = instance.gather_msb_range(first_block, 1);
+  std::bitset<128> result = instance.gather_msb_range(input_block, 1);
 
   BOOST_CHECK_NE(result.any(),false);
+
+  result = instance.gather_msb_range(input_block, 2);
+  
+  BOOST_CHECK_NE(result.any(),true);
   
 }
 

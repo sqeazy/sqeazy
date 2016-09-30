@@ -16,18 +16,18 @@ namespace sqeazy {
     template<typename T>
     struct gather_msb {
 
-      std::bitset<16> operator()(const __m128i& _block) const {return std::bitset<16>();}
+      std::uint16_t operator()(const __m128i& _block) const {return std::uint16_t(0);}
       
     };
 
     template<>
     struct gather_msb<std::uint8_t> {
 
-      std::bitset<16> operator()(const __m128i& _block) const {
+      std::uint16_t operator()(const __m128i& _block) const {
 
 	const int result = _mm_movemask_epi8(_block);
 
-	std::bitset<16> value = result;
+	std::uint16_t value = result;
 	
 	return value;
 
@@ -38,7 +38,7 @@ namespace sqeazy {
     template<>
     struct gather_msb<std::int8_t> {
 
-      std::bitset<16> operator()(const __m128i& _block) const {
+      std::uint16_t operator()(const __m128i& _block) const {
 
 	return gather_msb<std::uint8_t>()(_block);
 	
@@ -50,7 +50,7 @@ namespace sqeazy {
     template<>
     struct gather_msb<std::uint16_t> {
 
-      std::bitset<16> operator()(const __m128i& _block) const {
+      std::uint16_t operator()(const __m128i& _block) const {
 
 	__m128i shuffle_by = _mm_set_epi8(0xff	, 0xff	,
 					  0xff	, 0xff	,
@@ -67,7 +67,7 @@ namespace sqeazy {
 
 	const int result = _mm_movemask_epi8(temp);//result contains collapsed MSBs
 	
-	std::bitset<16> value = result;
+	std::uint16_t value = result;
 	value <<= 8;
 	
 	return value;
@@ -79,7 +79,7 @@ namespace sqeazy {
     template<>
     struct gather_msb<std::int16_t> {
 
-      std::bitset<16> operator()(const __m128i& _block) const {
+      std::uint16_t operator()(const __m128i& _block) const {
 	return gather_msb<std::uint16_t>()(_block);
       }
       
@@ -88,8 +88,8 @@ namespace sqeazy {
     template<>
     struct gather_msb<std::uint32_t> {
 
-      std::bitset<16> operator()(const __m128i& _block) const {
-	std::bitset<16> value =  _mm_movemask_ps(_mm_castsi128_ps(_block));
+      std::uint16_t operator()(const __m128i& _block) const {
+	std::uint16_t value =  _mm_movemask_ps(_mm_castsi128_ps(_block));
 	value <<= 12;
 	return value;
       }
@@ -98,7 +98,7 @@ namespace sqeazy {
     template<>
     struct gather_msb<std::int32_t> {
 
-      std::bitset<16> operator()(const __m128i& _block) const {
+      std::uint16_t operator()(const __m128i& _block) const {
 	return gather_msb<std::uint32_t>()(_block);
       }
     };
@@ -619,23 +619,11 @@ namespace sqeazy {
 
 	std::bitset<128> value;
 
-	// int left_shift = sizeof(int) - sizeof(in_type);
-	// //aquire the leading bits of int32 blocks in m128
-	// //m128 consists of 4 32bit integers that originate from T-bitwidth blocks
-	// __m128i v_first_items =  _mm_slli_si128(
-	// 					//convert to 32bits in order to get only the first (items 0,1,2,3 in _block) half of m128i
-	// 					to_32bit_field<in_type>::conversion(block),
-	// 					left_shift //left shift by n bytes to move the bits towards the MSB
-	// 					); 
-
-	// //invert the sequence of v_first_items
-	// v_first_items = _mm_shuffle_epi32(v_first_items, _MM_SHUFFLE(0,1,2,3));
-    
-	// __m128 first_part = *reinterpret_cast<__m128*>(&v_first_items);
-
-	// //collect the msb per 32bit item into result
-	// value = _mm_movemask_ps (first_part); 
-
+	if(n_bits == 1){
+	  gather_msb<in_type> op;
+	  value = op(block);
+	  value <<= value.size() - 16;
+	}
 	
 	return value;
       }
