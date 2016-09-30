@@ -277,6 +277,9 @@ BOOST_AUTO_TEST_CASE( fill_anything ){
   
   BOOST_CHECK_NE(instance.empty(),true);
   BOOST_CHECK_EQUAL(instance.any(),true);
+
+  BOOST_CHECK_EQUAL(instance.segments[0].any(),true);
+  BOOST_CHECK_EQUAL(instance.segments[0].count(),input.size());
 }
 
 
