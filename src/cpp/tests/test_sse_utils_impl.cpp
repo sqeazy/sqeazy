@@ -47,7 +47,26 @@ struct sse_fixture {
 
 };
 
+BOOST_AUTO_TEST_CASE( check_movemask ){
 
+  int mask = _mm_movemask_epi8(_mm_set1_epi8(0xff));
+  BOOST_CHECK_EQUAL(pop(mask),16);
+
+  mask = _mm_movemask_epi8(_mm_set_epi8(0x0,0x80,0x80,0x80,0x80,0x80,0x80,0x80,
+					0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80));
+  BOOST_CHECK_EQUAL(pop(mask),15);
+  BOOST_CHECK_EQUAL(mask,0x7fff);
+
+  mask = _mm_movemask_epi8(_mm_set_epi8(0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,
+					0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x0));
+  BOOST_CHECK_EQUAL(pop(mask),15);
+  BOOST_CHECK_EQUAL(mask,0xfffe);
+
+  mask = _mm_movemask_epi8(_mm_set_epi8(0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,
+					0,0,0,0,0,0,0,0));
+  BOOST_CHECK_EQUAL(pop(mask),8);
+  BOOST_CHECK_EQUAL(mask,0xff00);
+}
   
 BOOST_FIXTURE_TEST_SUITE( to_32bit , sse_fixture )
 
@@ -99,15 +118,24 @@ BOOST_AUTO_TEST_CASE( gather_msb_8 ){
 
 BOOST_AUTO_TEST_CASE( gather_msb_8_order_right ){
 
-  msb_is_1.back() = 0;
-  __m128i input = _mm_load_si128(reinterpret_cast<const __m128i*>(&msb_is_1[0]));
+  msb_is_1[msb_is_1.size()-1] = 0;
+  __m128i input = _mm_load_si128(reinterpret_cast<const __m128i*>(msb_is_1.data()));
+  __m128i exp = _mm_set_epi8(0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,
+			     0x80,0x80,0x80,0x80,0x80,0x80,0x80,0);
 
+  std::fill(msb_lsb_both_1.begin(), msb_lsb_both_1.end(),0);
+  _mm_store_si128(reinterpret_cast<__m128i*>(msb_lsb_both_1.data()), input);
+  
+  BOOST_CHECK_EQUAL_COLLECTIONS(msb_is_1.begin(), msb_is_1.end(),
+				msb_lsb_both_1.begin(), msb_lsb_both_1.end());
+  
   sqeazy::detail::gather_msb<std::uint8_t> op;
-  std::bitset<16> received = op(input);
+  std::bitset<16> received = op(exp);
 
   BOOST_CHECK_EQUAL(received.count(),msb_is_1.size()-1);
-  BOOST_CHECK_EQUAL(received.test(15),false);
+  BOOST_CHECK_EQUAL(received.test(15),true);
   BOOST_CHECK_EQUAL(received.test(14),true);
+  BOOST_CHECK_EQUAL(received.test(0),false);
 }
 
 BOOST_AUTO_TEST_CASE( gather_msb_16 ){

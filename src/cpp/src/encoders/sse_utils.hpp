@@ -25,8 +25,11 @@ namespace sqeazy {
 
       std::bitset<16> operator()(const __m128i& _block) const {
 
-	std::bitset<16> result(_mm_movemask_epi8(_block));
-	return result;
+	const int result = _mm_movemask_epi8(_block);
+
+	std::bitset<16> value = result;
+	
+	return value;
 
       }
       
