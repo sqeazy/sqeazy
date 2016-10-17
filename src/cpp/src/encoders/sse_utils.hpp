@@ -4,7 +4,9 @@
 #include <stdexcept>
 #include <climits>
 #include <array>
-#include <bitset>
+
+#include "boost/dynamic_bitset.hpp"
+
 
 #include <xmmintrin.h>
 #include <smmintrin.h>
@@ -13,6 +15,15 @@ namespace sqeazy {
 
   namespace detail {
 
+    /**
+       \brief functor to 
+
+       \param[in] 
+
+       \return 
+       \retval 
+
+    */
     template<typename T>
     struct gather_msb {
 
@@ -25,6 +36,7 @@ namespace sqeazy {
 
       std::uint16_t operator()(const __m128i& _block) const {
 
+	//does this change the order?
 	const int result = _mm_movemask_epi8(_block);
 
 	std::uint16_t value = result;
@@ -591,12 +603,19 @@ namespace sqeazy {
 		    "sqeazy::detail::bitshuffle received more n_bits_per_segment that given type yields");
       
       
-      std::array<std::bitset<simd_width>, n_segments> segments;
+      std::array<boost::dynamic_bitset<in_type>, n_segments> segments;
       std::uint32_t n_bits_consumed;
 
       bitshuffle():
 	segments(),
-	n_bits_consumed(0){}
+	n_bits_consumed(0){
+
+	std::fill(segments.begin(),
+		  segments.end(),
+		  boost::dynamic_bitset<in_type>(simd_width)
+		  );
+	
+      }
 
 
       bool empty() const {
@@ -615,13 +634,13 @@ namespace sqeazy {
 	return value;
       }
 
-      std::bitset<128> gather_msb_range(__m128i block, int n_bits){
+      boost::dynamic_bitset<in_type> gather_msb_range(__m128i block, int n_bits){
 
-	std::bitset<128> value;
+	 boost::dynamic_bitset<in_type> value;
 
 	if(n_bits == 1){
 	  gather_msb<in_type> op;
-	  value = op(block);
+	  value = boost::dynamic_bitset<in_type>(simd_width,op(block));
 	  value <<= value.size() - 16;
 	}
 	
@@ -653,7 +672,7 @@ namespace sqeazy {
 	    current = left_shifter(current,n_bits_per_segment);
 
 	    //extract msb(s)
-	    std::bitset<128> extracted = gather_msb_range(current,n_bits_per_segment);
+	    boost::dynamic_bitset<in_type> extracted = gather_msb_range(current,n_bits_per_segment);
 
 	    //update segment
 	    segments[s] |= (extracted >> (n_bits_per_segment*n_in_type_per_simd));

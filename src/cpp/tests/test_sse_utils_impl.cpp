@@ -5,7 +5,10 @@
 #include <iostream>
 #include <algorithm> // for copy
 #include <iterator> // for ostream_iterator
+
 #include "encoders/sse_utils.hpp"
+
+#include "boost/dynamic_bitset.hpp"
 
 
 int pop(unsigned x)
@@ -111,7 +114,9 @@ BOOST_AUTO_TEST_CASE( gather_msb_8 ){
   __m128i input = _mm_load_si128(reinterpret_cast<const __m128i*>(&msb_is_1[0]));
 
   sqeazy::detail::gather_msb<std::uint8_t> op;
-  std::bitset<16> received = op(input);
+  
+  auto res = op(input);
+  boost::dynamic_bitset<std::uint8_t> received(16,res);  
 
   BOOST_CHECK_EQUAL(received.count(),msb_is_1.size());
 }
@@ -120,8 +125,8 @@ BOOST_AUTO_TEST_CASE( gather_msb_8_order_right ){
 
   msb_is_1[msb_is_1.size()-1] = 0;
   __m128i input = _mm_load_si128(reinterpret_cast<const __m128i*>(msb_is_1.data()));
-  __m128i exp = _mm_set_epi8(0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,
-			     0x80,0x80,0x80,0x80,0x80,0x80,0x80,0);
+  // __m128i exp = _mm_set_epi8(0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,
+  // 			     0x80,0x80,0x80,0x80,0x80,0x80,0x80,0);
 
   std::fill(msb_lsb_both_1.begin(), msb_lsb_both_1.end(),0);
   _mm_store_si128(reinterpret_cast<__m128i*>(msb_lsb_both_1.data()), input);
@@ -130,12 +135,19 @@ BOOST_AUTO_TEST_CASE( gather_msb_8_order_right ){
 				msb_lsb_both_1.begin(), msb_lsb_both_1.end());
   
   sqeazy::detail::gather_msb<std::uint8_t> op;
-  std::bitset<16> received = op(exp);
+  auto res = op(input);
+  boost::dynamic_bitset<std::uint8_t> received(16,res);  
 
   BOOST_CHECK_EQUAL(received.count(),msb_is_1.size()-1);
-  BOOST_CHECK_EQUAL(received.test(15),true);
+  BOOST_CHECK_EQUAL(received.test(1),true);
   BOOST_CHECK_EQUAL(received.test(14),true);
-  BOOST_CHECK_EQUAL(received.test(0),false);
+
+  //bit position is counted from the right,
+  //e.g. 0111
+  // bit number 4 is 0
+  // bit number 0 is 1
+  BOOST_CHECK_EQUAL(received.test(0),false);//LSB
+  BOOST_CHECK_EQUAL(received.test(15),true);//MSB
 }
 
 BOOST_AUTO_TEST_CASE( gather_msb_16 ){
@@ -144,7 +156,8 @@ BOOST_AUTO_TEST_CASE( gather_msb_16 ){
   __m128i input = _mm_load_si128(reinterpret_cast<const __m128i*>(&msb_is_1_16[0]));
 
   sqeazy::detail::gather_msb<std::uint16_t> op;
-  std::bitset<16> received = op(input);
+  auto res = op(input);
+  boost::dynamic_bitset<std::uint16_t> received(16,res);  
 
   BOOST_CHECK_EQUAL(received.count(),msb_is_1_16.size());
 }
@@ -155,7 +168,8 @@ BOOST_AUTO_TEST_CASE( gather_msb_16_order_right ){
   __m128i input = _mm_load_si128(reinterpret_cast<const __m128i*>(&msb_is_1_16[0]));
 
   sqeazy::detail::gather_msb<std::uint16_t> op;
-  std::bitset<16> received = op(input);
+  auto res = op(input);
+  boost::dynamic_bitset<std::uint16_t> received(16,res); 
 
   BOOST_CHECK_EQUAL(received.count(),msb_is_1_16.size()-1);
   BOOST_CHECK_EQUAL(received.test(8),false);
@@ -168,8 +182,8 @@ BOOST_AUTO_TEST_CASE( gather_msb_16_pattern_right ){
   __m128i input = _mm_load_si128(reinterpret_cast<const __m128i*>(&msb_is_1_16[0]));
 
   sqeazy::detail::gather_msb<std::uint16_t> op;
-  
-  std::bitset<16> received = op(input);
+  auto res = op(input);
+  boost::dynamic_bitset<std::uint16_t> received(16,res); 
 
   BOOST_CHECK_EQUAL(received.count(),4);
   
@@ -184,7 +198,8 @@ BOOST_AUTO_TEST_CASE( gather_msb_32 ){
   __m128i input = _mm_load_si128(reinterpret_cast<const __m128i*>(&msb_is_1_32[0]));
 
   sqeazy::detail::gather_msb<std::uint32_t> op;
-  std::bitset<16> received = op(input);
+  auto res = op(input);
+  boost::dynamic_bitset<std::uint16_t> received(16,res); 
 
   BOOST_CHECK_EQUAL(received.count(),msb_is_1_32.size());
 }
@@ -244,7 +259,7 @@ BOOST_AUTO_TEST_CASE( construct ){
 BOOST_AUTO_TEST_CASE( gather_msb_range ){
   sqd::bitshuffle<type> instance;
   
-  std::bitset<128> result = instance.gather_msb_range(input_block, 1);
+  boost::dynamic_bitset<type> result = instance.gather_msb_range(input_block, 1);
 
   BOOST_CHECK_NE(result.any(),false);
 
