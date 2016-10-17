@@ -70,7 +70,99 @@ BOOST_AUTO_TEST_CASE( check_movemask ){
   BOOST_CHECK_EQUAL(pop(mask),8);
   BOOST_CHECK_EQUAL(mask,0xff00);
 }
+
+
+
+BOOST_FIXTURE_TEST_SUITE( movemask_sanity_checks , sse_fixture )
+
+BOOST_AUTO_TEST_CASE( from_char_buffer ){
+
+  __m128i input = _mm_load_si128(reinterpret_cast<const __m128i*>(msb_is_1.data()));
+  int plain_res = _mm_movemask_epi8(input);
+  boost::dynamic_bitset<std::uint8_t> plain(32,plain_res);
+
   
+  BOOST_CHECK_EQUAL(plain.any(),true);
+  BOOST_CHECK_EQUAL(plain.test(0),true);
+  BOOST_CHECK_EQUAL(plain.test(1),true);
+  BOOST_CHECK_EQUAL(plain.test(15),true);
+  BOOST_CHECK_EQUAL(plain.test(16),false);
+  BOOST_CHECK_EQUAL(plain.test(31),false);
+  
+  
+  msb_is_1[msb_is_1.size()-1] = 0;
+  input = _mm_load_si128(reinterpret_cast<const __m128i*>(msb_is_1.data()));
+  int asymm_res = _mm_movemask_epi8(input);
+  boost::dynamic_bitset<std::uint8_t> asymm(32,asymm_res);
+    
+  BOOST_CHECK_EQUAL(asymm.any(),true);
+  BOOST_CHECK_EQUAL(asymm.count(),16-1);
+  
+  BOOST_CHECK_EQUAL(asymm.test(0),true);
+  BOOST_CHECK_EQUAL(asymm.test(1),true);
+  BOOST_CHECK_EQUAL(asymm.test(15),false);
+  BOOST_CHECK_EQUAL(asymm.test(16),false);
+  BOOST_CHECK_EQUAL(asymm.test(31),false);
+
+}
+
+BOOST_AUTO_TEST_CASE( from_asymm_char_buffer ){
+
+  //						    v MSB from field at offset 15
+  //MSB pattern to be generated { 0100 1111 1111 1100 }
+  //                              ^ MSB from field at offset 0
+  msb_is_1[0] = 0;
+  msb_is_1[2] = 0;
+  msb_is_1[3] = 0;
+
+  msb_is_1[14] = 0;
+  msb_is_1[15] = 0;
+
+  
+  __m128i input = _mm_load_si128(reinterpret_cast<const __m128i*>(msb_is_1.data()));
+  int plain_res = _mm_movemask_epi8(input);
+  boost::dynamic_bitset<std::uint8_t> plain(32,plain_res);
+
+  BOOST_CHECK_EQUAL(plain.count(),16-5);
+  BOOST_CHECK_EQUAL(plain.any(),true);
+  
+  BOOST_CHECK_EQUAL(plain.test(0),false);
+  BOOST_CHECK_EQUAL(plain.test(1),true);
+  BOOST_CHECK_EQUAL(plain.test(2),false);
+  BOOST_CHECK_EQUAL(plain.test(3),false);
+
+  BOOST_CHECK_EQUAL(plain.test(4),true);
+  BOOST_CHECK_EQUAL(plain.test(5),true);
+  BOOST_CHECK_EQUAL(plain.test(6),true);
+  BOOST_CHECK_EQUAL(plain.test(7),true);
+
+  BOOST_CHECK_EQUAL(plain.test( 8),true);
+  BOOST_CHECK_EQUAL(plain.test( 9),true);
+  BOOST_CHECK_EQUAL(plain.test(10),true);
+  BOOST_CHECK_EQUAL(plain.test(11),true);
+
+  BOOST_CHECK_EQUAL(plain.test(12),true);
+  BOOST_CHECK_EQUAL(plain.test(13),true);
+  BOOST_CHECK_EQUAL(plain.test(14),false);
+  BOOST_CHECK_EQUAL(plain.test(15),false);
+  
+  BOOST_CHECK_EQUAL(plain.test(16),false);
+  BOOST_CHECK_EQUAL(plain.test(31),false);
+
+  std::vector<std::uint8_t> recasted;
+  boost::to_block_range(plain,std::back_inserter(recasted));
+
+  BOOST_CHECK_EQUAL(recasted.size(),4);
+  BOOST_CHECK_NE(recasted[0],0);
+  BOOST_CHECK_NE(recasted[1],0);
+  BOOST_CHECK_NE(recasted[2],0);
+  BOOST_CHECK_NE(recasted[3],0);
+    
+  
+}
+BOOST_AUTO_TEST_SUITE_END()
+
+
 BOOST_FIXTURE_TEST_SUITE( to_32bit , sse_fixture )
 
 BOOST_AUTO_TEST_CASE( from_16_to_4_bits ){
@@ -300,3 +392,4 @@ BOOST_AUTO_TEST_CASE( fill_anything ){
 
 
 BOOST_AUTO_TEST_SUITE_END()
+
