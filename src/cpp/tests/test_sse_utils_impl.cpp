@@ -355,8 +355,11 @@ struct single_bitplane_fixture {
     expected(),
     input_block()
   {
+
+    static const std::size_t simd_width = 128;
+    std::size_t n_elements = sizeof(in_type)*CHAR_BIT*simd_width/(sizeof(in_type)*CHAR_BIT);
     
-    input.resize(sizeof(in_type)*CHAR_BIT*(16/sizeof(in_type)));
+    input.resize(n_elements);
     std::fill(input.begin(), input.end(),
 	      1 << ((sizeof(in_type)*CHAR_BIT) -1 )
 	      );
@@ -443,15 +446,17 @@ BOOST_AUTO_TEST_CASE( consume_and_write ){
 				   input.end());
   
   BOOST_CHECK_NE(consumed-input.begin(),0);
-  
+
+  auto old_output = output;
   auto written = instance.write_segments(output.begin(),
 					 output.end()
 					 );
 
   BOOST_CHECK_NE(written-output.begin(),0);
+  BOOST_CHECK_EQUAL(written-output.end(),0);
   BOOST_REQUIRE_EQUAL_COLLECTIONS(output.begin(), output.end(),
 				  expected.begin(), expected.end());
-  
+  BOOST_CHECK_NE(std::equal(output.begin(), output.end(), old_output.begin()),true);
   
 }
 BOOST_AUTO_TEST_SUITE_END()
@@ -465,6 +470,27 @@ BOOST_AUTO_TEST_CASE( construct ){
   
   BOOST_CHECK_NE(instance.segments.empty(),true);
   BOOST_CHECK_NE(instance.segments[0].any(),true);
+  
+}
+
+BOOST_AUTO_TEST_CASE( consume_and_write ){
+
+  sqd::bitshuffle<type> instance;
+  auto consumed = instance.consume(input.begin(),
+				   input.end());
+  
+  BOOST_CHECK_NE(consumed-input.begin(),0);
+
+  auto old_output = output;
+  auto written = instance.write_segments(output.begin(),
+					 output.end()
+					 );
+
+  BOOST_CHECK_NE(written-output.begin(),0);
+  BOOST_CHECK_EQUAL(written-output.end(),0);
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(output.begin(), output.end(),
+				  expected.begin(), expected.end());
+  BOOST_CHECK_NE(std::equal(output.begin(), output.end(), old_output.begin()),true);
   
 }
 

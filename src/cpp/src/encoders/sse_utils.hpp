@@ -747,25 +747,29 @@ namespace sqeazy {
 	if(size % segments.size() > n_in_type_per_simd)
 	  return value;
 
-	std::size_t min_elements_required = segments[0].size()*segments.size()/CHAR_BIT;
+	std::size_t min_elements_required = segments[0].size()*segments.size()/(sizeof(*_begin)*CHAR_BIT);
 	
-	if(size <= min_elements_required)
+	if(size < min_elements_required)
 	  return value;
 
 
-	std::size_t segment_spacing = (size / segments.size());
+	std::size_t segment_spacing =  size / segments.size() ;
+
+	if(segment_spacing < n_in_type_per_simd)
+	  return value;
+	
 	std::size_t global_offset = 0;
 	
 	for( std::uint32_t s = 0;s < segments.size();++s){
-	  global_offset = s*segment_spacing;
-	  value = _begin + global_offset + offset + n_in_type_per_simd;
+	  global_offset = (s+1)*segment_spacing;
+	  value = _begin + global_offset + offset;
 	  
 	  std::reverse_iterator<iterator_t> r (value);
 	  boost::to_block_range(segments[s],r);
 	  
 	}
 	
-	return value + n_in_type_per_simd;
+	return value;
       }
 
       
