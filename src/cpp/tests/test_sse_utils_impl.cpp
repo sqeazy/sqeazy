@@ -106,6 +106,7 @@ BOOST_AUTO_TEST_CASE( from_char_buffer ){
 
 }
 
+
 BOOST_AUTO_TEST_CASE( from_asymm_char_buffer ){
 
   //						    v MSB from field at offset 15
@@ -120,16 +121,40 @@ BOOST_AUTO_TEST_CASE( from_asymm_char_buffer ){
 
   
   __m128i input = _mm_load_si128(reinterpret_cast<const __m128i*>(msb_is_1.data()));
+
+  //reverse m128
+  const __m128i mask_to_reverse =  _mm_set_epi8(0,
+					   1,
+					   2,
+					   3,
+					   4,
+					   5,
+					   6,
+					   7,
+					   8,
+					   9,
+					   10,
+					   11,
+					   12,
+					   13,
+					   14,
+					   15
+					   );
+	
+  input = _mm_shuffle_epi8(input, mask_to_reverse);
   int plain_res = _mm_movemask_epi8(input);
+
+  BOOST_CHECK_EQUAL(plain_res,0x4ffc);
+  
   boost::dynamic_bitset<std::uint8_t> plain(32,plain_res);
 
   BOOST_CHECK_EQUAL(plain.count(),16-5);
   BOOST_CHECK_EQUAL(plain.any(),true);
   
   BOOST_CHECK_EQUAL(plain.test(0),false);
-  BOOST_CHECK_EQUAL(plain.test(1),true);
-  BOOST_CHECK_EQUAL(plain.test(2),false);
-  BOOST_CHECK_EQUAL(plain.test(3),false);
+  BOOST_CHECK_EQUAL(plain.test(1),false);
+  BOOST_CHECK_EQUAL(plain.test(2),true);
+  BOOST_CHECK_EQUAL(plain.test(3),true);
 
   BOOST_CHECK_EQUAL(plain.test(4),true);
   BOOST_CHECK_EQUAL(plain.test(5),true);
@@ -141,23 +166,23 @@ BOOST_AUTO_TEST_CASE( from_asymm_char_buffer ){
   BOOST_CHECK_EQUAL(plain.test(10),true);
   BOOST_CHECK_EQUAL(plain.test(11),true);
 
-  BOOST_CHECK_EQUAL(plain.test(12),true);
-  BOOST_CHECK_EQUAL(plain.test(13),true);
-  BOOST_CHECK_EQUAL(plain.test(14),false);
+  BOOST_CHECK_EQUAL(plain.test(12),false);
+  BOOST_CHECK_EQUAL(plain.test(13),false);
+  BOOST_CHECK_EQUAL(plain.test(14),true);
   BOOST_CHECK_EQUAL(plain.test(15),false);
   
   BOOST_CHECK_EQUAL(plain.test(16),false);
   BOOST_CHECK_EQUAL(plain.test(31),false);
 
-  std::vector<std::uint8_t> recasted;
-  boost::to_block_range(plain,std::back_inserter(recasted));
+  std::array<std::uint8_t,4> static_recasted;
+  boost::to_block_range(plain, static_recasted.rbegin());
 
-  BOOST_CHECK_EQUAL(recasted.size(),4);
-  BOOST_CHECK_NE(recasted[0],0);
-  BOOST_CHECK_NE(recasted[1],0);
-  BOOST_CHECK_NE(recasted[2],0);
-  BOOST_CHECK_NE(recasted[3],0);
-    
+  
+  BOOST_CHECK_EQUAL(static_recasted[0],0);
+  BOOST_CHECK_EQUAL(static_recasted[1],0);
+  BOOST_CHECK_EQUAL(static_recasted[2],0x4f);
+  BOOST_CHECK_EQUAL(static_recasted[3],0xfc);
+  
   
 }
 BOOST_AUTO_TEST_SUITE_END()
@@ -217,14 +242,6 @@ BOOST_AUTO_TEST_CASE( gather_msb_8_order_right ){
 
   msb_is_1[msb_is_1.size()-1] = 0;
   __m128i input = _mm_load_si128(reinterpret_cast<const __m128i*>(msb_is_1.data()));
-  // __m128i exp = _mm_set_epi8(0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,
-  // 			     0x80,0x80,0x80,0x80,0x80,0x80,0x80,0);
-
-  std::fill(msb_lsb_both_1.begin(), msb_lsb_both_1.end(),0);
-  _mm_store_si128(reinterpret_cast<__m128i*>(msb_lsb_both_1.data()), input);
-  
-  BOOST_CHECK_EQUAL_COLLECTIONS(msb_is_1.begin(), msb_is_1.end(),
-				msb_lsb_both_1.begin(), msb_lsb_both_1.end());
   
   sqeazy::detail::gather_msb<std::uint8_t> op;
   auto res = op(input);
@@ -234,10 +251,6 @@ BOOST_AUTO_TEST_CASE( gather_msb_8_order_right ){
   BOOST_CHECK_EQUAL(received.test(1),true);
   BOOST_CHECK_EQUAL(received.test(14),true);
 
-  //bit position is counted from the right,
-  //e.g. 0111
-  // bit number 4 is 0
-  // bit number 0 is 1
   BOOST_CHECK_EQUAL(received.test(0),false);//LSB
   BOOST_CHECK_EQUAL(received.test(15),true);//MSB
 }
@@ -261,11 +274,18 @@ BOOST_AUTO_TEST_CASE( gather_msb_16_order_right ){
 
   sqeazy::detail::gather_msb<std::uint16_t> op;
   auto res = op(input);
+  BOOST_CHECK_EQUAL(res,0xfe00 );
+  
   boost::dynamic_bitset<std::uint16_t> received(16,res); 
 
   BOOST_CHECK_EQUAL(received.count(),msb_is_1_16.size()-1);
+
+  BOOST_CHECK_EQUAL(received.test(0),false);
+  BOOST_CHECK_EQUAL(received.test(7),false);
   BOOST_CHECK_EQUAL(received.test(8),false);
   BOOST_CHECK_EQUAL(received.test(9),true);
+  BOOST_CHECK_EQUAL(received.test(15),true);
+  
 }
 
 BOOST_AUTO_TEST_CASE( gather_msb_16_pattern_right ){
@@ -280,7 +300,7 @@ BOOST_AUTO_TEST_CASE( gather_msb_16_pattern_right ){
   BOOST_CHECK_EQUAL(received.count(),4);
   
   for(std::uint32_t i = 0;i<msb_is_1_16.size();++i)
-    BOOST_CHECK_MESSAGE(received.test(16-i-1) == (msb_is_1_16[i] > 0),
+    BOOST_CHECK_MESSAGE(received.test(15-i) == (msb_is_1_16[i] > 0),
 			i << ": bit " << received.test(16-i-1) << " versus input " << msb_is_1_16[i] );
 }
 
@@ -294,6 +314,27 @@ BOOST_AUTO_TEST_CASE( gather_msb_32 ){
   boost::dynamic_bitset<std::uint16_t> received(16,res); 
 
   BOOST_CHECK_EQUAL(received.count(),msb_is_1_32.size());
+}
+
+BOOST_AUTO_TEST_CASE( gather_msb_32_order_right ){
+
+  msb_is_1_32.back() = 0;
+  __m128i input = _mm_load_si128(reinterpret_cast<const __m128i*>(&msb_is_1_32[0]));
+
+  sqeazy::detail::gather_msb<std::uint32_t> op;
+  auto res = op(input);
+
+  BOOST_CHECK_EQUAL(res,0xe000);
+  
+  boost::dynamic_bitset<std::uint16_t> received(16,res); 
+
+  BOOST_CHECK_EQUAL(received.count(),msb_is_1_32.size()-1);
+  BOOST_CHECK_EQUAL(received.test(15),true);
+  BOOST_CHECK_EQUAL(received.test(14),true);
+  BOOST_CHECK_EQUAL(received.test(13),true);
+  for(int r = 12;r>-1;--r)
+    BOOST_CHECK_EQUAL(received.test(r),false);
+  
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -387,9 +428,68 @@ BOOST_AUTO_TEST_CASE( fill_anything ){
 
   BOOST_CHECK_EQUAL(instance.segments[0].any(),true);
   BOOST_CHECK_EQUAL(instance.segments[0].count(),input.size());
+
+  for(std::uint32_t i = 1;i<instance.segments.size();++i){
+    BOOST_CHECK_EQUAL(instance.segments[i].any(),false);
+  }
+    
 }
 
 
+BOOST_AUTO_TEST_CASE( consume_and_write ){
 
+  sqd::bitshuffle<type> instance;
+  auto consumed = instance.consume(input.begin(),
+				   input.end());
+  
+  BOOST_CHECK_NE(consumed-input.begin(),0);
+  
+  
+}
 BOOST_AUTO_TEST_SUITE_END()
 
+
+BOOST_FIXTURE_TEST_SUITE( with_8bit , bitplane_fixture_8 )
+
+BOOST_AUTO_TEST_CASE( construct ){
+
+  sqd::bitshuffle<type> instance;
+  
+  BOOST_CHECK_NE(instance.segments.empty(),true);
+  BOOST_CHECK_NE(instance.segments[0].any(),true);
+  
+}
+
+BOOST_AUTO_TEST_CASE( fill_anything ){
+
+  sqd::bitshuffle<type> instance;
+  
+  BOOST_CHECK_EQUAL(instance.empty(),true);
+  BOOST_CHECK_EQUAL(instance.full(),false);
+  BOOST_CHECK_EQUAL(instance.any(),false);
+
+  auto consumed = instance.consume(input.begin()+input.size()-1,
+				   input.end());
+  std::size_t diff = consumed-(input.begin()+input.size()-1);
+  BOOST_CHECK_EQUAL(diff,0);
+  
+  
+  consumed = instance.consume(input.begin(),
+			      input.end());
+  
+  BOOST_CHECK_NE(consumed-input.begin(),0);
+  BOOST_CHECK(consumed == input.end());
+  
+  BOOST_CHECK_NE(instance.empty(),true);
+  BOOST_CHECK_EQUAL(instance.any(),true);
+
+  BOOST_CHECK_EQUAL(instance.segments[0].any(),true);
+  BOOST_CHECK_EQUAL(instance.segments[0].count(),input.size());
+
+  for(std::uint32_t i = 1;i<instance.segments.size();++i){
+    BOOST_CHECK_EQUAL(instance.segments[i].any(),false);
+  }
+    
+}
+
+BOOST_AUTO_TEST_SUITE_END()

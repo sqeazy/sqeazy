@@ -36,8 +36,31 @@ namespace sqeazy {
 
       std::uint16_t operator()(const __m128i& _block) const {
 
-	//does this change the order?
-	const int result = _mm_movemask_epi8(_block);
+	//reverse m128
+	static const __m128i reverse_bytes =  _mm_set_epi8(0,
+						    1,
+						    2,
+						    3,
+						    4,
+						    5,
+						    6,
+						    7,
+						    8,
+						    9,
+						    10,
+						    11,
+						    12,
+						    13,
+						    14,
+						    15
+						    );
+	
+
+
+	//NB:	the interpretation of  epi8 ordering of _mm_movemask_epi8 does not match the memory layout
+	//	thus, the input m128 block needs to be reverse first
+	__m128i input = _mm_shuffle_epi8(_block, reverse_bytes);
+	const int result = _mm_movemask_epi8(input);
 
 	std::uint16_t value = result;
 	
@@ -62,17 +85,21 @@ namespace sqeazy {
     template<>
     struct gather_msb<std::uint16_t> {
 
+      //collect MSBs of short elements in m128
+      //result is always left shifted!
       std::uint16_t operator()(const __m128i& _block) const {
 
-	__m128i shuffle_by = _mm_set_epi8(0xff	, 0xff	,
-					  0xff	, 0xff	,
-					  0xff	, 0xff	,
-					  0xff	, 0xff  ,
-					  1	, 3	,
-					  5	, 7	,
-					  9	, 11	,
-					  13 	, 15
-					  );
+	//reverse and shift incoming block
+	//lower half bytes are discarded
+	static const __m128i shuffle_by = _mm_set_epi8(0xff	, 0xff	,
+						       0xff	, 0xff	,
+						       0xff	, 0xff	,
+						       0xff	, 0xff  ,
+						       1	, 3	,
+						       5	, 7	,
+						       9	, 11	,
+						       13 	, 15
+						       );
 	
 	__m128i temp = _mm_shuffle_epi8(_block,
 					shuffle_by);
@@ -101,7 +128,14 @@ namespace sqeazy {
     struct gather_msb<std::uint32_t> {
 
       std::uint16_t operator()(const __m128i& _block) const {
-	std::uint16_t value =  _mm_movemask_ps(_mm_castsi128_ps(_block));
+
+	static const int reverse_mask = 0 |
+	  3 |
+	  (2 << 2) |
+	  (1 << 4);
+	
+	auto input = _mm_castsi128_ps(_mm_shuffle_epi32(_block, reverse_mask));
+	std::uint16_t value =  _mm_movemask_ps(input);
 	value <<= 12;
 	return value;
       }
@@ -634,6 +668,15 @@ namespace sqeazy {
 	return value;
       }
 
+      /**
+	 \brief collect msb values from block in chunks of in_type, the resulting bitset contains the aquired values starting at the MSB
+
+	 \param[in] 
+
+	 \return 
+	 \retval 
+
+      */
       boost::dynamic_bitset<in_type> gather_msb_range(__m128i block, int n_bits){
 
 	 boost::dynamic_bitset<in_type> value;
@@ -641,7 +684,7 @@ namespace sqeazy {
 	if(n_bits == 1){
 	  gather_msb<in_type> op;
 	  value = boost::dynamic_bitset<in_type>(simd_width,op(block));
-	  value <<= value.size() - 16;
+	  value <<= (simd_width - 16);
 	}
 	
 	return value;
@@ -661,27 +704,32 @@ namespace sqeazy {
 	
 	iterator_t value = _begin;
 	const int step_size = simd_width/in_type_width;
+	std::uint32_t segment_counter = 0;
+	
 	__m128i current;
 	shift_left_m128i<in_type> left_shifter;
 	
-	for(;value!=_end;value+=step_size){
-	  current = _mm_load_si128(reinterpret_cast<const __m128i*>(&value));
+	for(;value!=_end;value+=step_size, ++segment_counter){
+	  current = _mm_load_si128(reinterpret_cast<const __m128i*>(&*value));
 
 	  for(int s = 0;s<n_segments;++s){
-	    //left shift
-	    current = left_shifter(current,n_bits_per_segment);
 
 	    //extract msb(s)
 	    boost::dynamic_bitset<in_type> extracted = gather_msb_range(current,n_bits_per_segment);
 
 	    //update segment
-	    segments[s] |= (extracted >> (n_bits_per_segment*n_in_type_per_simd));
+	    segments[s] |= (extracted >> (segment_counter*n_in_type_per_simd));
 	    
-	    n_bits_consumed += n_bits_per_segment;
-	    if(full())
-	      return value;
+	    //left shift to bring the next segment to the MSB
+	    current = left_shifter(current,n_bits_per_segment);
 	  }
-	    
+
+	  n_bits_consumed += (n_bits_per_segment*n_in_type_per_simd);
+	  
+	  if(full())
+	    return value;
+
+	  
 	}
 		
 	return value;
