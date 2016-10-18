@@ -340,7 +340,7 @@ BOOST_AUTO_TEST_CASE( gather_msb_32_order_right ){
 BOOST_AUTO_TEST_SUITE_END()
 
 template<typename in_type>
-struct bitplane_fixture {
+struct single_bitplane_fixture {
 
   typedef in_type type;
   
@@ -349,14 +349,14 @@ struct bitplane_fixture {
   std::vector<in_type> expected	;
   __m128i input_block;
   
-  bitplane_fixture():
+  single_bitplane_fixture():
     input(),
     output(),
     expected(),
     input_block()
   {
     
-    input.resize(32/sizeof(in_type));
+    input.resize(sizeof(in_type)*CHAR_BIT*(16/sizeof(in_type)));
     std::fill(input.begin(), input.end(),
 	      1 << ((sizeof(in_type)*CHAR_BIT) -1 )
 	      );
@@ -374,10 +374,10 @@ struct bitplane_fixture {
 
 namespace sqd = sqeazy::detail;
 
-using bitplane_fixture_16 = bitplane_fixture<std::uint16_t>;
-using bitplane_fixture_8 = bitplane_fixture<std::uint8_t>;
+using single_bitplane_fixture_16 = single_bitplane_fixture<std::uint16_t>;
+using single_bitplane_fixture_8 = single_bitplane_fixture<std::uint8_t>;
 
-BOOST_FIXTURE_TEST_SUITE( with_16bit , bitplane_fixture_16 )
+BOOST_FIXTURE_TEST_SUITE( with_16bit , single_bitplane_fixture_16 )
 
 BOOST_AUTO_TEST_CASE( construct ){
 
@@ -444,12 +444,20 @@ BOOST_AUTO_TEST_CASE( consume_and_write ){
   
   BOOST_CHECK_NE(consumed-input.begin(),0);
   
+  auto written = instance.write_segments(output.begin(),
+					 output.end()
+					 );
+
+  BOOST_CHECK_NE(written-output.begin(),0);
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(output.begin(), output.end(),
+				  expected.begin(), expected.end());
+  
   
 }
 BOOST_AUTO_TEST_SUITE_END()
 
 
-BOOST_FIXTURE_TEST_SUITE( with_8bit , bitplane_fixture_8 )
+BOOST_FIXTURE_TEST_SUITE( with_8bit , single_bitplane_fixture_8 )
 
 BOOST_AUTO_TEST_CASE( construct ){
 

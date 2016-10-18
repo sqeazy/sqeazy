@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <climits>
 #include <array>
+#include <iterator>
 
 #include "boost/dynamic_bitset.hpp"
 
@@ -710,6 +711,10 @@ namespace sqeazy {
 	shift_left_m128i<in_type> left_shifter;
 	
 	for(;value!=_end;value+=step_size, ++segment_counter){
+
+	  if(full())
+	    return value;
+	  
 	  current = _mm_load_si128(reinterpret_cast<const __m128i*>(&*value));
 
 	  for(int s = 0;s<n_segments;++s){
@@ -726,14 +731,43 @@ namespace sqeazy {
 
 	  n_bits_consumed += (n_bits_per_segment*n_in_type_per_simd);
 	  
-	  if(full())
-	    return value;
-
-	  
 	}
 		
 	return value;
       }
+
+      template <typename iterator_t>
+      iterator_t write_segments(iterator_t _begin, iterator_t _end,
+				std::size_t offset = 0){
+
+	iterator_t value = _begin;
+	std::size_t size = _end - _begin;
+
+
+	if(size % segments.size() > n_in_type_per_simd)
+	  return value;
+
+	std::size_t min_elements_required = segments[0].size()*segments.size()/CHAR_BIT;
+	
+	if(size <= min_elements_required)
+	  return value;
+
+
+	std::size_t segment_spacing = (size / segments.size());
+	std::size_t global_offset = 0;
+	
+	for( std::uint32_t s = 0;s < segments.size();++s){
+	  global_offset = s*segment_spacing;
+	  value = _begin + global_offset + offset + n_in_type_per_simd;
+	  
+	  std::reverse_iterator<iterator_t> r (value);
+	  boost::to_block_range(segments[s],r);
+	  
+	}
+	
+	return value + n_in_type_per_simd;
+      }
+
       
     };
     
