@@ -181,7 +181,7 @@ namespace sqeazy {
 	      typename raw_type , 
 	      typename size_type
 	      >
-    static const error_code sse_bitplane_reorder_encode(const raw_type* _input,
+    static const error_code sse_bitplane_reorder_encode_deprecated(const raw_type* _input,
 							raw_type* _output,
 							const size_type& _length)
     {
@@ -254,7 +254,103 @@ namespace sqeazy {
     }
 
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //SSE implementation
+    /*
+      given an input array of type T: 
+      * we loop through the array with stride n
+      * load n elements into an SSE register
+      * xor with 0x7f for 8-bit data, 0x7fff for 16-bit data, 0x7fffffff for 32-bit data, etc. if the input is signed
+      * rotate the input left by one bit
+      * perform the bitplane reordering
+      * continue to next stride
+      */
+    template <const unsigned nbits_per_plane, 
+	      typename raw_type , 
+	      typename size_type
+	      >
+    static const error_code sse_bitplane_reorder_encode(const raw_type* _input,
+							raw_type* _output,
+							const size_type& _length)
+    {
+      static_assert(nbits_per_plane == 1, "sse_bitplane_reorder_encode does not yet support bitplane widths larger than 1");
 
+      sqeazy::detail::bitshuffle<raw_type, nbits_per_plane> instance;
+      const std::uint32_t n_iterations = _length/(instance.num_elements());
+      const std::uint32_t rest_iterations = _length % (instance.num_elements());
+      if(rest_iterations)
+	std::cerr << "[sse_bitplane_reorder_encode] WARNING input array size has remainder, skipping last "
+		  << rest_iterations << " elements\n";
+
+      std::size_t missed_elements_consume = 0;
+      std::size_t missed_elements_written = 0;
+      //setup data structures for looping
+      vec_xor<raw_type> xoring;
+      vec_rotate_left<raw_type> rotate;
+
+      __m128i input;
+      
+     
+      
+      std::array<raw_type, sqeazy::detail::bitshuffle<raw_type, nbits_per_plane>::n_elements> temp;
+      
+      for( std::uint32_t it = 0;it < n_iterations;++it){
+
+	auto in_begin	= _input + it*instance.num_elements();
+	auto in_end	= in_begin + instance.num_elements();
+
+	std::copy(in_begin, in_end,
+		  temp.begin());
+
+	for(auto chunk = temp.begin();
+	    chunk!= temp.end();
+	    chunk += sqeazy::detail::bitshuffle<raw_type, nbits_per_plane>::n_elements_per_simd){
+
+	  //TODO: replace this with _mm_stream_store_si128?
+	  input = _mm_load_si128(reinterpret_cast<const __m128i*>(&*chunk));
+	  
+	  // no need to xor, but we implement it anyway for the sake of completeness
+	  if(std::numeric_limits<raw_type>::is_signed)
+	    xoring(&input);
+	  
+	  input = rotate(&input);
+	  
+	  //store input back
+	  _mm_stream_si128(reinterpret_cast<__m128i*>(&*chunk),
+			   input);
+	  
+	}
+	
+	
+	instance.reset();
+
+	auto consumed = instance.consume(temp.begin(),
+					 temp.end()
+					 );
+
+	missed_elements_consume += (temp.end() - consumed);
+		
+	auto written = instance.write_segments(_output,
+					       _output + _length,
+					       it*sqeazy::detail::bitshuffle<raw_type>::n_elements_per_simd);
+
+	missed_elements_written += (_output + _length - written);
+	
+      }
+      
+      if(missed_elements_consume){
+	std::cerr << "[sse_bitplane_reorder_encode] failed to reorder array for "<< missed_elements_consume <<" elements \n";
+	return FAILURE;
+      }
+
+      if(missed_elements_written){
+	std::cerr << "[sse_bitplane_reorder_encode] failed to write "<< missed_elements_written <<" elements of aggregated bitplanes\n";
+	return FAILURE;
+      }
+
+      return SUCCESS;
+      
+    }
     
   }//namespace detail
 
