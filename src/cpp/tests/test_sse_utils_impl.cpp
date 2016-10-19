@@ -344,33 +344,60 @@ struct single_bitplane_fixture {
 
   typedef in_type type;
   
-  std::vector<in_type> input	;
+
   std::vector<in_type> output	;
-  std::vector<in_type> expected	;
+
+  std::vector<in_type> input_2p1	;
+  std::vector<in_type> expected_2p1	;
+
+  std::vector<in_type> input_msb_1	;
+  std::vector<in_type> expected_msb_1	;
+
+
   __m128i input_block;
   
   single_bitplane_fixture():
-    input(),
     output(),
-    expected(),
+    input_msb_1(),
+    expected_msb_1(),
+    input_2p1(),
+    expected_2p1(),
     input_block()
   {
 
     static const std::size_t simd_width = 128;
     std::size_t n_elements = sizeof(in_type)*CHAR_BIT*simd_width/(sizeof(in_type)*CHAR_BIT);
     
-    input.resize(n_elements);
-    std::fill(input.begin(), input.end(),
-	      1 << ((sizeof(in_type)*CHAR_BIT) -1 )
+    input_msb_1.resize(n_elements);
+    expected_msb_1.resize(n_elements);
+    const in_type msb_1 = 1 << ((sizeof(in_type)*CHAR_BIT) -1 );
+    std::fill(input_msb_1.begin(), input_msb_1.end(),
+	      msb_1
+	      );
+
+    input_2p1.resize(n_elements);
+    expected_2p1.resize(n_elements);
+    const in_type val_2p1 = (3 << ((sizeof(in_type)*CHAR_BIT) -2 )) | 1;
+    std::fill(input_2p1.begin(), input_2p1.end(),
+	      val_2p1
 	      );
     
-    output.resize(input.size());
-    expected.resize(input.size());
+    output.resize(input_msb_1.size());
 
-    for(std::uint32_t i = 0;i < (input.size()/(sizeof(in_type)*CHAR_BIT)); ++i)
-      expected[i] = ~(in_type(0));
 
-    input_block = _mm_load_si128(reinterpret_cast<const __m128i*>(input.data()));
+    for(std::uint32_t i = 0;i < (input_msb_1.size()/(sizeof(in_type)*CHAR_BIT)); ++i)
+      expected_msb_1[i] = ~(in_type(0));
+
+    for(std::uint32_t i = 0;i < 2*(input_2p1.size()/(sizeof(in_type)*CHAR_BIT)); ++i){
+      expected_2p1[i] = ~(in_type(0));
+    }
+
+    for(std::uint32_t i = expected_2p1.size()-(input_2p1.size()/(sizeof(in_type)*CHAR_BIT));i < expected_2p1.size(); ++i){
+      expected_2p1[i] = ~(in_type(0));
+    }
+
+    
+    input_block = _mm_load_si128(reinterpret_cast<const __m128i*>(input_msb_1.data()));
   }
   
 };
@@ -414,23 +441,23 @@ BOOST_AUTO_TEST_CASE( fill_anything ){
   BOOST_CHECK_EQUAL(instance.full(),false);
   BOOST_CHECK_EQUAL(instance.any(),false);
 
-  auto consumed = instance.consume(input.begin()+input.size()-1,
-				   input.end());
-  std::size_t diff = consumed-(input.begin()+input.size()-1);
+  auto consumed = instance.consume(input_msb_1.begin()+input_msb_1.size()-1,
+				   input_msb_1.end());
+  std::size_t diff = consumed-(input_msb_1.begin()+input_msb_1.size()-1);
   BOOST_CHECK_EQUAL(diff,0);
   
   
-  consumed = instance.consume(input.begin(),
-			      input.end());
+  consumed = instance.consume(input_msb_1.begin(),
+			      input_msb_1.end());
   
-  BOOST_CHECK_NE(consumed-input.begin(),0);
-  BOOST_CHECK(consumed == input.end());
+  BOOST_CHECK_NE(consumed-input_msb_1.begin(),0);
+  BOOST_CHECK(consumed == input_msb_1.end());
   
   BOOST_CHECK_NE(instance.empty(),true);
   BOOST_CHECK_EQUAL(instance.any(),true);
 
   BOOST_CHECK_EQUAL(instance.segments[0].any(),true);
-  BOOST_CHECK_EQUAL(instance.segments[0].count(),input.size());
+  BOOST_CHECK_EQUAL(instance.segments[0].count(),input_msb_1.size());
 
   for(std::uint32_t i = 1;i<instance.segments.size();++i){
     BOOST_CHECK_EQUAL(instance.segments[i].any(),false);
@@ -442,10 +469,10 @@ BOOST_AUTO_TEST_CASE( fill_anything ){
 BOOST_AUTO_TEST_CASE( consume_and_write ){
 
   sqd::bitshuffle<type> instance;
-  auto consumed = instance.consume(input.begin(),
-				   input.end());
+  auto consumed = instance.consume(input_msb_1.begin(),
+				   input_msb_1.end());
   
-  BOOST_CHECK_NE(consumed-input.begin(),0);
+  BOOST_CHECK_NE(consumed-input_msb_1.begin(),0);
 
   auto old_output = output;
   auto written = instance.write_segments(output.begin(),
@@ -455,10 +482,32 @@ BOOST_AUTO_TEST_CASE( consume_and_write ){
   BOOST_CHECK_NE(written-output.begin(),0);
   BOOST_CHECK_EQUAL(written-output.end(),0);
   BOOST_REQUIRE_EQUAL_COLLECTIONS(output.begin(), output.end(),
-				  expected.begin(), expected.end());
+				  expected_msb_1.begin(), expected_msb_1.end());
   BOOST_CHECK_NE(std::equal(output.begin(), output.end(), old_output.begin()),true);
   
 }
+
+BOOST_AUTO_TEST_CASE( consume_and_write_2p1 ){
+
+  sqd::bitshuffle<type> instance;
+  auto consumed = instance.consume(input_2p1.begin(),
+				   input_2p1.end());
+  
+  BOOST_CHECK_NE(consumed-input_2p1.begin(),0);
+
+  auto old_output = output;
+  auto written = instance.write_segments(output.begin(),
+					 output.end()
+					 );
+
+  BOOST_CHECK_NE(written-output.begin(),0);
+  BOOST_CHECK_EQUAL(written-output.end(),0);
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(output.begin(), output.end(),
+				  expected_2p1.begin(), expected_2p1.end());
+  BOOST_CHECK_NE(std::equal(output.begin(), output.end(), old_output.begin()),true);
+  
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 
@@ -473,26 +522,7 @@ BOOST_AUTO_TEST_CASE( construct ){
   
 }
 
-BOOST_AUTO_TEST_CASE( consume_and_write ){
 
-  sqd::bitshuffle<type> instance;
-  auto consumed = instance.consume(input.begin(),
-				   input.end());
-  
-  BOOST_CHECK_NE(consumed-input.begin(),0);
-
-  auto old_output = output;
-  auto written = instance.write_segments(output.begin(),
-					 output.end()
-					 );
-
-  BOOST_CHECK_NE(written-output.begin(),0);
-  BOOST_CHECK_EQUAL(written-output.end(),0);
-  BOOST_REQUIRE_EQUAL_COLLECTIONS(output.begin(), output.end(),
-				  expected.begin(), expected.end());
-  BOOST_CHECK_NE(std::equal(output.begin(), output.end(), old_output.begin()),true);
-  
-}
 
 BOOST_AUTO_TEST_CASE( fill_anything ){
 
@@ -502,28 +532,70 @@ BOOST_AUTO_TEST_CASE( fill_anything ){
   BOOST_CHECK_EQUAL(instance.full(),false);
   BOOST_CHECK_EQUAL(instance.any(),false);
 
-  auto consumed = instance.consume(input.begin()+input.size()-1,
-				   input.end());
-  std::size_t diff = consumed-(input.begin()+input.size()-1);
+  auto consumed = instance.consume(input_msb_1.begin()+input_msb_1.size()-1,
+				   input_msb_1.end());
+  std::size_t diff = consumed-(input_msb_1.begin()+input_msb_1.size()-1);
   BOOST_CHECK_EQUAL(diff,0);
   
   
-  consumed = instance.consume(input.begin(),
-			      input.end());
+  consumed = instance.consume(input_msb_1.begin(),
+			      input_msb_1.end());
   
-  BOOST_CHECK_NE(consumed-input.begin(),0);
-  BOOST_CHECK(consumed == input.end());
+  BOOST_CHECK_NE(consumed-input_msb_1.begin(),0);
+  BOOST_CHECK(consumed == input_msb_1.end());
   
   BOOST_CHECK_NE(instance.empty(),true);
   BOOST_CHECK_EQUAL(instance.any(),true);
 
   BOOST_CHECK_EQUAL(instance.segments[0].any(),true);
-  BOOST_CHECK_EQUAL(instance.segments[0].count(),input.size());
+  BOOST_CHECK_EQUAL(instance.segments[0].count(),input_msb_1.size());
 
   for(std::uint32_t i = 1;i<instance.segments.size();++i){
     BOOST_CHECK_EQUAL(instance.segments[i].any(),false);
   }
     
+}
+
+BOOST_AUTO_TEST_CASE( consume_and_write ){
+
+  sqd::bitshuffle<type> instance;
+  auto consumed = instance.consume(input_msb_1.begin(),
+				   input_msb_1.end());
+  
+  BOOST_CHECK_NE(consumed-input_msb_1.begin(),0);
+
+  auto old_output = output;
+  auto written = instance.write_segments(output.begin(),
+					 output.end()
+					 );
+
+  BOOST_CHECK_NE(written-output.begin(),0);
+  BOOST_CHECK_EQUAL(written-output.end(),0);
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(output.begin(), output.end(),
+				  expected_msb_1.begin(), expected_msb_1.end());
+  BOOST_CHECK_NE(std::equal(output.begin(), output.end(), old_output.begin()),true);
+  
+}
+
+BOOST_AUTO_TEST_CASE( consume_and_write_2p1 ){
+
+  sqd::bitshuffle<type> instance;
+  auto consumed = instance.consume(input_2p1.begin(),
+				   input_2p1.end());
+  
+  BOOST_CHECK_NE(consumed-input_2p1.begin(),0);
+
+  auto old_output = output;
+  auto written = instance.write_segments(output.begin(),
+					 output.end()
+					 );
+
+  BOOST_CHECK_NE(written-output.begin(),0);
+  BOOST_CHECK_EQUAL(written-output.end(),0);
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(output.begin(), output.end(),
+				  expected_2p1.begin(), expected_2p1.end());
+  BOOST_CHECK_NE(std::equal(output.begin(), output.end(), old_output.begin()),true);
+  
 }
 
 BOOST_AUTO_TEST_SUITE_END()
