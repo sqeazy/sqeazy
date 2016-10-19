@@ -73,7 +73,8 @@ struct const_anyvalue_fixture{
   }
 };
 
-template <const unsigned size = (32*(1 << 10)), typename T = unsigned short>
+template <const unsigned size = (32*(1 << 10)),
+	    typename T = unsigned short>
 struct ramp_fixture{     
   std::vector<T> input; 
   std::vector<T> output; 

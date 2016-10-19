@@ -40,6 +40,8 @@ BOOST_AUTO_TEST_CASE( scalar_version ){
 
   BOOST_CHECK(time.count()>0);
   std::cout << "scalar version: " << time.count()/20 << " s\n";
+  std::cout << "\t\t" << input.size()*sizeof(input[0])/(1024.*1024.) << " MB, "
+	    << input.size()*sizeof(input[0])/(1024.*1024.)/(time.count()/20.)<<" MB/s\n";
 
 }
 
@@ -65,7 +67,9 @@ BOOST_AUTO_TEST_CASE( sse_version ){
   }
 
   BOOST_CHECK(time.count()>0);
-  std::cout << "sse version: " << time.count()/20 << " s\n";
+  std::cout << "sse version:    " << time.count()/20 << " s\n";
+  std::cout << "\t\t" << input.size()*sizeof(input[0])/(1024.*1024.) << " MB, "
+	    << input.size()*sizeof(input[0])/(1024.*1024.)/(time.count()/20.)<<" MB/s\n";
 
   
 }
