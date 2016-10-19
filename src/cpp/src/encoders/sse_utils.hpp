@@ -661,6 +661,25 @@ namespace sqeazy {
 	return n_bits_consumed == simd_width;
       }
 
+      void set(std::size_t seg_id, std::size_t bit_id = 0)  {
+
+	if(seg_id>=segments.size())
+	  return;
+
+	if(bit_id>=segments[0].size())
+	  return;
+
+	segments[seg_id].set(bit_id);
+	n_bits_consumed += 1;
+      }
+      
+      void reset()  {
+	for( auto & seg : segments ){
+	  seg.reset();
+	}
+	n_bits_consumed = 0;;
+      }
+      
       bool any() const {
 	bool value = false;
 	for(auto & bits : segments )

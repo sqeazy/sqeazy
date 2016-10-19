@@ -347,12 +347,17 @@ struct single_bitplane_fixture {
 
   std::vector<in_type> output	;
 
-  std::vector<in_type> input_2p1	;
-  std::vector<in_type> expected_2p1	;
-
   std::vector<in_type> input_msb_1	;
   std::vector<in_type> expected_msb_1	;
 
+  std::vector<in_type> input_2p1	;
+  std::vector<in_type> expected_2p1	;
+
+
+  std::vector<in_type> output_36x	;
+
+  std::vector<in_type> input_2p1_36x	;
+  std::vector<in_type> expected_2p1_36x	;
 
   __m128i input_block;
   
@@ -362,6 +367,9 @@ struct single_bitplane_fixture {
     expected_msb_1(),
     input_2p1(),
     expected_2p1(),
+    output_36x(),
+    input_2p1_36x(),
+    expected_2p1_36x(),
     input_block()
   {
 
@@ -383,7 +391,7 @@ struct single_bitplane_fixture {
 	      );
     
     output.resize(input_msb_1.size());
-
+    
 
     for(std::uint32_t i = 0;i < (input_msb_1.size()/(sizeof(in_type)*CHAR_BIT)); ++i)
       expected_msb_1[i] = ~(in_type(0));
@@ -396,7 +404,23 @@ struct single_bitplane_fixture {
       expected_2p1[i] = ~(in_type(0));
     }
 
+    output_36x.resize(36*n_elements);
+    input_2p1_36x.resize(36*n_elements);
+    expected_2p1_36x.resize(36*n_elements);
+    std::fill(input_2p1_36x.begin(), input_2p1_36x.end(),
+	      val_2p1
+	      );
+    std::fill(expected_2p1_36x.begin(),
+	      expected_2p1_36x.begin()+2*(input_2p1_36x.size()/(sizeof(in_type)*CHAR_BIT)),
+	      ~(in_type(0))
+	      );
+    std::fill(expected_2p1_36x.rbegin(),
+	      expected_2p1_36x.rbegin()+(input_2p1_36x.size()/(sizeof(in_type)*CHAR_BIT)),
+	      ~(in_type(0))
+	      );
+
     
+      
     input_block = _mm_load_si128(reinterpret_cast<const __m128i*>(input_msb_1.data()));
   }
   
@@ -417,6 +441,23 @@ BOOST_AUTO_TEST_CASE( construct ){
   BOOST_CHECK_NE(instance.segments[0].any(),true);
   
 }
+
+BOOST_AUTO_TEST_CASE( reset ){
+
+  sqd::bitshuffle<type> instance;
+  instance.set(0,1);
+  instance.set(0,100);
+
+  BOOST_CHECK_EQUAL(instance.empty(),false);
+  BOOST_CHECK_EQUAL(instance.any(),true);
+
+  instance.reset();
+
+  BOOST_CHECK_EQUAL(instance.empty(),!false);
+  BOOST_CHECK_EQUAL(instance.any(),!true);
+  
+}
+
 
 
 BOOST_AUTO_TEST_CASE( gather_msb_range ){
@@ -508,6 +549,8 @@ BOOST_AUTO_TEST_CASE( consume_and_write_2p1 ){
   
 }
 
+
+
 BOOST_AUTO_TEST_SUITE_END()
 
 
@@ -596,6 +639,33 @@ BOOST_AUTO_TEST_CASE( consume_and_write_2p1 ){
 				  expected_2p1.begin(), expected_2p1.end());
   BOOST_CHECK_NE(std::equal(output.begin(), output.end(), old_output.begin()),true);
   
+}
+
+BOOST_AUTO_TEST_CASE( consume_and_write_2p1_36x ){
+
+  sqd::bitshuffle<type> instance;
+  auto consumed = instance.consume(input_2p1_36x.begin(),
+				   input_2p1_36x.end());
+  
+  BOOST_CHECK_NE(consumed-input_2p1_36x.begin(),0);
+  BOOST_CHECK_NE(instance.any(),false);
+
+  auto old_output = output_36x;
+
+  
+  auto written = instance.write_segments(output_36x.begin(),
+					 output_36x.end()
+					 );
+
+  BOOST_CHECK_NE(written-output_36x.begin(),0);
+  BOOST_CHECK_EQUAL(written-output_36x.end(),0);
+
+  
+  BOOST_CHECK_NE(std::equal(output_36x.begin(), output_36x.end(), old_output.begin()),true);
+
+  for(std::size_t i = 0;i < output_36x.size();++i)
+    BOOST_REQUIRE_MESSAGE(output_36x[i] == expected_2p1_36x[i],
+			  "item " << i << " mismatches, (obs exp) " << (int)output_36x[i] << " " << (int)expected_2p1_36x[i]);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
