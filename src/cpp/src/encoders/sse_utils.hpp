@@ -631,9 +631,10 @@ namespace sqeazy {
       static const int in_type_width = sizeof(in_type)*CHAR_BIT;
       static const int simd_width = 128;
       static const int simd_width_bytes = simd_width/CHAR_BIT;
-      static const int n_in_type_per_simd = simd_width/in_type_width;
+      static const int n_elements_per_simd = simd_width/in_type_width;
       static const int n_segments = in_type_width/n_bits_per_segment;
-
+      static const int n_elements = simd_width_bytes*n_segments/sizeof(in_type);
+      
       static_assert(n_bits_per_segment <= in_type_width,
 		    "sqeazy::detail::bitshuffle received more n_bits_per_segment that given type yields");
       
@@ -661,6 +662,19 @@ namespace sqeazy {
 	return n_bits_consumed == simd_width;
       }
 
+      std::size_t size() const {
+	return simd_width*n_segments;
+      }
+
+      std::size_t size_in_bytes() const {
+	return simd_width*n_segments/CHAR_BIT;
+      }
+
+      
+      std::size_t num_elements() const {
+	return size_in_bytes()/sizeof(in_type);
+      }
+      
       void set(std::size_t seg_id, std::size_t bit_id = 0)  {
 
 	if(seg_id>=segments.size())
@@ -713,8 +727,7 @@ namespace sqeazy {
       template <typename iterator_t>
       iterator_t consume(iterator_t _begin, iterator_t _end){
 
-	if(sizeof(decltype(*_begin)) != sizeof(in_type))
-	  return _begin;
+	static_assert(sizeof(decltype(*_begin)) == sizeof(in_type), "received iterator type does not match assumed type");
 
 	std::size_t size = _end - _begin;
 	
@@ -742,13 +755,13 @@ namespace sqeazy {
 	    boost::dynamic_bitset<in_type> extracted = gather_msb_range(current,n_bits_per_segment);
 
 	    //update segment
-	    segments[s] |= (extracted >> (segment_counter*n_in_type_per_simd));
+	    segments[s] |= (extracted >> (segment_counter*n_elements_per_simd));
 	    
 	    //left shift to bring the next segment to the MSB
 	    current = left_shifter(current,n_bits_per_segment);
 	  }
 
-	  n_bits_consumed += (n_bits_per_segment*n_in_type_per_simd);
+	  n_bits_consumed += (n_bits_per_segment*n_elements_per_simd);
 	  
 	}
 		
@@ -763,7 +776,7 @@ namespace sqeazy {
 	std::size_t size = _end - _begin;
 
 
-	if(size % segments.size() > n_in_type_per_simd)
+	if(size % segments.size() > n_elements_per_simd)
 	  return value;
 
 	std::size_t min_elements_required = segments[0].size()*segments.size()/(sizeof(*_begin)*CHAR_BIT);
@@ -774,21 +787,21 @@ namespace sqeazy {
 
 	std::size_t segment_spacing =  size / segments.size() ;
 
-	if(segment_spacing < n_in_type_per_simd)
+	if(segment_spacing < n_elements_per_simd)
 	  return value;
 	
 	std::size_t global_offset = 0;
 	
 	for( std::uint32_t s = 0;s < segments.size();++s){
-	  global_offset = (s+1)*segment_spacing;
-	  value = _begin + global_offset + offset;
+	  global_offset = s*segment_spacing;
+	  value = _begin + global_offset + offset + n_elements_per_simd;
 	  
 	  std::reverse_iterator<iterator_t> r (value);
 	  boost::to_block_range(segments[s],r);
 	  
 	}
 	
-	return value;
+	return _end;
       }
 
       
