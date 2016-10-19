@@ -549,7 +549,42 @@ BOOST_AUTO_TEST_CASE( consume_and_write_2p1 ){
   
 }
 
+BOOST_AUTO_TEST_CASE( consume_and_write_2p1_36x ){
 
+  sqd::bitshuffle<type> instance;
+
+  
+  const std::uint32_t n_iterations = input_2p1_36x.size()/(instance.num_elements());
+  BOOST_CHECK_EQUAL(input_2p1_36x.size() % instance.num_elements(),0);
+  auto old_output = output_36x;
+  
+  for( std::uint32_t it = 0;it < n_iterations;++it){
+    instance.reset();
+
+    auto in_begin = input_2p1_36x.begin() + it*instance.num_elements();
+    auto in_end = input_2p1_36x.begin() + (it+1)*instance.num_elements();
+    auto consumed = instance.consume(in_begin,
+				     in_end
+				     );
+  
+    BOOST_CHECK_NE(consumed-input_2p1_36x.begin(),0);
+    BOOST_CHECK(consumed == in_end);
+    BOOST_CHECK_NE(instance.any(),false);
+  
+    auto written = instance.write_segments(output_36x.begin(),
+					   output_36x.end(),
+					   it*sqd::bitshuffle<type>::num_elements_per_simd);
+
+    BOOST_REQUIRE_NE(written-output_36x.begin(),0);
+    BOOST_REQUIRE_EQUAL(written-output_36x.end(),0);
+  }
+  
+  BOOST_CHECK_NE(std::equal(output_36x.begin(), output_36x.end(), old_output.begin()),true);
+
+  for(std::size_t i = 0;i < output_36x.size();++i)
+    BOOST_REQUIRE_MESSAGE(output_36x[i] == expected_2p1_36x[i],
+			  "item " << i << " mismatches, (obs exp) " << (int)output_36x[i] << " " << (int)expected_2p1_36x[i]);
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -644,22 +679,32 @@ BOOST_AUTO_TEST_CASE( consume_and_write_2p1 ){
 BOOST_AUTO_TEST_CASE( consume_and_write_2p1_36x ){
 
   sqd::bitshuffle<type> instance;
-  auto consumed = instance.consume(input_2p1_36x.begin(),
-				   input_2p1_36x.end());
-  
-  BOOST_CHECK_NE(consumed-input_2p1_36x.begin(),0);
-  BOOST_CHECK_NE(instance.any(),false);
 
+  
+  const std::uint32_t n_iterations = input_2p1_36x.size()/(instance.num_elements());
+  BOOST_CHECK_EQUAL(input_2p1_36x.size() % instance.num_elements(),0);
   auto old_output = output_36x;
-
   
-  auto written = instance.write_segments(output_36x.begin(),
-					 output_36x.end()
-					 );
+  for( std::uint32_t it = 0;it < n_iterations;++it){
+    instance.reset();
 
-  BOOST_CHECK_NE(written-output_36x.begin(),0);
-  BOOST_CHECK_EQUAL(written-output_36x.end(),0);
+    auto in_begin = input_2p1_36x.begin() + it*instance.num_elements();
+    auto in_end = input_2p1_36x.begin() + (it+1)*instance.num_elements();
+    auto consumed = instance.consume(in_begin,
+				     in_end
+				     );
+  
+    BOOST_CHECK_NE(consumed-input_2p1_36x.begin(),0);
+    BOOST_CHECK(consumed == in_end);
+    BOOST_CHECK_NE(instance.any(),false);
+  
+    auto written = instance.write_segments(output_36x.begin(),
+					   output_36x.end(),
+					   it*sqd::bitshuffle<type>::num_elements_per_simd);
 
+    BOOST_REQUIRE_NE(written-output_36x.begin(),0);
+    BOOST_REQUIRE_EQUAL(written-output_36x.end(),0);
+  }
   
   BOOST_CHECK_NE(std::equal(output_36x.begin(), output_36x.end(), old_output.begin()),true);
 
