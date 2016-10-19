@@ -299,7 +299,8 @@ namespace sqeazy {
 	auto in_begin	= _input + it*instance.num_elements();
 	auto in_end	= in_begin + instance.num_elements();
 
-	std::copy(in_begin, in_end,
+	std::copy(in_begin,
+		  in_end,
 		  temp.begin());
 
 	for(auto chunk = temp.begin();

@@ -166,7 +166,7 @@ BOOST_AUTO_TEST_CASE( versus_default_all ){
   int ret2 = sqeazy::detail::scalar_bitplane_reorder_encode<1>(&input[0], &reference[0], 16);
 
   BOOST_REQUIRE(ret1 == ret2);
-  for(unsigned i = 0;i<input.size();++i){
+  for(unsigned i = 0;i<16;++i){
     try{
       BOOST_REQUIRE(output[i] == reference[i]);
     }
@@ -188,8 +188,13 @@ BOOST_AUTO_TEST_CASE( versus_default_first_16 ){
   
     BOOST_REQUIRE(ret1 == ret2);
     for(unsigned i = 0;i<16;++i){
-      BOOST_CHECK(output[i] == calc_first_16_hand[i]);
-      BOOST_CHECK(reference[i] == calc_first_16_hand[i]);
+      BOOST_CHECK_MESSAGE(output[i] == calc_first_16_hand[i],
+			  "[versus_default_first_16] sse_bitplane failed (obs exp):"
+			  << output[i] << " " << calc_first_16_hand[i]);
+      
+      BOOST_CHECK_MESSAGE(reference[i] == calc_first_16_hand[i],
+			  "[versus_default_first_16] scalar_bitplane failed (obs exp):"
+			  << reference[i] << " " << calc_first_16_hand[i]);
       try{
 	BOOST_REQUIRE(output[i] == reference[i]);
       }
@@ -269,25 +274,3 @@ BOOST_AUTO_TEST_CASE(produces_same_output_as_scalar){
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-
-//TODO!
-// TEST_CASE("2-bit extraction for 16bit input of all bits to short","[bp2-reorder-const]"){
-
-//   unsigned short value = 1 << 15;
-//   __m128i testi = _mm_set1_epi16(value);
-    
-//   std::vector<unsigned short> bitplanes(16,0);
-
-//   std::vector<unsigned short*> bitplanes_ptr(16);
-//   for(int i = 0;i<bitplanes.size();++i)
-//     bitplanes_ptr[i] = &bitplanes[i];
-    
-//   reorder_bitplanes<2>(testi, bitplanes_ptr,8);
-    
-//   REQUIRE(bitplanes[0] == (0xaa00 << 1));
-//   for(int i = 1;i<bitplanes.size();++i)
-//     REQUIRE(bitplanes[i] == 0);
-
-  
-// }
-
