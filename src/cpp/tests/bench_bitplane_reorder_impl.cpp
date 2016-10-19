@@ -74,4 +74,33 @@ BOOST_AUTO_TEST_CASE( sse_version ){
   
 }
 
+BOOST_AUTO_TEST_CASE( sse_deprecated ){
+
+  int ret = 0;
+
+  std::chrono::duration<double> time;
+  
+  for(int i = 0;i<20;++i){
+
+    auto start = std::chrono::high_resolution_clock::now();
+    ret = sqeazy::detail::sse_bitplane_reorder_encode_deprecated<1>(&input[0],
+								    &output[0],
+								    input.size());
+    auto end = std::chrono::high_resolution_clock::now();
+
+    BOOST_CHECK(ret==0);
+    std::fill(output.begin(), output.end(),0);
+
+    time += end-start;
+  }
+
+  BOOST_CHECK(time.count()>0);
+  std::cout << "sse deprecated: " << time.count()/20 << " s\n";
+  std::cout << "\t\t" << input.size()*sizeof(input[0])/(1024.*1024.) << " MB, "
+	    << input.size()*sizeof(input[0])/(1024.*1024.)/(time.count()/20.)<<" MB/s\n";
+
+  
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()
