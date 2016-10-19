@@ -66,18 +66,18 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_FIXTURE_TEST_SUITE( check_sse_default_highbit_16bit, default_hicv_fixture )
 
-BOOST_AUTO_TEST_CASE( versus_default_first_16 ){
+BOOST_AUTO_TEST_CASE( versus_default_first_128 ){
   
-  int ret1 = sqeazy::detail::sse_bitplane_reorder_encode<1>(&input[0], &output[0], 16);
-  int ret2 = sqeazy::detail::scalar_bitplane_reorder_encode<1>(&input[0], &reference[0], 16);
+  int ret1 = sqeazy::detail::sse_bitplane_reorder_encode<1>(&input[0], &output[0], 128);
+  int ret2 = sqeazy::detail::scalar_bitplane_reorder_encode<1>(&input[0], &reference[0], 128);
 
   BOOST_REQUIRE(ret1 == ret2);
-  for(int i = 0;i<16;++i){
+  for(int i = 0;i<128;++i){
     try{
       BOOST_REQUIRE(output[i] == reference[i]);
     }
     catch(...){
-      BOOST_TEST_MESSAGE("[check-sse-default-highbit 16] " << i << " item does not match" );
+      BOOST_TEST_MESSAGE("[check-sse-default-highbit 128] " << i << " item does not match" );
       throw;
     }
   }
@@ -105,18 +105,18 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_FIXTURE_TEST_SUITE( check_sse_default_lobit_16bit, default_locv_fixture )
 
-BOOST_AUTO_TEST_CASE( versus_default_first_16 ){
+BOOST_AUTO_TEST_CASE( versus_default_first_128 ){
 
-  int ret1 = sqeazy::detail::sse_bitplane_reorder_encode<1>(&input[0], &output[0], 16);
-  int ret2 = sqeazy::detail::scalar_bitplane_reorder_encode<1>(&input[0], &reference[0], 16);
+  int ret1 = sqeazy::detail::sse_bitplane_reorder_encode<1>(&input[0], &output[0], 128);
+  int ret2 = sqeazy::detail::scalar_bitplane_reorder_encode<1>(&input[0], &reference[0], 128);
 
   BOOST_REQUIRE(ret1 == ret2);
-  for(unsigned i = 0;i<16;++i){
+  for(unsigned i = 0;i<128;++i){
     try{
       BOOST_REQUIRE(output[i] == reference[i]);
     }
     catch(...){
-      BOOST_TEST_MESSAGE("[check-sse-default-lowbit 16] " << i << " item does not match" );
+      BOOST_TEST_MESSAGE("[check-sse-default-lowbit 128] " << i << " item does not match" );
       throw;
     }
   }
@@ -124,8 +124,8 @@ BOOST_AUTO_TEST_CASE( versus_default_first_16 ){
 
 BOOST_AUTO_TEST_CASE( versus_default_all ){
   
-  int ret1 = sqeazy::detail::sse_bitplane_reorder_encode<1>(&input[0], &output[0], 16);
-  int ret2 = sqeazy::detail::scalar_bitplane_reorder_encode<1>(&input[0], &reference[0], 16);
+  int ret1 = sqeazy::detail::sse_bitplane_reorder_encode<1>(&input[0], &output[0], input.size());
+  int ret2 = sqeazy::detail::scalar_bitplane_reorder_encode<1>(&input[0], &reference[0], input.size());
 
   BOOST_REQUIRE(ret1 == ret2);
   for(unsigned i = 0;i<input.size();++i){
@@ -143,18 +143,18 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_FIXTURE_TEST_SUITE( check_sse_default_mibit_16bit, default_micv_fixture )
 
-BOOST_AUTO_TEST_CASE( versus_default_first_16 ){
+BOOST_AUTO_TEST_CASE( versus_default_first_128 ){
 
-  int ret1 = sqeazy::detail::sse_bitplane_reorder_encode<1>(&input[0], &output[0], 16);
-  int ret2 = sqeazy::detail::scalar_bitplane_reorder_encode<1>(&input[0], &reference[0], 16);
+  int ret1 = sqeazy::detail::sse_bitplane_reorder_encode<1>(&input[0], &output[0], 128);
+  int ret2 = sqeazy::detail::scalar_bitplane_reorder_encode<1>(&input[0], &reference[0], 128);
 
   BOOST_REQUIRE(ret1 == ret2);
-  for(unsigned i = 0;i<16;++i){
+  for(unsigned i = 0;i<128;++i){
     try{
       BOOST_REQUIRE(output[i] == reference[i]);
     }
     catch(...){
-      BOOST_TEST_MESSAGE("[check-sse-default-midbit 16] " << i << " item does not match" );
+      BOOST_TEST_MESSAGE("[check-sse-default-midbit 128] " << i << " item does not match" );
       throw;
     }
   }
@@ -162,11 +162,11 @@ BOOST_AUTO_TEST_CASE( versus_default_first_16 ){
 
 BOOST_AUTO_TEST_CASE( versus_default_all ){
   
-  int ret1 = sqeazy::detail::sse_bitplane_reorder_encode<1>(&input[0], &output[0], 16);
-  int ret2 = sqeazy::detail::scalar_bitplane_reorder_encode<1>(&input[0], &reference[0], 16);
+  int ret1 = sqeazy::detail::sse_bitplane_reorder_encode<1>(&input[0], &output[0], input.size());
+  int ret2 = sqeazy::detail::scalar_bitplane_reorder_encode<1>(&input[0], &reference[0], input.size());
 
   BOOST_REQUIRE(ret1 == ret2);
-  for(unsigned i = 0;i<16;++i){
+  for(unsigned i = 0;i<input.size();++i){
     try{
       BOOST_REQUIRE(output[i] == reference[i]);
     }
@@ -180,26 +180,20 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_FIXTURE_TEST_SUITE( check_sse_ramp_16bit, default_ramp_fixture )
 
-BOOST_AUTO_TEST_CASE( versus_default_first_16 ){
+BOOST_AUTO_TEST_CASE( versus_default_first_128 ){
 
-  int ret1 = sqeazy::detail::sse_bitplane_reorder_encode<1>(&input[0], &output[0], 16);
-  int ret2 = sqeazy::detail::scalar_bitplane_reorder_encode<1>(&input[0], &reference[0], 16);
+  int ret1 = sqeazy::detail::sse_bitplane_reorder_encode<1>(&input[0], &output[0], 128);
+  int ret2 = sqeazy::detail::scalar_bitplane_reorder_encode<1>(&input[0], &reference[0], 128);
 
   
     BOOST_REQUIRE(ret1 == ret2);
-    for(unsigned i = 0;i<16;++i){
-      BOOST_CHECK_MESSAGE(output[i] == calc_first_16_hand[i],
-			  "[versus_default_first_16] sse_bitplane failed (obs exp):"
-			  << output[i] << " " << calc_first_16_hand[i]);
-      
-      BOOST_CHECK_MESSAGE(reference[i] == calc_first_16_hand[i],
-			  "[versus_default_first_16] scalar_bitplane failed (obs exp):"
-			  << reference[i] << " " << calc_first_16_hand[i]);
+    for(unsigned i = 0;i<128;++i){
+    
       try{
 	BOOST_REQUIRE(output[i] == reference[i]);
       }
       catch(...){
-	BOOST_TEST_MESSAGE("[check-sse-default 16 zick-zack] sse-vs-scalar" << i << " / "<< 16<<" item does not match" );
+	BOOST_TEST_MESSAGE("[check-sse-default 128 zick-zack] sse-vs-scalar" << i << " / "<< 128<<" item does not match" );
 	throw;
       }
       
@@ -208,8 +202,8 @@ BOOST_AUTO_TEST_CASE( versus_default_first_16 ){
 
 BOOST_AUTO_TEST_CASE( versus_default_all ){
 
- int ret1 = sqeazy::detail::sse_bitplane_reorder_encode<1>(&input[0], &output[0], 16);
-  int ret2 = sqeazy::detail::scalar_bitplane_reorder_encode<1>(&input[0], &reference[0], 16);
+  int ret1 = sqeazy::detail::sse_bitplane_reorder_encode<1>(&input[0], &output[0], input.size());
+  int ret2 = sqeazy::detail::scalar_bitplane_reorder_encode<1>(&input[0], &reference[0], input.size());
 
   
     BOOST_REQUIRE(ret1 == ret2);

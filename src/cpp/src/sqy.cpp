@@ -79,7 +79,6 @@ int brief_help(const options_type& _sqy_options ,
   std::cout << "usage: " << me << " <-h|optional> <verb> <files|..>\n"
 	    << "\n"
 	    << "available verbs (their description and aliases):\n"
-	    // << "\t" <<  "help" << "\n"
     ;
 
   std::vector<std::string> keys;
@@ -114,7 +113,7 @@ int brief_help(const options_type& _sqy_options ,
 	    << "available flags to sqy only:\n"
 	    << _sqy_options << "\n";
 
-  
+  return 0;
 }
 
 static void print_pipeline_descriptions(){

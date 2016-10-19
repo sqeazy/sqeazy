@@ -573,7 +573,7 @@ BOOST_AUTO_TEST_CASE( consume_and_write_2p1_36x ){
   
     auto written = instance.write_segments(output_36x.begin(),
 					   output_36x.end(),
-					   it*sqd::bitshuffle<type>::num_elements_per_simd);
+					   it*sqd::bitshuffle<type>::n_elements_per_simd);
 
     BOOST_REQUIRE_NE(written-output_36x.begin(),0);
     BOOST_REQUIRE_EQUAL(written-output_36x.end(),0);
@@ -700,7 +700,7 @@ BOOST_AUTO_TEST_CASE( consume_and_write_2p1_36x ){
   
     auto written = instance.write_segments(output_36x.begin(),
 					   output_36x.end(),
-					   it*sqd::bitshuffle<type>::num_elements_per_simd);
+					   it*sqd::bitshuffle<type>::n_elements_per_simd);
 
     BOOST_REQUIRE_NE(written-output_36x.begin(),0);
     BOOST_REQUIRE_EQUAL(written-output_36x.end(),0);

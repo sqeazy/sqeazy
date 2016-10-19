@@ -77,7 +77,7 @@ template <const unsigned size = (32*(1 << 10)), typename T = unsigned short>
 struct ramp_fixture{     
   std::vector<T> input; 
   std::vector<T> output; 
-  std::vector<T> calc_first_16_hand; 
+  std::vector<T> calc_first_16_hand;
   std::vector<T> reference;
 
   ramp_fixture():
@@ -91,10 +91,12 @@ struct ramp_fixture{
 	input[i] = i;
       }
     
-    calc_first_16_hand[11] = 0xff;// = 255
-    calc_first_16_hand[12] = 0xf0f;// = 3855
-    calc_first_16_hand[13] = 0x3333;// = 13107
-    calc_first_16_hand[14] = 0x5555;// = 21845
+    calc_first_16_hand[11] = 0xff;  // =   255,        11111111
+    calc_first_16_hand[12] = 0xf0f; // =  3855,    111100001111
+    calc_first_16_hand[13] = 0x3333;// = 13107,  11001100110011 (2nd to last bit)
+    calc_first_16_hand[14] = 0x5555;// = 21845, 101010101010101 (last bit)
+
+    
 
   }
 };

@@ -237,11 +237,12 @@ int forward_conversion(const bfs::path& _src,
       std::cout << "[SQY]\tUsing quantiser " << quantiser_definition << "\n";
 
     auto pipe16 = sqy::dypeline<std::uint16_t>::from_string(quantiser_definition);
-    //apply quantiser (dropping LUT)
+   
     if(_config["chroma_sampling"].as<std::string>() == sqeazy::yuv420formatter::y4m_code()){
 
       sqeazy::uint16_image_stack_cref loaded_stack(reinterpret_cast<const uint16_t*>(input.data()),c_storage_order_shape);
-      auto encoded_end = pipe16.detail_encode(loaded_stack.data(),
+      // auto encoded_end = 
+	pipe16.detail_encode(loaded_stack.data(),
 					      (char*)converted_stack.data(),
 					      c_storage_order_shape,
 					      converted_stack.num_elements()*sizeof(std::uint8_t));

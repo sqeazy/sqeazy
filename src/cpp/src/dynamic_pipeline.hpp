@@ -547,7 +547,7 @@ namespace sqeazy
       hdr.set_compressed_size_byte<incoming_t>(compressed_bytes*sizeof(outgoing_t));
       hdr.set_pipeline<incoming_t>(name());
 
-      if(hdr.size()!=hdr_shift){
+      if(hdr.size()!=(std::size_t)hdr_shift){
 	std::copy(first_output, first_output + compressed_bytes,
 		  output_buffer+hdr.size()
 		  );
@@ -729,7 +729,6 @@ namespace sqeazy
       std::size_t output_len = std::accumulate(out_shape.begin(), out_shape.end(),
 					       1,
 					       std::multiplies<std::size_t>());
-      std::size_t out_size_bytes = output_len*sizeof(*_out);
 
 
       std::vector<incoming_t> temp(output_len,0);

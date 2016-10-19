@@ -1,6 +1,8 @@
 #ifndef _BITSWAP_SCHEME_SSE_H_
 #define _BITSWAP_SCHEME_SSE_H_
 
+
+
 #include "sqeazy_common.hpp"
 #include "sse_utils.hpp"
 
@@ -273,7 +275,7 @@ namespace sqeazy {
 							raw_type* _output,
 							const size_type& _length)
     {
-      static_assert(nbits_per_plane == 1, "sse_bitplane_reorder_encode does not yet support bitplane widths larger than 1");
+      //static_assert(nbits_per_plane == 1, "sse_bitplane_reorder_encode does not yet support bitplane widths larger than 1");
 
       sqeazy::detail::bitshuffle<raw_type, nbits_per_plane> instance;
       const std::uint32_t n_iterations = _length/(instance.num_elements());

@@ -628,18 +628,20 @@ namespace sqeazy {
     struct bitshuffle
     {
 
-      static const int in_type_width = sizeof(in_type)*CHAR_BIT;
+      typedef typename std::make_unsigned<in_type>::type type;
+      
+      static const int type_width = sizeof(type)*CHAR_BIT;
       static const int simd_width = 128;
       static const int simd_width_bytes = simd_width/CHAR_BIT;
-      static const int n_elements_per_simd = simd_width/in_type_width;
-      static const int n_segments = in_type_width/n_bits_per_segment;
-      static const int n_elements = simd_width_bytes*n_segments/sizeof(in_type);
+      static const int n_elements_per_simd = simd_width/type_width;
+      static const int n_segments = type_width/n_bits_per_segment;
+      static const int n_elements = simd_width_bytes*n_segments/sizeof(type);
       
-      static_assert(n_bits_per_segment <= in_type_width,
+      static_assert(n_bits_per_segment <= type_width,
 		    "sqeazy::detail::bitshuffle received more n_bits_per_segment that given type yields");
       
       
-      std::array<boost::dynamic_bitset<in_type>, n_segments> segments;
+      std::array<boost::dynamic_bitset<type>, n_segments> segments;
       std::uint32_t n_bits_consumed;
 
       bitshuffle():
@@ -648,7 +650,7 @@ namespace sqeazy {
 
 	std::fill(segments.begin(),
 		  segments.end(),
-		  boost::dynamic_bitset<in_type>(simd_width)
+		  boost::dynamic_bitset<type>(simd_width)
 		  );
 	
       }
@@ -672,7 +674,7 @@ namespace sqeazy {
 
       
       std::size_t num_elements() const {
-	return size_in_bytes()/sizeof(in_type);
+	return size_in_bytes()/sizeof(type);
       }
       
       void set(std::size_t seg_id, std::size_t bit_id = 0)  {
@@ -703,7 +705,7 @@ namespace sqeazy {
       }
 
       /**
-	 \brief collect msb values from block in chunks of in_type, the resulting bitset contains the aquired values starting at the MSB
+	 \brief collect msb values from block in chunks of type, the resulting bitset contains the aquired values starting at the MSB
 
 	 \param[in] 
 
@@ -711,13 +713,13 @@ namespace sqeazy {
 	 \retval 
 
       */
-      boost::dynamic_bitset<in_type> gather_msb_range(__m128i block, int n_bits){
+      boost::dynamic_bitset<type> gather_msb_range(__m128i block, int n_bits){
 
-	 boost::dynamic_bitset<in_type> value;
+	 boost::dynamic_bitset<type> value;
 
 	if(n_bits == 1){
-	  gather_msb<in_type> op;
-	  value = boost::dynamic_bitset<in_type>(simd_width,op(block));
+	  gather_msb<type> op;
+	  value = boost::dynamic_bitset<type>(simd_width,op(block));
 	  value <<= (simd_width - 16);
 	}
 	
@@ -727,20 +729,20 @@ namespace sqeazy {
       template <typename iterator_t>
       iterator_t consume(iterator_t _begin, iterator_t _end){
 
-	static_assert(sizeof(decltype(*_begin)) == sizeof(in_type), "received iterator type does not match assumed type");
+	static_assert(sizeof(decltype(*_begin)) == sizeof(type), "received iterator type does not match assumed type");
 
 	std::size_t size = _end - _begin;
 	
-	if(size*sizeof(in_type) < simd_width_bytes)
+	if(size*sizeof(type) < simd_width_bytes)
 	  return _begin;
 
 	
 	iterator_t value = _begin;
-	const int step_size = simd_width/in_type_width;
+	const int step_size = simd_width/type_width;
 	std::uint32_t segment_counter = 0;
 	
 	__m128i current;
-	shift_left_m128i<in_type> left_shifter;
+	shift_left_m128i<type> left_shifter;
 	
 	for(;value!=_end;value+=step_size, ++segment_counter){
 
@@ -752,7 +754,7 @@ namespace sqeazy {
 	  for(int s = 0;s<n_segments;++s){
 
 	    //extract msb(s)
-	    boost::dynamic_bitset<in_type> extracted = gather_msb_range(current,n_bits_per_segment);
+	    boost::dynamic_bitset<type> extracted = gather_msb_range(current,n_bits_per_segment);
 
 	    //update segment
 	    segments[s] |= (extracted >> (segment_counter*n_elements_per_simd));
