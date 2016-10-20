@@ -91,10 +91,15 @@ check_cxx_compiler_flag(-ffast-math HAS_FAST_MATH_COMPILERFLAG)
 #C/C++ specific flags
 #for GCC
 IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "5.0")
+    set(USE_CXX11_ABI ON)
+  endif()
   if(${USE_CXX11_ABI})
     add_definitions(-D_GLIBCXX_USE_CXX11_ABI=1)
+    message(">> [GCC ${CMAKE_CXX_COMPILER_VERSION}] adding -D_GLIBCXX_USE_CXX11_ABI=1")
   else()
     add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
+    message(">> [GCC ${CMAKE_CXX_COMPILER_VERSION}] adding -D_GLIBCXX_USE_CXX11_ABI=1")
   endif()
   
   SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -ggdb3 -Wno-overflow")
