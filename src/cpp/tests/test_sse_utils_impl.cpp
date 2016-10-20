@@ -7,8 +7,9 @@
 #include <iterator> // for ostream_iterator
 
 #include "encoders/sse_utils.hpp"
+namespace sqd = sqeazy::detail;
 
-#include "boost/dynamic_bitset.hpp"
+//#include "boost/dynamic_bitset.hpp"
 
 
 int pop(unsigned x)
@@ -71,6 +72,38 @@ BOOST_AUTO_TEST_CASE( check_movemask ){
   BOOST_CHECK_EQUAL(mask,0xff00);
 }
 
+BOOST_AUTO_TEST_CASE( to_block_range ){
+
+  std::bitset<128> test(43);
+  test.set(127);
+  test.set(63);
+  
+  std::array<std::uint8_t,16> tgt8	;
+  std::array<std::uint16_t,8> tgt16	;
+  std::array<std::uint32_t,4> tgt32	;
+
+  std::fill(tgt8.begin(), tgt8.end()	,0);
+  std::fill(tgt16.begin(), tgt16.end()	,0);
+  std::fill(tgt32.begin(), tgt32.end()	,0);
+  
+  sqd::to_block_range(test,
+		      tgt8.begin(), tgt8.end());
+  sqd::to_block_range(test,
+		      tgt16.begin(), tgt16.end());
+  sqd::to_block_range(test,
+		      tgt32.begin(), tgt32.end());
+  
+  BOOST_CHECK_EQUAL(tgt8 .back(),43);
+  BOOST_CHECK_EQUAL(tgt16.back(),43);
+  BOOST_CHECK_EQUAL(tgt32.back(),43);
+  BOOST_CHECK_NE(tgt8 .front(),43);
+  BOOST_CHECK_NE(tgt16.front(),43);
+  BOOST_CHECK_NE(tgt32.front(),43);
+  BOOST_CHECK_EQUAL(tgt8 .front(),1 << 7);
+  BOOST_CHECK_EQUAL(tgt16.front(),1 << 15);
+  BOOST_CHECK_EQUAL(tgt32.front(),1 << 31);
+  
+}
 
 
 BOOST_FIXTURE_TEST_SUITE( movemask_sanity_checks , sse_fixture )
@@ -79,7 +112,7 @@ BOOST_AUTO_TEST_CASE( from_char_buffer ){
 
   __m128i input = _mm_load_si128(reinterpret_cast<const __m128i*>(msb_is_1.data()));
   int plain_res = _mm_movemask_epi8(input);
-  boost::dynamic_bitset<std::uint8_t> plain(32,plain_res);
+  std::bitset<32> plain(plain_res);
 
   
   BOOST_CHECK_EQUAL(plain.any(),true);
@@ -93,7 +126,8 @@ BOOST_AUTO_TEST_CASE( from_char_buffer ){
   msb_is_1[msb_is_1.size()-1] = 0;
   input = _mm_load_si128(reinterpret_cast<const __m128i*>(msb_is_1.data()));
   int asymm_res = _mm_movemask_epi8(input);
-  boost::dynamic_bitset<std::uint8_t> asymm(32,asymm_res);
+  //boost::dynamic_bitset<std::uint8_t> asymm(32,asymm_res);
+  std::bitset<32> asymm(asymm_res);
     
   BOOST_CHECK_EQUAL(asymm.any(),true);
   BOOST_CHECK_EQUAL(asymm.count(),16-1);
@@ -146,8 +180,9 @@ BOOST_AUTO_TEST_CASE( from_asymm_char_buffer ){
 
   BOOST_CHECK_EQUAL(plain_res,0x4ffc);
   
-  boost::dynamic_bitset<std::uint8_t> plain(32,plain_res);
-
+  //boost::dynamic_bitset<std::uint8_t> plain(32,plain_res);
+  std::bitset<32> plain(plain_res);
+  
   BOOST_CHECK_EQUAL(plain.count(),16-5);
   BOOST_CHECK_EQUAL(plain.any(),true);
   
@@ -175,13 +210,15 @@ BOOST_AUTO_TEST_CASE( from_asymm_char_buffer ){
   BOOST_CHECK_EQUAL(plain.test(31),false);
 
   std::array<std::uint8_t,4> static_recasted;
-  boost::to_block_range(plain, static_recasted.rbegin());
+  sqd::to_block_range(plain,
+		      static_recasted.begin(),
+		      static_recasted.end());
 
   
-  BOOST_CHECK_EQUAL(static_recasted[0],0);
-  BOOST_CHECK_EQUAL(static_recasted[1],0);
-  BOOST_CHECK_EQUAL(static_recasted[2],0x4f);
-  BOOST_CHECK_EQUAL(static_recasted[3],0xfc);
+  BOOST_CHECK_EQUAL(static_recasted[3],0);
+  BOOST_CHECK_EQUAL(static_recasted[2],0);
+  BOOST_CHECK_EQUAL(static_recasted[1],0x4f);
+  BOOST_CHECK_EQUAL(static_recasted[0],0xfc);
   
   
 }
@@ -233,7 +270,7 @@ BOOST_AUTO_TEST_CASE( gather_msb_8 ){
   sqeazy::detail::gather_msb<std::uint8_t> op;
   
   auto res = op(input);
-  boost::dynamic_bitset<std::uint8_t> received(16,res);  
+  std::bitset<16> received(res);  
 
   BOOST_CHECK_EQUAL(received.count(),msb_is_1.size());
 }
@@ -245,7 +282,7 @@ BOOST_AUTO_TEST_CASE( gather_msb_8_order_right ){
   
   sqeazy::detail::gather_msb<std::uint8_t> op;
   auto res = op(input);
-  boost::dynamic_bitset<std::uint8_t> received(16,res);  
+  std::bitset<16> received(res);  
 
   BOOST_CHECK_EQUAL(received.count(),msb_is_1.size()-1);
   BOOST_CHECK_EQUAL(received.test(1),true);
@@ -262,7 +299,7 @@ BOOST_AUTO_TEST_CASE( gather_msb_16 ){
 
   sqeazy::detail::gather_msb<std::uint16_t> op;
   auto res = op(input);
-  boost::dynamic_bitset<std::uint16_t> received(16,res);  
+  std::bitset<16> received(res);  
 
   BOOST_CHECK_EQUAL(received.count(),msb_is_1_16.size());
 }
@@ -276,7 +313,7 @@ BOOST_AUTO_TEST_CASE( gather_msb_16_order_right ){
   auto res = op(input);
   BOOST_CHECK_EQUAL(res,0xfe00 );
   
-  boost::dynamic_bitset<std::uint16_t> received(16,res); 
+  std::bitset<16> received(res);  
 
   BOOST_CHECK_EQUAL(received.count(),msb_is_1_16.size()-1);
 
@@ -295,7 +332,7 @@ BOOST_AUTO_TEST_CASE( gather_msb_16_pattern_right ){
 
   sqeazy::detail::gather_msb<std::uint16_t> op;
   auto res = op(input);
-  boost::dynamic_bitset<std::uint16_t> received(16,res); 
+  std::bitset<16> received(res);  
 
   BOOST_CHECK_EQUAL(received.count(),4);
   
@@ -311,7 +348,7 @@ BOOST_AUTO_TEST_CASE( gather_msb_32 ){
 
   sqeazy::detail::gather_msb<std::uint32_t> op;
   auto res = op(input);
-  boost::dynamic_bitset<std::uint16_t> received(16,res); 
+  std::bitset<16> received(res);  
 
   BOOST_CHECK_EQUAL(received.count(),msb_is_1_32.size());
 }
@@ -326,7 +363,7 @@ BOOST_AUTO_TEST_CASE( gather_msb_32_order_right ){
 
   BOOST_CHECK_EQUAL(res,0xe000);
   
-  boost::dynamic_bitset<std::uint16_t> received(16,res); 
+  std::bitset<16> received(res);  
 
   BOOST_CHECK_EQUAL(received.count(),msb_is_1_32.size()-1);
   BOOST_CHECK_EQUAL(received.test(15),true);
@@ -426,7 +463,7 @@ struct single_bitplane_fixture {
   
 };
 
-namespace sqd = sqeazy::detail;
+
 
 using single_bitplane_fixture_16 = single_bitplane_fixture<std::uint16_t>;
 using single_bitplane_fixture_8 = single_bitplane_fixture<std::uint8_t>;
@@ -463,7 +500,7 @@ BOOST_AUTO_TEST_CASE( reset ){
 BOOST_AUTO_TEST_CASE( gather_msb_range ){
   sqd::bitshuffle<type> instance;
   
-  boost::dynamic_bitset<type> result = instance.gather_msb_range(input_block, 1);
+  sqd::bitshuffle<type>::bitset_t result = instance.gather_msb_range(input_block, 1);
 
   BOOST_CHECK_NE(result.any(),false);
 

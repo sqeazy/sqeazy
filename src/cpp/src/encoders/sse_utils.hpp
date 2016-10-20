@@ -5,6 +5,8 @@
 #include <climits>
 #include <array>
 #include <iterator>
+#include <bitset>
+#include <string>
 
 #include "boost/dynamic_bitset.hpp"
 
@@ -15,6 +17,42 @@
 namespace sqeazy {
 
   namespace detail {
+
+    template <std::size_t N, typename iterator_t>
+    void to_block_range(const std::bitset<N>& _src,
+			iterator_t _begin,
+			iterator_t _end){
+  
+      static const std::size_t ulong_bytes = sizeof(unsigned long);  
+      static const std::size_t ulong_bits = ulong_bytes*CHAR_BIT;
+      static const std::size_t n_chunks = (N + ulong_bits - 1)/ulong_bits;
+
+      typedef typename std::remove_reference<decltype(*_begin)>::type value_t;
+      
+      // const std::size_t size = _end - _begin;
+      // const std::size_t size_bytes = size*sizeof(*_begin);
+      // const std::size_t size_bits = size_bytes*CHAR_BIT;
+      
+      auto dest = reinterpret_cast<value_t*>(&*_begin);
+      unsigned long val = 0;
+      
+      for(std::size_t c = 0;c < n_chunks;++c){
+	int right_shift = (n_chunks - 1 - c )*ulong_bits;
+	auto temp = _src >> right_shift;
+	temp &= ~((temp >> ulong_bits) << ulong_bits);
+	val = temp.to_ulong();
+
+	value_t* vbegin = reinterpret_cast<value_t*>(&val);
+	value_t* vend = vbegin + (sizeof(val)/sizeof(value_t));
+	std::reverse_iterator<value_t*> r(dest + ((c+1)*sizeof(val)/sizeof(value_t)));
+	std::copy(vbegin,
+		  vend,
+		  r);
+    
+      }
+    
+  
+    }
 
     /**
        \brief functor to 
@@ -39,22 +77,22 @@ namespace sqeazy {
 
 	//reverse m128
 	static const __m128i reverse_bytes =  _mm_set_epi8(0,
-						    1,
-						    2,
-						    3,
-						    4,
-						    5,
-						    6,
-						    7,
-						    8,
-						    9,
-						    10,
-						    11,
-						    12,
-						    13,
-						    14,
-						    15
-						    );
+							   1,
+							   2,
+							   3,
+							   4,
+							   5,
+							   6,
+							   7,
+							   8,
+							   9,
+							   10,
+							   11,
+							   12,
+							   13,
+							   14,
+							   15
+							   );
 	
 
 
@@ -640,18 +678,19 @@ namespace sqeazy {
       static_assert(n_bits_per_segment <= type_width,
 		    "sqeazy::detail::bitshuffle received more n_bits_per_segment that given type yields");
       
+      typedef typename std::bitset<simd_width> bitset_t;
       
-      std::array<boost::dynamic_bitset<type>, n_segments> segments;
+      std::array<bitset_t, n_segments> segments;
       std::uint32_t n_bits_consumed;
 
       bitshuffle():
 	segments(),
 	n_bits_consumed(0){
 
-	std::fill(segments.begin(),
-		  segments.end(),
-		  boost::dynamic_bitset<type>(simd_width)
-		  );
+	// std::fill(segments.begin(),
+	// 	  segments.end(),
+	// 	  boost::dynamic_bitset<type>(simd_width)
+	// 	  );
 	
       }
 
@@ -713,14 +752,15 @@ namespace sqeazy {
 	 \retval 
 
       */
-      boost::dynamic_bitset<type> gather_msb_range(__m128i block, int n_bits){
+      bitset_t gather_msb_range(__m128i block, int n_bits){
 
-	 boost::dynamic_bitset<type> value;
+	bitset_t value;
 
 	if(n_bits == 1){
 	  gather_msb<type> op;
-	  value = boost::dynamic_bitset<type>(simd_width,op(block));
-	  value <<= (simd_width - 16);
+	  const auto val = op(block);
+	  value = bitset_t(val);
+	  value <<= (simd_width - (sizeof(val)*CHAR_BIT));
 	}
 	
 	return value;
@@ -743,6 +783,7 @@ namespace sqeazy {
 	
 	__m128i current;
 	shift_left_m128i<type> left_shifter;
+	bitset_t extracted;
 	
 	for(;value!=_end;value+=step_size, ++segment_counter){
 
@@ -754,7 +795,7 @@ namespace sqeazy {
 	  for(int s = 0;s<n_segments;++s){
 
 	    //extract msb(s)
-	    boost::dynamic_bitset<type> extracted = gather_msb_range(current,n_bits_per_segment);
+	    extracted = gather_msb_range(current,n_bits_per_segment);
 
 	    //update segment
 	    segments[s] |= (extracted >> (segment_counter*n_elements_per_simd));
@@ -796,10 +837,11 @@ namespace sqeazy {
 	
 	for( std::uint32_t s = 0;s < segments.size();++s){
 	  global_offset = s*segment_spacing;
-	  value = _begin + global_offset + offset + n_elements_per_simd;
+	  value = _begin + global_offset + offset;
 	  
-	  std::reverse_iterator<iterator_t> r (value);
-	  boost::to_block_range(segments[s],r);
+	  to_block_range(segments[s],
+			 value,
+			 value+n_elements_per_simd);
 	  
 	}
 	
