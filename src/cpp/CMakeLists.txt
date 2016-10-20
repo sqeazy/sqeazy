@@ -41,6 +41,7 @@ SET (SQEAZY_VENDOR_URL "www.mpi-cbg.de")
 SET (SQEAZY_ID "${SQEAZY_VENDOR_ID}.${PROJECT_NAME}")
 
 option(BUNDLE_SQEAZY "compile sqeazy ready for bundling" OFF)
+option(USE_CXX11_ABI "enable _GLIBCXX_USE_CXX11_ABI in GCC 5.0+" ON)
 
 # trying to setup paths so this package can be picked up
 set(INSTALL_BIN_DIR bin CACHE PATH "Installation directory for executables")
@@ -90,6 +91,12 @@ check_cxx_compiler_flag(-ffast-math HAS_FAST_MATH_COMPILERFLAG)
 #C/C++ specific flags
 #for GCC
 IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
+  if(${USE_CXX11_ABI})
+    add_definitions(-D_GLIBCXX_USE_CXX11_ABI=1)
+  else()
+    add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
+  endif()
+  
   SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -ggdb3 -Wno-overflow")
   SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -ggdb3 -Wno-overflow")
 
@@ -201,7 +208,7 @@ IF(CMAKE_BUILD_TYPE STREQUAL Debug)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
 ENDIF()
 
-IF(CMAKE_BUILD_TYPE STREQUAL RelWDbg)
+IF(CMAKE_BUILD_TYPE STREQUAL RelWDbg OR CMAKE_BUILD_TYPE STREQUAL RelwDbg)
   MESSAGE(STATUS "using ${CMAKE_BUILD_TYPE} build flags: ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELWDBG}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELWDBG}")
 ENDIF()
