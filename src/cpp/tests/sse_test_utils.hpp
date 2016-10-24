@@ -76,6 +76,9 @@ struct const_anyvalue_fixture{
 template <const unsigned size = (32*(1 << 10)),
 	    typename T = unsigned short>
 struct ramp_fixture{     
+
+  typedef T value_t;
+  
   std::vector<T> input; 
   std::vector<T> output; 
   std::vector<T> calc_first_16_hand;

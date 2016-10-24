@@ -57,6 +57,9 @@ target_link_libraries(test_bitswap_scheme_impl ${Boost_LIBRARIES})
 add_executable(test_bitplane_reorder_impl test_bitplane_reorder_impl.cpp)
 target_link_libraries(test_bitplane_reorder_impl ${Boost_LIBRARIES})
 
+add_executable(test_bitplane_reorder_on_ramp_impl test_bitplane_reorder_on_ramp_impl.cpp)
+target_link_libraries(test_bitplane_reorder_on_ramp_impl ${Boost_LIBRARIES})
+
 add_executable(bench_bitplane_reorder_impl bench_bitplane_reorder_impl.cpp)
 target_link_libraries(bench_bitplane_reorder_impl ${Boost_LIBRARIES})
 
