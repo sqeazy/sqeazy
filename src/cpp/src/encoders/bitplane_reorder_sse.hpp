@@ -275,82 +275,26 @@ namespace sqeazy {
 							raw_type* _output,
 							const size_type& _length)
     {
-      //static_assert(nbits_per_plane == 1, "sse_bitplane_reorder_encode does not yet support bitplane widths larger than 1");
-
-      sqeazy::detail::bitshuffle<raw_type, nbits_per_plane> instance;
-      const std::uint32_t n_iterations = _length/(instance.num_elements());
-      const std::uint32_t rest_iterations = _length % (instance.num_elements());
-      if(rest_iterations)
-	std::cerr << "[sse_bitplane_reorder_encode] WARNING input array size has remainder, skipping last "
-		  << rest_iterations << " elements\n";
-
-      std::size_t missed_elements_consume = 0;
-      std::size_t missed_elements_written = 0;
-      //setup data structures for looping
-      vec_xor<raw_type> xoring;
-      vec_rotate_left<raw_type> rotate;
-
-      __m128i input;
       
-     
+      static const std::size_t n_bits_per_element = sizeof(raw_type)*CHAR_BIT;
+      static const std::size_t n_elements_per_simd = 128/n_bits_per_element;
+      static_assert((n_bits_per_element) % nbits_per_plane == 0,"\n\t[sse_bitplane_reorder_encode] number of bits per element not divisible byt number of bits per plane");
       
-      std::array<raw_type, sqeazy::detail::bitshuffle<raw_type, nbits_per_plane>::n_elements> temp;
+      const std::size_t n_segments_per_element = n_bits_per_element/nbits_per_plane;
+      static const std::size_t n_elements_full_sweep = n_elements_per_simd*n_segments_per_element;
       
-      for( std::uint32_t it = 0;it < n_iterations;++it){
-
-	auto in_begin	= _input + it*instance.num_elements();
-	auto in_end	= in_begin + instance.num_elements();
-
-	std::copy(in_begin,
-		  in_end,
-		  temp.begin());
-
-	for(auto chunk = temp.begin();
-	    chunk!= temp.end();
-	    chunk += sqeazy::detail::bitshuffle<raw_type, nbits_per_plane>::n_elements_per_simd){
-
-	  //TODO: replace this with _mm_stream_store_si128?
-	  input = _mm_load_si128(reinterpret_cast<const __m128i*>(&*chunk));
-	  
-	  // no need to xor, but we implement it anyway for the sake of completeness
-	  if(std::numeric_limits<raw_type>::is_signed)
-	    xoring(&input);
-	  
-	  input = rotate(&input);
-	  
-	  //store input back
-	  _mm_stream_si128(reinterpret_cast<__m128i*>(&*chunk),
-			   input);
-	  
-	}
+      if(_length % n_elements_full_sweep){
+	std::cerr << "[sse_bitplane_reorder_encode] " << _length << " ("<< n_bits_per_element
+		  <<" bits per element) cannot be processed by "
+		  << n_elements_full_sweep << " without rest\n";
 	
-	
-	instance.reset();
-
-	auto consumed = instance.consume(temp.begin(),
-					 temp.end()
-					 );
-
-	missed_elements_consume += (temp.end() - consumed);
-		
-	auto written = instance.write_segments(_output,
-					       _output + _length,
-					       it*sqeazy::detail::bitshuffle<raw_type>::n_elements_per_simd);
-
-	missed_elements_written += (_output + _length - written);
-	
-      }
-      
-      if(missed_elements_consume){
-	std::cerr << "[sse_bitplane_reorder_encode] failed to reorder array for "<< missed_elements_consume <<" elements \n";
 	return FAILURE;
       }
-
-      if(missed_elements_written){
-	std::cerr << "[sse_bitplane_reorder_encode] failed to write "<< missed_elements_written <<" elements of aggregated bitplanes\n";
-	return FAILURE;
-      }
-
+      
+      sqeazy::detail::simd_segment_broadcast(_input,
+					     _input + _length,
+					     _output);
+      
       return SUCCESS;
       
     }

@@ -8,9 +8,6 @@
 #include <bitset>
 #include <string>
 
-#include "boost/dynamic_bitset.hpp"
-
-
 #include <xmmintrin.h>
 #include <smmintrin.h>
 
@@ -18,41 +15,7 @@ namespace sqeazy {
 
   namespace detail {
 
-    template <std::size_t N, typename iterator_t>
-    void to_block_range(const std::bitset<N>& _src,
-			iterator_t _begin,
-			iterator_t _end){
-  
-      static const std::size_t ulong_bytes = sizeof(unsigned long);  
-      static const std::size_t ulong_bits = ulong_bytes*CHAR_BIT;
-      static const std::size_t n_chunks = (N + ulong_bits - 1)/ulong_bits;
-
-      typedef typename std::remove_reference<decltype(*_begin)>::type value_t;
-      
-      // const std::size_t size = _end - _begin;
-      // const std::size_t size_bytes = size*sizeof(*_begin);
-      // const std::size_t size_bits = size_bytes*CHAR_BIT;
-      
-      auto dest = reinterpret_cast<value_t*>(&*_begin);
-      unsigned long val = 0;
-      
-      for(std::size_t c = 0;c < n_chunks;++c){
-	int right_shift = (n_chunks - 1 - c )*ulong_bits;
-	auto temp = _src >> right_shift;
-	temp &= ~((temp >> ulong_bits) << ulong_bits);
-	val = temp.to_ulong();
-
-	value_t* vbegin = reinterpret_cast<value_t*>(&val);
-	value_t* vend = vbegin + (sizeof(val)/sizeof(value_t));
-	std::reverse_iterator<value_t*> r(dest + ((c+1)*sizeof(val)/sizeof(value_t)));
-	std::copy(vbegin,
-		  vend,
-		  r);
     
-      }
-    
-  
-    }
 
     /**
        \brief functor to 
@@ -661,196 +624,110 @@ namespace sqeazy {
       }
     };
 
+    static inline __m128i sse_insert_epi16(const __m128i& _data,
+					  int _value,
+					  int _position){
 
-    template<typename in_type, std::uint32_t n_bits_per_segment = 1>
-    struct bitshuffle
-    {
+      switch(_position){
+      case 0: return _mm_insert_epi16(_data,_value,0);break;
+      case 1: return _mm_insert_epi16(_data,_value,1);break;
+      case 2: return _mm_insert_epi16(_data,_value,2);break;
+      case 3: return _mm_insert_epi16(_data,_value,3);break;
+      case 4: return _mm_insert_epi16(_data,_value,4);break;
+      case 5: return _mm_insert_epi16(_data,_value,5);break;
+      case 6: return _mm_insert_epi16(_data,_value,6);break;
+      case 7: return _mm_insert_epi16(_data,_value,7);break;
+      default: return _data;break;
+      };
+  
+    }
 
-      typedef typename std::make_unsigned<in_type>::type type;
-      
-      static const int type_width = sizeof(type)*CHAR_BIT;
-      static const int simd_width = 128;
-      static const int simd_width_bytes = simd_width/CHAR_BIT;
-      static const int n_elements_per_simd = simd_width/type_width;
-      static const int n_segments = type_width/n_bits_per_segment;
-      static const int n_elements = simd_width_bytes*n_segments/sizeof(type);
-      
-      static_assert(n_bits_per_segment <= type_width,
-		    "sqeazy::detail::bitshuffle received more n_bits_per_segment that given type yields");
-      
-      typedef typename std::bitset<simd_width> bitset_t;
-      
-      std::array<bitset_t, n_segments> segments;
-      std::uint32_t n_bits_consumed;
+    template <typename in_iterator_t, typename out_iterator_t>
+    void simd_segment_broadcast(in_iterator_t _begin,
+				in_iterator_t _end,
+				out_iterator_t _dst){
 
-      bitshuffle():
-	segments(),
-	n_bits_consumed(0){
+      typedef typename std::iterator_traits<in_iterator_t>::value_type in_value_t;
+      typedef typename std::iterator_traits<out_iterator_t>::value_type out_value_t;
 
-	// std::fill(segments.begin(),
-	// 	  segments.end(),
-	// 	  boost::dynamic_bitset<type>(simd_width)
-	// 	  );
+      static_assert(std::is_same<in_value_t,out_value_t>::value, "[sse_segment_broadcast] received value is not integral");
+      static_assert(std::is_integral<in_value_t>::value, "[sse_segment_broadcast] received value is not integral");
+      //static_assert((std::is_same<value_t,std::uint16_t>::value || std::is_same<value_t,std::int16_t>::value) && sizeof(value_t) == 2, "[simd_copy] unsigned short != 2");
+  
+				// static const std::size_t n_bytes_simd		= sizeof(__m128i);
+      //      static const std::size_t n_bits_simd		= n_bytes_simd*CHAR_BIT;
+      static const std::size_t n_bits_in_value_t	= sizeof(in_value_t)*CHAR_BIT;
+      constexpr    std::size_t n_elements_per_simd	= 128/(CHAR_BIT*sizeof(in_value_t));
+
+      const std::size_t n_segments		= sizeof(in_value_t)*CHAR_BIT;
+
+      const std::size_t n_elements		= _end - _begin;
+      const std::size_t segment_offset	= n_elements/n_segments;
+      const std::size_t n_elements_per_seg	= n_elements*1/n_bits_in_value_t;
+      const std::size_t n_iterations	= n_elements/n_elements_per_simd;
+      constexpr std::size_t n_filled_segments_per_simd	= 16/n_elements_per_simd;
+  
+      assert(n_elements >= n_elements_per_simd && "received iterator range is smaller than SIMD register");
+      if(n_elements_per_seg > segment_offset)
+	return;
+  
+      __m128i input_block;
+      __m128i output_block;
+      sqeazy::detail::gather_msb<in_value_t> collect;
+      sqeazy::detail::vec_xor<in_value_t> xoring;
+      sqeazy::detail::vec_rotate_left<in_value_t> rotate_left;
+      sqeazy::detail::shift_left_m128i<in_value_t> shift_left;
+  
+      in_iterator_t input;
+      out_iterator_t output;  // out_iterator_t outpute = output + n_elements;
+      std::uint16_t result = 0;
+      int pos = 7;
+      
+      for(std::size_t s = 0;s<n_segments;++s){
+	input = _begin;
+	output = _dst + s*segment_offset;
+
+	pos = 7;
 	
-      }
+	for(std::size_t i = 0;i<n_iterations;i+=n_filled_segments_per_simd){
 
+	  result = 0;
 
-      bool empty() const {
-	return n_bits_consumed == 0;
-      }
-
-      bool full() const {
-	return n_bits_consumed == simd_width;
-      }
-
-      std::size_t size() const {
-	return simd_width*n_segments;
-      }
-
-      std::size_t size_in_bytes() const {
-	return simd_width*n_segments/CHAR_BIT;
-      }
-
-      
-      std::size_t num_elements() const {
-	return size_in_bytes()/sizeof(type);
-      }
-      
-      void set(std::size_t seg_id, std::size_t bit_id = 0)  {
-
-	if(seg_id>=segments.size())
-	  return;
-
-	if(bit_id>=segments[0].size())
-	  return;
-
-	segments[seg_id].set(bit_id);
-	n_bits_consumed += 1;
-      }
-      
-      void reset()  {
-	for( auto & seg : segments ){
-	  seg.reset();
-	}
-	n_bits_consumed = 0;;
-      }
-      
-      bool any() const {
-	bool value = false;
-	for(auto & bits : segments )
-	  value = value || bits.any() ;
+	  //TODO: this can be unrolled
+      	  for(std::size_t l = 0;l<n_filled_segments_per_simd;++l){
 	
-	return value;
-      }
+	    input_block = _mm_load_si128(reinterpret_cast<const __m128i*>(&*input));
 
-      /**
-	 \brief collect msb values from block in chunks of type, the resulting bitset contains the aquired values starting at the MSB
-
-	 \param[in] 
-
-	 \return 
-	 \retval 
-
-      */
-      bitset_t gather_msb_range(__m128i block, int n_bits){
-
-	bitset_t value;
-
-	if(n_bits == 1){
-	  gather_msb<type> op;
-	  const auto val = op(block);
-	  value = bitset_t(val);
-	  value <<= (simd_width - (sizeof(val)*CHAR_BIT));
-	}
-	
-	return value;
-      }
-
-      template <typename iterator_t>
-      iterator_t consume(iterator_t _begin, iterator_t _end){
-
-	static_assert(sizeof(decltype(*_begin)) == sizeof(type), "received iterator type does not match assumed type");
-
-	std::size_t size = _end - _begin;
-	
-	if(size*sizeof(type) < simd_width_bytes)
-	  return _begin;
-
-	
-	iterator_t value = _begin;
-	const int step_size = simd_width/type_width;
-	std::uint32_t segment_counter = 0;
-	
-	__m128i current;
-	shift_left_m128i<type> left_shifter;
-	bitset_t extracted;
-	
-	for(;value!=_end;value+=step_size, ++segment_counter){
-
-	  if(full())
-	    return value;
+	    if(std::numeric_limits<in_value_t>::is_signed)
+	      xoring(&input_block);
 	  
-	  current = _mm_load_si128(reinterpret_cast<const __m128i*>(&*value));
-
-	  for(int s = 0;s<n_segments;++s){
-
-	    //extract msb(s)
-	    extracted = gather_msb_range(current,n_bits_per_segment);
-
-	    //update segment
-	    segments[s] |= (extracted >> (segment_counter*n_elements_per_simd));
+	    input_block = rotate_left(&input_block); // 
 	    
-	    //left shift to bring the next segment to the MSB
-	    current = left_shifter(current,n_bits_per_segment);
+	    input_block = shift_left(input_block,s);
+	
+	    //result <<= l*(16/n_filled_segments_per_simd);
+	    std::uint16_t temp = collect(input_block);
+	    
+	    result |= (temp >> l*(16/n_filled_segments_per_simd) );
+	
+	    input += n_elements_per_simd;
+	    
 	  }
-
-	  n_bits_consumed += (n_bits_per_segment*n_elements_per_simd);
-	  
-	}
-		
-	return value;
-      }
-
-      template <typename iterator_t>
-      iterator_t write_segments(iterator_t _begin, iterator_t _end,
-				std::size_t offset = 0){
-
-	iterator_t value = _begin;
-	std::size_t size = _end - _begin;
-
-
-	if(size % segments.size() > n_elements_per_simd)
-	  return value;
-
-	std::size_t min_elements_required = segments[0].size()*segments.size()/(sizeof(*_begin)*CHAR_BIT);
-	
-	if(size < min_elements_required)
-	  return value;
-
-
-	std::size_t segment_spacing =  size / segments.size() ;
-
-	if(segment_spacing < n_elements_per_simd)
-	  return value;
-	
-	std::size_t global_offset = 0;
-	
-	for( std::uint32_t s = 0;s < segments.size();++s){
-	  global_offset = s*segment_spacing;
-	  value = _begin + global_offset + offset;
-	  
-	  to_block_range(segments[s],
-			 value,
-			 value+n_elements_per_simd);
-	  
-	}
-	
-	return _end;
-      }
-
       
-    };
-    
+
+	  output_block = sse_insert_epi16(output_block,result,pos);
+	  pos -= 1;
+      
+	  if(pos < 0){
+	    _mm_store_si128(reinterpret_cast<__m128i*>(&*output),output_block);
+	    output += n_elements_per_simd;
+	    pos = 7;
+	  }
+	  
+	}// i iteratos
+      } // s segments 
+    }
+
   }//detail
 
 }//sqeazy
