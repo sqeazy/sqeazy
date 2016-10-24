@@ -5,11 +5,12 @@
 #include <iostream>
 #include <algorithm> // for copy
 #include <iterator> // for ostream_iterator
-#include "encoders/sqeazy_impl.hpp"
+//#include "encoders/sqeazy_impl.hpp"
 #include "sse_test_utils.hpp"
 
-#include "bitplane_reorder_detail.hpp"
-//#include "bitswap_helpers.hpp"
+#include "encoders/sse_utils.hpp"
+#include "encoders/scalar_utils.hpp"
+#include "encoders/bitplane_reorder_sse.hpp"
 
 
 
@@ -25,7 +26,7 @@ BOOST_AUTO_TEST_CASE( rotate_left_by_one ){
 
   __m128i v_in = _mm_load_si128(reinterpret_cast<const __m128i*>(&input[0]));
 
-  vec_rotate_left<unsigned char> rotate;
+  sqeazy::detail::vec_rotate_left<unsigned char> rotate;
   v_in = rotate(&v_in);
 
   _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]), v_in);
@@ -33,7 +34,7 @@ BOOST_AUTO_TEST_CASE( rotate_left_by_one ){
   BOOST_REQUIRE(output[0]!=input[0]);
     
   try{
-    BOOST_REQUIRE(output[0]==sqeazy::rotate_left<1>(input[0]));
+    BOOST_REQUIRE(output[0]==sqeazy::detail::rotate_left<1>(input[0]));
 
     BOOST_REQUIRE(std::accumulate(output.begin(), output.end(),0u)==4*output.size());
   }
@@ -48,15 +49,15 @@ BOOST_AUTO_TEST_CASE( rotate_left_by_two_and_cycle ){
 
   __m128i v_in = _mm_load_si128(reinterpret_cast<const __m128i*>(&input[0]));
 
-  vec_rotate_left<unsigned char> rotate(2);
+  sqeazy::detail::vec_rotate_left<unsigned char> rotate(2);
   v_in = rotate(&v_in);
 
   _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]), v_in);
   BOOST_REQUIRE(output[0]!=input[0]);
     
   try{
-    BOOST_REQUIRE(output[0]==sqeazy::rotate_left<2>(input[0]));
-    BOOST_REQUIRE(std::accumulate(output.begin(), output.end(),(unsigned char)0)==sqeazy::rotate_left<2>(input[0])*output.size());
+    BOOST_REQUIRE(output[0]==sqeazy::detail::rotate_left<2>(input[0]));
+    BOOST_REQUIRE(std::accumulate(output.begin(), output.end(),(unsigned char)0)==sqeazy::detail::rotate_left<2>(input[0])*output.size());
   }
   catch(...){
     std::copy(output.begin(), output.end(), std::ostream_iterator<unsigned char>(std::cout, " "));
@@ -72,7 +73,7 @@ BOOST_AUTO_TEST_CASE( rotate_left_by_two_and_flip ){
     }
     
   __m128i v_in = _mm_load_si128(reinterpret_cast<const __m128i*>(&input[0]));
-  vec_rotate_left<unsigned char> rotate(1);
+  sqeazy::detail::vec_rotate_left<unsigned char> rotate(1);
   v_in = rotate(&v_in);
   _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]), v_in);
     
@@ -87,7 +88,7 @@ BOOST_AUTO_TEST_CASE( rotate_left_by_one ){
 
   __m128i v_in = _mm_load_si128(reinterpret_cast<const __m128i*>(&input[0]));
 
-  vec_rotate_left<unsigned short> rotate;
+  sqeazy::detail::vec_rotate_left<unsigned short> rotate;
   v_in = rotate(&v_in);
 
   _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]), v_in);
@@ -95,7 +96,7 @@ BOOST_AUTO_TEST_CASE( rotate_left_by_one ){
   BOOST_REQUIRE(output[0]!=input[0]);
     
   try{
-    BOOST_REQUIRE(output[0]==sqeazy::rotate_left<1>(input[0]));
+    BOOST_REQUIRE(output[0]==sqeazy::detail::rotate_left<1>(input[0]));
 
     BOOST_REQUIRE(std::accumulate(output.begin(), output.end(),0u)==4u*output.size());
   }
@@ -109,15 +110,15 @@ BOOST_AUTO_TEST_CASE( rotate_left_by_two_and_cycle ){
 
   __m128i v_in = _mm_load_si128(reinterpret_cast<const __m128i*>(&input[0]));
 
-  vec_rotate_left<unsigned short> rotate(2);
+  sqeazy::detail::vec_rotate_left<unsigned short> rotate(2);
   v_in = rotate(&v_in);
 
   _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]), v_in);
   BOOST_REQUIRE(output[0]!=input[0]);
     
   try{
-    BOOST_REQUIRE(output[0]==sqeazy::rotate_left<2>(input[0]));
-    BOOST_REQUIRE(std::accumulate(output.begin(), output.end(),(unsigned short)0)==sqeazy::rotate_left<2>(input[0])*output.size());
+    BOOST_REQUIRE(output[0]==sqeazy::detail::rotate_left<2>(input[0]));
+    BOOST_REQUIRE(std::accumulate(output.begin(), output.end(),(unsigned short)0)==sqeazy::detail::rotate_left<2>(input[0])*output.size());
   }
   catch(...){
     std::copy(output.begin(), output.end(), std::ostream_iterator<unsigned short>(std::cout, " "));
@@ -133,7 +134,7 @@ BOOST_AUTO_TEST_CASE( rotate_left_and_flip ){
     }
     
   __m128i v_in = _mm_load_si128(reinterpret_cast<const __m128i*>(&input[0]));
-  vec_rotate_left<unsigned short> rotate(1);
+  sqeazy::detail::vec_rotate_left<unsigned short> rotate(1);
   v_in = rotate(&v_in);
   _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]), v_in);
     
@@ -149,10 +150,10 @@ BOOST_AUTO_TEST_CASE( rotate_left_by_one ){
 
   for(unsigned i = 0;i < input.size();++i){
     input[i]+=1;
-    reference[i] = sqeazy::rotate_left<1>(input[i]);
+    reference[i] = sqeazy::detail::rotate_left<1>(input[i]);
   }
 
-  vec_rotate_left<unsigned short> rotate;
+  sqeazy::detail::vec_rotate_left<unsigned short> rotate;
 
   for(unsigned i = 0;i < input.size();i+=8){
     __m128i v_in = _mm_load_si128(reinterpret_cast<const __m128i*>(&input[i]));
@@ -172,10 +173,10 @@ BOOST_AUTO_TEST_CASE( rotate_left_by_two ){
 
   for(unsigned i = 0;i < input.size();++i){
     input[i]+=1;
-    reference[i] = sqeazy::rotate_left<2>(input[i]);
+    reference[i] = sqeazy::detail::rotate_left<2>(input[i]);
   }
 
-  vec_rotate_left<unsigned short> rotate(2);
+  sqeazy::detail::vec_rotate_left<unsigned short> rotate(2);
 
   for(unsigned i = 0;i < input.size();i+=8){
     __m128i v_in = _mm_load_si128(reinterpret_cast<const __m128i*>(&input[i]));
@@ -207,7 +208,7 @@ namespace fixed_value_fixture{
 BOOST_FIXTURE_TEST_SUITE( understand_setbits_of_integertype, default_128bit_fixture )
 BOOST_AUTO_TEST_CASE( use_scalar_version ){
 
-    unsigned short result = sqeazy::setbits_of_integertype(fixed_value_fixture::dest,
+    unsigned short result = sqeazy::detail::setbits_of_integertype(fixed_value_fixture::dest,
 							   fixed_value_fixture::src,
 							   fixed_value_fixture::at,
 							   2);
@@ -222,7 +223,7 @@ BOOST_AUTO_TEST_CASE( use_vectorized_version ){
   std::fill(reference.begin(), reference.end(), fixed_value_fixture::dest);
 
   for(unsigned i = 0;i < reference.size();++i){
-    reference[i] = sqeazy::setbits_of_integertype(reference[i], 
+    reference[i] = sqeazy::detail::setbits_of_integertype(reference[i], 
 						  fixed_value_fixture::src, 
 						  fixed_value_fixture::at, 
 						  fixed_value_fixture::size);
@@ -326,7 +327,7 @@ BOOST_AUTO_TEST_CASE( _bit_extraction_for_16bit_input_of_all_bits ){
   for(unsigned i = 0;i<bitplanes.size();++i)
     bitplanes_ptr[i] = &bitplanes[i];
     
-  reorder_bitplanes<1>(testi, bitplanes_ptr,8);
+  sqeazy::detail::reorder_bitplanes<1>(testi, bitplanes_ptr,8);
     
   BOOST_REQUIRE(bitplanes[0] == 255 << 8);
   for(unsigned i = 1;i<bitplanes.size();++i)

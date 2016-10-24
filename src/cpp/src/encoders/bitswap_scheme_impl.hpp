@@ -4,9 +4,15 @@
 #include "neighborhood_utils.hpp"
 #include "sqeazy_common.hpp"
 #include "traits.hpp"
-#include "bitswap_scheme_utils.hpp"
+
 #include "dynamic_stage.hpp"
 #include "string_parsers.hpp"
+
+#ifdef COMPASS_HAS_SSE4
+#include "bitplane_reorder_sse.hpp"
+#endif
+
+#include "bitplane_reorder_scalar.hpp"
 
 namespace sqeazy {
 
@@ -86,7 +92,12 @@ namespace sqeazy {
 	std::copy(_input+max_size,_input+_length,_output+max_size);
 
       int err = 0;
-      if(sqeazy::platform::use_vectorisation::value && num_bits_per_plane==1 && sizeof(raw_type)>1){
+      if(sqeazy::platform::use_vectorisation::value &&
+	 compass::runtime::has(compass::feature::sse4()) &&
+	 num_bits_per_plane==1 &&
+	 sizeof(raw_type)>1)
+	{
+	  
 #ifdef _SQY_VERBOSE_
 	std::cout << "[bitswap_scheme::encode]\tusing see method\n";
 #endif
