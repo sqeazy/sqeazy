@@ -681,13 +681,13 @@ namespace sqeazy {
       in_iterator_t input;
       out_iterator_t output;  // out_iterator_t outpute = output + n_elements;
       std::uint16_t result = 0;
-      int pos = 7;
+      int pos = 0;
       
       for(std::size_t s = 0;s<n_segments;++s){
 	input = _begin;
 	output = _dst + s*segment_offset;
 
-	pos = 7;
+	pos = 0;
 	
 	for(std::size_t i = 0;i<n_iterations;i+=n_filled_segments_per_simd){
 
@@ -716,12 +716,12 @@ namespace sqeazy {
       
 
 	  output_block = sse_insert_epi16(output_block,result,pos);
-	  pos -= 1;
+	  pos++;
       
-	  if(pos < 0){
+	  if(pos > 7){
 	    _mm_store_si128(reinterpret_cast<__m128i*>(&*output),output_block);
 	    output += n_elements_per_simd;
-	    pos = 7;
+	    pos = 0;
 	  }
 	  
 	}// i iteratos

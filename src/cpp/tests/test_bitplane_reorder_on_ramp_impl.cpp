@@ -14,6 +14,44 @@ typedef ramp_fixture<(1 << 15)> default_ramp_fixture;
 
 BOOST_FIXTURE_TEST_SUITE( check_sse_ramp_16bit, default_ramp_fixture )
 
+BOOST_AUTO_TEST_CASE( insert_into_simd_128 ){
+
+  
+  std::copy(input.begin(),input.end(),output.begin());
+  
+  const std::size_t n_elements_per_simd = 16/sizeof(value_t);
+  
+
+  __m128i block;
+  
+  for(std::size_t i = 0;i<128;i+=n_elements_per_simd){
+    
+
+    block = _mm_set1_epi16(0);
+    for(std::size_t pos = 0;pos<n_elements_per_simd;++pos){
+      block = sqeazy::detail::sse_insert_epi16(block,input[i+pos],pos);
+    }
+    
+    _mm_store_si128(reinterpret_cast<__m128i*>(&reference[i]),block);
+  }
+  
+  for(unsigned i = 0;i<128;++i){
+    
+    try{
+      BOOST_REQUIRE(output[i] == reference[i]);
+    }
+    catch(...){
+      std::cerr << "[insert_into_simd_128] " << i << " / "<< 128<<" item does not match "
+		<< "scalar :" <<  output[i] << ", "
+		<< "sse    :" <<  reference[i]
+		<< "\n";
+      throw;
+    }
+      
+  }
+}
+
+
 BOOST_AUTO_TEST_CASE( rotate_left_128 ){
 
   
@@ -321,6 +359,7 @@ BOOST_AUTO_TEST_CASE( versus_default_first_128 ){
 
   
   BOOST_REQUIRE(ret1 == ret2);
+  
   for(unsigned i = 0;i<128;++i){
     
     try{
