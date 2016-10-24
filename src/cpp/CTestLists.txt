@@ -19,6 +19,7 @@ add_test(NAME bitswap_schemes COMMAND test_bitswap_schemes)
 # add_test(NAME bitplane_reorder_impl COMMAND test_bitplane_reorder_impl CONFIGURATION --run_test=*16bit/*)
 # add_test(NAME bitswap_scheme_impl COMMAND test_bitswap_scheme_impl CONFIGURATION --run_test=*bit/*)
 add_test(NAME bitplane_reorder_impl COMMAND test_bitplane_reorder_impl)
+add_test(NAME bitplane_reorder_on_ramp_impl COMMAND test_bitplane_reorder_on_ramp_impl)
 add_test(NAME bitswap_scheme_impl COMMAND test_bitswap_scheme_impl)
 
 add_test(NAME shift_by_intrinsics COMMAND test_shift_by_intrinsics)
