@@ -1,9 +1,9 @@
 sudo: required
 dist: trusty
 
-cache:
-  directories:
-  - /home/travis/sw
+# cache:
+#   directories:
+#   - /home/travis/sw
   
 language: java
 jdk:
@@ -53,6 +53,7 @@ before_install:
     fi
   - if [[ -e `which ffmpeg` ]]; then
         which ffmpeg;
+        find /home/travis/sw/lib /usr/lib* -name "*265*so"
         ldd `which ffmpeg`;
         `which ffmpeg` -version;
     fi
