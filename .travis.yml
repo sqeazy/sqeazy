@@ -54,7 +54,11 @@ before_install:
       echo "ffmpeg installed in /home/travis/sw";
     fi
   - cd .. && sudo rm -rf ffmpeg_repo
-  - ffmpeg -version
+  - if [[ -e /home/travis/sw/bin/ffmpeg || -e `which ffmpeg` ]]; then
+  which ffmpeg
+  ldd ffmpeg
+  ffmpeg -version
+  fi
 
   
   #############################################################################
