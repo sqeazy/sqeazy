@@ -6,6 +6,7 @@
 #include <bitset>
 #include <map>
 #include <cstdint>
+#include <iterator>
 
 #include "boost/filesystem.hpp"
 #include "volume_fixtures.hpp"
@@ -217,6 +218,59 @@ BOOST_AUTO_TEST_CASE( write_to_string ){
   
 }
 
+
+BOOST_AUTO_TEST_CASE( inject_unknown_values ){
+
+  typedef typename sqeazy::quantiser<uint16_t,uint8_t>::raw_t lut_value_t;
+  typedef typename std::iterator_traits<sqeazy::quantiser<uint16_t,uint8_t>::lut_decode_t::iterator>::value_type value_t;
+  static_assert(std::is_same<lut_value_t,value_t>::value,"raw_t is unqeual the value_type of the lut_decode_t::const_iterator");
+  
+  std::stringstream lut_file;
+  lut_file << "checkon_16bit_"
+	   << boost::unit_test::framework::current_test_case().p_name
+	   << ".log";
+
+  for(std::size_t i = 0;i<embryo_.num_elements();++i)
+    embryo_.data()[i] = embryo_.data()[i] % 1024;
+  
+  sqeazy::quantiser<uint16_t,uint8_t> shrinker(embryo_.data(),
+					       embryo_.data() + embryo_.num_elements());
+
+  auto unary = [](value_t item){
+    return (item != 0);
+  };
+  
+  auto fitr = std::find_if(shrinker.lut_decode_.rbegin(),
+			   shrinker.lut_decode_.rend(),
+			   unary);
+
+  std::size_t highest_nonzero_lut_key = std::distance(fitr,shrinker.lut_decode_.rend()-1);
+  
+  BOOST_CHECK_NE(highest_nonzero_lut_key,0);
+  BOOST_CHECK_LT(highest_nonzero_lut_key,shrinker.lut_decode_.size());
+  BOOST_CHECK_NE(shrinker.lut_decode_[highest_nonzero_lut_key],0);
+  BOOST_CHECK_EQUAL(shrinker.lut_decode_[highest_nonzero_lut_key+1],0);
+
+
+  std::string lut = shrinker.lut_to_string(shrinker.lut_decode_);
+  std::vector<uint8_t> encoded(embryo_.num_elements(),0);
+  shrinker.encode(embryo_.data(),embryo_.num_elements(),&encoded[0]);
+  
+  std::fill(encoded.begin(), encoded.begin()+10,highest_nonzero_lut_key+1);
+  std::fill(encoded.begin()+10, encoded.begin()+20,std::numeric_limits<uint8_t>::max());
+  
+  decltype(shrinker.lut_decode_) lut_decode;
+  shrinker.lut_from_string(lut,lut_decode);
+  
+  std::vector<uint16_t> reconstructed(encoded.size(),0);
+  shrinker.decode(lut_decode,
+  		  &encoded[0],
+  		  encoded.size(),
+  		  &reconstructed[0]);
+
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(reconstructed.begin(), reconstructed.end(),embryo_.data(),
+  				  embryo_.data()+ embryo_.num_elements());
+}
 
 
 BOOST_AUTO_TEST_SUITE_END()
