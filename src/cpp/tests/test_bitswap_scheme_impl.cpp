@@ -22,15 +22,15 @@ BOOST_FIXTURE_TEST_SUITE( shift_signed_bits_16bit, uint16_cube_of_8 )
 BOOST_AUTO_TEST_CASE( rotate_left )
 {
   unsigned char test_unsigned_char = 23;
-  unsigned char result_char = sqeazy::rotate_left<1>(test_unsigned_char);
+  unsigned char result_char = sqeazy::detail::rotate_left<1>(test_unsigned_char);
   BOOST_CHECK_EQUAL(46,result_char);
 
   std::uint16_t test_unsigned_short = 23;
-  std::uint16_t result = sqeazy::rotate_left<1>(test_unsigned_short);
+  std::uint16_t result = sqeazy::detail::rotate_left<1>(test_unsigned_short);
   BOOST_CHECK_EQUAL(46,result);
 
   short test_signed_short = 23;
-  short result_signed = sqeazy::rotate_left<1>(test_signed_short);
+  short result_signed = sqeazy::detail::rotate_left<1>(test_signed_short);
   BOOST_CHECK_EQUAL(46,result_signed);
 
 }
@@ -38,15 +38,15 @@ BOOST_AUTO_TEST_CASE( rotate_left )
 BOOST_AUTO_TEST_CASE( rotate_right )
 {
   unsigned char test_unsigned_char = 23;
-  unsigned char result_char = sqeazy::rotate_right<1>(test_unsigned_char);
+  unsigned char result_char = sqeazy::detail::rotate_right<1>(test_unsigned_char);
   BOOST_CHECK_EQUAL(139,result_char);
 
   std::uint16_t test_unsigned_short = 23;
-  std::uint16_t result = sqeazy::rotate_right<1>(test_unsigned_short);
+  std::uint16_t result = sqeazy::detail::rotate_right<1>(test_unsigned_short);
   BOOST_CHECK_EQUAL(32779,result);
 
   short test_signed_short = 23;
-  short result_signed = sqeazy::rotate_right<1>(test_signed_short);
+  short result_signed = sqeazy::detail::rotate_right<1>(test_signed_short);
   BOOST_CHECK_EQUAL(-32757,result_signed);
   std::uint16_t result_casted = static_cast<std::uint16_t>(result_signed);
   BOOST_CHECK_EQUAL(result_casted,result);
@@ -56,40 +56,40 @@ BOOST_AUTO_TEST_CASE( rotate_is_injective )
 {
   unsigned char test_unsigned_char = 23;
   unsigned char result_unsigned_char = 
-sqeazy::rotate_left<1>(sqeazy::rotate_right<1>(test_unsigned_char));
+sqeazy::detail::rotate_left<1>(sqeazy::detail::rotate_right<1>(test_unsigned_char));
   BOOST_CHECK_EQUAL(test_unsigned_char,result_unsigned_char);
   result_unsigned_char = 
-sqeazy::rotate_right<1>(sqeazy::rotate_left<1>(test_unsigned_char));
+sqeazy::detail::rotate_right<1>(sqeazy::detail::rotate_left<1>(test_unsigned_char));
   BOOST_CHECK_EQUAL(test_unsigned_char,result_unsigned_char);
 
   std::uint16_t test_unsigned_short = 23;
   std::uint16_t result_unsigned_short = 
-sqeazy::rotate_left<1>(sqeazy::rotate_right<1>(test_unsigned_short));
+sqeazy::detail::rotate_left<1>(sqeazy::detail::rotate_right<1>(test_unsigned_short));
   BOOST_CHECK_EQUAL(test_unsigned_short,result_unsigned_short);
   result_unsigned_short = 
-sqeazy::rotate_right<1>(sqeazy::rotate_left<1>(test_unsigned_short));
+sqeazy::detail::rotate_right<1>(sqeazy::detail::rotate_left<1>(test_unsigned_short));
   BOOST_CHECK_EQUAL(test_unsigned_short,result_unsigned_short);
 
   short test_short = 23;
   
-BOOST_CHECK_EQUAL(test_short,sqeazy::rotate_left<1>(sqeazy::rotate_right<1>(
+BOOST_CHECK_EQUAL(test_short,sqeazy::detail::rotate_left<1>(sqeazy::detail::rotate_right<1>(
 test_short)));
-  short result_short = sqeazy::rotate_right<1>(test_short);
-  result_short = sqeazy::rotate_left<1>(result_short);
+  short result_short = sqeazy::detail::rotate_right<1>(test_short);
+  result_short = sqeazy::detail::rotate_left<1>(result_short);
   BOOST_CHECK_EQUAL(test_short,result_short);
 
-  result_short = sqeazy::rotate_right<1>(sqeazy::rotate_left<1>(test_short));
+  result_short = sqeazy::detail::rotate_right<1>(sqeazy::detail::rotate_left<1>(test_short));
   BOOST_CHECK_EQUAL(test_short,result_short);
 
   test_short = -23;
   
-BOOST_CHECK_EQUAL(test_short,sqeazy::rotate_left<1>(sqeazy::rotate_right<1>(
+BOOST_CHECK_EQUAL(test_short,sqeazy::detail::rotate_left<1>(sqeazy::detail::rotate_right<1>(
 test_short)));
-  result_short = sqeazy::rotate_right<1>(test_short);
-  result_short = sqeazy::rotate_left<1>(result_short);
+  result_short = sqeazy::detail::rotate_right<1>(test_short);
+  result_short = sqeazy::detail::rotate_left<1>(result_short);
   BOOST_CHECK_EQUAL(test_short,result_short);
 
-  result_short = sqeazy::rotate_right<1>(sqeazy::rotate_left<1>(test_short));
+  result_short = sqeazy::detail::rotate_right<1>(sqeazy::detail::rotate_left<1>(test_short));
   BOOST_CHECK_EQUAL(test_short,result_short);
 
 
@@ -100,8 +100,8 @@ BOOST_AUTO_TEST_CASE( offset_called )
   std::uint16_t test_unsigned = 42;
   short test_signed = -42;
 
-  std::uint16_t result_unsigned = sqeazy::xor_if_signed(test_unsigned);
-  short result_signed = sqeazy::xor_if_signed(test_signed);
+  std::uint16_t result_unsigned = sqeazy::detail::xor_if_signed(test_unsigned);
+  short result_signed = sqeazy::detail::xor_if_signed(test_signed);
   
   BOOST_CHECK_EQUAL(result_unsigned,test_unsigned);
   BOOST_CHECK_EQUAL(result_signed,-32727);
@@ -119,24 +119,24 @@ BOOST_AUTO_TEST_CASE( encoding_decoding_injective_on_signed )
     
     if(test_signed[i]<0){
       
-      BOOST_CHECK_NE(test_signed[i], xor_if_signed(test_signed[i]));
-      BOOST_CHECK_EQUAL(xor_if_signed(test_signed[i]), test_signed[i] ^ short(~(1 << 15)));
+      BOOST_CHECK_NE(test_signed[i], sqeazy::detail::xor_if_signed(test_signed[i]));
+      BOOST_CHECK_EQUAL(sqeazy::detail::xor_if_signed(test_signed[i]), test_signed[i] ^ short(~(1 << 15)));
       
     }
     else
-      BOOST_CHECK_EQUAL(test_signed[i], xor_if_signed(test_signed[i]));
+      BOOST_CHECK_EQUAL(test_signed[i], sqeazy::detail::xor_if_signed(test_signed[i]));
 
     
 
-    short intermediate = xor_if_signed(test_signed[i]);
+    short intermediate = sqeazy::detail::xor_if_signed(test_signed[i]);
 
-    intermediate = sqeazy::rotate_left<1>(intermediate);
+    intermediate = sqeazy::detail::rotate_left<1>(intermediate);
     
-    expected = xor_if_signed(test_signed[i]);
-    BOOST_CHECK_EQUAL(expected, sqeazy::rotate_right<1>(intermediate));
-    intermediate = sqeazy::rotate_right<1>(intermediate);
+    expected = sqeazy::detail::xor_if_signed(test_signed[i]);
+    BOOST_CHECK_EQUAL(expected, sqeazy::detail::rotate_right<1>(intermediate));
+    intermediate = sqeazy::detail::rotate_right<1>(intermediate);
 
-    short result =  xor_if_signed(intermediate);
+    short result =  sqeazy::detail::xor_if_signed(intermediate);
 
     BOOST_CHECK_EQUAL(test_signed[i], result);
   }
@@ -152,10 +152,10 @@ BOOST_AUTO_TEST_CASE( encoding_decoding_injective_on_unsigned )
   for(int i = 0;i<8;++i){
     
     std::uint16_t intermediate =  
-sqeazy::rotate_left<1>(xor_if_signed(test_signed[i]));
+sqeazy::detail::rotate_left<1>(sqeazy::detail::xor_if_signed(test_signed[i]));
 
     std::uint16_t result =  
-      xor_if_signed(sqeazy::rotate_right<1>(intermediate));
+      sqeazy::detail::xor_if_signed(sqeazy::detail::rotate_right<1>(intermediate));
 
     BOOST_CHECK_EQUAL(test_signed[i], result);
   }
@@ -267,7 +267,7 @@ BOOST_AUTO_TEST_CASE( apply_xor )
 
   for(int i = 0;i<16;++i){
     
-    short result =  sqeazy::xor_if_signed(test_signed[i]);
+    short result =  sqeazy::detail::xor_if_signed(test_signed[i]);
     std::bitset<16> result_repr(result);
     short expected = expected_bit_map[test_signed[i]].to_ulong();
         
@@ -334,16 +334,16 @@ BOOST_AUTO_TEST_CASE( setbits_on_integertype )
 {
   std::uint16_t zero = 0;
   std::uint16_t one = 1;
-  BOOST_CHECK(sqeazy::setbits_of_integertype(zero, one, 5u, 1u) == 1 << 5);
+  BOOST_CHECK(sqeazy::detail::setbits_of_integertype(zero, one, 5u, 1u) == 1 << 5);
 
   std::uint16_t max_char = 0xff;
-  BOOST_CHECK(sqeazy::setbits_of_integertype(max_char, one, 10u, 1u) == (max_char + (1 << 10)));
+  BOOST_CHECK(sqeazy::detail::setbits_of_integertype(max_char, one, 10u, 1u) == (max_char + (1 << 10)));
 
-  BOOST_CHECK(sqeazy::setbits_of_integertype(max_char, zero, 4u, 4u) == 0xf);
+  BOOST_CHECK(sqeazy::detail::setbits_of_integertype(max_char, zero, 4u, 4u) == 0xf);
   
   std::uint16_t three = 3;
   //three is truncated if it maps to more than 16 bits (here)
-  BOOST_CHECK(sqeazy::setbits_of_integertype(zero, three, 15u, 2u) == 0x8000);
+  BOOST_CHECK(sqeazy::detail::setbits_of_integertype(zero, three, 15u, 2u) == 0x8000);
 }
 
 
@@ -492,9 +492,25 @@ BOOST_AUTO_TEST_CASE( decode_encoded_by_hand_planewidth4_new_api )
 BOOST_AUTO_TEST_SUITE_END()
 
 
-BOOST_AUTO_TEST_SUITE( shift_signed_bits_8bit )
 
-BOOST_AUTO_TEST_CASE( roundtrip_ramp )
+BOOST_AUTO_TEST_CASE( setbits_on_integertype )
+{
+  std::uint16_t zero = 0;
+  std::uint16_t one = 1;
+  BOOST_CHECK(sqeazy::detail::setbits_of_integertype(zero, one, 5u, 1u) == 1 << 5);
+
+  std::uint16_t max_char = 0xff;
+  BOOST_CHECK(sqeazy::detail::setbits_of_integertype(max_char, one, 10u, 1u) == (max_char + (1 << 10)));
+
+  BOOST_CHECK(sqeazy::detail::setbits_of_integertype(max_char, zero, 4u, 4u) == 0xf);
+  
+  std::uint16_t three = 3;
+  //three is truncated if it maps to more than 16 bits (here)
+  BOOST_CHECK(sqeazy::detail::setbits_of_integertype(zero, three, 15u, 2u) == 0x8000);
+}
+
+
+BOOST_AUTO_TEST_CASE( roundtrip_ramp_8 )
 {
   using namespace sqeazy;
 
@@ -530,9 +546,9 @@ BOOST_AUTO_TEST_CASE( roundtrip_ramp )
 }
 
 
-BOOST_AUTO_TEST_SUITE_END()
+//BOOST_AUTO_TEST_SUITE_END()
 
-BOOST_AUTO_TEST_CASE( roundtrip_ramp )
+BOOST_AUTO_TEST_CASE( roundtrip_ramp_16 )
 {
   using namespace sqeazy;
 
