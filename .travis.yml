@@ -1,9 +1,9 @@
 sudo: required
 dist: trusty
 
-# cache:
-#   directories:
-#   - /home/travis/sw
+cache:
+  directories:
+  - /home/travis/sw
   
 language: java
 jdk:
