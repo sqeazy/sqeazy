@@ -107,6 +107,9 @@ namespace sqeazy {
 
     typedef std::array<compressed_type, max_raw_> lut_encode_t;
     typedef std::array<raw_type, max_compressed_> lut_decode_t;
+    typedef compressed_type compressed_t;
+    typedef raw_type raw_t;
+    
     
     lut_encode_t lut_encode_;
     lut_decode_t lut_decode_;
@@ -278,14 +281,14 @@ namespace sqeazy {
 	    bucketSize = (importanceSum-importanceIntegral)/levels_available;
 	  
 	  if(quantile_sum!=0.)
-	    index_weighted_mean_importance = weighted_mean_importance_in_bucket/quantile_sum;
+	    index_weighted_mean_importance = std::round(weighted_mean_importance_in_bucket/quantile_sum);
 
 	} else {
 	  quantile_sum += importance_[raw_idx];
 	  weighted_mean_importance_in_bucket += raw_idx*importance_[raw_idx];
 
 	  if(quantile_sum!=0.)
-	    index_weighted_mean_importance = weighted_mean_importance_in_bucket/quantile_sum;
+	    index_weighted_mean_importance = std::round(weighted_mean_importance_in_bucket/quantile_sum);
 	 	 
 	
 	}
