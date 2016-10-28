@@ -236,6 +236,7 @@ int main(int argc, char *argv[])
   descriptions["scan"].add_options()
     ("help,h", "produce help message")
     ("verbose,v", "enable verbose output")
+    ("bit_details,d", "print some statistics on bits (dynamic range, lowest set bit)")
     ;
 
   descriptions["convert"].add_options()
