@@ -14,7 +14,7 @@
 namespace sqeazy {
 
 template <typename T, typename FT>
-T round(const FT& _num) {
+T my_round(const FT& _num) {
 
     return std::floor(_num + .5);
 }
