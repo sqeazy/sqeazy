@@ -83,7 +83,7 @@ namespace sqeazy {
   };
 
   //all is public for now
-  template<typename raw_type,typename compressed_type, typename weight_functor_t = noWeighter>
+  template<typename raw_type,typename compressed_type >
   struct quantiser{
 
 
@@ -114,8 +114,10 @@ namespace sqeazy {
     lut_encode_t lut_encode_;
     lut_decode_t lut_decode_;
 
-    
-    quantiser(const raw_type* _begin = 0, const raw_type* _end = 0) :
+    template <typename weight_functor_t = noWeighter>
+    quantiser(const raw_type* _begin = 0,
+	      const raw_type* _end = 0,
+	      weight_functor_t _weight_functor = noWeighter()) :
       sum_(0),
       histo_(),
       weights_(),
@@ -132,9 +134,9 @@ namespace sqeazy {
       
       //this loop is fixed at compile time even!
       //could be potential candidate for unrolling
-      weight_functor_t functor;
+      //      weight_functor_t functor;
       for(uint32_t idx = 0;idx<quantiser::max_raw_;++idx){
-	weights_[idx] = functor(idx);
+	weights_[idx] = _weight_functor(idx);
       }
 
       setup(_begin, _end);

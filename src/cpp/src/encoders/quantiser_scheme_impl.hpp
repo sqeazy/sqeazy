@@ -25,8 +25,9 @@ namespace sqeazy {
 
   //all is public for now
   template<typename in_type,
-	   typename out_type = char,
-	   typename weight_functor_t = noWeighter>
+	   typename out_type = char// ,
+	   // typename weight_functor_t = noWeighter
+	   >
   struct quantiser_scheme : public sink<in_type,out_type> {
 
     typedef sink<in_type,out_type> base_type;
@@ -36,8 +37,8 @@ namespace sqeazy {
     std::string quantiser_config;
     parsed_map_t  config_map;
 
-    quantiser<raw_type, compressed_type, weight_functor_t> shrinker;
-    static const std::string description() { return std::string("quantisation that cuts raw bitwidth by 2, uint16->uint8; if <decode_lut_path> is given, the lut will be taken from there (decoding) or written there (encoding); if <decode_lut_string> is given, it'll be taken from the argument value (decoding) or written there (encoding)"); };
+    quantiser<raw_type, compressed_type> shrinker;
+    static const std::string description() { return std::string("quantisation that cuts raw bitwidth by 2, e.g. uint16->uint8; if <decode_lut_path> is given, the lut will be taken from there (for decoding) or written there (for encoding); if <decode_lut_string> is given, it'll be taken from the argument value (for decoding) or written there (for encoding)"); };
     
     quantiser_scheme(const std::string& _payload = ""):
       quantiser_config(_payload),
@@ -56,6 +57,8 @@ namespace sqeazy {
 	  shrinker.lut_from_string(fitr->second,shrinker.lut_decode_);
 	}
       }
+
+      
     }
 
     ~quantiser_scheme() override final {}
@@ -155,7 +158,17 @@ namespace sqeazy {
       
       applyLUT<raw_type, compressed_type> lutApplyer(shrinker.lut_encode_);
       auto out_end = std::transform(_in,_in+_length,_out,lutApplyer);
-            
+
+      // fitr = config_map.find("dump_encoded_path");
+      // if(fitr!=config_map.end()){
+      // 	std::ofstream file(fitr->second, std::ios::out );
+      // 	std::size_t osize = out_end - _out;
+      // 	for(std::size_t i = 0;i<osize;++i){
+      // 	  if(i>0 && i % 32 == 0)
+      // 	    file << "\n";
+      // 	  file << std::setw(4) << (int)_out[i];
+      // 	}
+      // }
       return out_end;
     }
 
@@ -189,6 +202,18 @@ namespace sqeazy {
 	size = std::min(_outlength,_inlength);
       }
 
+      // auto fitr = config_map.find("dump_encoded_path");
+      // if(fitr!=config_map.end()){
+      // 	std::ofstream file(fitr->second, std::ios::out );
+
+      // 	for(std::size_t i = 0;i<size;++i){
+      // 	  if(i>0 && i % 32 == 0)
+      // 	    file << "\n";
+      // 	  file << std::setw(4) << (int)_in[i];
+      // 	}
+	
+      // }
+      
       applyLUT<compressed_type, raw_type> lutApplyer(shrinker.lut_decode_);
       auto begin = _in;
       auto end   = _in+size;
