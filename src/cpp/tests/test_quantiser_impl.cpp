@@ -7,6 +7,7 @@
 #include <map>
 #include <cstdint>
 #include <iterator>
+#include <random>
 
 #include "boost/filesystem.hpp"
 #include "volume_fixtures.hpp"
@@ -820,5 +821,73 @@ BOOST_AUTO_TEST_CASE( capped_ramp_roundtrip ){
   }
   
 }
+
+BOOST_AUTO_TEST_CASE( decode_lut_yields_only_unique_values_wide_normal ){
+
+  std::vector<uint16_t> input(1 << 12,0);
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  
+  std::normal_distribution<> wide_normal(4048,500);
+
+  for( uint16_t& _el : input )
+    _el = std::round(wide_normal(gen));
+  
+  sqeazy::quantiser<uint16_t,uint8_t> shrinker(input.data(),
+					       input.data() + input.size());
+
+  std::vector<uint16_t> decode_lut(shrinker.lut_decode_.begin(), shrinker.lut_decode_.end());
+  auto decode_lut_sorted = decode_lut;
+  std::sort(decode_lut_sorted.begin(),decode_lut_sorted.end());
+  auto new_end = std::unique(decode_lut_sorted.begin(), decode_lut_sorted.end());
+
+  BOOST_CHECK_EQUAL(new_end - decode_lut_sorted.begin(),shrinker.lut_decode_.size());
+  
+}
+
+BOOST_AUTO_TEST_CASE( decode_lut_yields_only_unique_values ){
+
+  std::vector<uint16_t> input(1 << 12,0);
+  uint16_t value = 0;
+  for( uint16_t& _el : input )
+    _el = value++ ;
+  
+  sqeazy::quantiser<uint16_t,uint8_t> shrinker(input.data(),
+					       input.data() + input.size());
+
+  std::vector<uint16_t> decode_lut(shrinker.lut_decode_.begin(), shrinker.lut_decode_.end());
+  auto decode_lut_sorted = decode_lut;
+  std::sort(decode_lut_sorted.begin(),decode_lut_sorted.end());
+  auto new_end = std::unique(decode_lut_sorted.begin(), decode_lut_sorted.end());
+
+  BOOST_CHECK_EQUAL(new_end - decode_lut_sorted.begin(),shrinker.lut_decode_.size());
+  
+}
+
+BOOST_AUTO_TEST_CASE( decode_lut_yields_only_unique_peaky_bucket ){
+
+  std::vector<uint16_t> input(1 << 12,0);
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  
+  std::normal_distribution<> peak(4048,.1);
+  std::uniform_int_distribution<> background(0, std::numeric_limits<uint16_t>::max());
+
+  
+  for( uint16_t& _el : input )
+    _el = std::round(peak(gen) + background(gen)) ;
+  
+  sqeazy::quantiser<uint16_t,uint8_t> shrinker(input.data(),
+					       input.data() + input.size());
+
+  std::vector<uint16_t> decode_lut(shrinker.lut_decode_.begin(), shrinker.lut_decode_.end());
+  auto decode_lut_sorted = decode_lut;
+  std::sort(decode_lut_sorted.begin(),decode_lut_sorted.end());
+  auto new_end = std::unique(decode_lut_sorted.begin(), decode_lut_sorted.end());
+
+  BOOST_CHECK_EQUAL(new_end - decode_lut_sorted.begin(),shrinker.lut_decode_.size());
+  
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
