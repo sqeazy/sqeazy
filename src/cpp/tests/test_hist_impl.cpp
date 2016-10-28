@@ -182,8 +182,8 @@ BOOST_AUTO_TEST_CASE( median_variation )
 BOOST_AUTO_TEST_CASE( rounding )
 {
 
-    BOOST_CHECK_EQUAL(sqeazy::round<int>(.55),1);
-    BOOST_CHECK_EQUAL(sqeazy::round<int>(.05),0);
+    BOOST_CHECK_EQUAL(sqeazy::my_round<int>(.55),1);
+    BOOST_CHECK_EQUAL(sqeazy::my_round<int>(.05),0);
 }
 
 BOOST_AUTO_TEST_CASE( data_of_all_zeroes )
