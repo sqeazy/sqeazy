@@ -18,6 +18,7 @@
 #include "image_stack.hpp"
 #include "encoders/quantiser_scheme_impl.hpp"
 #include "sqeazy_algorithms.hpp"
+#include "hist_impl.hpp"
 
 namespace po = boost::program_options;
 namespace bfs = boost::filesystem;
@@ -26,38 +27,64 @@ struct info
 {
 
 
-  static void header(const int& _space_left = 30) {
+  static void header(const po::variables_map& _config,
+		     const int& _space_left = 30) {
 
     std::cout << std::setw(_space_left) << "filename"
-             << std::setw(8) << "min"
-             << std::setw(8) << "max"
-             << std::setw(8) << "drange"
-             << std::setw(8) << "lsb"
-             << "\n";
+	      << std::setw(8) << "min"
+	      << std::setw(8) << "max"
+      	      << std::setw(8) << "mean"
+      	      << std::setw(8) << "stddev"
+	      << std::setw(8) << ".25*quant"
+      	      << std::setw(8) << "median"
+      	      << std::setw(8) << ".75*quant"
+      ;
+
+    if(_config.count("bit_details")){
+      std::cout << std::setw(8) << "drange"
+		<< std::setw(8) << "lsb";
+    }
+    
+    std::cout << "\n";
 
   };
 
   template <typename T>
   static void print(const std::vector<T>& _payload,
-                   const po::variables_map& _config) {
+		    const po::variables_map& _config) {
 
 
     T min = *std::min_element(_payload.begin(), _payload.end());
     T max = *std::max_element(_payload.begin(), _payload.end());
-
-    static const double base2 = 1/std::log(2);
     
-    double drange = 0;
-    if(min!=max)
-      drange = std::ceil(std::log(max - min + 1)*base2);
-
-    int low_bit = sqeazy::lowest_set_bit(_payload.begin(), _payload.end());
-    
+        
     std::cout << std::setw(8) << min
-             << std::setw(8) << max
-             << std::setw(8) << drange
-             << std::setw(8) << low_bit
-             << "\n";
+	      << std::setw(8) << max;
+
+    sqeazy::histogram<T> hist(_payload.cbegin(), _payload.cend());
+    std::cout.precision(2);
+    std::cout << std::setw(8) << hist.mean()
+	      << std::setw(8) << hist.mean_variation()
+	      << std::setw(8) << hist.calc_support(.25)
+    	      << std::setw(8) << hist.median()
+      	      << std::setw(8) << hist.calc_support(.75);
+    std::cout.precision(6);
+    
+    if(_config.count("bit_details")){
+      
+      static const double base2 = 1/std::log(2);
+    
+      double drange = 0;
+      if(min!=max)
+	drange = std::ceil(std::log(max - min + 1)*base2);
+
+      int low_bit = sqeazy::lowest_set_bit(_payload.begin(), _payload.end());
+
+      std::cout << std::setw(8) << drange
+		<< std::setw(8) << low_bit;
+    }
+    
+    std::cout << "\n";
 
   };
 
@@ -89,7 +116,7 @@ int scan_files(const std::vector<std::string>& _files,
 
   max_file_name_size *= 1.1;
   
-  info::header(max_file_name_size);
+  info::header(_config,max_file_name_size );
     
   
   for(const std::string& _file : _files) {
