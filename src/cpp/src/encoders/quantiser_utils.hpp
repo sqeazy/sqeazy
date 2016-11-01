@@ -220,12 +220,12 @@ namespace sqeazy {
     
     void computeHistogram(const raw_type* _begin, const raw_type* _end){
       std::fill(histo_.begin(),histo_.end(),0.);
-      sum_ = 0;
-    
+
       for(;_begin!=_end;++_begin){
-	histo_[*_begin]++;
-	sum_+=*_begin;
+      	histo_[*_begin]++;
       }
+
+      sum_ = std::accumulate(histo_.begin(), histo_.end(),0);
     }
 
     void computeImportance(){
