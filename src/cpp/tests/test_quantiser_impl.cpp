@@ -33,6 +33,22 @@ BOOST_AUTO_TEST_CASE( constructs_with_payload ){
   
 }
 
+BOOST_AUTO_TEST_CASE( constructs_with_payload_and_weighter ){
+
+  sqeazy::quantiser<uint16_t,uint8_t> default_ctor(embryo_.data(),
+						   embryo_.data()+embryo_.num_elements()
+						   );
+
+  sqeazy::quantiser<uint16_t,uint8_t> weighted(embryo_.data(),
+					       embryo_.data()+embryo_.num_elements(),
+					       sqeazy::weighters::offset_power_of<>());
+
+  BOOST_CHECK_NE(std::equal(default_ctor.weights_.begin(), default_ctor.weights_.end(),
+			    weighted.weights_.cbegin()), true);
+  
+}
+
+
 BOOST_AUTO_TEST_CASE( setup ){
 
   sqeazy::quantiser<uint16_t,uint8_t> shrinker;
@@ -41,6 +57,17 @@ BOOST_AUTO_TEST_CASE( setup ){
   BOOST_CHECK_NE(std::accumulate(shrinker.lut_encode_.begin(), shrinker.lut_encode_.end(),0),0);
 }
 
+BOOST_AUTO_TEST_CASE( reset ){
+
+  sqeazy::quantiser<uint16_t,uint8_t> shrinker(embryo_.data(),
+					       embryo_.data()+embryo_.num_elements());
+  BOOST_CHECK_NE(shrinker.sum_,0);
+
+  shrinker.reset();
+
+  BOOST_CHECK_EQUAL(shrinker.sum_,0);
+  
+}
 
 BOOST_AUTO_TEST_CASE( max_value ){
 
@@ -890,4 +917,158 @@ BOOST_AUTO_TEST_CASE( decode_lut_yields_only_unique_peaky_bucket ){
 }
 
 
+BOOST_AUTO_TEST_SUITE_END()
+
+template <typename T>
+struct weighters_fixture {
+
+  std::array<T, std::numeric_limits<T>::max()> constv;
+  std::array<T, std::numeric_limits<T>::max()> output;
+  std::array<T, std::numeric_limits<T>::max()> ramp;
+  std::array<T, std::numeric_limits<T>::max()> ramp_w_gaps;
+
+  constexpr static std::size_t ten_percent   = std::round(.1*std::numeric_limits<T>::max());
+  constexpr static std::size_t half_elements = std::round(.5*std::numeric_limits<T>::max());
+
+  
+  weighters_fixture():
+    constv(),
+    output(),
+    ramp(),
+    ramp_w_gaps()
+  {
+
+    constv.fill(2);
+    output.fill(0);
+    
+    std::size_t count = 0;
+    for(T& el : ramp)
+      el = count++;
+
+    
+    auto start = ramp.begin()+ten_percent;
+    auto end = start + (half_elements-ten_percent);
+    auto dst = ramp_w_gaps.begin()+ten_percent;
+    std::copy(start, end, dst);
+
+    start = ramp.begin()+half_elements+ten_percent;
+    end = start + (half_elements-ten_percent);
+    dst = ramp_w_gaps.begin()+half_elements+ten_percent;
+    std::copy(start, end, dst);
+
+  };
+
+};
+
+
+
+BOOST_FIXTURE_TEST_SUITE( weighters_on_16bit , weighters_fixture<uint16_t> )
+
+  BOOST_AUTO_TEST_CASE( none ){
+
+  sqeazy::weighters::none w;
+  for(std::size_t i = 0;i<constv.size();++i)
+    output[i] = constv[i]*w(i, constv[i]);
+
+  BOOST_CHECK_EQUAL_COLLECTIONS(constv.begin(), constv.end(),
+				output.begin(), output.end());
+  
+}
+
+BOOST_AUTO_TEST_CASE( none_on_ramp ){
+
+  sqeazy::weighters::none w;
+  for(std::size_t i = 0;i<ramp.size();++i)
+    output[i] = ramp[i]*w(i, ramp[i]);
+
+  BOOST_CHECK_EQUAL_COLLECTIONS(ramp.begin(), ramp.end(),
+				output.begin(), output.end());
+  
+}
+
+BOOST_AUTO_TEST_CASE( power_of_on_ramp ){
+
+  sqeazy::weighters::power_of<2> w;
+  for(std::size_t i = 0;i<ramp.size();++i)
+    output[i] = ramp[i]*w(i, ramp[i]);
+
+  BOOST_CHECK_NE(std::equal(ramp.begin(), ramp.end(),output.begin()),
+		 true);
+  
+}
+
+BOOST_AUTO_TEST_CASE( offset_power_of_on_ramp ){
+
+  sqeazy::weighters::offset_power_of<2> w;
+  for(std::size_t i = 0;i<ramp.size();++i)
+    output[i] = ramp[i]*w(i, ramp[i]);
+
+  BOOST_CHECK_NE(std::equal(ramp.begin(), ramp.end(),output.begin()),
+		 true);
+
+  
+  
+}
+
+BOOST_AUTO_TEST_CASE( offset_versus_no_offset ){
+
+  sqeazy::weighters::offset_power_of<2> off;
+  sqeazy::weighters::power_of<2> no;
+  auto output_off = output;
+  auto output_no = output;
+  ramp[0] = 42;
+  
+  for(std::size_t i = 0;i<ramp.size();++i)
+    output_no[i] = ramp[i]*no(i, ramp[i]);
+
+  for(std::size_t i = 0;i<ramp.size();++i)
+    output_off[i] = ramp[i]*off(i, ramp[i]);
+    
+  
+  BOOST_CHECK_EQUAL_COLLECTIONS(output_off.begin(), output_off.end(),
+				output_no.begin(), output_no.end());
+
+  
+  
+}
+
+BOOST_AUTO_TEST_CASE( offset_vs_no_offset ){
+
+  sqeazy::weighters::offset_power_of<2> off;
+  sqeazy::weighters::power_of<2> no;
+  auto output_off = output;
+  auto output_no = output;
+  
+  for(std::size_t i = 0;i<ramp.size();++i)
+    output_no[i] = ramp[i]*no(i, ramp[i]);
+
+  for(std::size_t i = 0;i<ramp.size();++i)
+    output_off[i] = ramp[i]*off(i, ramp[i]);
+    
+  
+  BOOST_CHECK_NE(std::equal(output_off.begin(), output_off.begin() + 2*ten_percent,
+			    output_no.begin()),true);
+  
+  
+}
+
+BOOST_AUTO_TEST_CASE( offset_vs_no_offset_on_gaps ){
+
+  sqeazy::weighters::offset_power_of<2> off;
+  sqeazy::weighters::power_of<2> no;
+  auto output_off = output;
+  auto output_no = output;
+  
+  for(std::size_t i = 0;i<ramp_w_gaps.size();++i)
+    output_no[i] = ramp_w_gaps[i]*no(i, ramp_w_gaps[i]);
+
+  for(std::size_t i = 0;i<ramp_w_gaps.size();++i)
+    output_off[i] = ramp_w_gaps[i]*off(i, ramp_w_gaps[i]);
+    
+  BOOST_CHECK_NE(off.first_nonzero_index,0);
+  BOOST_CHECK_NE(std::equal(output_off.begin(), output_off.begin() + 2*ten_percent,
+			    output_no.begin()),true);
+  
+  
+}
 BOOST_AUTO_TEST_SUITE_END()
