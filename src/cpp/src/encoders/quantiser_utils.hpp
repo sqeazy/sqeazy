@@ -17,52 +17,82 @@
 #include "traits.hpp"
 #include "string_parsers.hpp"
 
-
-template<int base =  std::numeric_limits<uint16_t>::max()>
-struct pow4Weighter{
-
-  template <typename T>
-  float operator()(const T& _value) const {
-    return std::pow(_value/double(base),4);
-  }
-  
-};
-
-template<int exponent = 2>
-struct power_law
-{
-
-  static std::string name (){
-    std::ostringstream msg;
-    msg << "power_law" << exponent;
-    return msg.str();
-  }
-  
-  template <typename T, typename return_t = float>
-  constexpr return_t operator()(const T& _value) const {
-    return std::pow(_value,exponent);
-  }
-  
-};
-
-
-struct noWeighter{
-
-  static std::string name (){
-    std::ostringstream msg;
-    msg << "no_weight";
-    return msg.str();
-  }
-  
-  template <typename T>
-  constexpr float operator()(const T& _value) const {
-    return 1.f;
-  }
-  
-};
-
-
 namespace sqeazy {
+
+  namespace weighters {
+    template<int exp_enum = 1, int exp_denom = 1>
+    struct offset_power_of{
+
+      std::size_t first_nonzero_index = std::numeric_limits<std::size_t>::max();
+      const float exponent = float(exp_enum)/exp_denom;
+
+      static std::string name (){
+	std::ostringstream msg;
+	msg << "offset_power_of_" << exp_enum << "_" << exp_denom;
+	return msg.str();
+      }
+  
+      template <typename bin_type, typename value_type>
+      float operator()(const bin_type& _bin_index, const value_type& _index_value)  {
+
+	if(first_nonzero_index == std::numeric_limits<std::size_t>::max() && _index_value != value_type(0))
+	  first_nonzero_index = _bin_index;
+    
+	if(_index_value != 0)
+	  return std::pow(float(_bin_index-first_nonzero_index),exponent);
+	else
+	  return 1.f;
+    
+      }
+  
+    };
+
+    template<int exponent = 2>
+    struct power_of
+    {
+
+      static std::string name (){
+	std::ostringstream msg;
+	msg << "power_of_" << exponent;
+	return msg.str();
+      }
+  
+      template <typename bin_type, typename value_type>
+      float operator()(const bin_type& _bin_index, const value_type& _bin_value)  {
+	return std::pow(_bin_index,exponent);
+      }
+  
+    };
+
+
+
+    // template<int base =  std::numeric_limits<uint16_t>::max()>
+    // struct pow4Weighter{
+
+    //   template <typename bin_type, typename value_type>
+    //   float operator()(const bin_type& _bin_index, const value_type& _bin_value)  {
+    //     return std::pow(_bin_index/double(base),4);
+    //   }
+  
+    // };
+
+
+    struct none{
+
+      static std::string name (){
+	std::ostringstream msg;
+	msg << "no_weight";
+	return msg.str();
+      }
+  
+      template <typename bin_type, typename value_type>
+      float operator()(const bin_type& _bin_index, const value_type& _bin_value)  {
+	return 1.f;
+      }
+  
+    };
+
+  };//weighters
 
   template<typename raw_type, 
 	   typename compressed_type>
@@ -114,10 +144,10 @@ namespace sqeazy {
     lut_encode_t lut_encode_;
     lut_decode_t lut_decode_;
 
-    template <typename weight_functor_t = noWeighter>
+    template <typename weight_functor_t = weighters::none>
     quantiser(const raw_type* _begin = 0,
 	      const raw_type* _end = 0,
-	      weight_functor_t _weight_functor = noWeighter()) :
+	      weight_functor_t _weight_functor = weighters::none()) :
       sum_(0),
       histo_(),
       weights_(),
@@ -126,24 +156,24 @@ namespace sqeazy {
       lut_decode_()
     {
       
-      histo_.fill(0.f);
-      weights_.fill(1.f);
-      importance_.fill(0.f);
-      lut_encode_.fill(0);
-      lut_decode_.fill(0);
+      reset();
       
-      //this loop is fixed at compile time even!
-      //could be potential candidate for unrolling
-      //      weight_functor_t functor;
-      for(uint32_t idx = 0;idx<quantiser::max_raw_;++idx){
-	weights_[idx] = _weight_functor(idx);
-      }
-
-      setup(_begin, _end);
+      setup_com(_begin, _end, _weight_functor);
       
     };
 
 
+    void reset() {
+      
+      histo_.fill(0.f);
+      sum_ = 0;
+      weights_.fill(1.f);
+      importance_.fill(0.f);
+      lut_encode_.fill(0);
+      lut_decode_.fill(0);
+
+    }
+    
     inline raw_type max_value() const {
       auto max_filled_itr = std::find_if(histo_.rbegin(),
 					 histo_.rend(),
@@ -322,6 +352,13 @@ namespace sqeazy {
       
     }
 
+    template <typename weight_functor_t = weighters::none>
+    void computeWeights(weight_functor_t _weight_functor = weighters::none()){
+
+      for(std::size_t bin = 0;bin<histo_.size();++bin)
+	weights_[bin] = _weight_functor(bin,histo_[bin]);
+      
+    }
     
     void computeLUT(){
 
@@ -352,13 +389,18 @@ namespace sqeazy {
        \retval 
        
     */
-    void setup(const raw_type* _begin, const raw_type* _end){
+    template <typename weight_functor_t = weighters::none>
+    void setup(const raw_type* _begin, const raw_type* _end,
+	      weight_functor_t _weight_functor = weighters::none()){
 
       //safe-guard
       if(!_begin || !(_end - _begin))
 	return;
     
       computeHistogram(_begin, _end);
+
+      computeWeights(_weight_functor);
+      
       computeImportance();
       computeLUT();
 
@@ -370,18 +412,24 @@ namespace sqeazy {
 
        \param[in] _begin pointer to begin of input data
        \param[in] _end pointer to end of input data
+       \param[in] _ pointer to end of input data
        
        \return 
        \retval 
        
     */
-    void setup_com(const raw_type* _begin, const raw_type* _end){
+    template <typename weight_functor_t = weighters::none>
+    void setup_com(const raw_type* _begin, const raw_type* _end,
+	      weight_functor_t _weight_functor = weighters::none()){
 
       //safe-guard
       if(!_begin || !(_end - _begin))
 	return;
     
       computeHistogram(_begin, _end);
+
+      computeWeights(_weight_functor);
+      
       computeImportance();
 
       float importanceSum = std::accumulate(importance_.begin(),importance_.end(),0.);
@@ -412,13 +460,17 @@ namespace sqeazy {
        \retval 
        
     */
-    void setup(const raw_type* _input, const size_t& _in_nelems){
+    template <typename weight_functor_t = weighters::none>
+    void setup(const raw_type* _input,
+	       const size_t& _in_nelems,
+	       weight_functor_t _weight_functor = weighters::none()){
 
       //safe-guard
       if(!_input || !_in_nelems)
 	return;
     
       computeHistogram(_input, _input+ _in_nelems);
+      computeWeights(_weight_functor);
       computeImportance();
       computeLUT();
 
