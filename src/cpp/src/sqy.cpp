@@ -200,7 +200,8 @@ int main(int argc, char *argv[])
   verb_aliases["help"] 	= std::string("");
   verb_aliases["compress"] 	= std::string("compress|enc|encode|comp");
   verb_aliases["decompress"] 	= std::string("decompress|dec|decode|rec");
-  verb_aliases["scan"]		= std::string("scan|info");                
+  verb_aliases["scan"]		= std::string("scan|info");
+  verb_aliases["diff"]		= std::string("diff|delta");                
   verb_aliases["convert"] 	= std::string("convert|transform|trf");
   verb_aliases["compare"] 	= std::string("compare|cmp");
 
@@ -209,6 +210,7 @@ int main(int argc, char *argv[])
   verb_descriptions["compress"]	= std::string("compress a tiff stack to native sqy format or hdf5");
   verb_descriptions["decompress"]= std::string("decompress a .sqy/.h5 file to tiff");
   verb_descriptions["scan"]	= std::string("print statistics about the stack in a tiff file");
+  verb_descriptions["diff"]	= std::string("print statistics on the difference a tiff file with any other tiffs");
   verb_descriptions["convert"] 	= std::string("convert a tiff file to another format (.yuv, .y4m)");
   verb_descriptions["compare"] 	= std::string("compare two tiff stacks and see if they are equal");
 
@@ -239,6 +241,12 @@ int main(int argc, char *argv[])
     ("bit_details,d", "print some statistics on bits (dynamic range, lowest set bit)")
     ;
 
+  descriptions["diff"].add_options()
+    ("help,h", "produce help message")
+    ("verbose,v", "enable verbose output")
+    ;
+
+  
   descriptions["convert"].add_options()
     ("help,h", "produce help message")
     ("verbose,v", "enable verbose output")
@@ -253,7 +261,8 @@ int main(int argc, char *argv[])
   static     std::unordered_map<std::string, func_t> verb_functors;
   verb_functors["compress"]	= compress_files;      
   verb_functors["decompress"]	= decompress_files;    
-  verb_functors["scan"]		= scan_files;          
+  verb_functors["scan"]		= scan_files;
+  verb_functors["diff"]		= diff_files;          
   verb_functors["convert"]	= convert_files;       
   verb_functors["compare"]	= compare_files;       
   

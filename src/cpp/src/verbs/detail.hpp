@@ -6,5 +6,6 @@
 #include "convert.hpp"
 #include "decompress.hpp"
 #include "scan.hpp"
+#include "diff.hpp"
 
 #endif /* _SQY_VERBS_H_ */
