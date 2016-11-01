@@ -705,6 +705,22 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE( ramps)
 
+BOOST_AUTO_TEST_CASE( histogram_right ){
+
+  std::vector<uint16_t> input(1 << 12,0);
+  uint16_t value = 0;
+  for( uint16_t& _el : input )
+    _el = value++;
+
+  sqeazy::quantiser<uint16_t,uint8_t> shrinker(input.data(),
+					       input.data()+input.size()
+					       );
+
+  for(std::size_t i = 0;i<(1 << 12);++i)
+    BOOST_REQUIRE_MESSAGE(shrinker.histo_[i]== 1, "\n["<<i<<"] "<<shrinker.histo_[i]<<" != 1 \n");
+  
+}
+
 BOOST_AUTO_TEST_CASE( normal ){
 
   std::vector<uint16_t> input(1 << 12,0);
