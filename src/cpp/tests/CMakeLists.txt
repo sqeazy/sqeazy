@@ -82,8 +82,10 @@ add_executable(test_sqeazy_header_impl test_sqeazy_header_impl.cpp)
 target_link_libraries(test_sqeazy_header_impl ${Boost_LIBRARIES})
 
 add_executable(test_background_scheme_impl test_background_scheme_impl.cpp)
-target_link_libraries(test_background_scheme_impl # ${SQY_LIB}
-  ${Boost_LIBRARIES})
+target_link_libraries(test_background_scheme_impl  ${Boost_LIBRARIES})
+
+add_executable(test_memory_reorder_scheme_impl test_memory_reorder_scheme_impl.cpp)
+target_link_libraries(test_memory_reorder_scheme_impl  ${Boost_LIBRARIES})
 
 
 add_executable(test_hist_impl test_hist_impl.cpp)
