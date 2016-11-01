@@ -8,11 +8,13 @@
 #include <numeric>
 #include <limits>
 #include <array>
+#include <utility>
 #include <cstdint>
 #include <typeinfo>
 #include <type_traits>
 #include <fstream>
 #include <iomanip>
+#include <regex>
 
 #include "traits.hpp"
 #include "string_parsers.hpp"
@@ -22,7 +24,32 @@
 
 namespace sqeazy {
 
+  static std::pair<int,int> extract_ratio(std::string _text ){
+    
+    std::pair<int,int> value(0,0);
+    const std::regex expression("[0-9]+");
+    std::smatch match;
+    std::regex_search(_text,match,expression);
+    
+    if(!match.empty()){
+      std::string found(match[0].first,match[0].second);
+      value.first = std::stoi(found);
+      value.second = 1;
+      
+      _text = match.suffix();
+      std::regex_search(_text,match,expression);
+      
+      if(!match.empty()){
+	found = std::string(match[0].first,match[0].second);
+	value.second = std::stoi(found);
+      }
 
+    }
+    
+    return value;
+  }
+
+  
   //all is public for now
   template<typename in_type,
 	   typename out_type = char// ,
@@ -35,20 +62,27 @@ namespace sqeazy {
     typedef typename base_type::out_type compressed_type;
 
     std::string quantiser_config;
+    std::string weighting_string;
     parsed_map_t  config_map;
 
     quantiser<raw_type, compressed_type> shrinker;
-    static const std::string description() { return std::string("quantisation that cuts raw bitwidth by 2, e.g. uint16->uint8; if <decode_lut_path> is given, the lut will be taken from there (for decoding) or written there (for encoding); if <decode_lut_string> is given, it'll be taken from the argument value (for decoding) or written there (for encoding)"); };
+    static const std::string description() { return std::string("scalar histogram-based quantisation for conversion uint16->uint8; <decode_lut_path> : the lut will be taken from there (for decoding) or written there (for encoding); <decode_lut_string> : decode LUT will be taken from the argument value (for decoding) or written there (for encoding); <weighting_function>=(none, power_of_enumerator_denominator : apply power-law pow(x,<enumerator>/<denominator>) to histogram weights, offset_power_of_enumerator_denominator : apply power-law pow(x,<enumerator>/<denominator>) to histogram weights starting at first non-zero bin) ");
+    };
     
     quantiser_scheme(const std::string& _payload = ""):
       quantiser_config(_payload),
+      weighting_string("none"),
       config_map(),
       shrinker(){
 
       if(_payload.size())
 	config_map = parse_string_by(_payload);
-
-      auto fitr = config_map.find("decode_lut_path");
+      
+      auto fitr = config_map.find("weighting_function");
+      if(fitr!=config_map.end())
+	weighting_string = fitr->second;
+      
+      fitr = config_map.find("decode_lut_path");
       if(fitr!=config_map.end())
 	shrinker.lut_from_file(fitr->second,shrinker.lut_decode_);
       else{
@@ -148,7 +182,21 @@ namespace sqeazy {
 
       const raw_type* in_begin = _in;
       const raw_type* in_end = _in + _length;
-      shrinker.setup_com(in_begin, in_end);
+
+      //TODO: this atrocious, refactor this if-else-hell
+      if(weighting_string.find("none")!=std::string::npos)
+	shrinker.setup_com(in_begin, in_end);
+      else{
+	auto ratio = sqeazy::extract_ratio(weighting_string);
+	if(weighting_string.find("offset")!=std::string::npos){
+	  sqeazy::weighters::offset_power_of w(ratio.first,ratio.second);
+	  shrinker.setup_com(in_begin, in_end,w);
+	} else {
+	  sqeazy::weighters::power_of w(ratio.first,ratio.second);
+	  shrinker.setup_com(in_begin, in_end,w);
+	}
+	  
+      }
 
       auto fitr = config_map.find("decode_lut_path");
       if(fitr!=config_map.end())

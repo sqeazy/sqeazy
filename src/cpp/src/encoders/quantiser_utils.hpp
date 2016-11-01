@@ -20,13 +20,20 @@
 namespace sqeazy {
 
   namespace weighters {
-    template<int exp_enum = 1, int exp_denom = 1>
+
     struct offset_power_of{
 
       std::size_t first_nonzero_index = std::numeric_limits<std::size_t>::max();
-      const float exponent = float(exp_enum)/exp_denom;
 
-      static std::string name (){
+      int exp_enum = 1;
+      int exp_denom = 1;
+      
+      offset_power_of(int _enum = 1, int _denom = 1):
+	first_nonzero_index(std::numeric_limits<std::size_t>::max()),
+	exp_enum(_enum),
+	exp_denom(_denom){}
+      
+      std::string name (){
 	std::ostringstream msg;
 	msg << "offset_power_of_" << exp_enum << "_" << exp_denom;
 	return msg.str();
@@ -35,6 +42,8 @@ namespace sqeazy {
       template <typename bin_type, typename value_type>
       float operator()(const bin_type& _bin_index, const value_type& _index_value)  {
 
+	const float exponent = float(exp_enum)/exp_denom;
+	
 	if(first_nonzero_index == std::numeric_limits<std::size_t>::max() && _index_value != value_type(0))
 	  first_nonzero_index = _bin_index;
     
@@ -47,18 +56,28 @@ namespace sqeazy {
   
     };
 
-    template<int exponent = 2>
+
     struct power_of
     {
 
-      static std::string name (){
+      int exp_enum = 1;
+      int exp_denom = 1;
+      
+      power_of(int _enum = 1, int _denom = 1):
+	exp_enum(_enum),
+	exp_denom(_denom){}
+      
+      
+      std::string name (){
 	std::ostringstream msg;
-	msg << "power_of_" << exponent;
+	msg << "power_of_" << exp_enum << "_" << exp_denom;
 	return msg.str();
       }
   
       template <typename bin_type, typename value_type>
       float operator()(const bin_type& _bin_index, const value_type& _bin_value)  {
+
+	const float exponent = float(exp_enum)/exp_denom;
 	return std::pow(_bin_index,exponent);
       }
   
@@ -79,7 +98,7 @@ namespace sqeazy {
 
     struct none{
 
-      static std::string name (){
+      std::string name (){
 	std::ostringstream msg;
 	msg << "no_weight";
 	return msg.str();
