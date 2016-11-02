@@ -30,10 +30,10 @@ namespace sqeazy {
       }
 
       template <typename in_iterator_t, typename out_iterator_t, typename shape_container_t>
-      out_iterator_t apply(in_iterator_t _begin,
-			   in_iterator_t _end,
-			   out_iterator_t _out,
-			   const shape_container_t& _shape) const {
+      out_iterator_t encode(in_iterator_t _begin,
+			    in_iterator_t _end,
+			    out_iterator_t _out,
+			    const shape_container_t& _shape) const {
 
 	typedef typename std::iterator_traits<in_iterator_t>::value_type in_value_type;
 	typedef typename std::remove_cv<in_value_type>::type in_value_t;
@@ -44,10 +44,10 @@ namespace sqeazy {
 	typedef typename std::iterator_traits<decltype(_shape.begin())>::value_type shape_value_type;
 	typedef typename std::remove_cv<shape_value_type>::type shape_value_t;
 
-	static_assert(sizeof(in_value_type) == sizeof(out_value_type), "reorder received non-matching types");
+	static_assert(sizeof(in_value_type) == sizeof(out_value_type), "[sqeazy::detail::reorder::encode] reorder received non-matching types");
 
 	if(_shape.size()!=3){
-	  std::cerr << "[sqeazy::detail::reorder] received non-3D shape which is currently unsupported!\n";
+	  std::cerr << "[sqeazy::detail::reorder::encode] received non-3D shape which is currently unsupported!\n";
 	  return _out;
 	}
 	
@@ -56,7 +56,7 @@ namespace sqeazy {
 							    1,
 							    std::multiplies<std::size_t>());
 	if(n_elements_from_shape != n_elements){
-	  std::cerr << "[sqeazy::detail::reorder] input iterator range does not match shape in 1D size!\n";
+	  std::cerr << "[sqeazy::detail::reorder::encode] input iterator range does not match shape in 1D size!\n";
 	  return _out;
 	}
 	
@@ -85,10 +85,12 @@ namespace sqeazy {
 	out_iterator_t dst = _out;
 	
 	for(shape_value_t z = 0;z<_shape[row_major::z];++z){
+	  
 	  ztile = z / tile_size;
 	  z_intile_row_offset = z % tile_size;
 	  
 	  for(shape_value_t y = 0;y<_shape[row_major::y];++y){
+
 	    ytile = y / tile_size;
 	    y_intile_row_offset = y % tile_size;
 	    
@@ -115,7 +117,7 @@ namespace sqeazy {
 
 	bool has_remainder = std::count_if(rem.begin(), rem.end(), [](shape_value_t el){ return el > 0;});
 	if(!has_remainder)
-	  return _out + n_elements;
+	  return dst;//_out + n_elements;
 	    
 
 
@@ -126,6 +128,17 @@ namespace sqeazy {
 	return _out;
       }
 
+
+      template <typename in_iterator_t, typename out_iterator_t, typename shape_container_t>
+      out_iterator_t decode(in_iterator_t _begin,
+			    in_iterator_t _end,
+			    out_iterator_t _out,
+			    const shape_container_t& _shape) const {
+	
+	return encode(_begin, _end, _out,_shape);
+	
+      }
+      
     };
 
   };
