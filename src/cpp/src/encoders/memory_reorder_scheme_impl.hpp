@@ -9,6 +9,7 @@
 #include "dynamic_stage.hpp"
 #include "string_parsers.hpp"
 
+#include "memory_reorder_utils.hpp"
 
 namespace sqeazy {
 
