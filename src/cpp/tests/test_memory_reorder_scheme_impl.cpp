@@ -129,9 +129,10 @@ BOOST_AUTO_TEST_CASE( tile_of_3 )
   std::vector<std::uint16_t> expected = {0,1,2,
 					 8,9,10,
 					 16,17,18,
-					 24,25,26,
 					 64,65,66,
-					 72,73,74};
+					 72,73,74,
+					 80,81,82
+  };
   
   BOOST_CHECK_EQUAL_COLLECTIONS(to_play_with.begin(), to_play_with.begin()+expected.size(),
 				expected.begin(), expected.end()); 
@@ -187,5 +188,26 @@ BOOST_AUTO_TEST_CASE( tile_of_4 )
 
 }
 
+BOOST_AUTO_TEST_CASE( tile_of_3 )
+{
+
+  sqyd::reorder in_tiles_of(3);
+  auto rem = in_tiles_of.encode(incrementing_cube.cbegin(), incrementing_cube.cend(),
+				to_play_with.begin(),
+				dims);
+  BOOST_REQUIRE(rem == to_play_with.end());
+
+  auto decoded = constant_cube;
+  std::fill(decoded.begin(), decoded.end(),0);
+
+  rem = in_tiles_of.decode(to_play_with.cbegin(),to_play_with.cend(),
+			   decoded.begin(),
+			   dims);
+  BOOST_REQUIRE(rem == decoded.end());  
+  BOOST_CHECK_EQUAL_COLLECTIONS(decoded.begin(), decoded.end(),
+				decoded.begin(), decoded.end()); 
+  
+
+}
 
 BOOST_AUTO_TEST_SUITE_END()
