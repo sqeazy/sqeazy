@@ -194,7 +194,7 @@ namespace sqeazy {
 	std::size_t running_sum = 0;
 	for(std::size_t i = 0;i<tile_size_sums.size();++i){
 	  tile_size_sums[i] = running_sum;
-	  running_sum =+ tile_sizes[i];
+	  running_sum += tile_sizes[i];
 	}
 	
 	std::size_t in_row  = 0;
@@ -239,7 +239,6 @@ namespace sqeazy {
 			      _out + tile_output_offset + intile_row_offset
 			      );
 	      
-	      tile_index+=1;
 	    }
 	    
 	  }
