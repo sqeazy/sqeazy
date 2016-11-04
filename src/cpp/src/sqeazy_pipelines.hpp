@@ -4,6 +4,7 @@
 //import native filters/sinks
 #include "encoders/sqeazy_impl.hpp"
 #include "encoders/quantiser_scheme_impl.hpp"
+#include "encoders/memory_reorder_scheme_impl.hpp"
 
 //import external filters/sinks
 #include "encoders/lz4.hpp"
@@ -23,7 +24,8 @@ namespace sqeazy {
     bitswap_scheme<T>,
     remove_background_scheme<T>,
     flatten_to_neighborhood_scheme<T>,
-    remove_estimated_background_scheme<T>
+    remove_estimated_background_scheme<T>,
+    memory_reorder_scheme<T>
     >;
 
   template <typename T>
@@ -39,7 +41,8 @@ namespace sqeazy {
     bitswap_scheme<T>,
     h264_scheme<T>,
     hevc_scheme<T>,
-    lz4_scheme<T>
+    lz4_scheme<T>,
+    memory_reorder_scheme<T>
     >;
   
   template <typename T>
