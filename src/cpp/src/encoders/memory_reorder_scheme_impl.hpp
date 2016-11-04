@@ -54,20 +54,12 @@ namespace sqeazy {
       	  tile_size = std::stoi(f_itr->second);
 	
       }
-      // 	f_itr = config_map.find("threshold");
-      // 	if(f_itr!=config_map.end())
-      // 	  threshold = std::stoi(f_itr->second);
-      // }
     }
 
     std::string name() const override final {
 
       std::ostringstream msg;
-        msg << "memory_reorder"
-            // << Neighborhood::x_offset_end - Neighborhood::x_offset_begin << "x"
-            // << Neighborhood::y_offset_end - Neighborhood::y_offset_begin << "x"
-            // << Neighborhood::z_offset_end - Neighborhood::z_offset_begin 
-	  ;
+        msg << "memory_reorder";
 
         return msg.str();
 	

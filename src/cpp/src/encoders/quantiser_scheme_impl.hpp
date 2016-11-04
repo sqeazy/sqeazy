@@ -14,37 +14,52 @@
 #include <type_traits>
 #include <fstream>
 #include <iomanip>
-#include <regex>
+//#include <regex>
 
 #include "traits.hpp"
 #include "string_parsers.hpp"
 #include "dynamic_stage.hpp"
 #include "quantiser_utils.hpp"
-
+#include "regex_helpers.hpp"
 
 namespace sqeazy {
 
   static std::pair<int,int> extract_ratio(std::string _text ){
+
     
     std::pair<int,int> value(0,0);
-    const std::regex expression("[0-9]+");
-    std::smatch match;
-    std::regex_search(_text,match,expression);
-    
-    if(!match.empty()){
-      std::string found(match[0].first,match[0].second);
-      value.first = std::stoi(found);
-      value.second = 1;
-      
-      _text = match.suffix();
-      std::regex_search(_text,match,expression);
-      
-      if(!match.empty()){
-	found = std::string(match[0].first,match[0].second);
-	value.second = std::stoi(found);
-      }
+    std::size_t pos_dash = _text.rfind("_");
+    if(pos_dash == std::string::npos)
+      return value;
 
+    auto res = sqeazy::extract_ints(_text);
+    
+    if(res.size()==1){
+      value.first = res[0];
+      value.second = 1;
     }
+    if(res.size()==2){
+      value.first = res[0];
+      value.second = res[1];
+    }
+    // const std::regex expression("[0-9]+");
+    // std::smatch match;
+    // std::regex_search(_text,match,expression);
+    
+    // if(!match.empty()){
+    //   std::string found(match[0].first,match[0].second);
+    //   value.first = std::stoi(found);
+    //   value.second = 1;
+      
+    //   _text = match.suffix();
+    //   std::regex_search(_text,match,expression);
+      
+    //   if(!match.empty()){
+    // 	found = std::string(match[0].first,match[0].second);
+    // 	value.second = std::stoi(found);
+    //   }
+
+    // }
     
     return value;
   }
