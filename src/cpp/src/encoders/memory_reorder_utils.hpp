@@ -466,11 +466,15 @@ namespace sqeazy {
 	
 	std::vector<std::array<std::size_t, 3> > tile_offsets(n_tiles, tile_shape);
 	auto linear_offsets_begin = tile_offsets.begin();
+	std::array<std::size_t, 3> loc;
 	
 	for(shape_value_t z = 0;z<_shape[row_major::z];z+=tile_size){
 	  for(shape_value_t y = 0;y<_shape[row_major::y];y+=tile_size){
 	    for(shape_value_t x = 0;x<_shape[row_major::x];x+=tile_size){
-	      *linear_offsets_begin = {z,y,x};
+	      loc[row_major::x] = x;
+	      loc[row_major::y] = y;
+	      loc[row_major::z] = z;
+	      *linear_offsets_begin = loc;
 	      ++linear_offsets_begin;
 	    }
 	  }
@@ -482,10 +486,13 @@ namespace sqeazy {
 	shape_value_t y_in_tile = 0;
 	shape_value_t output_offset = 0;
 
-	//	const std::size_t output_frame_size_in_tiles = tiles_per_dim[row_major::x]*tiles_per_dim[row_major::y];
 	std::vector<in_value_t> buffer_row(_shape[row_major::x],0);
 	auto buffer_row_begin = buffer_row.begin();
 	in_iterator_t src = _begin;
+	
+	std::array<std::size_t, 3> dst_offset;dst_offset.fill(0);
+	std::size_t dst_start_tile = 0;
+	std::size_t write_count = 0;
 	
 	for(std::size_t row_in_tile = 0;row_in_tile<max_n_rows_per_tile;++row_in_tile){
 
@@ -496,9 +503,6 @@ namespace sqeazy {
 
 	    if(!(row_in_tile<tile_n_rows[tile]))
 	      continue;
-	    
-	    z_in_tile = row_in_tile / tile_shapes[tile][row_major::y];
-	    y_in_tile = row_in_tile % tile_shapes[tile][row_major::y];;
 
 	    src += row_in_tile*tile_shapes[tile][row_major::x];
 	    
@@ -506,30 +510,35 @@ namespace sqeazy {
 					 buffer_row_begin);
 
 	    if(buffer_row_begin == buffer_row.end()){
-	      auto dst_ref_tile = tile - (tiles_per_dim[row_major::x]-1);
+
+	      dst_offset = tile_offsets[tile];
+		
+	      z_in_tile = row_in_tile / tile_shapes[tile][row_major::y];
+	      y_in_tile = row_in_tile % tile_shapes[tile][row_major::y];
+
+	      dst_start_tile = (dst_offset[row_major::z]+z_in_tile)*output_frame_size;
+	      dst_start_tile += (dst_offset[row_major::y]+y_in_tile)*_shape[row_major::x]  ;
+	      dst_start_tile += dst_offset[row_major::x] + tile_shapes[tile][row_major::x] ;
+	      dst_start_tile -= buffer_row.size();
 	      
-	      auto offset = tile_offsets[dst_ref_tile];
-	      dst = _out + (offset[row_major::z]+z_in_tile)*output_frame_size
-		+ (offset[row_major::y]+y_in_tile)*_shape[row_major::x]
-		;
-	      
-	      dst = std::copy(buffer_row.begin(),buffer_row.end(),
+	      dst = _out + dst_start_tile ;
+	      		
+	      dst = std::copy(buffer_row.begin(),
+			      buffer_row.end(),
 			      dst);
+	      write_count += buffer_row.size();
 	      buffer_row_begin = buffer_row.begin();
+	      
 	    }
 	    
-
-	    // output_offset = tile_root_offsets[tile] + ztile*output_frame_size + ytile*_shape[row_major::x];
-	    
-	    // dst = _out + output_offset;
-
-	    // dst = std::copy(src,
-	    // 		    src+tile_shapes[row_in_tile][row_major::x],
-	    // 		    dst);
 	  }
 	}
-	
-	return dst;
+
+	const std::size_t n_elements = (_end - _begin);
+	if(write_count == n_elements)
+	  return _out + write_count;
+	else
+	  return _out;
 	
       }
 
