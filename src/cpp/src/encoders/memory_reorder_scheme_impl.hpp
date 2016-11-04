@@ -36,10 +36,6 @@ namespace sqeazy {
 
     std::size_t tile_size;
     
-    // memory_reorder_scheme():
-    //   tile_size(default_tile_size){
-    // }
-
     
     memory_reorder_scheme(const std::string& _payload=""):
       tile_size(default_tile_size)
