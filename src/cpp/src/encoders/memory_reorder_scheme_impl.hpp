@@ -32,20 +32,28 @@ namespace sqeazy {
     typedef in_type compressed_type;
 
     static const std::string description() { return std::string("reorder the memory layout of the incoming buffer"); };
+    static const std::size_t default_tile_size = 16/sizeof(in_type);
 
-    memory_reorder_scheme(){
+    std::size_t tile_size;
+    
+    memory_reorder_scheme():
+      tile_size(default_tile_size){
     }
 
     
-    memory_reorder_scheme(const std::string& _payload=""){
+    memory_reorder_scheme(const std::string& _payload=""):
+      tile_size(default_tile_size)
+    {
+      
+      auto config_map = parse_string_by(_payload);
 
-      // auto config_map = parse_string_by(_payload);
-
-      // if(config_map.size()){
-      // 	auto f_itr = config_map.find("fraction");
-      // 	if(f_itr!=config_map.end())
-      // 	  fraction = std::stof(f_itr->second);
-
+      if(config_map.size()){
+	
+      	auto f_itr = config_map.find("tile_size");
+      	if(f_itr!=config_map.end())
+      	  tile_size = std::stoi(f_itr->second);
+	
+      }
       // 	f_itr = config_map.find("threshold");
       // 	if(f_itr!=config_map.end())
       // 	  threshold = std::stoi(f_itr->second);
@@ -67,10 +75,9 @@ namespace sqeazy {
 
     std::string config() const override final {
 
-      // std::ostringstream msg;
-      // msg << "threshold=" << std::to_string(threshold) << ",";
-      // msg << "fraction=" << std::to_string(fraction);
-      return "";
+      std::ostringstream msg;
+      msg << "tile_size=" << std::to_string(tile_size);
+      return msg.str();
     
     }
 
@@ -79,6 +86,7 @@ namespace sqeazy {
       return _size_bytes;
     }
 
+    
     compressed_type* encode( const raw_type* _input,
 			     compressed_type* _output,
 			     const std::vector<std::size_t>& _shape) override final {
@@ -86,17 +94,32 @@ namespace sqeazy {
       typedef std::size_t size_type;
       unsigned long length = std::accumulate(_shape.begin(), _shape.end(), 1, std::multiplies<size_type>());
 
+      detail::reorder tiles_of(tile_size);
       
-      return _output+length;
-      
+      auto value = tiles_of.encode(_input, _input+length,
+				   _output,
+				   _shape);
+
+      return value;
     }
 
-    int decode( const compressed_type* _input, raw_type* _output,
-		const std::vector<std::size_t>& _shape,
-		std::vector<std::size_t>) const override final {
+    int decode( const compressed_type* _input,
+		raw_type* _output,
+		const std::vector<std::size_t>& _ishape,
+		std::vector<std::size_t> _oshape = std::vector<std::size_t>()) const override final {
 
-      std::size_t total_size = std::accumulate(_shape.begin(), _shape.end(), 1, std::multiplies<std::size_t>());
-      return 0;
+      std::size_t length = std::accumulate(_ishape.begin(), _ishape.end(), 1, std::multiplies<std::size_t>());
+
+      detail::reorder tiles_of(tile_size);
+      
+      auto value = tiles_of.decode(_input, _input+length,
+				   _output,
+				   _ishape);
+
+      if(value==(_output+length))
+	return SUCCESS;
+      else
+	return FAILURE;
 
     }
 
