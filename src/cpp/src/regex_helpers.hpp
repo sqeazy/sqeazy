@@ -32,7 +32,7 @@ namespace sqeazy {
   }
 
   template <typename string_t>
-  std::vector<int> extract_ints(const string_t& _data, const std::string& _regex = "[0-9]+"){
+  std::vector<int> extract_ints(string_t _data, const std::string& _regex = "[0-9]+"){
 
     std::vector<int> value;
     const boost::regex regex_present(_regex,boost::regex::egrep);
