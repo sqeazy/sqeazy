@@ -238,12 +238,14 @@ int main(int argc, char *argv[])
   descriptions["scan"].add_options()
     ("help,h", "produce help message")
     ("verbose,v", "enable verbose output")
-    ("bit_details,d", "print some statistics on bits (dynamic range, lowest set bit)")
+    ("bit_details,b", "print some statistics on bits (dynamic range, lowest set bit)")
+    ("delimiter,d", po::value<std::string>()->default_value(","), "delimiter to separate columns")
     ;
 
   descriptions["diff"].add_options()
     ("help,h", "produce help message")
     ("verbose,v", "enable verbose output")
+    ("delimiter,d", po::value<std::string>()->default_value(","), "delimiter to separate columns")
     ;
 
   

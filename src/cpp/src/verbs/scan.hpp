@@ -31,18 +31,18 @@ struct info
 		     const int& _space_left = 30) {
 
     std::cout << std::setw(_space_left) << "filename"
-	      << std::setw(8) << "min"
-	      << std::setw(8) << "max"
-      	      << std::setw(8) << "mean"
-      	      << std::setw(8) << "stddev"
-	      << std::setw(8) << ".25*quant"
-      	      << std::setw(8) << "median"
-      	      << std::setw(8) << ".75*quant"
+	      << _config["delimiter"].as<std::string>() << "min"
+	      << _config["delimiter"].as<std::string>() << "max"
+      	      << _config["delimiter"].as<std::string>() << "mean"
+      	      << _config["delimiter"].as<std::string>() << "stddev"
+	      << _config["delimiter"].as<std::string>() << ".25*quant"
+      	      << _config["delimiter"].as<std::string>() << "median"
+      	      << _config["delimiter"].as<std::string>() << ".75*quant"
       ;
 
     if(_config.count("bit_details")){
-      std::cout << std::setw(8) << "drange"
-		<< std::setw(8) << "lsb";
+      std::cout << _config["delimiter"].as<std::string>() << "drange"
+		<< _config["delimiter"].as<std::string>() << "lsb";
     }
     
     std::cout << "\n";
@@ -58,16 +58,16 @@ struct info
     T max = *std::max_element(_payload.begin(), _payload.end());
     
         
-    std::cout << std::setw(8) << min
-	      << std::setw(8) << max;
+    std::cout << _config["delimiter"].as<std::string>() << min
+	      << _config["delimiter"].as<std::string>() << max;
 
     sqeazy::histogram<T> hist(_payload.cbegin(), _payload.cend());
     std::cout.precision(2);
-    std::cout << std::setw(8) << hist.mean()
-	      << std::setw(8) << hist.mean_variation()
-	      << std::setw(8) << hist.calc_support(.25)
-    	      << std::setw(8) << hist.median()
-      	      << std::setw(8) << hist.calc_support(.75);
+    std::cout << _config["delimiter"].as<std::string>() << hist.mean()
+	      << _config["delimiter"].as<std::string>() << hist.mean_variation()
+	      << _config["delimiter"].as<std::string>() << hist.calc_support(.25)
+    	      << _config["delimiter"].as<std::string>() << hist.median()
+      	      << _config["delimiter"].as<std::string>() << hist.calc_support(.75);
     std::cout.precision(6);
     
     if(_config.count("bit_details")){
@@ -80,8 +80,8 @@ struct info
 
       int low_bit = sqeazy::lowest_set_bit(_payload.begin(), _payload.end());
 
-      std::cout << std::setw(8) << drange
-		<< std::setw(8) << low_bit;
+      std::cout << _config["delimiter"].as<std::string>() << drange
+		<< _config["delimiter"].as<std::string>() << low_bit;
     }
     
     std::cout << "\n";

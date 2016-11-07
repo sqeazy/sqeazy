@@ -31,14 +31,15 @@ struct diff_info
 		     const po::variables_map& _config,
 		     const int& _space_left = 30) {
 
-    std::string first = _reffile;
-    first += " vs.";
+    std::string first = "ref=";
+      first += _reffile;
+
     std::cout << std::setw(_space_left) << first
-	      << std::setw(10) << "mse"
-	      << std::setw(8) << "lmax"
-      	      << std::setw(8) << "lmin"
-      	      << std::setw(8) << "refmax"
-      	      << std::setw(8) << "refmin"
+      	      << _config["delimiter"].as<std::string>() << "mse"
+	      << _config["delimiter"].as<std::string>() << "max"
+      	      << _config["delimiter"].as<std::string>() << "min"
+      	      << _config["delimiter"].as<std::string>() << "refmax"
+      	      << _config["delimiter"].as<std::string>() << "refmin"
       ;
     
     std::cout << "\n";
@@ -58,16 +59,17 @@ struct diff_info
       }
 
     T left_max  = *std::max_element(_left.begin(), _left.end());
-    T right_max = *std::max_element(_ref.begin(), _ref.end());
     T left_min  = *std::min_element(_left.begin(), _left.end());
-    T right_min = *std::min_element(_ref.begin(), _ref.end());
+
+    T ref_max = *std::max_element(_ref.begin(), _ref.end());
+    T ref_min = *std::min_element(_ref.begin(), _ref.end());
     
     std::cout.precision(4);
-    std::cout << std::setw(10) << mse/(_left.size()-1)
-	      << std::setw(8) << left_max
-      	      << std::setw(8) << left_min
-      	      << std::setw(8) << right_max
-      	      << std::setw(8) << right_min
+    std::cout << _config["delimiter"].as<std::string>() << mse/(_left.size()-1)
+	      << _config["delimiter"].as<std::string>() << left_max
+      	      << _config["delimiter"].as<std::string>() << left_min
+      	      << _config["delimiter"].as<std::string>() << ref_max
+      	      << _config["delimiter"].as<std::string>() << ref_min
       ;
     
     std::cout << "\n";
