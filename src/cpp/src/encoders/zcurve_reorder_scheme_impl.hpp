@@ -38,8 +38,8 @@ namespace sqeazy {
     static const std::size_t default_tile_size = 16/sizeof(in_type);
 
     std::size_t tile_size;
-    std::function<std::uint64_t(const std::array<std::uint32_t,3>&)> zcurve_encode;
-    std::function<void(std::uint64_t,std::array<std::uint32_t,3>&)>  zcurve_decode;
+    std::function<std::uint64_t(std::uint32_t,std::uint32_t,std::uint32_t)> zcurve_encode;
+    std::function<void(std::uint64_t,std::uint32_t&,std::uint32_t&,std::uint32_t&)>  zcurve_decode;
 
     
     zcurve_reorder_scheme(const std::string& _payload=""):
@@ -121,16 +121,21 @@ namespace sqeazy {
 			     compressed_type* _output,
 			     const std::vector<std::size_t>& _shape) override final {
 
-      // typedef std::size_t size_type;
-      // unsigned long length = std::accumulate(_shape.begin(), _shape.end(), 1, std::multiplies<size_type>());
+      std::uint64_t dst = 0;
 
-      // detail::reorder tiles_of(tile_size);
+      const raw_type* itr = _input;
       
-      // auto value = tiles_of.encode(_input, _input+length,
-      // 				   _output,
-      // 				   _shape);
+      for(std::uint32_t z = 0;z<_shape[row_major::z];++z)
+	for(std::uint32_t y = 0;y<_shape[row_major::y];++y)
+	  for(std::uint32_t x = 0;x<_shape[row_major::x];++x){
 
-      return nullptr;
+	    dst = zcurve_encode(z,y,x);
+	    *(_output+dst) = *(itr++);
+	    
+	  }
+
+      compressed_type* value = _output + (itr - _input);
+      return value;
     }
 
     int decode( const compressed_type* _input,
@@ -138,19 +143,25 @@ namespace sqeazy {
 		const std::vector<std::size_t>& _ishape,
 		std::vector<std::size_t> _oshape = std::vector<std::size_t>()) const override final {
 
-      // std::size_t length = std::accumulate(_ishape.begin(), _ishape.end(), 1, std::multiplies<std::size_t>());
+      std::size_t length = std::accumulate(_ishape.begin(), _ishape.end(), 1, std::multiplies<std::size_t>());
 
-      // detail::reorder tiles_of(tile_size);
+      std::uint64_t src = 0;
+      raw_type* out = _output;
       
-      // auto value = tiles_of.decode(_input, _input+length,
-      // 				   _output,
-      // 				   _ishape);
+      for(std::uint32_t z = 0;z<_ishape[row_major::z];++z)
+	for(std::uint32_t y = 0;y<_ishape[row_major::y];++y)
+	  for(std::uint32_t x = 0;x<_ishape[row_major::x];++x){
 
-      // if(value==(_output+length))
-      // 	return SUCCESS;
-      // else
-	return FAILURE;
-
+	    src = zcurve_encode(z,y,x);
+	    *out = *(_input + src);
+	    ++out;
+	  }
+      
+      if(out==(_output+length))
+      	return SUCCESS;
+      else
+      	return FAILURE;
+      
     }
 
     

@@ -115,7 +115,7 @@ namespace sqeazy {
     
       static constexpr array_t values = fill_array<stripe_size, bitplane_width , size>();
 
-      static inline std::uint64_t from_(std::uint32_t z,
+      static inline std::uint64_t from(std::uint32_t z,
 				       std::uint32_t y,
 				       std::uint32_t x){
 	std::uint64_t value = 0;
@@ -137,24 +137,14 @@ namespace sqeazy {
 	return value;
       }
 
-      static inline std::uint64_t from(const std::array<std::uint32_t,stripe_size>& _coords){
+      static inline std::uint64_t from_(const std::array<std::uint32_t,stripe_size>& _coords){
 	return from_(_coords[row_major::z],
 		     _coords[row_major::y],
 		     _coords[row_major::x]);
       }
 
-      static inline void to_(std::uint64_t index,std::uint32_t& z, std::uint32_t& y, std::uint32_t& x){
-	std::array<std::uint32_t,stripe_size> coords;
-	coords[row_major::z]  = z;
-	coords[row_major::y]  = y;
-	coords[row_major::x]  = x;
-	to(index, coords);
-	z= coords[row_major::z];
-	y= coords[row_major::y];
-	x= coords[row_major::x];
-      }
       
-      static inline void to(std::uint64_t index,std::array<std::uint32_t,stripe_size>& _coords){
+      static inline void to_(std::uint64_t index,std::array<std::uint32_t,stripe_size>& _coords){
 
 	static const std::uint32_t bits_per_dim		= sizeof(index)*CHAR_BIT/3 	;
 	// static const std::uint32_t n_full_spans		= bits_per_dim/span_bits  	;
@@ -177,6 +167,18 @@ namespace sqeazy {
 	return;
       
       }
+
+      static inline void to(std::uint64_t index,std::uint32_t& z, std::uint32_t& y, std::uint32_t& x){
+	std::array<std::uint32_t,stripe_size> coords;
+	coords[row_major::z]  = z;
+	coords[row_major::y]  = y;
+	coords[row_major::x]  = x;
+	to_(index, coords);
+	z= coords[row_major::z];
+	y= coords[row_major::y];
+	x= coords[row_major::x];
+      }
+
 
     };
 

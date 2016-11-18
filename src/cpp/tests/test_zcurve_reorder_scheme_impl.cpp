@@ -114,45 +114,93 @@ BOOST_AUTO_TEST_CASE( on_buffer )
 			       to_play_with.data(),
 			       shape);
   BOOST_REQUIRE(rem != nullptr);
-  BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(), constant_cube.end(),
-				to_play_with.begin(), to_play_with.end()); 
-
+  BOOST_REQUIRE_EQUAL(rem,to_play_with.data()+to_play_with.size());
+  
   sqy::zcurve_reorder_scheme<value_type> morton_of1;
   rem = morton_of1.encode(constant_cube.data(),
 			  to_play_with.data(),
 			  shape);
   BOOST_REQUIRE(rem != nullptr);
-  BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(), constant_cube.end(),
-				to_play_with.begin(), to_play_with.end()); 
+  BOOST_REQUIRE_EQUAL(rem,to_play_with.data()+to_play_with.size());
 
 }
 BOOST_AUTO_TEST_SUITE_END()
 
 
-// BOOST_FIXTURE_TEST_SUITE( on_ramp_forward , uint16_cube_of_8 )
+BOOST_FIXTURE_TEST_SUITE( rt_on_ramp , uint16_cube_of_8 )
 
-// BOOST_AUTO_TEST_CASE( tile_of_2 )
-// {
+BOOST_AUTO_TEST_CASE( tile_of_2 )
+{
 
-//   sqyd::reorder in_tiles_of(2);
-//   label_stack_by_tile(incrementing_cube.begin(),dims,2);
-				 
-//   auto rem = in_tiles_of.encode(incrementing_cube.cbegin(), incrementing_cube.cend(),
-// 				to_play_with.begin(),
-// 				dims);
-//   BOOST_REQUIRE(rem == to_play_with.end());
+  std::vector<std::size_t> shape(dims.begin(), dims.end());
+  // label_stack_by_tile(incrementing_cube.begin(),dims,2);
 
-//   std::vector<std::uint16_t> expected = constant_cube;
-//   encoded_tile_labels(expected.begin(),
-// 		      dims,
-// 		      in_tiles_of.tile_size);
+  sqy::zcurve_reorder_scheme<value_type> morton_of;
+  auto rem = morton_of.encode(incrementing_cube.data(), 
+			       to_play_with.data(),
+			       shape);
+  BOOST_REQUIRE(rem != nullptr);
+  BOOST_REQUIRE_EQUAL(rem,to_play_with.data()+to_play_with.size());
+
+  auto res = morton_of.decode(to_play_with.data(),
+			       constant_cube.data(),
+			       shape);
+
+  BOOST_REQUIRE_EQUAL(res,0);
+  BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(), constant_cube.end(),
+				incrementing_cube.begin(), incrementing_cube.end()); 
   
-//   BOOST_CHECK_EQUAL_COLLECTIONS(to_play_with.begin(), to_play_with.begin()+expected.size(),
-// 				expected.begin(), expected.end()); 
+
+}
+
+
+BOOST_AUTO_TEST_CASE( tile_of_4 )
+{
+
+  std::vector<std::size_t> shape(dims.begin(), dims.end());
+  // label_stack_by_tile(incrementing_cube.begin(),dims,2);
+
+  sqy::zcurve_reorder_scheme<value_type> morton_of("tile_size=4");
+  auto rem = morton_of.encode(incrementing_cube.data(), 
+			       to_play_with.data(),
+			       shape);
+  BOOST_REQUIRE(rem != nullptr);
+  BOOST_REQUIRE_EQUAL(rem,to_play_with.data()+to_play_with.size());
+
+  auto res = morton_of.decode(to_play_with.data(),
+			       constant_cube.data(),
+			       shape);
+
+  BOOST_REQUIRE_EQUAL(res,0);
+  BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(), constant_cube.end(),
+				incrementing_cube.begin(), incrementing_cube.end()); 
   
 
-// }
+}
 
+BOOST_AUTO_TEST_CASE( tile_of_8 )
+{
+
+  std::vector<std::size_t> shape(dims.begin(), dims.end());
+  // label_stack_by_tile(incrementing_cube.begin(),dims,2);
+
+  sqy::zcurve_reorder_scheme<value_type> morton_of("tile_size=8");
+  auto rem = morton_of.encode(incrementing_cube.data(), 
+			       to_play_with.data(),
+			       shape);
+  BOOST_REQUIRE(rem != nullptr);
+  BOOST_REQUIRE_EQUAL(rem,to_play_with.data()+to_play_with.size());
+
+  auto res = morton_of.decode(to_play_with.data(),
+			       constant_cube.data(),
+			       shape);
+
+  BOOST_REQUIRE_EQUAL(res,0);
+  BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(), constant_cube.end(),
+				incrementing_cube.begin(), incrementing_cube.end()); 
+  
+
+}
 
 
 // BOOST_AUTO_TEST_CASE( tile_of_4 )
@@ -434,4 +482,4 @@ BOOST_AUTO_TEST_SUITE_END()
   
 
 // }
-//BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END()

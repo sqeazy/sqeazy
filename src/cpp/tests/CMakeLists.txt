@@ -87,6 +87,8 @@ target_link_libraries(test_background_scheme_impl  ${Boost_LIBRARIES})
 add_executable(test_raster_reorder_scheme_impl test_raster_reorder_scheme_impl.cpp)
 target_link_libraries(test_raster_reorder_scheme_impl  ${Boost_LIBRARIES})
 
+add_executable(test_zcurve_reorder_scheme_impl test_zcurve_reorder_scheme_impl.cpp)
+target_link_libraries(test_zcurve_reorder_scheme_impl  ${Boost_LIBRARIES})
 
 add_executable(test_hist_impl test_hist_impl.cpp)
 target_link_libraries(test_hist_impl ${Boost_LIBRARIES})
