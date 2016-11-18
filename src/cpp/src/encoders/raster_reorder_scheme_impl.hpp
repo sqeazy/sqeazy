@@ -1,5 +1,5 @@
-#ifndef _MEMORY_REORDER_SCHEME_IMPL_H_
-#define _MEMORY_REORDER_SCHEME_IMPL_H_
+#ifndef _RASTER_REORDER_SCHEME_IMPL_H_
+#define _RASTER_REORDER_SCHEME_IMPL_H_
 
 #include <sstream>
 #include <string>
@@ -9,7 +9,7 @@
 #include "dynamic_stage.hpp"
 #include "string_parsers.hpp"
 
-#include "memory_reorder_utils.hpp"
+#include "raster_reorder_utils.hpp"
 
 namespace sqeazy {
 
@@ -25,7 +25,7 @@ namespace sqeazy {
 *
 */
   template <typename in_type>
-  struct memory_reorder_scheme : public filter<in_type> {
+  struct raster_reorder_scheme : public filter<in_type> {
   
     typedef filter<in_type> base_type;
     typedef in_type raw_type;
@@ -37,7 +37,7 @@ namespace sqeazy {
     std::size_t tile_size;
     
     
-    memory_reorder_scheme(const std::string& _payload=""):
+    raster_reorder_scheme(const std::string& _payload=""):
       tile_size(default_tile_size)
     {
       
@@ -55,7 +55,7 @@ namespace sqeazy {
     std::string name() const override final {
 
       std::ostringstream msg;
-        msg << "memory_reorder";
+        msg << "raster_reorder";
 
         return msg.str();
 	
@@ -112,7 +112,7 @@ namespace sqeazy {
     }
 
     
-    ~memory_reorder_scheme(){};
+    ~raster_reorder_scheme(){};
 
     std::string output_type() const final override {
 
@@ -133,4 +133,4 @@ namespace sqeazy {
 
 }
 
-#endif /* _MEMORY_REORDER_SCHEME_IMPL_H_ */
+#endif /* _RASTER_REORDER_SCHEME_IMPL_H_ */

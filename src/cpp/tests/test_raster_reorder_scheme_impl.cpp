@@ -7,7 +7,7 @@
 #include <map>
 #include "array_fixtures.hpp"
 // #include "encoders/memory_reorder_utils.hpp"
-#include "encoders/memory_reorder_scheme_impl.hpp"
+#include "encoders/raster_reorder_scheme_impl.hpp"
 #include "traits.hpp"
 
 typedef sqeazy::array_fixture<std::uint16_t> uint16_cube_of_8;
@@ -381,7 +381,7 @@ BOOST_AUTO_TEST_CASE( scheme_tile_of_4 )
 {
 
   
-  sqeazy::memory_reorder_scheme<value_type> scheme("4");
+  sqeazy::raster_reorder_scheme<value_type> scheme("4");
 
   std::vector<std::size_t> shape(dims.begin(), dims.end());
   auto rem = scheme.encode(incrementing_cube.data(),
