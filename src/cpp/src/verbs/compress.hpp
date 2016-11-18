@@ -83,6 +83,63 @@ size_t native_compress_write(const sqeazy::tiff_facet& _input,
 }
 
 template <typename pipe_t>
+size_t tiff_compress_write(const sqeazy::tiff_facet& _input,
+			   pipe_t& _pipeline,
+			   bfs::path& _output_file,
+			   bool _verbose = false){
+
+  typedef typename pipe_t::incoming_t raw_t;
+
+  std::vector<size_t>	input_shape;
+  std::vector<char>	output;
+  size_t		expected_size_byte = _pipeline.max_encoded_size(_input.size_in_byte());
+  // size_t                output_file_size = bfs::exists(_output_file) ? bfs::file_size(_output_file) : 0;
+  size_t		bytes_written =0;
+    
+  if(_pipeline.is_compressor()) {
+    std::cerr << "[SQY::compress to tiff]\t pipelines that perform any compression cannot be written to tiff (yet)\n";
+    return 1;
+  }
+
+  
+  //create clean output buffer
+  if(expected_size_byte!=output.size())
+    output.resize(expected_size_byte);
+  
+  std::fill(output.begin(), output.end(),0);
+
+  //retrieve the size of the loaded buffer
+  _input.dimensions(input_shape);
+
+  //compress  
+  char* enc_end = _pipeline.encode(reinterpret_cast<const raw_t*>(_input.data()),
+				   output.data(),
+				   input_shape);
+
+  if(enc_end == nullptr && _verbose) {
+    std::cerr << "[SQY::compress to tiff]\tnative compression failed! Nothing to write to disk...\n";
+    return 1;
+  }
+
+  ////////////////////////OUTPUT I/O///////////////////////////////
+  
+  sqeazy::tiff_facet otiff(_output_file.generic_string());
+  otiff.shape_ = input_shape;
+  otiff.buffer_.resize(enc_end - output.data());
+
+  std::copy(output.begin(),
+	    output.end(),
+	    otiff.buffer_.begin());
+  
+  otiff.write(_output_file.generic_string(),
+	      sizeof(typename pipe_t::outgoing_t)*CHAR_BIT);
+  
+  bytes_written = bfs::file_size(_output_file);
+
+  return bytes_written;
+}
+
+template <typename pipe_t>
 size_t h5_compress_write(const sqeazy::tiff_facet& _input,
 			  pipe_t& _pipeline,
 			  bfs::path& _output_file,
@@ -214,6 +271,23 @@ int compress_files(const std::vector<std::string>& _files,
       }
     }
 
+    if(output_file.extension()==".tif"){
+      if(input.bits_per_sample()==16){
+	bytes_written = tiff_compress_write(input,
+					      pipe16,
+					      output_file,
+					      _config.count("verbose"));
+      }
+      else{
+	bytes_written = tiff_compress_write(input,
+					    pipe8,
+					    output_file,
+					    _config.count("verbose"));
+	
+      }
+    }
+
+    
     if(output_file.extension()==".h5"){
       
 	if(input.bits_per_sample()==16){
