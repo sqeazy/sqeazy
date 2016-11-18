@@ -211,7 +211,10 @@ BOOST_AUTO_TEST_CASE( tile_of_2 )
 {
 
   std::vector<std::size_t> shape = {15,64,15};
-  std::size_t len = 15*32*32;
+  std::size_t len = std::accumulate(shape.begin(), shape.end(),
+				    1.,
+				    std::multiplies<std::size_t>()
+				    );
   
   std::vector<std::uint16_t> src(len,0);
   for(std::size_t i = 0;i<len;++i)

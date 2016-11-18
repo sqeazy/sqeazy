@@ -10,7 +10,7 @@
 #include "dynamic_stage.hpp"
 #include "string_parsers.hpp"
 
-#include "morton.hpp"
+#include "zcurve_reorder_utils.hpp"
 
 namespace sqeazy {
 
@@ -35,18 +35,14 @@ namespace sqeazy {
     typedef decltype(detail::morton_at_ct<>::to)	to_func_t;
 
     static const std::string description() { return std::string("reorder the memory layout of the incoming buffer using space filling z curves"); };
-    static const std::size_t default_tile_size = 16/sizeof(in_type);
+
 
     std::size_t tile_size;
-    std::function<std::uint64_t(std::uint32_t,std::uint32_t,std::uint32_t)> zcurve_encode;
-    std::function<void(std::uint64_t,std::uint32_t&,std::uint32_t&,std::uint32_t&)>  zcurve_decode;
-    std::size_t max_index_per_dim;
+    detail::zcurve encoder;
     
     zcurve_reorder_scheme(const std::string& _payload=""):
-      tile_size(default_tile_size),
-      zcurve_encode(detail::morton_at_ct<>::from),
-      zcurve_decode(detail::morton_at_ct<>::to),
-      max_index_per_dim(0)
+      tile_size(2),
+      encoder(2)
     {
       
       auto config_map = parse_string_by(_payload);
@@ -56,48 +52,7 @@ namespace sqeazy {
       	auto f_itr = config_map.find("tile_size");
       	if(f_itr!=config_map.end()){
       	  tile_size = std::stoi(f_itr->second);
-
-	  switch(tile_size){
-	  case 2:
-	    zcurve_encode = detail::morton_at_ct<>::from;
-	    zcurve_decode = detail::morton_at_ct<>::to;
-	    max_index_per_dim = 1 << detail::morton_at_ct<>::bits_per_dim;
-	    break;
-	  case 4:
-	    zcurve_encode = detail::morton_at_ct<2>::from;
-	    zcurve_decode = detail::morton_at_ct<2>::to;
-	    max_index_per_dim = 1 << detail::morton_at_ct<2>::bits_per_dim;
-	    break;
-	  case 8:
-	    zcurve_encode = detail::morton_at_ct<3>::from;
-	    zcurve_decode = detail::morton_at_ct<3>::to;
-	    max_index_per_dim = (1 << detail::morton_at_ct<3>::bits_per_dim);
-	    break;
-	  case 16:
-	    zcurve_encode = detail::morton_at_ct<4>::from;
-	    zcurve_decode = detail::morton_at_ct<4>::to;
-	    max_index_per_dim = (1 << detail::morton_at_ct<4>::bits_per_dim);
-	    break;
-	  case 32:
-	    zcurve_encode = detail::morton_at_ct<5>::from;
-	    zcurve_decode = detail::morton_at_ct<5>::to;
-	    max_index_per_dim = (1 << detail::morton_at_ct<5>::bits_per_dim);
-	    break;
-	  case 64:
-	    zcurve_encode = detail::morton_at_ct<6>::from;
-	    zcurve_decode = detail::morton_at_ct<6>::to;
-	    max_index_per_dim = (1 << detail::morton_at_ct<6>::bits_per_dim);
-	    break;
-	  case 128:
-	    zcurve_encode = detail::morton_at_ct<7>::from;
-	    zcurve_decode = detail::morton_at_ct<7>::to;
-	    max_index_per_dim = (1 << detail::morton_at_ct<7>::bits_per_dim);
-	    break;
-	  default:
-	    zcurve_encode = detail::morton_at_ct<>::from;
-	    zcurve_decode = detail::morton_at_ct<>::to;
-	    max_index_per_dim = (1 << detail::morton_at_ct<1>::bits_per_dim);
-	  };
+	  encoder = detail::zcurve(tile_size);
 	  
 	}
 	
@@ -130,24 +85,11 @@ namespace sqeazy {
 			     compressed_type* _output,
 			     const std::vector<std::size_t>& _shape) override final {
 
-      std::uint64_t dst = 0;
-      // std::vector<std::size_t> safe_shape = _shape;
-      // for(std::uint32_t i = 0;i<_shape.size();++i){
-	
-      // }
-      
-      const raw_type* itr = _input;
-      
-      for(std::uint32_t z = 0;z<_shape[row_major::z];++z)
-	for(std::uint32_t y = 0;y<_shape[row_major::y];++y)
-	  for(std::uint32_t x = 0;x<_shape[row_major::x];++x){
-
-	    dst = zcurve_encode(z,y,x);
-	    *(_output+dst) = *(itr++);
-	    
-	  }
-
-      compressed_type* value = _output + (itr - _input);
+      const std::size_t len = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
+      auto value = encoder.encode(_input,
+				  _input + len,
+				  _output,
+				  _shape);
       return value;
     }
 
@@ -156,21 +98,13 @@ namespace sqeazy {
 		const std::vector<std::size_t>& _ishape,
 		std::vector<std::size_t> _oshape = std::vector<std::size_t>()) const override final {
 
-      std::size_t length = std::accumulate(_ishape.begin(), _ishape.end(), 1, std::multiplies<std::size_t>());
+      std::size_t len = std::accumulate(_ishape.begin(), _ishape.end(), 1, std::multiplies<std::size_t>());
 
-      std::uint64_t src = 0;
-      raw_type* out = _output;
-      
-      for(std::uint32_t z = 0;z<_ishape[row_major::z];++z)
-	for(std::uint32_t y = 0;y<_ishape[row_major::y];++y)
-	  for(std::uint32_t x = 0;x<_ishape[row_major::x];++x){
-
-	    src = zcurve_encode(z,y,x);
-	    *out = *(_input + src);
-	    ++out;
-	  }
-      
-      if(out==(_output+length))
+      auto value = encoder.decode(_input,
+				  _input + len,
+				  _output,
+				  _ishape);
+      if(value==(_output+len))
       	return SUCCESS;
       else
       	return FAILURE;
