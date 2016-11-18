@@ -40,12 +40,13 @@ namespace sqeazy {
     std::size_t tile_size;
     std::function<std::uint64_t(std::uint32_t,std::uint32_t,std::uint32_t)> zcurve_encode;
     std::function<void(std::uint64_t,std::uint32_t&,std::uint32_t&,std::uint32_t&)>  zcurve_decode;
-
+    std::size_t max_index_per_dim;
     
     zcurve_reorder_scheme(const std::string& _payload=""):
       tile_size(default_tile_size),
       zcurve_encode(detail::morton_at_ct<>::from),
-      zcurve_decode(detail::morton_at_ct<>::to)
+      zcurve_decode(detail::morton_at_ct<>::to),
+      max_index_per_dim(0)
     {
       
       auto config_map = parse_string_by(_payload);
@@ -60,34 +61,42 @@ namespace sqeazy {
 	  case 2:
 	    zcurve_encode = detail::morton_at_ct<>::from;
 	    zcurve_decode = detail::morton_at_ct<>::to;
+	    max_index_per_dim = 1 << detail::morton_at_ct<>::bits_per_dim;
 	    break;
 	  case 4:
 	    zcurve_encode = detail::morton_at_ct<2>::from;
 	    zcurve_decode = detail::morton_at_ct<2>::to;
+	    max_index_per_dim = 1 << detail::morton_at_ct<2>::bits_per_dim;
 	    break;
 	  case 8:
 	    zcurve_encode = detail::morton_at_ct<3>::from;
 	    zcurve_decode = detail::morton_at_ct<3>::to;
+	    max_index_per_dim = (1 << detail::morton_at_ct<3>::bits_per_dim);
 	    break;
 	  case 16:
 	    zcurve_encode = detail::morton_at_ct<4>::from;
 	    zcurve_decode = detail::morton_at_ct<4>::to;
+	    max_index_per_dim = (1 << detail::morton_at_ct<4>::bits_per_dim);
 	    break;
 	  case 32:
 	    zcurve_encode = detail::morton_at_ct<5>::from;
 	    zcurve_decode = detail::morton_at_ct<5>::to;
+	    max_index_per_dim = (1 << detail::morton_at_ct<5>::bits_per_dim);
 	    break;
 	  case 64:
 	    zcurve_encode = detail::morton_at_ct<6>::from;
 	    zcurve_decode = detail::morton_at_ct<6>::to;
+	    max_index_per_dim = (1 << detail::morton_at_ct<6>::bits_per_dim);
 	    break;
 	  case 128:
 	    zcurve_encode = detail::morton_at_ct<7>::from;
 	    zcurve_decode = detail::morton_at_ct<7>::to;
+	    max_index_per_dim = (1 << detail::morton_at_ct<7>::bits_per_dim);
 	    break;
 	  default:
 	    zcurve_encode = detail::morton_at_ct<>::from;
 	    zcurve_decode = detail::morton_at_ct<>::to;
+	    max_index_per_dim = (1 << detail::morton_at_ct<1>::bits_per_dim);
 	  };
 	  
 	}
@@ -122,7 +131,11 @@ namespace sqeazy {
 			     const std::vector<std::size_t>& _shape) override final {
 
       std::uint64_t dst = 0;
-
+      // std::vector<std::size_t> safe_shape = _shape;
+      // for(std::uint32_t i = 0;i<_shape.size();++i){
+	
+      // }
+      
       const raw_type* itr = _input;
       
       for(std::uint32_t z = 0;z<_shape[row_major::z];++z)

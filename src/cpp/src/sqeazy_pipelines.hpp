@@ -5,6 +5,7 @@
 #include "encoders/sqeazy_impl.hpp"
 #include "encoders/quantiser_scheme_impl.hpp"
 #include "encoders/raster_reorder_scheme_impl.hpp"
+#include "encoders/zcurve_reorder_scheme_impl.hpp"
 
 //import external filters/sinks
 #include "encoders/lz4.hpp"
@@ -25,7 +26,8 @@ namespace sqeazy {
     remove_background_scheme<T>,
     flatten_to_neighborhood_scheme<T>,
     remove_estimated_background_scheme<T>,
-    raster_reorder_scheme<T>
+    raster_reorder_scheme<T>,
+    zcurve_reorder_scheme<T>
     >;
 
   template <typename T>
@@ -42,7 +44,8 @@ namespace sqeazy {
     h264_scheme<T>,
     hevc_scheme<T>,
     lz4_scheme<T>,
-    raster_reorder_scheme<T>
+    raster_reorder_scheme<T>,
+    zcurve_reorder_scheme<T>
     >;
   
   template <typename T>

@@ -203,283 +203,39 @@ BOOST_AUTO_TEST_CASE( tile_of_8 )
 }
 
 
-// BOOST_AUTO_TEST_CASE( tile_of_4 )
-// {
+BOOST_AUTO_TEST_SUITE_END()
 
-//   sqyd::reorder in_tiles_of(4);
-//   auto rem = in_tiles_of.encode(incrementing_cube.cbegin(), incrementing_cube.cend(),
-// 			       to_play_with.begin(),
-// 			       dims);
-//   BOOST_REQUIRE(rem == to_play_with.end());
+BOOST_AUTO_TEST_SUITE( odd_shapes  )
 
-//   std::vector<std::uint16_t> expected = {0,1,2,3,
-//   					 8,9,10,11,
-//   					 16,17,18,19,
-//   					 24,25,26,27,
-//   					 64,65,66,67,
-//   					 72,73,74,75,
-//   					 80,81,82,83,
-//   					 88,89,90,91
-//   };
+BOOST_AUTO_TEST_CASE( tile_of_2 )
+{
+
+  std::vector<std::size_t> shape = {15,64,15};
+  std::size_t len = 15*32*32;
   
-//   BOOST_CHECK_EQUAL_COLLECTIONS(to_play_with.begin(), to_play_with.begin()+expected.size(),
-// 				expected.begin(), expected.end()); 
+  std::vector<std::uint16_t> src(len,0);
+  for(std::size_t i = 0;i<len;++i)
+    src[i] = i;
+  
+  std::vector<std::uint16_t> enc(len,0);
+  std::vector<std::uint16_t> dec(len,0);
   
 
-// }
+  sqy::zcurve_reorder_scheme<std::uint16_t> morton_of;
+  auto rem = morton_of.encode(src.data(), 
+			      enc.data(),
+			      shape);
+  BOOST_REQUIRE(rem != nullptr);
+  BOOST_REQUIRE_EQUAL(rem,enc.data()+enc.size());
 
-// BOOST_AUTO_TEST_CASE( tile_of_4_labelled )
-// {
+  auto res = morton_of.decode(enc.data(),
+			      src.data(),
+			      shape);
 
-//   sqyd::reorder in_tiles_of(4);
-//   label_stack_by_tile(incrementing_cube.begin(),dims,in_tiles_of.tile_size);
-//   auto rem = in_tiles_of.encode(incrementing_cube.cbegin(), incrementing_cube.cend(),
-// 			       to_play_with.begin(),
-// 			       dims);
-//   BOOST_REQUIRE(rem == to_play_with.end());
-
-//   // std::vector<std::uint16_t> expected = {0,1,2,3,
-//   // 					 8,9,10,11,
-//   // 					 16,17,18,19,
-//   // 					 24,25,26,27,
-//   // 					 64,65,66,67,
-//   // 					 72,73,74,75,
-//   // 					 80,81,82,83,
-//   // 					 88,89,90,91
-//   // };
-//   auto expected = constant_cube;
-//   encoded_tile_labels(expected.begin(),
-// 		      dims,
-// 		      in_tiles_of.tile_size);
-  
-//   BOOST_CHECK_EQUAL_COLLECTIONS(to_play_with.begin(), to_play_with.begin()+expected.size(),
-// 				expected.begin(), expected.end()); 
+  BOOST_REQUIRE_EQUAL(res,0);
+  BOOST_CHECK_EQUAL_COLLECTIONS(src.begin(), src.end(),
+				dec.begin(), dec.end()); 
   
 
-// }
-
-
-// BOOST_AUTO_TEST_CASE( tile_of_3 )
-// {
-
-//   sqyd::reorder in_tiles_of(3);
-//   auto rem = in_tiles_of.encode(incrementing_cube.cbegin(), incrementing_cube.cend(),
-// 			       to_play_with.begin(),
-// 			       dims);
-//   BOOST_REQUIRE(rem == to_play_with.end());
-
-//   std::vector<std::uint16_t> expected = {0,1,2,
-// 					 8,9,10,
-// 					 16,17,18,
-// 					 64,65,66,
-// 					 72,73,74,
-// 					 80,81,82
-//   };
-  
-//   BOOST_CHECK_EQUAL_COLLECTIONS(to_play_with.begin(), to_play_with.begin()+expected.size(),
-// 				expected.begin(), expected.end()); 
-  
-
-// }
-
-// BOOST_AUTO_TEST_SUITE_END()
-
-// BOOST_FIXTURE_TEST_SUITE( on_ramp_backward , uint16_cube_of_8 )
-
-// BOOST_AUTO_TEST_CASE( tile_of_2 )
-// {
-
-//   sqyd::reorder in_tiles_of(2);
-//   std::vector<std::uint16_t> expected = {0,1,
-// 					 8,9,
-// 					 64,65,
-// 					 72,73};
-//   std::fill(constant_cube.begin(), constant_cube.end(),0);
-//   std::copy(expected.begin(), expected.end(),constant_cube.begin());
-  
-//   auto rem = in_tiles_of.decode(constant_cube.cbegin(), constant_cube.cend(),
-// 				to_play_with.begin(),
-// 				dims);
-  
-//   BOOST_REQUIRE(rem == to_play_with.end());
-
-//   for(int i = 0;i<8;++i)
-//     BOOST_CHECK_EQUAL(to_play_with[expected[i]],expected[i]);
-  
-
-// }
-
-// BOOST_AUTO_TEST_CASE( tile_of_2_labelled )
-// {
-
-//   sqyd::reorder in_tiles_of(2);
-//   auto encoded = constant_cube;
-//   std::fill(encoded.begin(), encoded.end(),0);
-//   encoded_tile_labels(encoded.begin(),
-// 		      dims,
-// 		      in_tiles_of.tile_size);
-
-//   auto expected = constant_cube;
-//   std::fill(expected.begin(), expected.end(),0);
-//   label_stack_by_tile(expected.begin(),dims,in_tiles_of.tile_size);
-  
-  
-//   auto rem = in_tiles_of.decode(encoded.cbegin(), encoded.cend(),
-// 				to_play_with.begin(),
-// 				dims);
-  
-//   BOOST_REQUIRE(rem == to_play_with.end());
-
-//   BOOST_CHECK_EQUAL_COLLECTIONS(to_play_with.begin(), to_play_with.end(),
-// 				expected.begin(), expected.end()); 
-
-// }
-
-// BOOST_AUTO_TEST_SUITE_END()
-
-// BOOST_FIXTURE_TEST_SUITE( on_ramp_roundtrip , uint16_cube_of_8 )
-
-// BOOST_AUTO_TEST_CASE( tile_of_2 )
-// {
-
-//   sqyd::reorder in_tiles_of(2);
-//   auto rem = in_tiles_of.encode(incrementing_cube.cbegin(), incrementing_cube.cend(),
-// 				to_play_with.begin(),
-// 				dims);
-//   BOOST_REQUIRE(rem == to_play_with.end());
-
-//   auto decoded = constant_cube;
-//   std::fill(decoded.begin(), decoded.end(),0);
-
-//   rem = in_tiles_of.decode(to_play_with.cbegin(),to_play_with.cend(),
-// 			   decoded.begin(),
-// 			   dims);
-//   BOOST_REQUIRE(rem == decoded.end());  
-//   BOOST_CHECK_EQUAL_COLLECTIONS(incrementing_cube.begin(), incrementing_cube.end(),
-// 				decoded.begin(), decoded.end()); 
-  
-
-// }
-
-// BOOST_AUTO_TEST_CASE( tile_of_4 )
-// {
-
-//   sqyd::reorder in_tiles_of(4);
-//   auto rem = in_tiles_of.encode(incrementing_cube.cbegin(), incrementing_cube.cend(),
-// 				to_play_with.begin(),
-// 				dims);
-//   BOOST_REQUIRE(rem == to_play_with.end());
-
-//   auto decoded = constant_cube;
-//   std::fill(decoded.begin(), decoded.end(),0);
-
-//   rem = in_tiles_of.decode(to_play_with.cbegin(),to_play_with.cend(),
-// 			   decoded.begin(),
-// 			   dims);
-//   BOOST_REQUIRE(rem == decoded.end());  
-//   BOOST_CHECK_EQUAL_COLLECTIONS(incrementing_cube.begin(), incrementing_cube.end(),
-// 				decoded.begin(), decoded.end()); 
-  
-
-// }
-
-// BOOST_AUTO_TEST_CASE( tile_of_3 )
-// {
-
-//   sqyd::reorder in_tiles_of(3);
-//   auto rem = in_tiles_of.encode(incrementing_cube.cbegin(), incrementing_cube.cend(),
-// 				to_play_with.begin(),
-// 				dims);
-//   BOOST_REQUIRE(rem == to_play_with.end());
-
-//   auto decoded = constant_cube;
-//   std::fill(decoded.begin(), decoded.end(),0);
-
-//   rem = in_tiles_of.decode(to_play_with.cbegin(),to_play_with.cend(),
-// 			   decoded.begin(),
-// 			   dims);
-//   BOOST_REQUIRE(rem == decoded.end());  
-//   BOOST_CHECK_EQUAL_COLLECTIONS(incrementing_cube.begin(), incrementing_cube.end(),
-// 				decoded.begin(), decoded.end()); 
-  
-
-// }
-
-// BOOST_AUTO_TEST_CASE( scheme_tile_of_4 )
-// {
-
-  
-//   sqeazy::raster_reorder_scheme<value_type> scheme("4");
-
-//   std::vector<std::size_t> shape(dims.begin(), dims.end());
-//   auto rem = scheme.encode(incrementing_cube.data(),
-// 			   to_play_with.data(),
-// 			   shape);
-//   BOOST_REQUIRE(rem == (to_play_with.data() + to_play_with.size()));
-
-//   auto decoded = constant_cube;
-//   std::fill(decoded.begin(), decoded.end(),0);
-
-//   auto rv = scheme.decode(to_play_with.data(),
-// 		      decoded.data(),
-// 		      shape);
-
-//   BOOST_REQUIRE(rv == 0);
-//   BOOST_CHECK_EQUAL_COLLECTIONS(incrementing_cube.begin(), incrementing_cube.end(),
-// 				decoded.begin(), decoded.end()); 
-  
-
-// }
-
-// // BOOST_AUTO_TEST_CASE( tile_of_3 )
-// // {
-
-// //   sqyd::reorder in_tiles_of(3);
-// //   auto rem = in_tiles_of.encode(incrementing_cube.cbegin(), incrementing_cube.cend(),
-// // 				to_play_with.begin(),
-// // 				dims);
-// //   BOOST_REQUIRE(rem == to_play_with.end());
-
-// //   auto decoded = constant_cube;
-// //   std::fill(decoded.begin(), decoded.end(),0);
-
-// //   rem = in_tiles_of.decode(to_play_with.cbegin(),to_play_with.cend(),
-// // 			   decoded.begin(),
-// // 			   dims);
-// //   BOOST_REQUIRE(rem == decoded.end());  
-// //   BOOST_CHECK_EQUAL_COLLECTIONS(incrementing_cube.begin(), incrementing_cube.end(),
-// // 				decoded.begin(), decoded.end()); 
-  
-
-// // }
-
-
-// BOOST_AUTO_TEST_SUITE_END()
-
-// BOOST_FIXTURE_TEST_SUITE( big_roundtrips , uint16_cube_of_32 )
-// BOOST_AUTO_TEST_CASE( tile_of_simd_fitted )
-// {
-
-//   sqyd::reorder in_tiles_of(16/sizeof(value_type));
-//   for(unsigned dim : dims)
-//     BOOST_REQUIRE_EQUAL(dim % in_tiles_of.tile_size,0);
-  
-//   auto rem = in_tiles_of.encode_full_simd(incrementing_cube.data(),
-// 					  incrementing_cube.data()+size,
-// 					  to_play_with.data(),
-// 					  dims);
-//   BOOST_CHECK(rem == (to_play_with.data()+size));
-
-//   auto decoded = constant_cube;
-//   std::fill(decoded.begin(), decoded.end(),0);
-
-//   auto rv_decode = in_tiles_of.decode(to_play_with.cbegin(),to_play_with.cend(),
-// 				      decoded.begin(),
-// 				      dims);
-//   BOOST_CHECK(rv_decode == decoded.end());  
-//   BOOST_CHECK_EQUAL_COLLECTIONS(incrementing_cube.begin(), incrementing_cube.end(),
-// 				decoded.begin(), decoded.end()); 
-  
-
-// }
+}
 BOOST_AUTO_TEST_SUITE_END()

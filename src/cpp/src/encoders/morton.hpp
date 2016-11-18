@@ -106,7 +106,8 @@ namespace sqeazy {
 
       static const std::uint32_t size = 256;
       static const std::uint32_t span_bits = 8;
-
+      static const std::uint32_t bits_per_dim		= sizeof(std::uint64_t)*CHAR_BIT/stripe_size 	;
+      static const std::uint32_t n_full_spans		= bits_per_dim/span_bits  	;
       static const std::uint32_t span_mask = (1 << span_bits) -1;
 
     
@@ -119,8 +120,6 @@ namespace sqeazy {
 				       std::uint32_t y,
 				       std::uint32_t x){
 	std::uint64_t value = 0;
-	static const std::uint32_t bits_per_dim		= sizeof(value)*CHAR_BIT/3 	;
-	static const std::uint32_t n_full_spans		= bits_per_dim/span_bits  	;
 	// static const std::uint32_t n_remaining_bits	= bits_per_dim % span_bits	;
 	// static const std::uint32_t mask_remaining_bits	= (1 << n_remaining_bits) -1 ;
       
