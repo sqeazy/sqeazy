@@ -175,10 +175,59 @@ namespace sqeazy {
 
 	}
 
-	return dst;
+	return _out + (src - _begin);
        
       }
 
+      template <typename shape_container_t>
+      std::vector<std::array<std::size_t, 3> > generate_tile_shapes(const shape_container_t& _shape) const {
+	
+	typedef typename std::iterator_traits<decltype(_shape.begin())>::value_type shape_value_type;
+	typedef typename std::remove_cv<shape_value_type>::type shape_value_t;
+	
+	const auto common = common_power_of_2(_shape);
+	const shape_container_t rem = remainder(_shape);
+	const bool has_remainder = std::count_if(rem.begin(), rem.end(), [](shape_value_t el){ return el > 0;});
+	
+
+	shape_container_t tiles_per_dim = _shape;
+	for(shape_value_t & tile : tiles_per_dim )
+	  tile = (tile + common - 1)/ common;
+	
+	const std::size_t n_tiles = std::accumulate(tiles_per_dim.begin(), tiles_per_dim.end(),
+						    1,
+						    std::multiplies<std::size_t>());
+
+	std::array<std::size_t, 3> tile_shape; tile_shape.fill(common);
+	std::vector<std::array<std::size_t, 3> > value (n_tiles, tile_shape);
+	
+	if(has_remainder){
+	  auto current_tile_shape = value.begin();
+
+	  
+	  for(shape_value_t z = 0;z<_shape[row_major::z];z+=common){
+	    tile_shape[row_major::z] = ((_shape[row_major::z] - z ) < common) ? (_shape[row_major::z] - z) : common;
+	  
+	    for(shape_value_t y = 0;y<_shape[row_major::y];y+=common){
+	      tile_shape[row_major::y] = ((_shape[row_major::y] - y) < common) ? (_shape[row_major::y] - y) : common;
+	      
+	      for(shape_value_t x = 0;x<_shape[row_major::x];x+=common){
+		tile_shape[row_major::x] = ((_shape[row_major::x] - x) < common) ? (_shape[row_major::x] - x) : common;
+
+		*current_tile_shape = tile_shape;
+		++current_tile_shape;
+
+
+		
+	      }
+	    }
+	  }
+
+	 
+	}
+
+	return value;
+      }
 
       
       template <typename in_iterator_t, typename out_iterator_t, typename shape_container_t>
@@ -192,59 +241,21 @@ namespace sqeazy {
 	typedef typename std::remove_cv<shape_value_type>::type shape_value_t;
 
 	const auto common = common_power_of_2(_shape);
-	const shape_container_t rem = remainder(_shape);
-	const bool has_remainder = std::count_if(rem.begin(), rem.end(), [](shape_value_t el){ return el > 0;});
 			
-	shape_container_t full_tiles_per_dim = _shape;
-	for(shape_value_t & tile : full_tiles_per_dim )
-	  tile = tile / common;
-
 	shape_container_t tiles_per_dim = _shape;
 	for(shape_value_t & tile : tiles_per_dim )
 	  tile = (tile + common - 1)/ common;
 	
-	const std::size_t n_tiles = std::accumulate(tiles_per_dim.begin(), tiles_per_dim.end(),
-						    1,
-						    std::multiplies<std::size_t>());
-
 	std::array<std::size_t, 3> tile_shape; tile_shape.fill(common);
 	
-	std::vector<std::array<std::size_t, 3> > tile_shapes (n_tiles, tile_shape);
-	std::vector<std::size_t>		 commons  (n_tiles, std::pow(common,_shape.size()));
-
+	std::vector<std::array<std::size_t, 3> > tile_shapes = generate_tile_shapes(_shape);
+	const std::size_t n_tiles = tile_shapes.size();
 	
-	if(has_remainder){
-	  auto current_tile_shape = tile_shapes.begin();
-	  auto current_commons = commons.begin() ;
-	  
-	  for(shape_value_t z = 0;z<tiles_per_dim[row_major::z];++z){
-	    tile_shape[row_major::z] = z != tiles_per_dim[row_major::z]-1 ? common : rem[row_major::z];
-	  
-	    for(shape_value_t y = 0;y<tiles_per_dim[row_major::y];++y){
-	      tile_shape[row_major::y] = y != tiles_per_dim[row_major::y]-1 ? common : rem[row_major::y];
-	    
-	      for(shape_value_t x = 0;x<tiles_per_dim[row_major::x];++x){
-		tile_shape[row_major::x] = x != tiles_per_dim[row_major::x]-1 ? common : rem[row_major::x];
-
-		*current_tile_shape = tile_shape;
-		++current_tile_shape;
-
-		*current_commons = std::accumulate(tile_shape.begin(), tile_shape.end(),1,std::multiplies<std::size_t>());
-		++current_commons;
-
-		
-	      }
-	    }
-	  }
-
-	  
-	}
-
 	std::vector<std::size_t> tile_output_offsets(n_tiles, 0);
 	std::size_t sum = 0;
-	for(std::size_t i = 0;i<commons.size();++i){
+	for(std::size_t i = 0;i<n_tiles;++i){
 	  tile_output_offsets[i] = sum;
-	  sum += commons[i];
+	  sum += std::accumulate(tile_shapes[i].begin(), tile_shapes[i].end(),1,std::multiplies<std::size_t>());
 	}
 
 
@@ -261,7 +272,7 @@ namespace sqeazy {
 	
 
 	in_iterator_t itr  = _begin;
-	out_iterator_t dst = _out;
+	
 	
 	for(shape_value_t z = 0;z<_shape[row_major::z];++z){
 	  
@@ -285,12 +296,13 @@ namespace sqeazy {
 	      x_intile = x % common;
 	      	      
 	      tile_output_offset = tile_output_offsets[tile_index+xtile];
-	      if(std::equal(tile_shapes[tile_index+xtile].begin(),
-			    tile_shapes[tile_index+xtile].end(),
+	      auto current_shape = tile_shapes[tile_index+xtile];
+	      if(std::equal(current_shape.begin(),
+			    current_shape.end(),
 			    tile_shape.begin()))
 		tile_output_offset += zcurve_encode(z_intile, y_intile, x_intile);
 	      else
-		tile_output_offset += z_intile*common*common + y_intile*common + x_intile;
+		tile_output_offset += z_intile*current_shape[row_major::x]*current_shape[row_major::y] + y_intile*current_shape[row_major::x] + x_intile;
 	      
 	      *(_out + tile_output_offset) = *(itr++);
 	      
@@ -301,7 +313,7 @@ namespace sqeazy {
 	}
 
 
-	return dst;
+	return _out + (itr - _begin);
       }
 
 
@@ -340,6 +352,7 @@ namespace sqeazy {
 	
       }
 
+      
       template <typename in_iterator_t, typename out_iterator_t, typename shape_container_t>
       out_iterator_t decode_with_remainder(in_iterator_t _begin,
 					   in_iterator_t _end,
@@ -351,59 +364,21 @@ namespace sqeazy {
 	typedef typename std::remove_cv<shape_value_type>::type shape_value_t;
 
 	const auto common = common_power_of_2(_shape);
-	const shape_container_t rem = remainder(_shape);
-	const bool has_remainder = std::count_if(rem.begin(), rem.end(), [](shape_value_t el){ return el > 0;});
 			
-	shape_container_t full_tiles_per_dim = _shape;
-	for(shape_value_t & tile : full_tiles_per_dim )
-	  tile = tile / common;
-
 	shape_container_t tiles_per_dim = _shape;
 	for(shape_value_t & tile : tiles_per_dim )
 	  tile = (tile + common - 1)/ common;
 	
-	const std::size_t n_tiles = std::accumulate(tiles_per_dim.begin(), tiles_per_dim.end(),
-						    1,
-						    std::multiplies<std::size_t>());
-
 	std::array<std::size_t, 3> tile_shape; tile_shape.fill(common);
 	
-	std::vector<std::array<std::size_t, 3> > tile_shapes (n_tiles, tile_shape);
-	std::vector<std::size_t>		 commons  (n_tiles, std::pow(common,_shape.size()));
-
+	std::vector<std::array<std::size_t, 3> > tile_shapes = generate_tile_shapes(_shape);
+	const std::size_t n_tiles = tile_shapes.size();
 	
-	if(has_remainder){
-	  auto current_tile_shape = tile_shapes.begin();
-	  auto current_commons = commons.begin() ;
-	  
-	  for(shape_value_t z = 0;z<tiles_per_dim[row_major::z];++z){
-	    tile_shape[row_major::z] = z != tiles_per_dim[row_major::z]-1 ? common : rem[row_major::z];
-	  
-	    for(shape_value_t y = 0;y<tiles_per_dim[row_major::y];++y){
-	      tile_shape[row_major::y] = y != tiles_per_dim[row_major::y]-1 ? common : rem[row_major::y];
-	    
-	      for(shape_value_t x = 0;x<tiles_per_dim[row_major::x];++x){
-		tile_shape[row_major::x] = x != tiles_per_dim[row_major::x]-1 ? common : rem[row_major::x];
-
-		*current_tile_shape = tile_shape;
-		++current_tile_shape;
-
-		*current_commons = std::accumulate(tile_shape.begin(), tile_shape.end(),1,std::multiplies<std::size_t>());
-		++current_commons;
-
-		
-	      }
-	    }
-	  }
-
-	  
-	}
-
 	std::vector<std::size_t> tile_output_offsets(n_tiles, 0);
 	std::size_t sum = 0;
-	for(std::size_t i = 0;i<commons.size();++i){
+	for(std::size_t i = 0;i<n_tiles;++i){
 	  tile_output_offsets[i] = sum;
-	  sum += commons[i];
+	  sum += std::accumulate(tile_shapes[i].begin(), tile_shapes[i].end(),1,std::multiplies<std::size_t>());
 	}
 	
 
@@ -444,12 +419,13 @@ namespace sqeazy {
 	      x_intile = x % common;
 	      	      
 	      tile_output_offset = tile_output_offsets[tile_index+xtile];
+	      auto current_shape = tile_shapes[tile_index+xtile];
 	      if(std::equal(tile_shapes[tile_index+xtile].begin(),
 			    tile_shapes[tile_index+xtile].end(),
 			    tile_shape.begin()))
 		tile_output_offset += zcurve_encode(z_intile, y_intile, x_intile);
 	      else
-		tile_output_offset += z_intile*common*common + y_intile*common + x_intile;
+		tile_output_offset += z_intile*current_shape[row_major::x]*current_shape[row_major::y] + y_intile*current_shape[row_major::x] + x_intile;
 	      
 	      *(dst++) = *(itr + tile_output_offset);
 	      

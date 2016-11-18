@@ -210,15 +210,14 @@ BOOST_AUTO_TEST_SUITE( odd_shapes  )
 BOOST_AUTO_TEST_CASE( tile_of_2 )
 {
 
-  std::vector<std::size_t> shape = {15,64,15};
+  std::vector<std::size_t> shape = {8,16,8};
   std::size_t len = std::accumulate(shape.begin(), shape.end(),
 				    1.,
 				    std::multiplies<std::size_t>()
 				    );
   
   std::vector<std::uint16_t> src(len,0);
-  for(std::size_t i = 0;i<len;++i)
-    src[i] = i;
+  label_stack_by_tile(src.begin(),shape,2);
   
   std::vector<std::uint16_t> enc(len,0);
   std::vector<std::uint16_t> dec(len,0);
@@ -232,13 +231,48 @@ BOOST_AUTO_TEST_CASE( tile_of_2 )
   BOOST_REQUIRE_EQUAL(rem,enc.data()+enc.size());
 
   auto res = morton_of.decode(enc.data(),
-			      src.data(),
+			      dec.data(),
 			      shape);
 
   BOOST_REQUIRE_EQUAL(res,0);
-  BOOST_CHECK_EQUAL_COLLECTIONS(src.begin(), src.end(),
-				dec.begin(), dec.end()); 
+  for(std::size_t i = 0;i<src.size();++i)
+    BOOST_REQUIRE_MESSAGE(src[i]==dec[i], "odd_shapes::tile_of_2 failed at item "<< i << ", obs: " << dec[i] << " exp: " << src[i]); 
   
 
 }
+
+BOOST_AUTO_TEST_CASE( tile_of_2_prime )
+{
+
+  std::vector<std::size_t> shape = {7,16,7};
+  std::size_t len = std::accumulate(shape.begin(), shape.end(),
+				    1.,
+				    std::multiplies<std::size_t>()
+				    );
+  
+  std::vector<std::uint16_t> src(len,0);
+  label_stack_by_tile(src.begin(),shape,2);
+  
+  std::vector<std::uint16_t> enc(len,0);
+  std::vector<std::uint16_t> dec(len,0);
+  
+
+  sqy::zcurve_reorder_scheme<std::uint16_t> morton_of;
+  auto rem = morton_of.encode(src.data(), 
+			      enc.data(),
+			      shape);
+  BOOST_REQUIRE(rem != nullptr);
+  BOOST_REQUIRE_EQUAL(rem,enc.data()+enc.size());
+
+  auto res = morton_of.decode(enc.data(),
+			      dec.data(),
+			      shape);
+
+  BOOST_REQUIRE_EQUAL(res,0);
+  for(std::size_t i = 0;i<src.size();++i)
+    BOOST_REQUIRE_MESSAGE(src[i]==dec[i], "odd_shapes::tile_of_2_prime failed at item "<< i << ", obs: " << dec[i] << " exp: " << src[i]); 
+  
+
+}
+
 BOOST_AUTO_TEST_SUITE_END()
