@@ -212,7 +212,7 @@ int decompress_files(const std::vector<std::string>& _files,
 		sqeazy::tiff_facet	tiff(output_file.string());
 		tiff.shape_.resize(shape.size());
 		std::copy(shape.begin(), shape.end(),
-			tiff.shape_.begin());
+			  tiff.shape_.begin());
 
 		if (expected_size_byte > tiff.buffer_.size())
 			tiff.buffer_.resize(expected_size_byte);

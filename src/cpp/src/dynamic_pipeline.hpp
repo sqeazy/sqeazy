@@ -483,6 +483,23 @@ namespace sqeazy
       return name();
     }
 
+    std::string header(const std::vector<std::size_t>& _in_shape) const
+    {
+
+
+      std::size_t len = std::accumulate(_in_shape.begin(), _in_shape.end(),1,std::multiplies<std::size_t>());
+      
+      sqeazy::image_header hdr(incoming_t(),
+			       _in_shape,
+			       name(),
+			       len*sizeof(incoming_t));
+
+      std::string value(hdr.begin(),hdr.end());
+      
+      return value;
+    }
+
+    
     /**
        \brief encode one-dimensional array _in and write results to _out
        
