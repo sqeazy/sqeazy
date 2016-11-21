@@ -74,7 +74,7 @@ namespace sqeazy {
 	h264_config = "preset=ultrafast,qp=0";
       
       config_map = parse_string_by(h264_config,",");
-
+      
       //TODO: catch this possibly throug the _payload
 #ifndef SQY_TRACE
       av_log_set_level(AV_LOG_ERROR);
@@ -85,7 +85,7 @@ namespace sqeazy {
       av_register_all();
     }
 
-    static const std::string description() { return std::string("h264 encode gray8 buffer with h264, args can be anything that libavcodec can understand, e.g. h264(preset=ultrafast,qp=0) would match the ffmpeg flags --preset=ultrafast --qp=0; see ffmpeg -h encoder=h264 for details. "); };
+    static const std::string description() { return std::string("h264 encode gray8 buffer with h264, args can be anything that libavcodec can understand, e.g. h264(preset=ultrafast,qp=0) would match the ffmpeg flags --preset=ultrafast --qp=0; see ffmpeg -h encoder=h264 for details.;if the input data is of 16-bit type, it is quantized by a min_of_4 difference scheme"); };
     
     std::string name() const override final {
 
@@ -157,22 +157,20 @@ namespace sqeazy {
 
       //normalize data FIXME: is that needed at all?
       if(sizeof(raw_type)!=1){
-	const int max_bit_set = sqeazy::highest_set_bit(_in,_in + total_length);
-	const int min_bit_set = sqeazy::lowest_set_bit(_in,_in + total_length);
-	drange = max_bit_set - min_bit_set;
+	const int max_value = *std::max_element(_in,_in + total_length);
+	const int min_value = *std::min_element(_in,_in + total_length);
+	drange = std::log(max_value - min_value)/std::log(2);
       } 
 
-      if(drange<9){
+      if(drange<17){
 	stack_cref<raw_type> temp_in_cref = temp_in;
 	num_written_bytes = ffmpeg_encode_stack<raw_type, AV_CODEC_ID_H264>(temp_in_cref,
 									    temp_out,
 									    config_map);
       }
       else {
-	//TODO: apply quantisation
-	std::cerr << "data with dynamic range > 8 found! Doing nothing\n";
+	std::cerr << "found dynamic range of more than 16 bits! this is not implemented yet\n";
 	num_written_bytes = 0;
-	
       }
 
       if(num_written_bytes>(temp_out.size()*sizeof(compressed_type))){

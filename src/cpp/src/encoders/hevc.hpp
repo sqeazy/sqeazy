@@ -145,22 +145,20 @@ namespace sqeazy {
       
       size_t num_written_bytes = 0;
 
-      //normalize data FIXME: is that needed at all?
       if(sizeof(raw_type)!=1){
-	const int max_bit_set = sqeazy::highest_set_bit(_in,_in + total_length);
-	const int min_bit_set = sqeazy::lowest_set_bit(_in,_in + total_length);
-	drange = max_bit_set - min_bit_set;
+	const int max_value = *std::max_element(_in,_in + total_length);
+	const int min_value = *std::min_element(_in,_in + total_length);
+	drange = std::log(max_value - min_value)/std::log(2);
+	// const int max_bit_set = sqeazy::highest_set_bit(_in,_in + total_length);
+	// 	const int min_bit_set = sqeazy::lowest_set_bit(_in,_in + total_length);
+	// 	drange = max_bit_set - min_bit_set;
       } 
 
-      if(drange<9)
-	num_written_bytes = ffmpeg_encode_stack<raw_type, AV_CODEC_ID_H264>(temp_in,temp_out,config_map);
-	// num_written_bytes = h264_encode_stack((uint8_t*)&temp_in[0],
-	// 				      _shape,
-	// 				      temp_out,
-	// 				      config_map);
+      if(drange<17)
+	num_written_bytes = ffmpeg_encode_stack<raw_type, AV_CODEC_ID_HEVC>(temp_in,temp_out,config_map);
       else {
 	//TODO: apply quantisation
-	std::cerr << "data with dynamic range > 8 found! Doing nothing\n";
+	std::cerr << "data with dynamic range > 16 found! Doing nothing\n";
 	num_written_bytes = 0;
 	
       }

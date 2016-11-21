@@ -466,7 +466,7 @@ namespace sqeazy {
 
 
     template <typename itr_type>
-    std::size_t y_to_vector(const sqeazy::av_frame_t& _frame,
+    std::size_t y_to_range(const sqeazy::av_frame_t& _frame,
 			    itr_type _begin, itr_type _end ){
 
       std::size_t frame_size = _frame.get()->width*_frame.get()->height;
@@ -474,7 +474,7 @@ namespace sqeazy {
 
       std::size_t bytes_copied = 0;
 
-      static_assert(sizeof(*_begin)==sizeof(_frame.get()->data[0][0]), "unable to copy y_to_vector due to mismtaching type");
+      static_assert(sizeof(*_begin)==sizeof(_frame.get()->data[0][0]), "unable to copy y_to_range due to mismtaching type");
     
       if(itr_size != frame_size)
 	return bytes_copied;
@@ -496,7 +496,7 @@ namespace sqeazy {
   std::size_t y_to_vector(const sqeazy::av_frame_t& _frame,
 			  std::vector<raw_type>& _vector ){
 
-    return y_to_vector(_frame,_vector.begin(), _vector.end());
+    return y_to_range(_frame,_vector.begin(), _vector.end());
     // std::size_t frame_size = _frame.get()->width*_frame.get()->height;
     // if(_vector.size() != frame_size)
     //   _vector.resize(frame_size);
@@ -517,7 +517,7 @@ namespace sqeazy {
 
 
   template <typename itr_type>
-  std::size_t vector_to_y(itr_type _begin, itr_type _end,
+  std::size_t range_to_y(itr_type _begin, itr_type _end,
 			  sqeazy::av_frame_t& _frame
 			  ){
     
@@ -532,7 +532,7 @@ namespace sqeazy {
 
     const std::size_t height = _frame.get()->height;
 
-    static_assert(sizeof(*_begin)==sizeof(_frame.get()->data[0][0]), "unable to copy vector_to_y due to mismtaching type");
+    static_assert(sizeof(*_begin)==sizeof(_frame.get()->data[0][0]), "unable to copy range_to_y due to mismtaching type");
     
     for(uint32_t y=0;y<height;++y){
       auto dst_begin = _frame.get()->data[0] + (y*_frame.get()->linesize[0]);
@@ -555,13 +555,13 @@ namespace sqeazy {
 			  sqeazy::av_frame_t& _frame
 			  ){
 
-    return vector_to_y(_vector.begin(),_vector.end(),_frame);
+    return range_to_y(_vector.begin(),_vector.end(),_frame);
 
   }
 
   
   template <typename itr_type>
-  std::size_t vector_to_yuv420(itr_type _begin, itr_type _end,
+  std::size_t range_to_yuv420(itr_type _begin, itr_type _end,
 			       sqeazy::av_frame_t& _frame
 			       ){
 
@@ -569,12 +569,11 @@ namespace sqeazy {
     typedef typename std::remove_reference<decltype(_frame.get()->data[0][0])>::type frame_y_t;
     typedef typename std::remove_reference<decltype(_frame.get()->data[0][1])>::type frame_c_t;
 
-    static_assert(sizeof(value_t)==2,"vector_to_yuv420 only works on 16bit data");
-    // if(sizeof(*_begin)==sizeof(_frame.get()->data[0][0]))
-    //    return vector_to_y(_begin,
-    // 			  _end,
-    // 			  _frame);
-       
+    // static_assert(sizeof(value_t)==2,"range_to_yuv420 only works on 16bit data");
+    if(sizeof(value_t)!=2){
+      std::cerr << "range_to_yuv420 only works on 16bit data\n";
+      return 0;
+    }
 
     std::size_t frame_size = _frame.get()->width*_frame.get()->height;
     std::size_t itr_size = _end - _begin;
@@ -632,18 +631,21 @@ namespace sqeazy {
   std::size_t vector_to_yuv420(const std::vector<value_type>& _container,
 			       sqeazy::av_frame_t& _frame
 			       ){
-    return vector_to_yuv420(_container.cbegin(), _container.cend(),_frame);
+    return range_to_yuv420(_container.cbegin(), _container.cend(),_frame);
   }
   
   template <typename itr_type>
-  std::size_t yuv420_to_vector(const sqeazy::av_frame_t& _frame,
+  std::size_t yuv420_to_range(const sqeazy::av_frame_t& _frame,
 			       itr_type _begin, itr_type _end
 			       ){
 
     typedef typename std::remove_reference<typename std::iterator_traits<itr_type>::value_type>::type value_t;
     // typedef typename std::remove_reference<decltype(_frame.get()->data[0][0])>::type frame_y_t;
     // typedef typename std::remove_reference<decltype(_frame.get()->data[0][1])>::type frame_c_t;
-    static_assert(sizeof(value_t)==2,"yuv420_to_vector only works on 16bit data");
+    if(sizeof(value_t)!=2){
+      std::cerr << "yuv420_to_range only works on 16bit data\n";
+      return 0;
+    }
        
     std::size_t frame_size = _frame.get()->width*_frame.get()->height;
     const std::size_t itr_size = _end - _begin;
@@ -675,8 +677,6 @@ namespace sqeazy {
 	*(dst_begin + x) = (*(begin + x) ) + to_add;
 	  
       }
-      
-      // std::copy(begin, end,dst_begin);
       
       bytes_decoded += (end-begin)*sizeof(*_begin);
       

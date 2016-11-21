@@ -209,7 +209,7 @@ BOOST_AUTO_TEST_CASE( roundtrip_frame ){
 BOOST_AUTO_TEST_SUITE_END()
 
 
-BOOST_FIXTURE_TEST_SUITE( frame_to_vector_et_al, av_frame_fixture )
+BOOST_FIXTURE_TEST_SUITE( frame_to_range_et_al, av_frame_fixture )
 
 BOOST_AUTO_TEST_CASE( gray_frame_av_copy ){
 
@@ -264,13 +264,13 @@ BOOST_AUTO_TEST_CASE( yuv420_zeros_frame_av_copy ){
 }
 
 
-BOOST_AUTO_TEST_CASE( gray_frame_to_vector ){
+BOOST_AUTO_TEST_CASE( gray_frame_to_range ){
 
   std::vector<std::uint8_t> output(ref.size(),0);
   auto bytes_copied = sqy::y_to_vector(gray8, output);
   BOOST_REQUIRE_GT(bytes_copied,0);
   for(int i = 0;i<10;++i)
-    BOOST_REQUIRE_MESSAGE(output[i] == ref[i], "frame_to_vector produces wrong result, ref["<< i <<"] =  "<< (int)ref[i] <<" became " << (int)output[i]);
+    BOOST_REQUIRE_MESSAGE(output[i] == ref[i], "frame_to_range produces wrong result, ref["<< i <<"] =  "<< (int)ref[i] <<" became " << (int)output[i]);
   
   BOOST_CHECK_EQUAL_COLLECTIONS(output.begin(), output.end(),
 				ref.begin(), ref.end());
@@ -280,43 +280,43 @@ BOOST_AUTO_TEST_CASE( gray_frame_to_vector ){
 BOOST_AUTO_TEST_CASE( gray_frame_to_nil_iterators ){
 
   std::vector<std::uint8_t> output;
-  auto bytes_copied = sqy::y_to_vector(gray8, output.begin(), output.end());
+  auto bytes_copied = sqy::y_to_range(gray8, output.begin(), output.end());
   BOOST_REQUIRE_EQUAL(bytes_copied,0);
 }
 
 BOOST_AUTO_TEST_CASE( gray_frame_to_iterators ){
 
   std::vector<std::uint8_t> output(ref.size(),0);
-  auto bytes_copied = sqy::y_to_vector(gray8, output.begin(), output.end());
+  auto bytes_copied = sqy::y_to_range(gray8, output.begin(), output.end());
   BOOST_REQUIRE_GT(bytes_copied,0);
   for(int i = 0;i<10;++i)
-    BOOST_REQUIRE_MESSAGE(output[i] == ref[i], "frame_to_vector produces wrong result, ref["<< i <<"] =  "<< (int)ref[i] <<" became " << (int)output[i]);
+    BOOST_REQUIRE_MESSAGE(output[i] == ref[i], "frame_to_range produces wrong result, ref["<< i <<"] =  "<< (int)ref[i] <<" became " << (int)output[i]);
   
   BOOST_CHECK_EQUAL_COLLECTIONS(output.begin(), output.end(),
 				ref.begin(), ref.end());
 }
 
 
-BOOST_AUTO_TEST_CASE( yuv420_frame_to_vector ){
+BOOST_AUTO_TEST_CASE( yuv420_frame_to_range ){
 
   std::vector<std::uint8_t> output(ref.size(),0);
   auto bytes_copied = sqy::y_to_vector(yuv420, output);
   BOOST_REQUIRE_GT(bytes_copied,0);
   for(int i = 0;i<10;++i)
-    BOOST_REQUIRE_MESSAGE(output[i] == ref[i], "frame_to_vector produces wrong result, ref["<< i <<"] =  "<< (int)ref[i] <<" became " << (int)output[i]);
+    BOOST_REQUIRE_MESSAGE(output[i] == ref[i], "frame_to_range produces wrong result, ref["<< i <<"] =  "<< (int)ref[i] <<" became " << (int)output[i]);
   
   BOOST_CHECK_EQUAL_COLLECTIONS(output.begin(), output.end(),
 				ref.begin(), ref.end());
   
 }
 
-BOOST_AUTO_TEST_CASE( yuv420_zeros_frame_to_vector ){
+BOOST_AUTO_TEST_CASE( yuv420_zeros_frame_to_range ){
 
   std::vector<std::uint8_t> output(ref.size(),0);
   auto bytes_copied = sqy::y_to_vector(yuv420_zeros, output);
   BOOST_REQUIRE_GT(bytes_copied,0);
   for(int i = 0;i<10;++i)
-    BOOST_REQUIRE_MESSAGE(output[i] == ref[i], "frame_to_vector produces wrong result, ref["<< i <<"] =  "<< (int)ref[i] <<" became " << (int)output[i]);
+    BOOST_REQUIRE_MESSAGE(output[i] == ref[i], "frame_to_range produces wrong result, ref["<< i <<"] =  "<< (int)ref[i] <<" became " << (int)output[i]);
   
   BOOST_CHECK_EQUAL_COLLECTIONS(output.begin(), output.end(),
 				ref.begin(), ref.end());
@@ -333,7 +333,7 @@ BOOST_AUTO_TEST_CASE( ref_to_frame ){
   
   BOOST_REQUIRE_GT(bytes_copied,0);
   for(int i = 0;i<10;++i)
-    BOOST_REQUIRE_MESSAGE(yuv420.get()->data[0][i] == frame.get()->data[0][i], "frame_to_vector produces wrong result, yuv420["<< i <<"] =  "<< (int)yuv420.get()->data[0][i] <<" became " << (int)frame.get()->data[0][i]);
+    BOOST_REQUIRE_MESSAGE(yuv420.get()->data[0][i] == frame.get()->data[0][i], "frame_to_range produces wrong result, yuv420["<< i <<"] =  "<< (int)yuv420.get()->data[0][i] <<" became " << (int)frame.get()->data[0][i]);
   
   BOOST_CHECK_EQUAL_COLLECTIONS(yuv420.get()->data[0], yuv420.get()->data[0]+(fix_size),
 				frame.get()->data[0], frame.get()->data[0]+(fix_size));
@@ -347,11 +347,11 @@ BOOST_AUTO_TEST_CASE( iterators_to_frame ){
   // for(int i = 0;i<10;++i)
   //   BOOST_REQUIRE_EQUAL(frame.get()->data[0][i],0);
     
-  auto bytes_copied = sqy::vector_to_y(ref.begin(),ref.end(),frame);
+  auto bytes_copied = sqy::range_to_y(ref.begin(),ref.end(),frame);
   
   BOOST_REQUIRE_GT(bytes_copied,0);
   for(int i = 0;i<10;++i)
-    BOOST_REQUIRE_MESSAGE(yuv420.get()->data[0][i] == frame.get()->data[0][i], "frame_to_vector produces wrong result, yuv420["<< i <<"] =  "<< (int)yuv420.get()->data[0][i] <<" became " << (int)frame.get()->data[0][i]);
+    BOOST_REQUIRE_MESSAGE(yuv420.get()->data[0][i] == frame.get()->data[0][i], "frame_to_range produces wrong result, yuv420["<< i <<"] =  "<< (int)yuv420.get()->data[0][i] <<" became " << (int)frame.get()->data[0][i]);
   
   BOOST_CHECK_EQUAL_COLLECTIONS(yuv420.get()->data[0], yuv420.get()->data[0]+(fix_size),
 				frame.get()->data[0], frame.get()->data[0]+(fix_size));
@@ -363,7 +363,7 @@ BOOST_AUTO_TEST_CASE( sixteen_bit_frame_conversion ){
   
   sqeazy::av_frame_t frame(fix_width,fix_height,sqeazy::av_pixel_type<sqy::yuv420p>::value);
     
-  auto bytes_copied = sqy::vector_to_yuv420(ref16.begin(),
+  auto bytes_copied = sqy::range_to_yuv420(ref16.begin(),
 					    ref16.end(),
 					    frame);
   
@@ -389,12 +389,12 @@ BOOST_AUTO_TEST_CASE( sixteen_bit_rt ){
   auto decoded = ref16;
   std::fill(decoded.begin(), decoded.end(),0);
   
-  auto bytes_copied = sqy::vector_to_yuv420(ref16.begin(),
+  auto bytes_copied = sqy::range_to_yuv420(ref16.begin(),
 					    ref16.end(),
 					    frame);
   
   BOOST_REQUIRE_GT(bytes_copied,0);
-  auto bytes_decoded = sqy::yuv420_to_vector(frame,
+  auto bytes_decoded = sqy::yuv420_to_range(frame,
 					     decoded.begin(),
 					     decoded.end()
 					     );
