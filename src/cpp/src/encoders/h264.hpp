@@ -60,7 +60,7 @@ namespace sqeazy {
     typedef typename base_t::out_type compressed_type;
 
     static_assert(std::is_arithmetic<raw_type>::value==true,"[h264_scheme] input type is non-arithmetic");
-    static_assert(sizeof(raw_type)==1,"[h264_scheme] input type is not 1-byte wide (large bit-depths than 8 are not supported yet)");
+    static_assert(sizeof(raw_type)<3,"[h264_scheme] input type is not 1- or 2-byte wide (bit-depths larger than 16 are not supported yet)");
     
     std::string h264_config;
     parsed_map_t  config_map;
@@ -200,7 +200,7 @@ namespace sqeazy {
       
       std::size_t num_bytes_decoded = decode_stack(input, _len_in, _out, _len_out);
       
-      return ( num_bytes_decoded > 0 && num_bytes_decoded <= _len_out ) ? SUCCESS : FAILURE;
+      return ( num_bytes_decoded > 0 && num_bytes_decoded <= (_len_out*sizeof(raw_type)) ) ? SUCCESS : FAILURE;
       
             
     }

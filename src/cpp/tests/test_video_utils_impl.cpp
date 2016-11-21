@@ -368,6 +368,7 @@ BOOST_AUTO_TEST_CASE( sixteen_bit_frame_conversion ){
 					    frame);
   
   BOOST_REQUIRE_GT(bytes_copied,0);
+  BOOST_REQUIRE_EQUAL(bytes_copied,ref16.size()*2);
   
   for(std::uint32_t i = 0;i<ref.size()-4;i+=4){
     BOOST_CHECK_EQUAL((ref16[i] - ref16[i+3]),
@@ -399,9 +400,65 @@ BOOST_AUTO_TEST_CASE( sixteen_bit_rt ){
 					     decoded.end()
 					     );
   BOOST_REQUIRE_GT(bytes_decoded,0);
+  BOOST_REQUIRE_EQUAL(bytes_decoded,ref16.size()*sizeof(ref16[0]));
   
   BOOST_CHECK_EQUAL_COLLECTIONS(ref16.begin(), ref16.end(),
 				decoded.begin(), decoded.end());
 }
+
+BOOST_AUTO_TEST_CASE( sixteen_bit_rt_odd_width ){
+
+  
+  sqeazy::av_frame_t frame(fix_width+6,fix_height,sqeazy::av_pixel_type<sqy::yuv420p>::value);
+
+  ref16.resize((fix_width+6)*fix_height);
+  for(std::size_t i = 0; i < ref16.size();++i)
+    ref16[i] = i % std::numeric_limits<std::uint16_t>::max();
+  
+  auto decoded = ref16;
+  std::fill(decoded.begin(), decoded.end(),0);
+  
+  auto bytes_copied = sqy::range_to_yuv420(ref16.begin(),
+					    ref16.end(),
+					    frame);
+  
+  BOOST_REQUIRE_GT(bytes_copied,0);
+  auto bytes_decoded = sqy::yuv420_to_range(frame,
+					     decoded.begin(),
+					     decoded.end()
+					     );
+  BOOST_REQUIRE_GT(bytes_decoded,0);
+  
+  BOOST_CHECK_EQUAL_COLLECTIONS(ref16.begin(), ref16.end(),
+				decoded.begin(), decoded.end());
+}
+
+BOOST_AUTO_TEST_CASE( sixteen_bit_rt_odd_shape ){
+
+  
+  sqeazy::av_frame_t frame(70,74,sqeazy::av_pixel_type<sqy::yuv420p>::value);
+
+  ref16.resize(70*74);
+  for(std::size_t i = 0; i < ref16.size();++i)
+    ref16[i] = i % std::numeric_limits<std::uint16_t>::max();
+  
+  auto decoded = ref16;
+  std::fill(decoded.begin(), decoded.end(),0);
+  
+  auto bytes_copied = sqy::range_to_yuv420(ref16.begin(),
+					    ref16.end(),
+					    frame);
+  
+  BOOST_REQUIRE_GT(bytes_copied,0);
+  auto bytes_decoded = sqy::yuv420_to_range(frame,
+					     decoded.begin(),
+					     decoded.end()
+					     );
+  BOOST_REQUIRE_GT(bytes_decoded,0);
+  
+  BOOST_CHECK_EQUAL_COLLECTIONS(ref16.begin(), ref16.end(),
+				decoded.begin(), decoded.end());
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 

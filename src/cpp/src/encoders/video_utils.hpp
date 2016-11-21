@@ -474,7 +474,7 @@ namespace sqeazy {
 
       std::size_t bytes_copied = 0;
 
-      static_assert(sizeof(*_begin)==sizeof(_frame.get()->data[0][0]), "unable to copy y_to_range due to mismtaching type");
+      //static_assert(sizeof(*_begin)==sizeof(_frame.get()->data[0][0]), "unable to copy y_to_range due to mismtaching type");
     
       if(itr_size != frame_size)
 	return bytes_copied;
@@ -497,22 +497,6 @@ namespace sqeazy {
 			  std::vector<raw_type>& _vector ){
 
     return y_to_range(_frame,_vector.begin(), _vector.end());
-    // std::size_t frame_size = _frame.get()->width*_frame.get()->height;
-    // if(_vector.size() != frame_size)
-    //   _vector.resize(frame_size);
-    
-
-    // std::size_t bytes_copied = 0;
-    // const std::size_t height = _frame.get()->height;
-    // for(uint32_t y=0;y<height;++y){
-    //   auto begin = _frame.get()->data[0] + (y*_frame.get()->linesize[0]);
-    //   auto end = begin + _frame.get()->width;
-    //   auto dst_begin = _vector.begin()+(y*_frame.get()->width);
-    //   std::copy(begin, end,dst_begin);
-    //   bytes_copied += (end-begin)*sizeof(raw_type);
-    // }
-
-    // return bytes_copied;
   }
 
 
@@ -532,7 +516,7 @@ namespace sqeazy {
 
     const std::size_t height = _frame.get()->height;
 
-    static_assert(sizeof(*_begin)==sizeof(_frame.get()->data[0][0]), "unable to copy range_to_y due to mismtaching type");
+    //static_assert(sizeof(*_begin)==sizeof(_frame.get()->data[0][0]), "unable to copy range_to_y due to mismtaching type");
     
     for(uint32_t y=0;y<height;++y){
       auto dst_begin = _frame.get()->data[0] + (y*_frame.get()->linesize[0]);
@@ -609,7 +593,7 @@ namespace sqeazy {
 	  _frame.get()->data[1][color_channel_count] = hihalf;
 	  _frame.get()->data[1][color_channel_count+1] = lohalf;
 	  color_channel_count+=2;
-	  bytes_copied += 2;
+	  // bytes_copied += 2;
 	}
 	
 	single_line[x] = *(begin+x) - min_el;
@@ -671,7 +655,7 @@ namespace sqeazy {
 	if(x % 4 == 0){
 	  to_add = value_t(_frame.get()->data[1][color_counter] << 8) | value_t(_frame.get()->data[1][color_counter+1]);
 	  color_counter += 2;
-	  bytes_decoded += 2;
+	  //bytes_decoded += 2;
 	}
 	
 	*(dst_begin + x) = (*(begin + x) ) + to_add;

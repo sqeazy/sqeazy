@@ -52,8 +52,8 @@ namespace sqeazy {
     typedef typename base_t::out_type compressed_type;
 
     static_assert(std::is_arithmetic<raw_type>::value==true,"[hevc_scheme] input type is non-arithmetic");
-    static_assert(sizeof(raw_type)==1,"[hevc_scheme] input type is not 1-byte wide (large bit-depths than 8 are not supported yet)");
-
+    static_assert(sizeof(raw_type)<3,"[hevc_scheme] input type is not 1- or 2-byte wide (bit-depths larger than 16 are not supported yet)");
+    
     std::string hevc_config;
     parsed_map_t  config_map;
     

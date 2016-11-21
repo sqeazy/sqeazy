@@ -34,6 +34,8 @@ namespace sqeazy {
   using encoders_factory = stage_factory<
     pass_through<T>,
     quantiser_scheme<T>,
+    hevc_scheme<T>,
+    h264_scheme<T>,
     lz4_scheme<T>
     >;
 

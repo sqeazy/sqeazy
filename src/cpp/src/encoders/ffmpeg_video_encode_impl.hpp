@@ -245,8 +245,10 @@ namespace sqeazy {
      \brief function that uses 
 
      \param[in] _buffer stack that contains the encoded stack   
+     \param[out] _buffer_len decoded stack shape as in [x,y,z] dimensions
+
      \param[out] _volume stack that is to be decoded
-     \param[out] _shape decoded stack shape as in [x,y,z] dimensions
+     \param[out] _volume_len linear number of elements in _volume
 
    
      \return 
@@ -254,12 +256,11 @@ namespace sqeazy {
    
   */
 template <typename raw_type>
-static uint32_t decode_stack(const char* _buffer,
-			     const uint32_t& _buffer_len,
-			     raw_type* _volume,
-			     const uint32_t& _volume_len// ,
-			     // std::vector<uint32_t>& _shape
-			     ){
+static std::size_t decode_stack(const char* _buffer,
+				const std::size_t& _buffer_len,
+				raw_type* _volume,
+				const std::size_t& _volume_len
+				){
 
   static_assert(sizeof(raw_type)<3,"video encoding for 16-bit or 8-bit supported currently");
     
