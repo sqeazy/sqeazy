@@ -36,6 +36,7 @@ struct av_frame_fixture{
   sqeazy::av_frame_t	yuv420;
   sqeazy::av_frame_t	yuv420_zeros;
   std::vector<std::uint8_t> ref;
+  std::vector<std::uint16_t> ref16;
   
   av_frame_fixture():
     fix_width(64),
@@ -44,7 +45,8 @@ struct av_frame_fixture{
     gray8(fix_width,fix_height,sqeazy::av_pixel_type<std::uint8_t>::value),
     yuv420(fix_width,fix_height,sqeazy::av_pixel_type<sqy::yuv420p>::value),
     yuv420_zeros(fix_width,fix_height,sqeazy::av_pixel_type<sqy::yuv420p>::value),
-    ref(fix_size,0)
+    ref(fix_size,0),
+    ref16(fix_size,0)
   {
     std::size_t count = 0;
 
@@ -54,6 +56,7 @@ struct av_frame_fixture{
 	std::uint8_t val = count % 255;
 	
 	ref[count] = val;
+	ref16[count] = count % std::numeric_limits<std::uint16_t>::max();
 	
 	gray8.get()->data[0][y*(gray8.get()->linesize[0])+x] = val;
 	yuv420.get()->data[0][y*(yuv420.get()->linesize[0])+x] = val ;
@@ -355,5 +358,50 @@ BOOST_AUTO_TEST_CASE( iterators_to_frame ){
   
 }
 
+BOOST_AUTO_TEST_CASE( sixteen_bit_frame_conversion ){
+
+  
+  sqeazy::av_frame_t frame(fix_width,fix_height,sqeazy::av_pixel_type<sqy::yuv420p>::value);
+    
+  auto bytes_copied = sqy::vector_to_yuv420(ref16.begin(),
+					    ref16.end(),
+					    frame);
+  
+  BOOST_REQUIRE_GT(bytes_copied,0);
+  
+  for(std::uint32_t i = 0;i<ref.size()-4;i+=4){
+    BOOST_CHECK_EQUAL((ref16[i] - ref16[i+3]),
+		      frame.get()->data[0][i]- frame.get()->data[0][i+3]);
+  }
+
+  auto sum = std::accumulate(&frame.get()->data[0][0], &frame.get()->data[0][0]+fix_width*fix_height/2,0);
+  BOOST_CHECK_NE(sum,0);
+  // BOOST_CHECK_EQUAL_COLLECTIONS(yuv420.get()->data[0], yuv420.get()->data[0]+(fix_size),
+  // 				frame.get()->data[0], frame.get()->data[0]+(fix_size));
+  
+}
+
+BOOST_AUTO_TEST_CASE( sixteen_bit_rt ){
+
+  
+  sqeazy::av_frame_t frame(fix_width,fix_height,sqeazy::av_pixel_type<sqy::yuv420p>::value);
+
+  auto decoded = ref16;
+  std::fill(decoded.begin(), decoded.end(),0);
+  
+  auto bytes_copied = sqy::vector_to_yuv420(ref16.begin(),
+					    ref16.end(),
+					    frame);
+  
+  BOOST_REQUIRE_GT(bytes_copied,0);
+  auto bytes_decoded = sqy::yuv420_to_vector(frame,
+					     decoded.begin(),
+					     decoded.end()
+					     );
+  BOOST_REQUIRE_GT(bytes_decoded,0);
+  
+  BOOST_CHECK_EQUAL_COLLECTIONS(ref16.begin(), ref16.end(),
+				decoded.begin(), decoded.end());
+}
 BOOST_AUTO_TEST_SUITE_END()
 

@@ -4,6 +4,8 @@
 #include <iostream>
 #include <memory>
 #include <cstdint>
+#include <iterator>
+#include <vector>
 
 #include "boost/align/aligned_allocator.hpp"
 
@@ -461,87 +463,58 @@ namespace sqeazy {
   };
 
 
-  template <typename raw_type>
-  std::size_t y_to_vector(const sqeazy::av_frame_t& _frame,
-			  std::vector<raw_type>& _vector ){
 
-    std::size_t frame_size = _frame.get()->width*_frame.get()->height;
-    if(_vector.size() != frame_size)
-      _vector.resize(frame_size);
-    
-
-    std::size_t bytes_copied = 0;
-    const std::size_t height = _frame.get()->height;
-    for(uint32_t y=0;y<height;++y){
-      auto begin = _frame.get()->data[0] + (y*_frame.get()->linesize[0]);
-      auto end = begin + _frame.get()->width;
-      auto dst_begin = _vector.begin()+(y*_frame.get()->width);
-      std::copy(begin, end,dst_begin);
-      bytes_copied += (end-begin)*sizeof(raw_type);
-    }
-
-    return bytes_copied;
-  }
 
     template <typename itr_type>
     std::size_t y_to_vector(const sqeazy::av_frame_t& _frame,
 			    itr_type _begin, itr_type _end ){
 
-    std::size_t frame_size = _frame.get()->width*_frame.get()->height;
-    const std::size_t itr_size = _end - _begin;
+      std::size_t frame_size = _frame.get()->width*_frame.get()->height;
+      const std::size_t itr_size = _end - _begin;
 
-    std::size_t bytes_copied = 0;
+      std::size_t bytes_copied = 0;
 
-    static_assert(sizeof(*_begin)==sizeof(_frame.get()->data[0][0]), "unable to copy y_to_vector due to mismtaching type");
+      static_assert(sizeof(*_begin)==sizeof(_frame.get()->data[0][0]), "unable to copy y_to_vector due to mismtaching type");
     
-    if(itr_size != frame_size)
+      if(itr_size != frame_size)
+	return bytes_copied;
+
+
+      const std::size_t height = _frame.get()->height;
+      for(uint32_t y=0;y<height;++y){
+	auto begin = _frame.get()->data[0] + (y*_frame.get()->linesize[0]);
+	auto end = begin + _frame.get()->width;
+	auto dst_begin = _begin+(y*_frame.get()->width);
+	std::copy(begin, end,dst_begin);
+	bytes_copied += (end-begin)*sizeof(*_begin);
+      }
+
       return bytes_copied;
-
-
-    const std::size_t height = _frame.get()->height;
-    for(uint32_t y=0;y<height;++y){
-      auto begin = _frame.get()->data[0] + (y*_frame.get()->linesize[0]);
-      auto end = begin + _frame.get()->width;
-      auto dst_begin = _begin+(y*_frame.get()->width);
-      std::copy(begin, end,dst_begin);
-      bytes_copied += (end-begin)*sizeof(*_begin);
     }
-
-    return bytes_copied;
-  }
-
-
 
   template <typename raw_type>
-  std::size_t vector_to_y(const std::vector<raw_type>& _vector,
-			  sqeazy::av_frame_t& _frame
-			  ){
+  std::size_t y_to_vector(const sqeazy::av_frame_t& _frame,
+			  std::vector<raw_type>& _vector ){
+
+    return y_to_vector(_frame,_vector.begin(), _vector.end());
+    // std::size_t frame_size = _frame.get()->width*_frame.get()->height;
+    // if(_vector.size() != frame_size)
+    //   _vector.resize(frame_size);
     
-    std::size_t value =0;
-    std::size_t frame_size = _frame.get()->width*_frame.get()->height;
-    
-    if(_vector.size() != frame_size)
-      return value;
 
-    std::size_t bytes_copied = 0;
+    // std::size_t bytes_copied = 0;
+    // const std::size_t height = _frame.get()->height;
+    // for(uint32_t y=0;y<height;++y){
+    //   auto begin = _frame.get()->data[0] + (y*_frame.get()->linesize[0]);
+    //   auto end = begin + _frame.get()->width;
+    //   auto dst_begin = _vector.begin()+(y*_frame.get()->width);
+    //   std::copy(begin, end,dst_begin);
+    //   bytes_copied += (end-begin)*sizeof(raw_type);
+    // }
 
-    const std::size_t height = _frame.get()->height;
-
-    static_assert(sizeof(raw_type)==sizeof(_frame.get()->data[0][0]), "unable to copy vector_to_y due to mismtaching type");
-    
-    for(uint32_t y=0;y<height;++y){
-      auto dst_begin = _frame.get()->data[0] + (y*_frame.get()->linesize[0]);
-
-      auto begin = _vector.begin()+(y*_frame.get()->width);
-      auto end = begin + _frame.get()->width;
-
-      std::copy(begin, end,dst_begin);
-      bytes_copied += (end-begin)*sizeof(raw_type);
-    }
-
-    value = bytes_copied;
-    return value;
+    // return bytes_copied;
   }
+
 
   template <typename itr_type>
   std::size_t vector_to_y(itr_type _begin, itr_type _end,
@@ -575,6 +548,143 @@ namespace sqeazy {
     return value;
   }
 
+  
+
+  template <typename raw_type>
+  std::size_t vector_to_y(const std::vector<raw_type>& _vector,
+			  sqeazy::av_frame_t& _frame
+			  ){
+
+    return vector_to_y(_vector.begin(),_vector.end(),_frame);
+
+  }
+
+  
+  template <typename itr_type>
+  std::size_t vector_to_yuv420(itr_type _begin, itr_type _end,
+			       sqeazy::av_frame_t& _frame
+			       ){
+
+    typedef typename std::iterator_traits<itr_type>::value_type value_t;
+    typedef typename std::remove_reference<decltype(_frame.get()->data[0][0])>::type frame_y_t;
+    typedef typename std::remove_reference<decltype(_frame.get()->data[0][1])>::type frame_c_t;
+
+    static_assert(sizeof(value_t)==2,"vector_to_yuv420 only works on 16bit data");
+    // if(sizeof(*_begin)==sizeof(_frame.get()->data[0][0]))
+    //    return vector_to_y(_begin,
+    // 			  _end,
+    // 			  _frame);
+       
+
+    std::size_t frame_size = _frame.get()->width*_frame.get()->height;
+    std::size_t itr_size = _end - _begin;
+    std::size_t bytes_copied = 0;
+    
+    if(itr_size != frame_size)
+      return bytes_copied;
+
+
+    
+    const std::size_t height = _frame.get()->height;
+    const std::size_t width = _frame.get()->width;
+
+    std::size_t color_channel_count = 0;
+    
+    std::vector<frame_y_t> single_line(width,0);
+    
+    for(std::uint32_t y=0;y<height;++y){
+      
+      auto begin = _begin+(y*_frame.get()->width);
+      auto end = begin + _frame.get()->width;
+
+      value_t min_el = 0;
+      
+      for(std::uint32_t x=0;x<width;++x){
+
+	if(x % 4 == 0){
+	  min_el = *std::min_element(begin+x,
+				     begin+x+((width - x > 3) ? 4 : width - x));
+
+	  frame_c_t hihalf = (min_el >> 8) & 0xff;
+	  frame_c_t lohalf = (min_el) & 0xff;
+	  _frame.get()->data[1][color_channel_count] = hihalf;
+	  _frame.get()->data[1][color_channel_count+1] = lohalf;
+	  color_channel_count+=2;
+	  bytes_copied += 2;
+	}
+	
+	single_line[x] = *(begin+x) - min_el;
+
+      }
+      
+      auto dst_begin = _frame.get()->data[0] + (y*_frame.get()->linesize[0]);
+      std::copy(single_line.begin(), single_line.end(),
+		dst_begin);
+      
+
+      bytes_copied += (end-begin)*sizeof(*_begin);
+    }
+
+    return bytes_copied;
+  }
+
+  template <typename value_type>
+  std::size_t vector_to_yuv420(const std::vector<value_type>& _container,
+			       sqeazy::av_frame_t& _frame
+			       ){
+    return vector_to_yuv420(_container.cbegin(), _container.cend(),_frame);
+  }
+  
+  template <typename itr_type>
+  std::size_t yuv420_to_vector(const sqeazy::av_frame_t& _frame,
+			       itr_type _begin, itr_type _end
+			       ){
+
+    typedef typename std::remove_reference<typename std::iterator_traits<itr_type>::value_type>::type value_t;
+    // typedef typename std::remove_reference<decltype(_frame.get()->data[0][0])>::type frame_y_t;
+    // typedef typename std::remove_reference<decltype(_frame.get()->data[0][1])>::type frame_c_t;
+    static_assert(sizeof(value_t)==2,"yuv420_to_vector only works on 16bit data");
+       
+    std::size_t frame_size = _frame.get()->width*_frame.get()->height;
+    const std::size_t itr_size = _end - _begin;
+
+    std::size_t bytes_decoded = 0;
+    
+    if(itr_size != frame_size)
+      return bytes_decoded;
+
+
+    const std::size_t height = _frame.get()->height;
+    const std::size_t width = _frame.get()->width;
+    std::size_t color_counter = 0;
+    value_t to_add = 0;
+    
+    for(std::uint32_t y=0;y<height;++y){
+
+      auto begin = _frame.get()->data[0] + (y*_frame.get()->linesize[0]);
+      auto end = begin + _frame.get()->width;
+      auto dst_begin = _begin+(y*_frame.get()->width);
+      
+      for(std::uint32_t x=0;x<width;++x){
+	if(x % 4 == 0){
+	  to_add = value_t(_frame.get()->data[1][color_counter] << 8) | value_t(_frame.get()->data[1][color_counter+1]);
+	  color_counter += 2;
+	  bytes_decoded += 2;
+	}
+	
+	*(dst_begin + x) = (*(begin + x) ) + to_add;
+	  
+      }
+      
+      // std::copy(begin, end,dst_begin);
+      
+      bytes_decoded += (end-begin)*sizeof(*_begin);
+      
+    }
+
+    return bytes_decoded;
+  }
+  
   
 };
 
