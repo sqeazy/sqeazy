@@ -147,13 +147,9 @@ namespace sqeazy {
 
     static_assert(sizeof(buffer_type)==1,"ffmpeg only works on byte-size types");
     static_assert(sizeof(raw_type)<3,"video encoding for 16-bit or 8-bit supported currently");
-    std::function<std::size_t(decltype(_stack.data()),decltype(_stack.data()),sqeazy::av_frame_t&)> encode_frame;
-    if(sizeof(raw_type)==1)
-      encode_frame = range_to_y<decltype(_stack.data())>;
-    if(sizeof(raw_type)==2)
-      encode_frame = range_to_yuv420<decltype(_stack.data())>;
-    
     uint32_t bytes_written = 0;
+    
+        
     
     try{
       _ctx.open();
@@ -174,6 +170,20 @@ namespace sqeazy {
     const uint32_t frame_size = _stack.shape()[row_major::w]*_stack.shape()[row_major::h];
     const uint32_t num_frames = _stack.shape()[row_major::d];
     uint32_t idx = 0;
+    std::function<std::size_t(decltype(_stack.data()),decltype(_stack.data()),sqeazy::av_frame_t&)> encode_frame;
+    if(sizeof(raw_type)==1)
+      encode_frame = range_to_y<decltype(_stack.data())>;
+    if(sizeof(raw_type)==2){
+
+      if(_stack.shape()[row_major::w] % 4 == 0)
+	encode_frame = range_to_yuv420<decltype(_stack.data())>;
+      else{
+	std::cerr << "[video encode] however possible this video yields a width = "
+		  << _stack.shape()[row_major::w] <<" which is not divisable by 4\nUnable to decode this!\n";
+	return bytes_written;
+      }
+      
+    }
 
     uint32_t frames_encoded = 0;
     _buffer.clear();
@@ -333,8 +343,17 @@ static std::size_t decode_stack(const char* _buffer,
   std::function<std::size_t(const sqeazy::av_frame_t&,raw_type*,raw_type*)> decode_frame;
   if(sizeof(raw_type)==1)
     decode_frame = y_to_range<raw_type*>;
-  if(sizeof(raw_type)==2)
-    decode_frame = yuv420_to_range<raw_type*>;
+  if(sizeof(raw_type)==2){
+
+    if(found_width % 4 == 0)
+      decode_frame = yuv420_to_range<raw_type*>;
+    else{
+      std::cerr << "[video decode] however possible this video yields a width = "
+		<< found_width <<" which is not divisable by 4\nUnable to decode this!\n";
+      return rcode;
+    }
+
+  }
 
   int frameFinished = 0;
   int decoded_bytes = 0;

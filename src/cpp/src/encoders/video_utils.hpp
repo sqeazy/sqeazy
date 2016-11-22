@@ -565,21 +565,21 @@ namespace sqeazy {
     
     if(itr_size != frame_size)
       return bytes_copied;
-
-
     
     const std::size_t height = _frame.get()->height;
     const std::size_t width = _frame.get()->width;
 
-    std::size_t color_channel_count = 0;
     
     std::vector<frame_y_t> single_line(width,0);
     
+      
     for(std::uint32_t y=0;y<height;++y){
       
       auto begin = _begin+(y*_frame.get()->width);
       auto end = begin + _frame.get()->width;
 
+      auto color_begin = &_frame.get()->data[1][y*_frame.get()->linesize[1]];
+	
       value_t min_el = 0;
       
       for(std::uint32_t x=0;x<width;++x){
@@ -590,9 +590,9 @@ namespace sqeazy {
 
 	  frame_c_t hihalf = (min_el >> 8) & 0xff;
 	  frame_c_t lohalf = (min_el) & 0xff;
-	  _frame.get()->data[1][color_channel_count] = hihalf;
-	  _frame.get()->data[1][color_channel_count+1] = lohalf;
-	  color_channel_count+=2;
+	  *(color_begin ) = hihalf;
+	  *(color_begin  + 1) = lohalf;
+	  color_begin+=2;
 	  // bytes_copied += 2;
 	}
 	
@@ -642,7 +642,7 @@ namespace sqeazy {
 
     const std::size_t height = _frame.get()->height;
     const std::size_t width = _frame.get()->width;
-    std::size_t color_counter = 0;
+
     value_t to_add = 0;
     
     for(std::uint32_t y=0;y<height;++y){
@@ -650,11 +650,12 @@ namespace sqeazy {
       auto begin = _frame.get()->data[0] + (y*_frame.get()->linesize[0]);
       auto end = begin + _frame.get()->width;
       auto dst_begin = _begin+(y*_frame.get()->width);
+      auto color_begin = &_frame.get()->data[1][y*_frame.get()->linesize[1]];
       
       for(std::uint32_t x=0;x<width;++x){
 	if(x % 4 == 0){
-	  to_add = value_t(_frame.get()->data[1][color_counter] << 8) | value_t(_frame.get()->data[1][color_counter+1]);
-	  color_counter += 2;
+	  to_add = value_t((*color_begin) << 8) | value_t(*(color_begin+1));
+	  color_begin += 2;
 	  //bytes_decoded += 2;
 	}
 	
