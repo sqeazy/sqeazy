@@ -307,7 +307,8 @@ BOOST_AUTO_TEST_CASE( lossless_roundtrip_step_ramp ){
   std::vector<std::size_t> shape = {static_cast<uint32_t>(embryo_.shape()[sqy::row_major::z]),
 				    static_cast<uint32_t>(embryo_.shape()[sqy::row_major::y]),
 				    static_cast<uint32_t>(embryo_.shape()[sqy::row_major::x])};
-  const std::size_t frame_size = embryo_.shape()[sqy::row_major::y]*embryo_.shape()[sqy::row_major::x];
+  
+  const std::size_t frame_size = shape[sqy::row_major::y]*shape[sqy::row_major::x];
   
   std::vector<char> encoded(embryo_.num_elements()*sizeof(std::uint16_t),0);
   
@@ -363,7 +364,7 @@ BOOST_AUTO_TEST_CASE( lossless_roundtrip_step_ramp ){
     
 
     std::size_t printed = 0;
-    for(std::size_t i = 0;i < frame_size && printed < 64;++i){
+    for(std::size_t i = 0;i < (10*frame_size) && printed < 64;++i){
       if(embryo_.data()[i]!=roundtrip.data()[i]){
     	std::cout << "frame:0 pixel:" << i
 		  << " ["<< embryo_.shape()[sqy::row_major::x] << "x" << embryo_.shape()[sqy::row_major::y] <<"]"

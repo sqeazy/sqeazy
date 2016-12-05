@@ -624,8 +624,7 @@ namespace sqeazy {
 			       ){
 
     typedef typename std::remove_reference<typename std::iterator_traits<itr_type>::value_type>::type value_t;
-    // typedef typename std::remove_reference<decltype(_frame.get()->data[0][0])>::type frame_y_t;
-    // typedef typename std::remove_reference<decltype(_frame.get()->data[0][1])>::type frame_c_t;
+
     if(sizeof(value_t)!=2){
       std::cerr << "yuv420_to_range only works on 16bit data\n";
       return 0;
@@ -656,7 +655,7 @@ namespace sqeazy {
 	if(x % 4 == 0){
 	  to_add = value_t((*color_begin) << 8) | value_t(*(color_begin+1));
 	  color_begin += 2;
-	  //bytes_decoded += 2;
+	  
 	}
 	
 	*(dst_begin + x) = (*(begin + x) ) + to_add;
