@@ -481,8 +481,6 @@ BOOST_AUTO_TEST_CASE( sixteen_bit_rt_odd_shape ){
 			  << "obs: " << decoded[i]);
   }
 
-  // BOOST_CHECK_EQUAL_COLLECTIONS(ref16.begin(), ref16.end(),
-  // 				decoded.begin(), decoded.end());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
