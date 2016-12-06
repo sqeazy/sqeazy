@@ -592,15 +592,16 @@ namespace sqeazy {
       auto begin = _begin+(y*_frame.get()->width);
       auto end = begin + _frame.get()->width;
 
-      auto color_begin = &_frame.get()->data[1][y*_frame.get()->linesize[1]];
+      auto color_begin = &_frame.get()->data[1][(y/2)*_frame.get()->linesize[1]];
 	
       value_t min_el = 0;
       
       for(std::uint32_t x=0;x<width;++x){
 
-	if(x % 4 == 0){
+	if(x % 8 == 0){
+	  const auto offset =((width - x > 7) ? 8 : width - x);
 	  min_el = *std::min_element(begin+x,
-				     begin+x+((width - x > 3) ? 4 : width - x));
+				     begin+x+offset);
 
 	  frame_c_t hihalf = (min_el >> 8) & 0xff;
 	  frame_c_t lohalf = (min_el) & 0xff;
@@ -672,10 +673,10 @@ namespace sqeazy {
       auto begin = _frame.get()->data[0] + (y*_frame.get()->linesize[0]);
       auto end = begin + _frame.get()->width;
       auto dst_begin = _begin+(y*_frame.get()->width);
-      auto color_begin = &_frame.get()->data[1][y*_frame.get()->linesize[1]];
+      auto color_begin = &_frame.get()->data[1][(y/2)*_frame.get()->linesize[1]];
       
       for(std::uint32_t x=0;x<width;++x){
-	if(x % 4 == 0){
+	if(x % 8 == 0){
 	  to_add = value_t((*color_begin) << 8) | value_t(*(color_begin+1));
 	  color_begin += 2;
 	  
