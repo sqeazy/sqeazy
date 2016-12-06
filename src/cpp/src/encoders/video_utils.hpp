@@ -543,7 +543,21 @@ namespace sqeazy {
 
   }
 
-  
+  /**
+   *  \brief encoding a 16-bit input buffer to yuv420 by extracting the minimum of 4 input values, 
+   *  store the minimum into 2 bytes of the first color channel and substract the minumum for the 4 values mentioned
+   *
+   *  example: 
+   *		input 	= {4048, 4047, 4045, 4100}
+   *		min   	= 4045
+   *		encoded[0]	= {3, 2, 0, 55}
+   *		encoded[1]	= {15, 205} //4045 = 0xfcd = {0xf, 0xcd}
+   *
+   *  \param _frame read-only frame to extract the 16-bit data from
+   *  \param _begin input iterator for 16-bit data pointing to the beginning of the sequence to fill
+   *  \param _end input iterator for 16-bit data pointing to 1 plus the last element of the sequence to fill
+   *  \return std::size_t number of bytes decoded
+   */
   template <typename itr_type>
   std::size_t range_to_yuv420(itr_type _begin, itr_type _end,
 			       sqeazy::av_frame_t& _frame
@@ -552,7 +566,7 @@ namespace sqeazy {
     typedef typename std::iterator_traits<itr_type>::value_type value_t;
     typedef typename std::remove_reference<decltype(_frame.get()->data[0][0])>::type frame_y_t;
     typedef typename std::remove_reference<decltype(_frame.get()->data[0][1])>::type frame_c_t;
-
+    
     // static_assert(sizeof(value_t)==2,"range_to_yuv420 only works on 16bit data");
     if(sizeof(value_t)!=2){
       std::cerr << "range_to_yuv420 only works on 16bit data\n";
@@ -611,25 +625,34 @@ namespace sqeazy {
     return bytes_copied;
   }
 
+  
   template <typename value_type>
   std::size_t vector_to_yuv420(const std::vector<value_type>& _container,
 			       sqeazy::av_frame_t& _frame
 			       ){
     return range_to_yuv420(_container.cbegin(), _container.cend(),_frame);
   }
-  
+
+  /**
+   *  \brief decoding a 16-bit input buffer from yuv420 by extracting the minimum of 4 values from 2 bytes of the first color channel
+   *
+   *  \param _frame read-only frame to extract the 16-bit data from
+   *  \param _begin input iterator for 16-bit data pointing to the beginning of the sequence to fill
+   *  \param _end input iterator for 16-bit data pointing to 1 plus the last element of the sequence to fill
+   *  \return std::size_t number of bytes decoded
+   */
   template <typename itr_type>
   std::size_t yuv420_to_range(const sqeazy::av_frame_t& _frame,
 			       itr_type _begin, itr_type _end
 			       ){
 
     typedef typename std::remove_reference<typename std::iterator_traits<itr_type>::value_type>::type value_t;
-
+    
     if(sizeof(value_t)!=2){
       std::cerr << "yuv420_to_range only works on 16bit data\n";
       return 0;
     }
-       
+    
     std::size_t frame_size = _frame.get()->width*_frame.get()->height;
     const std::size_t itr_size = _end - _begin;
 
