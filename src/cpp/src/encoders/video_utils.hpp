@@ -582,37 +582,54 @@ namespace sqeazy {
     
     const std::size_t height = _frame.get()->height;
     const std::size_t width = _frame.get()->width;
+    value_t min_el = 0;
 
+    // TODO: what if height is odd?
+    for(std::uint32_t y=0;y<height;y+=2){
+
+      auto begin = _begin+(y*_frame.get()->width);
+      	
+      value_t min_el_top = 0;
+      value_t min_el_bot = 0;
+      
+      
+      for(std::uint32_t x=0;x<width;x+=4){
+
+	auto color_begin = &_frame.get()->data[1][(y/2)*_frame.get()->linesize[1] + (x/4)];
+	
+	const auto offset =((width - x > 3) ? 4 : width - x);
+	min_el_top = *std::min_element(begin+x,
+				       begin+x+offset);
+
+	if(y+1 < height)
+	  min_el_bot = *std::min_element(begin+x+width,
+					 begin+x+width+offset);
+	else
+	  min_el_bot = min_el_top;
+	
+	min_el = std::min(min_el_top,min_el_bot);
+	  
+	frame_c_t hihalf = (min_el >> 8) & 0xff;
+	frame_c_t lohalf = (min_el) & 0xff;
+	*(color_begin ) = hihalf;
+	*(color_begin  + 1) = lohalf;
+	
+      }
+    }
     
     std::vector<frame_y_t> single_line(width,0);
     
-      
     for(std::uint32_t y=0;y<height;++y){
       
       auto begin = _begin+(y*_frame.get()->width);
       auto end = begin + _frame.get()->width;
-
-      auto color_begin = &_frame.get()->data[1][(y/2)*_frame.get()->linesize[1]];
-	
-      value_t min_el = 0;
-      
+            
       for(std::uint32_t x=0;x<width;++x){
 
-	if(x % 8 == 0){
-	  const auto offset =((width - x > 7) ? 8 : width - x);
-	  min_el = *std::min_element(begin+x,
-				     begin+x+offset);
-
-	  frame_c_t hihalf = (min_el >> 8) & 0xff;
-	  frame_c_t lohalf = (min_el) & 0xff;
-	  *(color_begin ) = hihalf;
-	  *(color_begin  + 1) = lohalf;
-	  color_begin+=2;
-	  // bytes_copied += 2;
-	}
-	
+	auto color_begin = &_frame.get()->data[1][(y/2)*_frame.get()->linesize[1] + (x/4)];
+	min_el = value_t((*color_begin) << 8) | value_t(*(color_begin+1));
 	single_line[x] = *(begin+x) - min_el;
-
+	
       }
       
       auto dst_begin = _frame.get()->data[0] + (y*_frame.get()->linesize[0]);
@@ -676,7 +693,7 @@ namespace sqeazy {
       auto color_begin = &_frame.get()->data[1][(y/2)*_frame.get()->linesize[1]];
       
       for(std::uint32_t x=0;x<width;++x){
-	if(x % 8 == 0){
+	if(x % 4 == 0 && y % 2 == 0 && (y+1)!=height){
 	  to_add = value_t((*color_begin) << 8) | value_t(*(color_begin+1));
 	  color_begin += 2;
 	  
