@@ -95,7 +95,9 @@ namespace sqeazy {
       size_t count = 0;
       for( const auto & kv : _config )
 	{
-	  
+	  #ifdef SQY_TRACE
+	  std::cout << "[ffmpeg_encode_stack]\t h265 av_opt_set " << kv.first << " :: " << kv.second << "\n";
+	  #endif
 	  if(kv.first == "preset" || kv.first == "profile"){
 	    av_opt_set(ctx.get()->priv_data, kv.first.c_str(), kv.second.c_str(), 0);
 	  }
@@ -275,7 +277,7 @@ static std::size_t decode_stack(const char* _buffer,
   static_assert(sizeof(raw_type)<3,"video encoding for 16-bit or 8-bit supported currently");
     
 
-  uint32_t rcode = 0;
+  std::size_t rcode = 0;
     
     
   sqeazy::avio_buffer_data read_this;
@@ -466,14 +468,12 @@ static std::size_t decode_stack(const char* _buffer,
       }
 
     
-
-    
   }
 
 
   sqeazy::av_free_packet(&packet);
-  
-  return shape[row_major::d]*frame_size*sizeof(raw_type);
+  rcode = shape[row_major::d]*frame_size*sizeof(raw_type);
+  return rcode;
 
 }
 
