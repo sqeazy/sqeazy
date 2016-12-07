@@ -9,7 +9,7 @@
 
 #define DEBUG_H264
 
-#include "encoders/h264.hpp"
+#include "encoders/external_encoders.hpp"
 #include "volume_fixtures.hpp"
 #include "tiff_utils.hpp"
 #include "yuv_utils.hpp"
@@ -354,9 +354,9 @@ BOOST_AUTO_TEST_CASE( lossless_roundtrip_step_ramp ){
 	
   }
   catch(...){
-    sqeazy::write_image_stack(embryo_,"step_ramp.tiff");
+    sqeazy::write_image_stack(embryo_,"step_ramp_16.tiff");
     // sqeazy::write_stack_as_y4m(embryo_,"step_ramp.y4m");
-    sqeazy::write_image_stack(roundtrip,"step_ramp_rt.tiff");
+    sqeazy::write_image_stack(roundtrip,"step_ramp_rt_16.tiff");
     // sqeazy::write_stack_as_y4m(roundtrip,"step_ramp_rt.y4m");
     // std::ofstream h264_file("step_ramp.h264", std::ios_base::binary | std::ios_base::out);
     // h264_file.write((char*)encoded.data(),bytes_written);
