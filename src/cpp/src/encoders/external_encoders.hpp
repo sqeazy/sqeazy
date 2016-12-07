@@ -5,8 +5,8 @@
 #include <typeinfo>
 
 
-// setup encoders
 #include "encoders/lz4.hpp"
 #include "encoders/hevc.hpp"
+#include "encoders/h264.hpp"
 
 #endif /* _EXTERNAL_ENCODERS_H_ */
