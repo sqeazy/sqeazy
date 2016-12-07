@@ -423,7 +423,7 @@ BOOST_AUTO_TEST_CASE( sixteen_bit_rt ){
 BOOST_AUTO_TEST_CASE( sixteen_bit_rt_odd_width ){
 
   
-  sqeazy::av_frame_t frame(fix_width// fix_width+6
+  sqeazy::av_frame_t frame(fix_width+6
 			   ,fix_height,
 			   sqeazy::av_pixel_type<sqy::yuv420p>::value);
 
