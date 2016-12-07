@@ -179,8 +179,14 @@ namespace sqeazy {
       if(_outshape.empty())
 	_outshape = _inshape;
       
-      size_t _len_in = std::accumulate(_inshape.begin(), _inshape.end(),1,std::multiplies<size_t>());
-      size_t _len_out = std::accumulate(_outshape.begin(), _outshape.end(),1,std::multiplies<size_t>());
+      size_t _len_in = std::accumulate(_inshape.begin(),
+				       _inshape.end(),
+				       1,
+				       std::multiplies<size_t>());
+      size_t _len_out = std::accumulate(_outshape.begin(),
+					_outshape.end(),
+					1,
+					std::multiplies<size_t>());
 	
       const char* input = reinterpret_cast<const char*>(_in);
       
@@ -189,7 +195,7 @@ namespace sqeazy {
 						   _out,
 						   _len_out);
       
-      return ( num_bytes_decoded > 0 && num_bytes_decoded <= _len_out ) ? SUCCESS : FAILURE;
+      return ( num_bytes_decoded > 0 && num_bytes_decoded <= (_len_out*sizeof(raw_type)) ) ? SUCCESS : FAILURE;
       
             
     }
