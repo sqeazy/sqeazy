@@ -938,49 +938,44 @@ BOOST_AUTO_TEST_SUITE_END()
 template <typename T>
 struct weighters_fixture {
 
-  std::array<T, std::numeric_limits<T>::max()> constv;
-  std::array<T, std::numeric_limits<T>::max()> output;
-  std::array<T, std::numeric_limits<T>::max()> ramp;
-  std::array<T, std::numeric_limits<T>::max()> ramp_w_gaps;
+  // std::array<T, std::numeric_limits<T>::max()> constv;
+  // std::array<T, std::numeric_limits<T>::max()> output;
+  // std::array<T, std::numeric_limits<T>::max()> ramp;
+  // std::array<T, std::numeric_limits<T>::max()> ramp_w_gaps;
 
+  std::vector<T> constv;     
+  std::vector<T> output;     
+  std::vector<T> ramp;       
+  std::vector<T> ramp_w_gaps;
+  
   constexpr static std::size_t ten_percent   = std::round(.1*std::numeric_limits<T>::max());
   constexpr static std::size_t half_elements = std::round(.5*std::numeric_limits<T>::max());
 
   
   weighters_fixture():
-    constv(),
-    output(),
-    ramp(),
-    ramp_w_gaps()
+    constv	(std::numeric_limits<T>::max(),2),
+    output	(std::numeric_limits<T>::max(),0),
+    ramp  	(std::numeric_limits<T>::max(),0),
+    ramp_w_gaps	(std::numeric_limits<T>::max(),0)
   {
-
-    constv.fill(2);
-    output.fill(0);
     
     std::size_t count = 0;
     for(T& el : ramp)
       el = count++;
 
+    count = 0;
+    for(T& el : ramp_w_gaps)
+      if((count/5) % 2 == 0)
+	el = count++;
+
     
-    auto start = ramp.begin()+ten_percent;
-    auto end = start + (half_elements-ten_percent);
-    auto dst = ramp_w_gaps.begin()+ten_percent;
-    std::copy(start, end, dst);
-
-    start = ramp.begin()+half_elements+ten_percent;
-    end = start + (half_elements-ten_percent);
-    dst = ramp_w_gaps.begin()+half_elements+ten_percent;
-    std::copy(start, end, dst);
-
   };
 
 };
 
+BOOST_AUTO_TEST_SUITE( weighters_api )
 
-
-BOOST_FIXTURE_TEST_SUITE( weighters_on_16bit , weighters_fixture<std::uint16_t> )
-
-  BOOST_AUTO_TEST_CASE( copy_ctor ){
+BOOST_AUTO_TEST_CASE( copy_ctor ){
   sqeazy::weighters::power_of first(2,11);
   
   sqeazy::weighters::power_of copied = first;
@@ -989,7 +984,7 @@ BOOST_FIXTURE_TEST_SUITE( weighters_on_16bit , weighters_fixture<std::uint16_t> 
   
 }
 
-  BOOST_AUTO_TEST_CASE( offset_copy_ctor ){
+BOOST_AUTO_TEST_CASE( offset_copy_ctor ){
     
     sqeazy::weighters::offset_power_of first(2,42);
     sqeazy::weighters::offset_power_of copied = first;
@@ -999,8 +994,13 @@ BOOST_FIXTURE_TEST_SUITE( weighters_on_16bit , weighters_fixture<std::uint16_t> 
   
 }
 
+BOOST_AUTO_TEST_SUITE_END()
 
-  BOOST_AUTO_TEST_CASE( none ){
+
+BOOST_FIXTURE_TEST_SUITE( weighters_on_16bit , weighters_fixture<std::uint16_t> )
+
+
+BOOST_AUTO_TEST_CASE( none ){
 
   sqeazy::weighters::none w;
   for(std::size_t i = 0;i<constv.size();++i)
