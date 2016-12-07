@@ -60,7 +60,7 @@ namespace sqeazy {
     //TODO: check syntax of hevc configuration at runtime
     hevc_scheme(const std::string& _payload=""):
       hevc_config(_payload),
-      config_map()
+      config_map(default_hevc_config)
     {
 
       if(_payload.size())
