@@ -169,3 +169,88 @@ BOOST_AUTO_TEST_CASE( noisy_roundtrip ){
 
 BOOST_AUTO_TEST_SUITE_END()
 
+
+BOOST_FIXTURE_TEST_SUITE( avcodec_16bit, sqeazy::volume_fixture<std::uint16_t> )
+
+BOOST_AUTO_TEST_CASE( lossless_roundtrip_step_ramp ){
+
+  av_register_all();
+  
+  std::vector<std::size_t> shape = {static_cast<uint32_t>(embryo_.shape()[sqy::row_major::z]),
+				    static_cast<uint32_t>(embryo_.shape()[sqy::row_major::y]),
+				    static_cast<uint32_t>(embryo_.shape()[sqy::row_major::x])};
+  
+  const std::size_t frame_size = shape[sqy::row_major::y]*shape[sqy::row_major::x];
+  
+  std::vector<char> encoded(embryo_.num_elements()*sizeof(std::uint16_t),0);
+  
+  sqeazy::hevc_scheme<std::uint16_t> scheme;
+
+  for(std::size_t i = 0;i<embryo_.num_elements();++i){
+    embryo_.data()[i] = i % frame_size;
+    
+  }
+  
+  auto encoded_end = scheme.encode(embryo_.data(),
+				   encoded.data(),
+				   shape);
+  std::size_t bytes_written = encoded_end - encoded.data();
+  encoded.resize(bytes_written);
+  
+  BOOST_CHECK(encoded_end!=nullptr);
+  BOOST_CHECK_NE(bytes_written,0u);
+  BOOST_CHECK_LT(bytes_written,embryo_.num_elements()*2);
+
+
+  sqy::uint16_image_stack roundtrip = embryo_;
+  int err = scheme.decode(encoded.data(),
+			  roundtrip.data(),
+			  shape);
+
+  BOOST_CHECK_EQUAL(err,0u);
+
+  sqy::uint16_image_stack_cref roundtripcref(roundtrip.data(),shape);
+  sqy::uint16_image_stack_cref embryo_cref(embryo_.data(),shape);
+  double l2norm = sqeazy::l2norm(roundtripcref,embryo_cref);
+  double l1norm = sqeazy::l1norm(roundtripcref,embryo_cref);
+  
+  BOOST_TEST_MESSAGE(boost::unit_test::framework::current_test_case().p_name << "\t l2norm = " << l2norm << ", l1norm = " << l1norm );
+  
+  try{
+    BOOST_REQUIRE_LT(l2norm,1);    
+    BOOST_REQUIRE_MESSAGE(std::equal(roundtrip.data(),
+				     roundtrip.data()+roundtrip.num_elements(),
+				     embryo_.data()),
+			"raw noisy volume and encoded/decoded volume do not match exactly, l2norm " << l2norm);
+
+	
+  }
+  catch(...){
+    sqeazy::write_image_stack(embryo_,"step_ramp_16.tiff");
+    // sqeazy::write_stack_as_y4m(embryo_,"step_ramp.y4m");
+    sqeazy::write_image_stack(roundtrip,"step_ramp_rt_16.tiff");
+    // sqeazy::write_stack_as_y4m(roundtrip,"step_ramp_rt.y4m");
+    
+
+    std::size_t printed = 0;
+    for(std::size_t i = 0;i < (10*frame_size) && printed < 64;++i){
+      if(embryo_.data()[i]!=roundtrip.data()[i]){
+    	std::cout << "frame:0 pixel:" << i
+		  << " ["<< embryo_.shape()[sqy::row_major::x] << "x" << embryo_.shape()[sqy::row_major::y] <<"]"
+		  << " differ, " << (int)embryo_.data()[i] << " != " << (int)roundtrip.data()[i] << "\n";
+	++printed;
+      }
+    }
+    throw;
+  }
+  const size_t len = embryo_.num_elements();
+  
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(embryo_.data(), embryo_.data()+10,
+				  roundtrip.data(), roundtrip.data()+10); 
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(embryo_.data()+len-10, embryo_.data()+len,
+				  roundtrip.data()+len-10, roundtrip.data()+len);
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(embryo_.data(), embryo_.data()+len,
+				  roundtrip.data(), roundtrip.data()+len);
+    
+}
+BOOST_AUTO_TEST_SUITE_END()
