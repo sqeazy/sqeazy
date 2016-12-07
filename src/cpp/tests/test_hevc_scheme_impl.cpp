@@ -207,7 +207,7 @@ BOOST_AUTO_TEST_CASE( lossless_roundtrip_step_ramp ){
 			  roundtrip.data(),
 			  shape);
 
-  BOOST_CHECK_EQUAL(err,0u);
+  BOOST_REQUIRE_EQUAL(err,0u);
 
   sqy::uint16_image_stack_cref roundtripcref(roundtrip.data(),shape);
   sqy::uint16_image_stack_cref embryo_cref(embryo_.data(),shape);
