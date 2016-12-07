@@ -344,8 +344,6 @@ BOOST_AUTO_TEST_CASE( ref_to_frame ){
 BOOST_AUTO_TEST_CASE( iterators_to_frame ){
 
   sqeazy::av_frame_t frame(fix_width,fix_height,sqeazy::av_pixel_type<sqy::yuv420p>::value);
-  // for(int i = 0;i<10;++i)
-  //   BOOST_REQUIRE_EQUAL(frame.get()->data[0][i],0);
     
   auto bytes_copied = sqy::range_to_y(ref.begin(),ref.end(),frame);
   
@@ -364,15 +362,21 @@ BOOST_AUTO_TEST_CASE( sixteen_bit_frame_conversion ){
   sqeazy::av_frame_t frame(fix_width,fix_height,sqeazy::av_pixel_type<sqy::yuv420p>::value);
     
   auto bytes_copied = sqy::range_to_yuv420(ref16.begin(),
-					    ref16.end(),
-					    frame);
-  
+					   ref16.end(),
+					   frame);
+
+  BOOST_REQUIRE_NE(frame.get()->data[1][3],0);
   BOOST_REQUIRE_GT(bytes_copied,0);
   BOOST_REQUIRE_EQUAL(bytes_copied,ref16.size()*2);
   
   for(std::uint32_t i = 0;i<ref.size()-4;i+=4){
-    BOOST_CHECK_EQUAL((ref16[i] - ref16[i+3]),
-		      frame.get()->data[0][i]- frame.get()->data[0][i+3]);
+    auto exp = (ref16[i+3] - ref16[i]);
+    auto obs = frame.get()->data[0][i+3]- frame.get()->data[0][i];
+    auto y_pos = i/fix_width;
+    auto x_pos = i - y_pos*fix_width;
+    BOOST_REQUIRE_MESSAGE(exp == obs, "@(x=" << x_pos << ",y=" << y_pos << ") " 
+			  << "pixel(" << i+3 << ")-pixel("<< i
+			  <<"), exp: " << exp << ", obs: "<< obs);
   }
 
   auto sum = std::accumulate(&frame.get()->data[0][0], &frame.get()->data[0][0]+fix_width*fix_height/2,0);
