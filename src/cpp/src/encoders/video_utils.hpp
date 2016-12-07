@@ -692,14 +692,10 @@ namespace sqeazy {
       auto color_begin = &_frame.get()->data[1][(y/2)*_frame.get()->linesize[1]];
       
       for(std::uint32_t x=0;x<width;++x){
-	if(x % 4 == 0 && y % 2 == 0 && (y+1)!=height){
-	  to_add = value_t((*color_begin) << 8) | value_t(*(color_begin+1));
-	  color_begin += 2;
-	  
-	}
-	
+	to_add = value_t((*color_begin) << 8) | value_t(*(color_begin+1));
 	*(dst_begin + x) = (*(begin + x) ) + to_add;
-	  
+
+	if(x % 4 == 3) color_begin += 2;
       }
       
       bytes_decoded += (end-begin)*sizeof(*_begin);
