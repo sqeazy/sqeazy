@@ -129,7 +129,7 @@ void label_stack_by_tile_reverse(iterator_t _begin,
 	  + ytile*n_tiles_per_dim[sqeazy::row_major::x]
 	  + xtile;
 
-	*(_begin++) = n_tiles - tile_id;
+	*(_begin++) = n_tiles - tile_id - 1;
 	
       }
     }
@@ -137,8 +137,33 @@ void label_stack_by_tile_reverse(iterator_t _begin,
 	
 }
 
+BOOST_FIXTURE_TEST_SUITE( reverse_stack_labels , uint16_cube_of_8 )
+BOOST_AUTO_TEST_CASE( first_tile_correct )
+{
 
+  label_stack_by_tile_reverse(incrementing_cube.begin(),dims,4);
+  BOOST_CHECK_EQUAL(incrementing_cube.data()[0],7);
+  BOOST_CHECK_EQUAL(incrementing_cube.data()[1],7);
+  BOOST_CHECK_EQUAL(incrementing_cube.data()[2],7);
+  BOOST_CHECK_EQUAL(incrementing_cube.data()[3],7);
 
+  BOOST_CHECK_EQUAL(incrementing_cube.data()[0+64],7);
+  BOOST_CHECK_EQUAL(incrementing_cube.data()[1+64],7);
+  BOOST_CHECK_EQUAL(incrementing_cube.data()[2+64],7);
+  BOOST_CHECK_EQUAL(incrementing_cube.data()[3+64],7);
+
+  BOOST_CHECK_EQUAL(incrementing_cube.data()[0+8],7);
+  BOOST_CHECK_EQUAL(incrementing_cube.data()[1+8],7);
+  BOOST_CHECK_EQUAL(incrementing_cube.data()[2+8],7);
+  BOOST_CHECK_EQUAL(incrementing_cube.data()[3+8],7);
+
+  BOOST_CHECK_EQUAL(incrementing_cube.data()[0+8+64],7);
+  BOOST_CHECK_EQUAL(incrementing_cube.data()[1+8+64],7);
+  BOOST_CHECK_EQUAL(incrementing_cube.data()[2+8+64],7);
+  BOOST_CHECK_EQUAL(incrementing_cube.data()[3+8+64],7);
+
+}
+BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_FIXTURE_TEST_SUITE( basic , uint16_cube_of_8 )
 
@@ -202,7 +227,12 @@ BOOST_FIXTURE_TEST_SUITE( roundtrips , uint16_cube_of_8 )
 BOOST_AUTO_TEST_CASE( reverse )
 {
   auto expected = incrementing_cube;
-  label_stack_by_tile(expected.begin(),dims,4);
+  auto exp_itr = expected.data();
+  std::size_t n_elements_per_tile = std::pow(4,3);
+  for(std::uint16_t i = 0;i<8;++i,exp_itr+=n_elements_per_tile){
+    
+      std::fill(exp_itr,exp_itr+n_elements_per_tile,i);
+  }
   
   label_stack_by_tile_reverse(incrementing_cube.begin(),dims,4);
   sqyd::tile_shuffle in_tiles_of(4);
