@@ -292,7 +292,7 @@ BOOST_AUTO_TEST_CASE( reverse_3 )
 
   // std::size_t n_elements_per_tile = std::pow(3,3);
 
-  std::vector<std::uint16_t> expected(9,0);
+
   
   label_stack_by_tile_reverse(incrementing_cube.begin(),dims,4);
   sqyd::tile_shuffle in_tiles_of(3);
@@ -302,11 +302,57 @@ BOOST_AUTO_TEST_CASE( reverse_3 )
 				dims);
   BOOST_REQUIRE(rem == to_play_with.end());
 
+  //check only the first tile
+  std::vector<std::uint16_t> expected_last_tile(9,7);
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(to_play_with.begin()+to_play_with.size()-4,
+				  to_play_with.end(),
+				  expected_last_tile.begin(), expected_last_tile.begin()+4);
+
+  BOOST_CHECK_EQUAL_COLLECTIONS(to_play_with.begin()+to_play_with.size()-expected_last_tile.size(),
+				to_play_with.end(),
+  				expected_last_tile.begin(), expected_last_tile.end());
+
+  //check that zeros are at the beginning
+  BOOST_CHECK_GT(std::count(to_play_with.begin(),
+			    to_play_with.end(),0),0);
+
+  //check that encoded data yields low values at the start and high ones in the back
+  auto checksum_start = std::accumulate(to_play_with.begin(),to_play_with.begin()+8,0);
+  auto checksum_mid = std::accumulate(to_play_with.begin()+to_play_with.size()/2,to_play_with.begin()+to_play_with.size()/2+8,0);
+  auto checksum_end = std::accumulate(to_play_with.end()-8,to_play_with.end(),0);
+  BOOST_CHECK_GT(checksum_end,checksum_start);
+  BOOST_CHECK_GT(checksum_end,checksum_mid);
+  BOOST_CHECK_GT(checksum_mid,checksum_start);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE( roundtrips , uint16_cube_of_8 )
+
+BOOST_AUTO_TEST_CASE( reverse )
+{
+
+  label_stack_by_tile_reverse(incrementing_cube.begin(),dims,4);
+  auto expected = incrementing_cube;
   
-  BOOST_REQUIRE_EQUAL_COLLECTIONS(to_play_with.begin(), to_play_with.begin()+4,
-				  expected.begin(), expected.begin()+4);
-  BOOST_CHECK_EQUAL_COLLECTIONS(to_play_with.begin(), to_play_with.begin()+expected.size(),
-				expected.begin(), expected.end());
+  sqyd::tile_shuffle in_tiles_of(4);
+  BOOST_CHECK(in_tiles_of.tile_size == 4);
+
+  auto rem = in_tiles_of.encode(incrementing_cube.cbegin(), incrementing_cube.cend(),
+				to_play_with.begin(),
+				dims);
+  BOOST_REQUIRE(rem == to_play_with.end());
+
+  auto dec_rem = in_tiles_of.decode(to_play_with.begin(), to_play_with.end(),
+				    incrementing_cube.begin(),
+				    dims);
+
+  BOOST_REQUIRE(dec_rem == incrementing_cube.end());
+
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(expected.begin(), expected.begin()+16,
+				  incrementing_cube.begin(), incrementing_cube.begin()+16);
+  BOOST_CHECK_EQUAL_COLLECTIONS(expected.begin(), expected.end(),
+				  incrementing_cube.begin(), incrementing_cube.end()); 
 
 }
 
