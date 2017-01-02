@@ -356,4 +356,59 @@ BOOST_AUTO_TEST_CASE( reverse )
 
 }
 
+BOOST_AUTO_TEST_CASE( reverse_2 )
+{
+
+  label_stack_by_tile_reverse(incrementing_cube.begin(),dims,2);
+  auto expected = incrementing_cube;
+  
+  sqyd::tile_shuffle in_tiles_of(2);
+
+
+  auto rem = in_tiles_of.encode(incrementing_cube.cbegin(), incrementing_cube.cend(),
+				to_play_with.begin(),
+				dims);
+  BOOST_REQUIRE(rem == to_play_with.end());
+
+  auto dec_rem = in_tiles_of.decode(to_play_with.begin(), to_play_with.end(),
+				    incrementing_cube.begin(),
+				    dims);
+
+  BOOST_REQUIRE(dec_rem == incrementing_cube.end());
+
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(expected.begin(), expected.begin()+16,
+				  incrementing_cube.begin(), incrementing_cube.begin()+16);
+  BOOST_CHECK_EQUAL_COLLECTIONS(expected.begin(), expected.end(),
+				  incrementing_cube.begin(), incrementing_cube.end()); 
+
+}
+
+BOOST_AUTO_TEST_CASE( reverse_3 )
+{
+
+  label_stack_by_tile_reverse(incrementing_cube.begin(),dims,4);
+  auto expected = incrementing_cube;
+  
+  sqyd::tile_shuffle in_tiles_of(3);
+
+
+  auto rem = in_tiles_of.encode(incrementing_cube.cbegin(), incrementing_cube.cend(),
+				to_play_with.begin(),
+				dims);
+  BOOST_REQUIRE(rem == to_play_with.end());
+
+  auto dec_rem = in_tiles_of.decode(to_play_with.begin(), to_play_with.end(),
+				    incrementing_cube.begin(),
+				    dims);
+
+  BOOST_REQUIRE(dec_rem == incrementing_cube.end());
+
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(expected.begin(), expected.begin()+16,
+				  incrementing_cube.begin(), incrementing_cube.begin()+16);
+  BOOST_CHECK_EQUAL_COLLECTIONS(expected.begin(), expected.end(),
+				  incrementing_cube.begin(), incrementing_cube.end()); 
+
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()
