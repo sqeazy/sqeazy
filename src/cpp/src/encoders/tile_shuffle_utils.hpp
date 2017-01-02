@@ -342,12 +342,21 @@ namespace sqeazy {
 	auto sorted_metric = metric;
 	std::sort(sorted_metric.begin(), sorted_metric.end());
 
+	std::vector<bool> tile_written(len_tiles,false);
+	
 	auto dst = _out;
 	for(shape_value_t i =0;i<metric.size();++i){
 	  auto original_index = std::find(metric.begin(), metric.end(), sorted_metric[i]) - metric.begin();
+
+	  while(tile_written[original_index] == true)
+	    original_index++;
+	  
 	  decode_map[i] = original_index;
-	  dst = std::copy(tiles[original_index].begin(), tiles[original_index].end(),
+	  dst = std::copy(tiles[original_index].begin(),
+			  tiles[original_index].end(),
 			  dst);
+
+	  tile_written[original_index] = true;
 	}
 	
 
