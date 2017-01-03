@@ -51,7 +51,7 @@ namespace sqeazy {
 
 	f_itr = config_map.find("reorder_map");
       	if(f_itr!=config_map.end())
-      	  serialized_reorder_map = std::stoi(f_itr->second);
+      	  serialized_reorder_map = f_itr->second;
 	
       }
     }

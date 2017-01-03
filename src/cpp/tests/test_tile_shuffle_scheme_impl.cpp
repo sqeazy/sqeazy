@@ -535,4 +535,35 @@ BOOST_AUTO_TEST_CASE( scheme_rt )
 
 }
 
+BOOST_AUTO_TEST_CASE( scheme_rt_with_alien_config )
+{
+
+  label_stack_by_tile_reverse(incrementing_cube.begin(),dims,4);
+  auto expected = incrementing_cube;
+  
+  sqy::tile_shuffle_scheme<std::uint16_t> scheme("tile_size=4");
+
+  std::vector<std::size_t> shape(dims.begin(), dims.end());
+  auto rem = scheme.encode(incrementing_cube.data(),
+			   to_play_with.data(),
+			   shape);
+  BOOST_REQUIRE(rem == (to_play_with.data()+to_play_with.size()));
+
+  std::string config = scheme.config();
+  sqy::tile_shuffle_scheme<std::uint16_t> another(config);
+  
+  auto dec_rem = another.decode(to_play_with.data(), 
+			       incrementing_cube.data(),
+			       shape);
+
+  BOOST_REQUIRE_EQUAL(dec_rem, sqy::SUCCESS);
+
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(expected.begin(), expected.begin()+16,
+  				  incrementing_cube.begin(), incrementing_cube.begin()+16);
+  BOOST_CHECK_EQUAL_COLLECTIONS(expected.begin(), expected.end(),
+  				  incrementing_cube.begin(), incrementing_cube.end()); 
+
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()
