@@ -32,9 +32,10 @@ namespace sqeazy {
     typedef in_type compressed_type;
 
     static const std::string description() { return std::string("reorder the tiles in the incoming stack based on some defined metric"); };
-    static const std::size_t default_tile_size = 16/sizeof(in_type);
+    static const std::size_t default_tile_size = 32;
 
     std::size_t tile_size;
+    std::string serialized_reorder_map;
         
     tile_shuffle_scheme(const std::string& _payload=""):
       tile_size(default_tile_size)
@@ -47,6 +48,10 @@ namespace sqeazy {
       	auto f_itr = config_map.find("tile_size");
       	if(f_itr!=config_map.end())
       	  tile_size = std::stoi(f_itr->second);
+
+	f_itr = config_map.find("reorder_map");
+      	if(f_itr!=config_map.end())
+      	  serialized_reorder_map = std::stoi(f_itr->second);
 	
       }
     }
@@ -64,6 +69,8 @@ namespace sqeazy {
 
       std::ostringstream msg;
       msg << "tile_size=" << std::to_string(tile_size);
+      msg << ",";
+      msg << "reorder_map=" << serialized_reorder_map;
       return msg.str();
     
     }
@@ -73,23 +80,81 @@ namespace sqeazy {
       return _size_bytes;
     }
 
+    template <typename T>
+    static void serialize_range(T _begin, T _end, std::string& _msg){
+
+      const std::size_t len = _end - _begin;
+      const std::size_t n_bytes = len*sizeof(*_begin);
+      //      const std::size_t n_bytes_per_item = sizeof(*_begin);
+      _msg.resize(n_bytes);
+
+      auto dst = _msg.begin();
+      const char* recasted = reinterpret_cast<const char*>(&*_begin);
+      std::copy(recasted,recasted+n_bytes,dst);
+      
+      
+    }
+
+    template <typename T>
+    static void serialize_container(const T& _container, std::string& _msg){
+
+      const std::size_t n_bytes = _container.size()*sizeof(*_container.data());
+      _msg.resize(n_bytes);
+
+      auto dst = _msg.begin();
+      const char* recasted = reinterpret_cast<const char*>(&*_container.data());
+      std::copy(recasted,recasted+n_bytes,dst);
+      
+      
+    }
+    
+    template <typename T>
+    static void deserialize_range(const std::string& _msg, T _begin, T _end){
+
+      const std::size_t len = _end - _begin;
+      const std::size_t n_bytes = len*sizeof(*_begin);
+
+      if(n_bytes!=_msg.size())
+	return;
+
+      char* recasted = reinterpret_cast<char*>(&*_begin);
+      std::copy(_msg.cbegin(), _msg.cend(),recasted);
+      
+      
+    }
+
+    template <typename T>
+    static void deserialize_container(const std::string& _msg, T& _container){
+
+      const std::size_t n_bytes = _container.size()*sizeof(*_container.data());
+
+      if(n_bytes!=_msg.size())
+	_container.resize(_msg.size()/sizeof(*_container.data()));
+
+      char* recasted = reinterpret_cast<char*>(&*_container.data());
+      std::copy(_msg.cbegin(), _msg.cend(),recasted);
+      
+      
+    }
+
     
     compressed_type* encode( const raw_type* _input,
 			     compressed_type* _output,
 			     const std::vector<std::size_t>& _shape) override final {
 
-      // typedef std::size_t size_type;
-      // unsigned long length = std::accumulate(_shape.begin(), _shape.end(), 1, std::multiplies<size_type>());
+      typedef std::size_t size_type;
+      unsigned long length = std::accumulate(_shape.begin(), _shape.end(), 1, std::multiplies<size_type>());
 
-      // detail::reorder tiles_of(tile_size);
+      detail::tile_shuffle tiles_of(tile_size);
       
-      // auto value = tiles_of.encode(_input, _input+length,
-      // 				   _output,
-      // 				   _shape);
+      auto value = tiles_of.encode(_input, _input+length,
+      				   _output,
+      				   _shape);
 
-      // return value;
-
-      return _output;
+      
+      serialize_range(tiles_of.decode_map.begin(), tiles_of.decode_map.end(),serialized_reorder_map);
+      
+      return value;
     }
 
     int decode( const compressed_type* _input,
@@ -97,18 +162,20 @@ namespace sqeazy {
 		const std::vector<std::size_t>& _ishape,
 		std::vector<std::size_t> _oshape = std::vector<std::size_t>()) const override final {
 
-      // std::size_t length = std::accumulate(_ishape.begin(), _ishape.end(), 1, std::multiplies<std::size_t>());
-
-      // detail::reorder tiles_of(tile_size);
+      std::size_t length = std::accumulate(_ishape.begin(), _ishape.end(), 1, std::multiplies<std::size_t>());
+      std::vector<std::size_t> decode_map;
+      deserialize_container(serialized_reorder_map,decode_map);
       
-      // auto value = tiles_of.decode(_input, _input+length,
-      // 				   _output,
-      // 				   _ishape);
+      detail::tile_shuffle tiles_of(tile_size,decode_map);
+      
+      auto value = tiles_of.decode(_input, _input+length,
+      				   _output,
+      				   _ishape);
 
-      // if(value==(_output+length))
-      // 	return SUCCESS;
-      // else
-	return FAILURE;
+      if(value==(_output+length))
+      	return SUCCESS;
+      else
+      return FAILURE;
 
     }
 

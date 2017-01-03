@@ -5,6 +5,7 @@
 #include <iostream>
 #include <bitset>
 #include <map>
+#include <string>
 
 #include "array_fixtures.hpp"
 
@@ -410,5 +411,128 @@ BOOST_AUTO_TEST_CASE( reverse_3 )
 
 }
 
+
+BOOST_AUTO_TEST_SUITE_END()
+
+
+BOOST_FIXTURE_TEST_SUITE( scheme_serialization , uint16_cube_of_8 )
+
+BOOST_AUTO_TEST_CASE( simple )
+{
+
+  label_stack_by_tile_reverse(incrementing_cube.begin(),dims,4);
+  auto expected = incrementing_cube;
+  
+  sqy::tile_shuffle_scheme<std::uint16_t> scheme;
+
+  std::vector<std::size_t> shape(dims.begin(), dims.end());
+  auto rem = scheme.encode(incrementing_cube.data(),
+			   to_play_with.data(),
+			   shape);
+  
+  BOOST_REQUIRE(rem == (to_play_with.data()+to_play_with.size()));
+  BOOST_CHECK_NE(scheme.serialized_reorder_map.empty(), true);
+  
+}
+
+BOOST_AUTO_TEST_CASE( serialize_correct )
+{
+  std::vector<std::size_t> input(512,0);
+  std::string msg;
+  
+  std::size_t counter = 0;
+  for( std::size_t & el : input )
+    el = counter++;
+
+  sqy::tile_shuffle_scheme<std::uint16_t>::serialize_range(input.begin(), input.end(),msg);
+  
+  BOOST_REQUIRE_NE(msg.empty(),true);
+  BOOST_REQUIRE_EQUAL(msg.size(),input.size()*sizeof(std::size_t));
+
+  std::string last_item_string = msg.substr(511*sizeof(std::size_t), sizeof(std::size_t));
+
+  BOOST_REQUIRE_EQUAL(last_item_string.size(),sizeof(std::size_t));
+
+  const char check1 = 0xff;
+  const char check2 = 0x01;
+
+  BOOST_CHECK_EQUAL(std::count(last_item_string.begin(), last_item_string.end(),check1),1);
+  BOOST_CHECK_EQUAL(std::count(last_item_string.begin(), last_item_string.end(),check2),1);
+}
+
+BOOST_AUTO_TEST_CASE( serialize_roundtrip_ranges )
+{
+  std::vector<std::size_t> input(512,0);
+  std::vector<std::size_t> output = input;
+  std::string msg;
+  
+  std::size_t counter = 0;
+  for( std::size_t & el : input )
+    el = counter++;
+
+  sqy::tile_shuffle_scheme<std::uint16_t>::serialize_range(input.begin(), input.end(),msg);
+  
+  BOOST_REQUIRE_NE(msg.empty(),true);
+  BOOST_REQUIRE_EQUAL(msg.size(),input.size()*sizeof(std::size_t));
+
+  sqy::tile_shuffle_scheme<std::uint16_t>::deserialize_range(msg,output.begin(),output.end());
+
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(output.begin(), output.begin()+4,
+				  input.begin(), input.begin()+4);
+  BOOST_CHECK_EQUAL_COLLECTIONS(output.begin(), output.begin()+input.size(),
+				input.begin(), input.end());
+
+}
+
+BOOST_AUTO_TEST_CASE( serialize_roundtrip_container )
+{
+  std::vector<std::size_t> input(512,0);
+  std::vector<std::size_t> output = input;
+  std::string msg;
+  
+  std::size_t counter = 0;
+  for( std::size_t & el : input )
+    el = counter++;
+
+  sqy::tile_shuffle_scheme<std::uint16_t>::serialize_container(input,msg);
+  
+  BOOST_REQUIRE_NE(msg.empty(),true);
+  BOOST_REQUIRE_EQUAL(msg.size(),input.size()*sizeof(std::size_t));
+
+  sqy::tile_shuffle_scheme<std::uint16_t>::deserialize_container(msg,output);
+
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(output.begin(), output.begin()+4,
+				  input.begin(), input.begin()+4);
+  BOOST_CHECK_EQUAL_COLLECTIONS(output.begin(), output.begin()+input.size(),
+				input.begin(), input.end());
+
+}
+
+BOOST_AUTO_TEST_CASE( scheme_rt )
+{
+
+  label_stack_by_tile_reverse(incrementing_cube.begin(),dims,4);
+  auto expected = incrementing_cube;
+  
+  sqy::tile_shuffle_scheme<std::uint16_t> scheme("tile_size=4");
+
+  std::vector<std::size_t> shape(dims.begin(), dims.end());
+  auto rem = scheme.encode(incrementing_cube.data(),
+			   to_play_with.data(),
+			   shape);
+  BOOST_REQUIRE(rem == (to_play_with.data()+to_play_with.size()));
+
+  auto dec_rem = scheme.decode(to_play_with.data(), 
+			       incrementing_cube.data(),
+			       shape);
+
+  BOOST_REQUIRE_EQUAL(dec_rem, sqy::SUCCESS);
+
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(expected.begin(), expected.begin()+16,
+  				  incrementing_cube.begin(), incrementing_cube.begin()+16);
+  BOOST_CHECK_EQUAL_COLLECTIONS(expected.begin(), expected.end(),
+  				  incrementing_cube.begin(), incrementing_cube.end()); 
+
+}
 
 BOOST_AUTO_TEST_SUITE_END()
