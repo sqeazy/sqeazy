@@ -411,6 +411,45 @@ namespace sqeazy {
       return value;
     }
 
+    
+    template <typename iter_t>
+    parsed_map_t minors(iter_t _begin, iter_t _end){
+
+      parsed_map_t value;
+      const std::size_t len = std::distance(_begin,_end);
+      
+      if(!len)
+	return value;
+      
+      if(seperators_.empty())
+	return value;
+
+      
+      boost::string_ref msg(&*_begin,len);
+      
+      vec_of_string_refs_t major_keys = split_string_ref_to_ref(msg,
+								seperators_[1]);
+
+      for(const boost::string_ref& maj_key : major_keys ){
+
+	auto dist = maj_key.find(seperators_.back());
+	if(dist == std::string::npos)
+	  dist = maj_key.size();
+	
+	std::string key(maj_key.begin(),
+			maj_key.begin()+dist);
+
+	std::string key_value(maj_key.begin()+dist+seperators_.back().size(),
+			  maj_key.end());
+
+	value[ key ] = key_value;
+      }
+
+      return value;
+    }
+
+    
+
   };
   
 };

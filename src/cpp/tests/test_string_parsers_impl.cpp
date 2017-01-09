@@ -258,6 +258,30 @@ BOOST_AUTO_TEST_CASE (parse_to_map) {
   
 }
 
+BOOST_AUTO_TEST_CASE (parse_to_map_with_parser) {
+
+  
+  std::vector<std::string> pairs = sqy::split_string_by(multiple_args,",");
+  BOOST_CHECK_EQUAL(pairs.size(),3);
+  BOOST_TEST_MESSAGE("split_by \'" << multiple_args << "\'");
+  for(auto p : pairs)
+    BOOST_TEST_MESSAGE(">> " << p);
+
+  sqy::pipeline_parser p;
+  
+  sqy::parsed_map_t value = p.minors(multiple_args.begin(), multiple_args.end());
+
+  BOOST_CHECK_EQUAL(value.size(),3);
+
+  BOOST_TEST_MESSAGE("parse_string_by \'" << multiple_args << "\'");
+  for(auto v : value)
+    BOOST_CHECK_MESSAGE(v.second == multiple_kv[v.first],
+			"values for " << v.first << " do not match: "
+			<< v.second << " != " << multiple_kv[v.first]);
+  
+}
+
+
 BOOST_AUTO_TEST_CASE (bug_20160520) {
 
   std::string sep = "->";
