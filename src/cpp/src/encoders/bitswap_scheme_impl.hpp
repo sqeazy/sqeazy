@@ -35,8 +35,9 @@ namespace sqeazy {
       num_bits_per_plane(static_num_bits_per_plane),
       num_planes(0)
     {
-      
-      auto config_map = parse_string_by(_payload);
+
+      pipeline_parser p;
+      auto config_map = p.minors(_payload.begin(), _payload.end());
 
       if(config_map.size()){
 	auto f_itr = config_map.find("num_bits_per_plane");

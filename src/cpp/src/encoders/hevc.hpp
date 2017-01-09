@@ -63,8 +63,10 @@ namespace sqeazy {
       config_map(default_hevc_config)
     {
 
+      pipeline_parser p;
+            
       if(_payload.size())
-	config_map = parse_string_by(_payload);
+	config_map = p.minors(hevc_config.begin(), hevc_config.end());
 
       //TODO: catch this possibly throug the _payload
 #ifndef SQY_TRACE

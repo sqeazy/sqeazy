@@ -47,6 +47,7 @@ namespace sqeazy {
       threshold(1),
       fraction(percentage_below/100.f){
 
+      pipeline_parser p;
       auto config_map = parse_string_by(_payload);
 
       if(config_map.size()){
