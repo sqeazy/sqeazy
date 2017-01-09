@@ -451,6 +451,113 @@ namespace sqeazy {
     
 
   };
+
+  namespace parsing {
+
+        /**
+       \brief function to copy the memory that a container occupies to a string
+
+       ATTENTION: this function is not portable between memory ordering, 
+       i.e. something verbatim on little-endian yields not the same as on large-endian systems
+
+       ATTENTION: this function is not portable between different alignments or allocators, 
+       i.e. if a container uses some element alignement on the src machine that does not match the one on the destination, this will produce corrupted data
+
+       \return 
+       \retval 
+
+    */
+    template <typename iter_t>
+    static std::string range_to_verbatim(iter_t _begin, iter_t _end){
+
+      typedef typename std::iterator_traits<iter_t>::value_type value_t;
+      
+      const std::size_t len = std::distance(_begin, _end);
+      const std::size_t bytes = len*sizeof(value_t);
+      std::size_t exp_size = bytes+ignore_this_delimiters.first.size()+ignore_this_delimiters.second.size();
+
+      std::string value;
+      
+      if(!len)
+	return value;
+
+      value.resize(exp_size);
+      
+      auto iter = std::copy(ignore_this_delimiters.first.begin(), ignore_this_delimiters.first.end(),
+			    value.begin());
+
+      const char* src = reinterpret_cast<const char*>(&*_begin);
+      iter = std::copy(src,src+bytes,iter);
+
+      iter = std::copy(ignore_this_delimiters.second.begin(), ignore_this_delimiters.second.end(),
+		       iter);
+
+      
+      return value;
+    }
+
+    
+    /**
+       \brief function to copy the memory of a verbatim string to range given
+
+       ATTENTION: this function is not portable between memory ordering, 
+       i.e. something verbatim on little-endian yields not the same as on large-endian systems
+
+       ATTENTION: this function is not portable between different alignments or allocators, 
+       e.g. if a container uses some element alignement on the src machine that does not match the one on the destination, this will produce corrupted data
+
+       \return 
+       \retval 
+
+    */
+    template <typename string_t, typename iter_t>
+    static iter_t verbatim_to_range(string_t _verbatim, iter_t _begin, iter_t _end){
+
+      typedef typename std::iterator_traits<iter_t>::value_type value_t;
+      
+      const std::size_t len = std::distance(_begin, _end);
+      const std::size_t bytes = len*sizeof(value_t);
+
+      iter_t value = _begin;
+      
+      if(!len)
+	return value;
+      
+      if((_verbatim.size() - ignore_this_delimiters.first.size() - ignore_this_delimiters.second.size()) > bytes)
+	return value;
+      
+      auto src = _verbatim.begin() + ignore_this_delimiters.first.size();
+      auto src_end_pos = _verbatim.rfind(ignore_this_delimiters.second) - ignore_this_delimiters.first.size();
+
+      char* dst = reinterpret_cast<char*>(&*_begin);
+      auto dst_end = std::copy(src,src+src_end_pos,dst);
+
+      value += std::distance(dst,dst_end)/sizeof(value_t);
+      
+      return value;
+    }
+    
+    /**
+       \brief function estimate how many bytes a range may consume as verbatim string 
+
+       \return 
+       \retval 
+
+    */
+    template <typename iter_t>
+    static std::size_t verbatim_bytes(iter_t _begin, iter_t _end){
+
+      typedef typename std::iterator_traits<iter_t>::value_type value_t;
+      
+      const std::size_t len = std::distance(_begin, _end);
+      const std::size_t bytes = len*sizeof(value_t);
+      std::size_t exp_size = bytes+ignore_this_delimiters.first.size()+ignore_this_delimiters.second.size();
+      return exp_size;
+      
+    }
+
+    
+  };
   
 };
 

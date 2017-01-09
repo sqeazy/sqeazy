@@ -477,3 +477,116 @@ BOOST_AUTO_TEST_CASE (serialized_longs_test) {
 
 BOOST_AUTO_TEST_SUITE_END()
 
+
+struct verbatim_fixture
+{
+
+  const std::size_t len;
+  std::vector<std::uint8_t >  range8;
+  std::vector<std::uint32_t> range32;
+  
+  std::size_t bytes_range8 ;
+  std::size_t bytes_range32;
+
+  verbatim_fixture():
+    len(32),
+    range8(len),
+    range32(len),
+    bytes_range8 (0),
+    bytes_range32(0)
+  {
+
+    std::uint32_t counter =0;
+    for( auto& el : range8)
+      el = counter++;
+
+    counter =0;
+    for( auto& el : range32)
+      el = counter++;
+
+    bytes_range8  = len*sizeof(std::uint8_t );
+    bytes_range32 = len*sizeof(std::uint32_t);
+  }
+};
+
+BOOST_FIXTURE_TEST_SUITE( make_verbatim, verbatim_fixture )
+
+BOOST_AUTO_TEST_CASE (encode_range8) {
+
+  
+  auto verbatim = sqy::parsing::range_to_verbatim(range8.begin(),
+					       range8.end());
+  BOOST_CHECK_EQUAL(verbatim.empty(),
+		    false);
+  
+  BOOST_CHECK_GT(verbatim.size(),
+		 bytes_range8);
+
+  BOOST_CHECK_EQUAL(verbatim.size(),
+		    bytes_range8+sqeazy::ignore_this_delimiters.first.size()+sqeazy::ignore_this_delimiters.second.size());
+
+  std::string last_entry(verbatim.end()-1-sqeazy::ignore_this_delimiters.second.size(),
+			 verbatim.end()-sqeazy::ignore_this_delimiters.second.size());
+  const std::uint8_t* last_ptr = reinterpret_cast<const std::uint8_t*>(last_entry.data());
+  BOOST_CHECK_EQUAL(*last_ptr,range8.back());
+  
+}
+
+BOOST_AUTO_TEST_CASE (encode_range32) {
+
+  auto verbatim = sqy::parsing::range_to_verbatim(range32.begin(),
+					       range32.end());
+  BOOST_CHECK_EQUAL(verbatim.empty(),
+		    false);
+  
+  BOOST_CHECK_GT(verbatim.size(),
+		 bytes_range32);
+
+  BOOST_CHECK_EQUAL(verbatim.size(),
+		    bytes_range32+sqeazy::ignore_this_delimiters.first.size()+sqeazy::ignore_this_delimiters.second.size());
+
+  std::string last_entry(verbatim.end()-sizeof(std::uint32_t)-sqeazy::ignore_this_delimiters.second.size(),
+			 verbatim.end()-sqeazy::ignore_this_delimiters.second.size());
+  const std::uint32_t* last_ptr = reinterpret_cast<const std::uint32_t*>(last_entry.data());
+  BOOST_CHECK_EQUAL(*last_ptr,range32.back());
+
+}
+
+BOOST_AUTO_TEST_CASE (rt_range8) {
+
+  auto decoded_range8 = range8;
+  std::fill(decoded_range8.begin(), decoded_range8.end(),0);
+  
+  auto verbatim = sqy::parsing::range_to_verbatim(range8.begin(),
+						  range8.end());
+  BOOST_CHECK_EQUAL(verbatim.empty(),
+		    false);
+
+  auto res = sqy::parsing::verbatim_to_range(verbatim,
+					     decoded_range8.begin(),
+					     decoded_range8.end());
+
+  BOOST_CHECK(res == decoded_range8.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(range8.begin(), range8.end(),
+				decoded_range8.begin(), decoded_range8.end());
+}
+
+BOOST_AUTO_TEST_CASE (rt_range32) {
+
+  auto decoded_range32 = range32;
+  std::fill(decoded_range32.begin(), decoded_range32.end(),0);
+  
+  auto verbatim = sqy::parsing::range_to_verbatim(range32.begin(),
+						  range32.end());
+  BOOST_CHECK_EQUAL(verbatim.empty(),
+		    false);
+
+  auto res = sqy::parsing::verbatim_to_range(verbatim,
+					     decoded_range32.begin(),
+					     decoded_range32.end());
+
+  BOOST_CHECK(res == decoded_range32.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(range32.begin(), range32.end(),
+				decoded_range32.begin(), decoded_range32.end());
+}
+BOOST_AUTO_TEST_SUITE_END()
