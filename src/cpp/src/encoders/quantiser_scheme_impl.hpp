@@ -89,9 +89,10 @@ namespace sqeazy {
       weighting_string("none"),
       config_map(),
       shrinker(){
-
+      
+      pipeline_parser p;
       if(_payload.size())
-	config_map = parse_string_by(_payload);
+	config_map = p.minors(_payload.begin(), _payload.end());
       
       auto fitr = config_map.find("weighting_function");
       if(fitr!=config_map.end())

@@ -28,6 +28,7 @@ namespace sqeazy {
       threshold(0)
     {
       
+      pipeline_parser p;
       auto config_map = parse_string_by(_payload);
 
       if(config_map.size()){
