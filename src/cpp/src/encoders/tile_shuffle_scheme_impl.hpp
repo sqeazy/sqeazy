@@ -41,7 +41,7 @@ namespace sqeazy {
       tile_size(default_tile_size)
     {
       
-      auto config_map = parse_string_by(_payload);
+      pipeline_parser p;auto config_map = parse_string_by(_payload);
 
       if(config_map.size()){
 	
@@ -151,8 +151,9 @@ namespace sqeazy {
       				   _output,
       				   _shape);
 
-      
-      serialize_range(tiles_of.decode_map.begin(), tiles_of.decode_map.end(),serialized_reorder_map);
+
+      serialized_reorder_map = parsing::range_to_verbatim(tiles_of.decode_map.begin(), tiles_of.decode_map.end());
+
       
       return value;
     }
@@ -163,8 +164,11 @@ namespace sqeazy {
 		std::vector<std::size_t> _oshape = std::vector<std::size_t>()) const override final {
 
       std::size_t length = std::accumulate(_ishape.begin(), _ishape.end(), 1, std::multiplies<std::size_t>());
-      std::vector<std::size_t> decode_map;
-      deserialize_container(serialized_reorder_map,decode_map);
+      
+      std::vector<std::size_t> decode_map(parsing::verbatim_yields_n_items_of<std::size_t>(serialized_reorder_map),0);
+      
+      auto res = parsing::verbatim_to_range(serialized_reorder_map,
+					    decode_map.begin(), decode_map.end());
       
       detail::tile_shuffle tiles_of(tile_size,decode_map);
       
