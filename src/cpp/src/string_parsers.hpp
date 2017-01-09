@@ -62,46 +62,10 @@ namespace sqeazy {
 
   
   
-
-  vec_of_strings_t split_string_by(const std::string& _data,
-				   const std::string& _sep = ","
-				   ){
-    vec_of_strings_t value;
-
-    if(_sep.empty() || _data.empty())
-      return value;
-
-    size_t approx_count = std::count(_data.begin(), _data.end(),_sep.front());
-    value.reserve(approx_count);
-    
-    size_t first = 0;
-    size_t last = first;
-
-    while(first!=std::string::npos){
-
-      //TODO: watch out for ignore_this
-      first = _data.find(_sep,first);
-
-      if(first!=std::string::npos)
-	value.push_back(_data.substr(last,first-last));
-      else{
-	value.push_back(_data.substr(last));
-	break;
-      }
-			
-      last = (first += _sep.size());
-      
-    }
-    
-    value.reserve(value.size());
-    return value;
-
-  }
-
   
-
+  template <typename string_t>
   vec_of_string_refs_t split_string_ref_to_ref(const boost::string_ref& _data,
-					       const boost::string_ref& _sep = ","
+					       const string_t& _sep = ","
 					       ){
     vec_of_string_refs_t value;
 
@@ -156,9 +120,9 @@ namespace sqeazy {
 
   }
 
-  
+  template <typename string_t>
   vec_of_strings_t split_string_ref_by(const boost::string_ref& _data,
-				       const boost::string_ref& _sep = ","
+				       const string_t& _sep = ","
 				       ){
     
 
@@ -169,56 +133,28 @@ namespace sqeazy {
     for( const boost::string_ref& ref : tmp )
       value.push_back(std::string(ref.begin(), ref.end()));
     
-    // if(_sep.empty() || _data.empty())
-    //   return value;
 
-    // std::size_t approx_count = std::count(_data.begin(), _data.end(),_sep.front());
-    // value.reserve(approx_count);
-    
-    // std::size_t first = 0;
-
-    // string_ref_t to_search(_data);
-    // std::size_t pos_of_ignore_delim = to_search.find(ignore_this_delimiters.first);
-    
-    // while(to_search.size()){
-	
-    //   first = to_search.find_first_of(_sep);
-
-    //   if(first != string_ref_t::npos &&
-    // 	 pos_of_ignore_delim!= string_ref_t::npos &&
-    // 	 pos_of_ignore_delim < first //did we pass a delimiter of ignorance?
-    // 	 ) 
-    // 	{
-    // 	pos_of_ignore_delim = to_search.find(ignore_this_delimiters.second);
-	
-    // 	string_ref_t tmp = to_search;
-    // 	tmp.remove_prefix(pos_of_ignore_delim+ignore_this_delimiters.second.size());
-    // 	first = tmp.find_first_of(_sep);
-    // 	if(first != string_ref_t::npos)
-    // 	  first +=  pos_of_ignore_delim+ignore_this_delimiters.second.size();
-    // 	}	
-
-    //   auto end_itr = first != string_ref_t::npos ? to_search.begin()+first : to_search.end();
-    //   std::string result(to_search.begin(),
-    // 			 end_itr);
-
-    //   value.push_back(result);
-      
-    //   if(first==string_ref_t::npos){
-    // 	break;
-    //   }
-
-    //   to_search.remove_prefix(first + _sep.size());
-    //   pos_of_ignore_delim -= (first + _sep.size());
-    // }
-
-
-    // value.reserve(value.size());
-    
     return value;
 
   }
   
+
+  
+  vec_of_strings_t split_string_by(const std::string& _data,
+				   const std::string& _sep = ","
+				   ){
+    vec_of_strings_t value;
+
+    if(_sep.empty() || _data.empty())
+      return value;
+
+    boost::string_ref data_ref = _data;
+
+    value = split_string_ref_by(data_ref, _sep);
+    
+    return value;
+
+  }
 
   
 
@@ -332,19 +268,15 @@ namespace sqeazy {
     typedef std::vector<boost::string_ref> vec_of_string_refs_t;
     
     vec_of_strings_t seperators_;
-    vec_of_string_refs_t seperator_refs_;
+
     
     std::map<std::string, parsed_map_t> tree_; 
 
     pipeline_parser(const vec_of_strings_t& _seps = {"->",",","="}):
-      seperators_(_seps),
-      seperator_refs_(_seps.size()){
+      seperators_(_seps)
+    {
 
-      std::uint8_t counter = 0;
-      for(const std::string& str : _seps){
-	seperator_refs_[counter++] = boost::string_ref(str);
-      }
-	
+     	
     }
     
 
@@ -364,7 +296,7 @@ namespace sqeazy {
       boost::string_ref msg(&*_begin,len);
       
       vec_of_string_refs_t major_keys = split_string_ref_to_ref(msg,
-								seperator_refs_.front());
+								seperators_.front());
 
       for(const boost::string_ref& maj_key : major_keys ){
 
@@ -383,10 +315,10 @@ namespace sqeazy {
 					maj_key.size()-1-(dist+1));
 
 	  vec_of_string_refs_t options = split_string_ref_to_ref(in_brackets,
-								 seperator_refs_[1]);
+								 seperators_[1]);
 	  for( const boost::string_ref& opt : options ){
 	    vec_of_strings_t key_value = split_string_ref_by(opt,
-							     seperator_refs_.back());
+							     seperators_.back());
 
 	    pmap[key_value.front()] = key_value.back();
 	    
