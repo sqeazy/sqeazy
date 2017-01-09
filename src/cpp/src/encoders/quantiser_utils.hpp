@@ -535,13 +535,9 @@ namespace sqeazy {
     template <typename T>
     std::string lut_to_string(const T& _lut){
 
-      std::ostringstream lut_stream(std::ios::out|std::ios::trunc);
-
-      for(auto& el : _lut)
-	lut_stream << el << lut_field_separator;
-
+      std::string value = parsing::range_to_verbatim(_lut.begin(),_lut.end());
       
-      return lut_stream.str();
+      return value;
     }
     
     
@@ -566,17 +562,19 @@ namespace sqeazy {
     void lut_from_string(const std::string& _lut_as_string,
 			 std::array<raw_type, max_compressed_>& _lut){
 
-      std::istringstream lutf(_lut_as_string,std::ios::in);
+      // std::istringstream lutf(_lut_as_string,std::ios::in);
 
-      const std::string sep(1,lut_field_separator);
-      std::vector<std::string> splitted = split_by(_lut_as_string.begin(),
-						   _lut_as_string.end(),
-						   sep);
+      // const std::string sep(1,lut_field_separator);
+      // std::vector<std::string> splitted = split_by(_lut_as_string.begin(),
+      // 						   _lut_as_string.end(),
+      // 						   sep);
 
-      uint32_t counter = 0;
-      for( const std::string& item : splitted ) 
-	_lut[counter++] = std::stol(item);
-
+      // uint32_t counter = 0;
+      // for( const std::string& item : splitted ) 
+      // 	_lut[counter++] = std::stol(item);
+      auto res = parsing::verbatim_to_range(_lut_as_string,_lut.begin(),_lut.end());
+      return ;
+      
     }
 
     
