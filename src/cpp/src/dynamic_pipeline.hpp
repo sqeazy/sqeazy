@@ -133,13 +133,12 @@ namespace sqeazy
 
 
       std::string _config = _config_str;
-      sqeazy::vec_of_pairs_t steps_n_args = sqeazy::parse_by(_config.begin(),
-							     _config.end(),
-							     "->");
-
+      pipeline_parser parser;
+      sqeazy::vec_of_pairs_t parsed = parser.to_pairs(_config.begin(),_config.end());
+      
       dynamic_pipeline value;
 
-      for(const auto &pair : steps_n_args)
+      for(const auto &pair : parsed)
       {
 	if(!value.sink_){
 	  if(head_filter_factory_t::has(pair.first)){
@@ -175,9 +174,9 @@ namespace sqeazy
 
 
       std::string _config = _config_str;
-      sqeazy::vec_of_pairs_t steps_n_args = sqeazy::parse_by(_config.begin(),
-							     _config.end(),
-							     _sep);
+
+      sqeazy::pipeline_parser p;
+      auto steps_n_args = p.to_pairs(_config.begin(),	 _config.end());
 
       bool value = false;
       std::uint32_t found = 0;
