@@ -284,23 +284,23 @@ BOOST_AUTO_TEST_CASE (githubissue_2) {
 
 }
 
-// BOOST_AUTO_TEST_CASE (anything_goes_test) {
+BOOST_AUTO_TEST_CASE (anything_goes_test) {
 
-//   std::string sep = "->";
-  
-//   sqy::vec_of_pairs_t value = sqy::parse_by(anything_goes_in_literals.begin(),anything_goes_in_literals.end(),
-// 					    sep);
-//   BOOST_REQUIRE_EQUAL(value.size(),4);
-//   BOOST_CHECK_EQUAL(value[0].first, "step1");
-//   BOOST_CHECK_EQUAL(value[1].first, "step2");
-//   BOOST_CHECK_EQUAL(value[2].first, "step3");
-//   BOOST_CHECK_EQUAL(value[3].first, "step4");
-//   BOOST_CHECK_EQUAL(value.front().second, "");
-//   BOOST_CHECK_EQUAL(value[1].second, "option=1");
-//   BOOST_CHECK_EQUAL(value[2].second, "junk=';,'./[],./'");
-//   BOOST_CHECK_EQUAL(value.back().second, "");
+  std::string sep = "->";
 
-// }
+  sqy::pipeline_parser p;
+  sqy::vec_of_pairs_t value = p.to_pairs(anything_goes_in_literals.begin(),anything_goes_in_literals.end());
+  BOOST_REQUIRE_EQUAL(value.size(),4);
+  BOOST_CHECK_EQUAL(value[0].first, "step1");
+  BOOST_CHECK_EQUAL(value[1].first, "step2");
+  BOOST_CHECK_EQUAL(value[2].first, "step3");
+  BOOST_CHECK_EQUAL(value[3].first, "step4");
+  BOOST_CHECK_EQUAL(value.front().second, "");
+  BOOST_CHECK_EQUAL(value[1].second, "option=1");
+  BOOST_CHECK_EQUAL(value[2].second, "junk=<verbatim>;->,'.==/[],./</verbatim>");
+  BOOST_CHECK_EQUAL(value.back().second, "option1=true,option2=false");
+
+}
 
 
 
@@ -330,6 +330,39 @@ BOOST_AUTO_TEST_CASE (anything_goes_in_literals_ref) {
   BOOST_CHECK(parsed_map["step3"].find("junk") != parsed_map["step3"].end());
   
   BOOST_CHECK_EQUAL(parsed_map["step4"].size(), 2);
+
+}
+
+
+BOOST_AUTO_TEST_CASE (anything_goes_in_literals_to_pairs) {
+
+  std::string sep = "->";
+  
+  boost::string_ref ref(anything_goes_in_literals);
+  
+  boost::string_ref sep_ref(sep);
+  
+  auto value = sqy::split_string_ref_by(ref,sep_ref);
+  
+  BOOST_REQUIRE_EQUAL(value.size(),4);
+  BOOST_CHECK_EQUAL(value[0].substr(0,5), "step1");
+  BOOST_CHECK_EQUAL(value[1].substr(0,5), "step2");
+  BOOST_CHECK_EQUAL(value[2].substr(0,5), "step3");
+  BOOST_CHECK_EQUAL(value[3].substr(0,5), "step4");
+
+  sqy::pipeline_parser parser;
+  auto parsed_pairs = parser.to_pairs(ref.begin(), ref.end());
+
+  BOOST_REQUIRE_EQUAL(parsed_pairs.size(), 4);
+  BOOST_CHECK_EQUAL(parsed_pairs.front().first, "step1");
+  BOOST_CHECK_EQUAL(parsed_pairs[1].first, "step2");
+  BOOST_CHECK_EQUAL(parsed_pairs[2].first, "step3");
+  BOOST_CHECK_EQUAL(parsed_pairs.back().first, "step4");
+  
+  // BOOST_CHECK_EQUAL(parsed_pairs["step3"].size(), 1);
+  // BOOST_CHECK(parsed_pairs["step3"].find("junk") != parsed_pairs["step3"].end());
+  
+  // BOOST_CHECK_EQUAL(parsed_pairs["step4"].size(), 2);
 
 }
 
