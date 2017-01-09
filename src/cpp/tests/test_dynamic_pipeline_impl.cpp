@@ -487,9 +487,12 @@ BOOST_AUTO_TEST_CASE (set_all_to_42_and_sum) {
   BOOST_CHECK(encoded_end!=nullptr);
 
   std::string buffer(intermediate.data(),encoded_end);
-  size_t pos = buffer.rfind("|")+1;
+  size_t pos = buffer.rfind(sqeazy::image_header::header_end_delimeter());;
 
   BOOST_CHECK_NE(pos,std::string::npos);
+  BOOST_CHECK_NE(pos,buffer.size()-sqeazy::image_header::header_end_delimeter().size());
+
+  pos+=sqeazy::image_header::header_end_delimeter().size() ;
   
   std::uint64_t result = *reinterpret_cast<std::uint64_t*>(&buffer[pos]);
   BOOST_CHECK_NE(result,0);

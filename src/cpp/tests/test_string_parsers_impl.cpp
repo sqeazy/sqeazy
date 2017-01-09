@@ -33,6 +33,14 @@ struct string_fixture
   std::string one_value = "test=0";
   std::string one_command = "ls(test=0)";
   std::string quantiser_bug_20160520 = "quantiser(decode_lut_string=254:766:1278:1790:2302:2814:3326:3838:4350:4862:5374)->h264(option=1)";
+  std::string anything_goes_in_literals = "step1->step2(option=1)->step3(junk=<verbatim>;->,'./[],./</verbatim>)->step4(option1=true,option2=false)";
+  std::string verbatim_literal_last = "step_i->step_ii(option=1)->step_iii(option1=true,option2=false)->step_iv(junk=<verbatim>;->,'./[],./</verbatim>)";
+
+  std::string serialized_longs = "step1->step2(option=1)->step3(junk=<verbatim>\\\u000B\u0000\u0000\u0000\u0000\u0000\u0000]\u000B\u0000\u0000\u0000\u0000\u0000\u0000^\u000B\u0000\u0000\u0000\u0000\u0000\u0000_\u000B\u0000\u0000\u0000\u0000\u0000\u0000`</verbatim>,option2=false)->step4(option1=true,option2=false)";
+
+  std::string junk_only = "junk=<verbatim>\\\u000B\u0000\u0000\u0000\u0000\u0000\u0000]\u000B\u0000\u0000\u0000\u0000\u0000\u0000^\u000B\u0000\u0000\u0000\u0000\u0000\u0000_\u000B\u0000\u0000\u0000\u0000\u0000\u0000`</verbatim>,option2=false";
+  
+  std::string longs_as_csv = "option=1,junk=<verbatim>\\\u000B\u0000\u0000\u0000\u0000\u0000\u0000]\u000B\u0000\u0000\u0000\u0000\u0000\u0000^\u000B\u0000\u0000\u0000\u0000\u0000\u0000_\u000B\u0000\u0000\u0000\u0000\u0000\u0000`</verbatim>";
   std::string parsing_0_githubissue_2 = "remove_background(threshold=0";
   
 };
@@ -49,6 +57,34 @@ BOOST_AUTO_TEST_CASE (split_to_strings) {
   BOOST_CHECK_EQUAL_COLLECTIONS(splitted.begin(), splitted.end(),
 				four_digits_as_strings.begin(), four_digits_as_strings.end());
 }
+
+BOOST_AUTO_TEST_CASE (split_string_ref) {
+
+  boost::string_ref local_ref(four_digits);
+  std::string sep = "->";
+  boost::string_ref sep_ref(sep);
+  auto splitted = sqy::split_string_ref_by(local_ref,sep_ref);
+  BOOST_CHECK_EQUAL(splitted.empty(),
+		    false);
+  
+  BOOST_CHECK_EQUAL_COLLECTIONS(splitted.begin(), splitted.end(),
+				four_digits_as_strings.begin(), four_digits_as_strings.end());
+
+  boost::string_ref junk_ref(junk_only);
+  sep = ",";
+  sep_ref = (sep);
+  splitted = sqy::split_string_ref_by(junk_ref,sep_ref);
+  BOOST_CHECK_EQUAL(splitted.empty(),
+		    false);
+  BOOST_CHECK_EQUAL(splitted.size(),
+		    2);
+
+  auto second_key = splitted[1].substr(0,7);
+  auto second_value = splitted[1].substr(8);
+  BOOST_CHECK_EQUAL(second_key,"option2");
+  BOOST_CHECK_EQUAL(second_value,"false");
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -247,6 +283,143 @@ BOOST_AUTO_TEST_CASE (githubissue_2) {
   BOOST_CHECK_EQUAL(value.front().second, "threshold=0");
 
 }
+
+BOOST_AUTO_TEST_CASE (anything_goes_test) {
+
+  std::string sep = "->";
+  
+  sqy::vec_of_pairs_t value = sqy::parse_by(anything_goes_in_literals.begin(),anything_goes_in_literals.end(),
+					    sep);
+  BOOST_REQUIRE_EQUAL(value.size(),4);
+  BOOST_CHECK_EQUAL(value[0].first, "step1");
+  BOOST_CHECK_EQUAL(value[1].first, "step2");
+  BOOST_CHECK_EQUAL(value[2].first, "step3");
+  BOOST_CHECK_EQUAL(value[3].first, "step4");
+  BOOST_CHECK_EQUAL(value.front().second, "");
+  BOOST_CHECK_EQUAL(value[1].second, "option=1");
+  BOOST_CHECK_EQUAL(value[2].second, "junk=';,'./[],./'");
+  BOOST_CHECK_EQUAL(value.back().second, "");
+
+}
+
+
+
+BOOST_AUTO_TEST_CASE (anything_goes_in_literals_ref) {
+
+  std::string sep = "->";
+  
+  boost::string_ref ref(anything_goes_in_literals);
+  
+  boost::string_ref sep_ref(sep);
+  
+  auto value = sqy::split_string_ref_by(ref,sep_ref);
+  
+  BOOST_REQUIRE_EQUAL(value.size(),4);
+  BOOST_CHECK_EQUAL(value[0].substr(0,5), "step1");
+  BOOST_CHECK_EQUAL(value[1].substr(0,5), "step2");
+  BOOST_CHECK_EQUAL(value[2].substr(0,5), "step3");
+  BOOST_CHECK_EQUAL(value[3].substr(0,5), "step4");
+
+  // auto parsed = sqy::parse_ref_by(ref);
+  // BOOST_CHECK_EQUAL(value.front().second, "");
+  // BOOST_CHECK_EQUAL(value[1].second, "option=1");
+  // BOOST_CHECK_EQUAL(value[2].second, "junk=';,'./[],./'");
+  // BOOST_CHECK_EQUAL(value.back().second, "");
+
+}
+
+
+
+BOOST_AUTO_TEST_CASE (verbatim_literal_last_ref) {
+
+  std::string sep = "->";
+  
+  boost::string_ref ref(verbatim_literal_last);
+  
+  boost::string_ref sep_ref(sep);
+  
+  auto value = sqy::split_string_ref_by(ref,sep_ref);
+  
+  BOOST_REQUIRE_EQUAL(value.size(),4);
+  BOOST_CHECK_EQUAL(value[0].substr(0,6), "step_i");
+  BOOST_CHECK_EQUAL(value[1].substr(0,7), "step_ii");
+  BOOST_CHECK_EQUAL(value[2].substr(0,8), "step_iii");
+  BOOST_CHECK_EQUAL(value[3].substr(0,7), "step_iv");
+
+  // auto parsed = sqy::parse_ref_by(ref);
+  // BOOST_CHECK_EQUAL(value.front().second, "");
+  // BOOST_CHECK_EQUAL(value[1].second, "option=1");
+  // BOOST_CHECK_EQUAL(value[2].second, "junk=';,'./[],./'");
+  // BOOST_CHECK_EQUAL(value.back().second, "");
+
+}
+
+
+BOOST_AUTO_TEST_CASE (longs_as_csv_manual_split) {
+
+  std::string sep = ",";
+  auto splitted = sqy::split_string_by(longs_as_csv,
+				       sep);
+  BOOST_CHECK_EQUAL(splitted.size(),2);
+
+  sep = "=";
+  sqy::parsed_map_t map;
+  for( std::string& item : splitted ){
+    auto splitted_item = sqy::split_string_by(item,sep);
+    if(!splitted_item.empty()){
+      map[splitted_item.front()] = splitted_item.size() > 1 ? splitted_item[1] : "";
+    }
+  }
+  
+  BOOST_CHECK_EQUAL(map.size(),2);
+
+  BOOST_REQUIRE(map.find("option")!=map.end());
+  BOOST_REQUIRE(map.find("junk")!=map.end());
+
+  auto option_itr = map.find("option");
+  auto junk_itr = map.find("junk");
+  
+  BOOST_CHECK_EQUAL(option_itr->second.size(),1);
+  BOOST_CHECK_GT(junk_itr->second.size(),1);
+  BOOST_CHECK_EQUAL(junk_itr->second.size(),174);
+  
+}
+
+
+BOOST_AUTO_TEST_CASE (serialized_longs_test) {
+
+  std::string sep = "->";
+  auto splitted = sqy::split_string_ref_by(serialized_longs,
+					   sep);
+  BOOST_CHECK_EQUAL(splitted.size(),4);
+
+  sqy::pipeline_parser parser;
+  
+  auto parsed_map = parser(serialized_longs.begin(),serialized_longs.end());
+  
+  BOOST_REQUIRE_EQUAL(parsed_map.size(),4);
+  BOOST_REQUIRE(parsed_map.find("step1") != parsed_map.end());
+  BOOST_REQUIRE(parsed_map.find("step2") != parsed_map.end());
+  BOOST_REQUIRE(parsed_map.find("step3") != parsed_map.end());
+  BOOST_REQUIRE(parsed_map.find("step4") != parsed_map.end());
+  BOOST_CHECK_EQUAL(parsed_map["step1"].empty(), true);
+  BOOST_CHECK_EQUAL(parsed_map["step2"].empty(), false);
+
+  BOOST_REQUIRE_EQUAL(parsed_map["step2"].size(), 1);
+  BOOST_REQUIRE(parsed_map["step2"].find("option") != parsed_map["step2"].end());
+  BOOST_CHECK_EQUAL(parsed_map["step2"]["option"], "1");
+  
+  BOOST_REQUIRE_EQUAL(parsed_map["step3"].size(), 1);
+  BOOST_REQUIRE(parsed_map["step3"].find("junk") != parsed_map["step2"].end());
+
+  boost::string_ref step3_junk = parsed_map["step3"]["junk"];
+  BOOST_CHECK_GT(step3_junk.size(), 0);
+  BOOST_CHECK_EQUAL(step3_junk.starts_with("<verbatim>"), true);
+  BOOST_CHECK_EQUAL(step3_junk.ends_with("</verbatim>"), true);
+
+  BOOST_REQUIRE_EQUAL(parsed_map["step4"].size(), 2);
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
 

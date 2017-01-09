@@ -82,8 +82,8 @@ namespace sqeazy {
 
   struct image_header {
 
-    static char header_end_delim;
-    static const char header_end_delimeter() { return header_end_delim; }
+    static std::string header_end_delim;
+    static const std::string header_end_delimeter() { return header_end_delim; }
 
     
     // typedef T value_type;
@@ -332,8 +332,8 @@ namespace sqeazy {
     template <typename iter_type>
     static const image_header unpack(iter_type _begin, iter_type _end) {
 
-      iter_type header_end_ptr = std::find(_begin,_end, image_header::header_end_delimeter());
-
+      iter_type header_end_ptr = header_end(_begin, _end);
+      
       //let's omit the header_end_delim for the JSON to be parsable
       std::string hdr(_begin, header_end_ptr);
       
@@ -378,7 +378,7 @@ namespace sqeazy {
       
       value.compressed_size_byte_ = tree.get("encoded.bytes", (unsigned long)0);
       value.header_ = hdr;
-      if(!ends_with(value.header_,&header_end_delim))
+      if(!ends_with(value.header_,header_end_delim))
 	value.header_ += header_end_delim;
       
       return image_header(value);//unnamed return-type optimisation
@@ -551,8 +551,8 @@ header_ = "";
       value = value && std::count(_begin,_end, '}') ==  std::count(_begin,_end, '{');
       value = value && std::count(_begin,_end, ':')>1;
       std::string data(_begin,_end);
-      static std::string delim = &header_end_delim;
-      value = value && (ends_with(data,"}}") || ends_with(data,delim));
+      
+      value = value && (ends_with(data,"}}") || ends_with(data,header_end_delimeter()));
       return value;
       
 
@@ -565,8 +565,26 @@ header_ = "";
 
 
     template <typename iter_type>
+    static const iter_type header_end(iter_type _begin, iter_type _end){
+      
+      const auto hdr_delim = image_header::header_end_delimeter();
+      iter_type value = std::find(_begin,_end, hdr_delim[0]);
+      std::string test_string(value,value+hdr_delim.size());
+
+      while(value != _end && ( test_string != hdr_delim )){
+	value = std::find(value+1,_end, hdr_delim[0]);
+	std::copy(value,value+hdr_delim.size(),test_string.begin());
+      }
+
+      
+      return value;
+
+    }
+
+    
+    template <typename iter_type>
     static const bool contained(iter_type _begin, iter_type _end){
-      iter_type header_end_ptr = std::find(_begin,_end, image_header::header_end_delimeter());
+      iter_type header_end_ptr = header_end(_begin,_end);
 
       return valid_header(_begin, header_end_ptr);
 
@@ -582,15 +600,7 @@ header_ = "";
 
     static const int unpack_num_dims(const char* _buffer, const unsigned& _size) {
 
-      // const char* header_end_ptr = std::find(_buffer, _buffer + _size, header_end_delim);
-      // //let's omit the header_end_ptr to make splitting easier
-      // std::string in_buffer(_buffer, header_end_ptr+1);
-
-      // if(!valid_header(in_buffer)){
-      // 	std::ostringstream msg;
-      // 	msg << "[image_header::unpack_shape]\t received header ("<< in_buffer <<") does not comply expected format\n";
-      // 	throw std::runtime_error(msg.str().c_str());
-      // }
+    
 
       image_header unpacked = unpack(_buffer, _buffer+_size);
       return static_cast<int>(unpacked.raw_shape_.size());
@@ -598,15 +608,7 @@ header_ = "";
 
     static const std::string unpack_type(const char* _buffer, const unsigned& _size) {
 
-      // const char* header_end_ptr = std::find(_buffer, _buffer + _size, header_end_delim);
-
-      // std::string in_buffer(_buffer, header_end_ptr+1);
-
-      // if(!valid_header(in_buffer)){
-      // 	std::ostringstream msg;
-      // 	msg << "[image_header::unpack_shape]\t received header ("<< in_buffer <<") does not comply expected format\n";
-      // 	throw std::runtime_error(msg.str().c_str());
-      // }
+     
 
       image_header unpacked = unpack(_buffer, _buffer+_size);
       return unpacked.raw_type_name_;
@@ -627,7 +629,7 @@ header_ = "";
   };
 
 
-  char image_header::header_end_delim = '|';
+  std::string image_header::header_end_delim = "|01307#!";
     
 };
 

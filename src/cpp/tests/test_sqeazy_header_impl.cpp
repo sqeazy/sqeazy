@@ -32,7 +32,10 @@ BOOST_AUTO_TEST_CASE( simple_pack )
   std::string header = sqeazy::image_header::pack<value_type>(dims);
     
   BOOST_CHECK_NE(header.size(),0);
-  BOOST_CHECK_EQUAL(header[header.size()-1],sqeazy::image_header::header_end_delimeter());
+
+  auto hdr_delim = sqeazy::image_header::header_end_delimeter();
+  BOOST_CHECK_NE(header.rfind(hdr_delim),0);
+  BOOST_CHECK_NE(header.rfind(hdr_delim),std::string::npos);
     
 }
 
@@ -81,7 +84,9 @@ BOOST_AUTO_TEST_CASE( encode_header_correct_typeid )
 {
 
   std::string hdr = sqeazy::image_header::pack<value_type>(dims);
-  std::stringstream header_stream(hdr.substr(0,hdr.size()-1));
+
+  int offset = sqeazy::image_header::header_end_delimeter().size();
+  std::stringstream header_stream(hdr.substr(0,hdr.size()-offset));
   
   bpt::ptree tree;
 
@@ -125,7 +130,9 @@ BOOST_AUTO_TEST_CASE( header_size_aligned_to_type )
  BOOST_AUTO_TEST_CASE( encode_header_correct_num_dims )
 {
   std::string hdr = sqeazy::image_header::pack<value_type>(dims);
-  std::stringstream header_stream(hdr.substr(0,hdr.size()-1));
+
+  int offset  = sqeazy::image_header::header_end_delimeter().size();
+  std::stringstream header_stream(hdr.substr(0,hdr.size()-offset));
   
   bpt::ptree tree;
 
