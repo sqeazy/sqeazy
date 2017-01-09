@@ -302,6 +302,20 @@ BOOST_AUTO_TEST_CASE (anything_goes_test) {
 
 }
 
+BOOST_AUTO_TEST_CASE (anything_goes_major_keys) {
+
+
+  sqy::pipeline_parser p;
+  auto value = p.major_keys(anything_goes_in_literals.begin(),anything_goes_in_literals.end());
+  
+  BOOST_REQUIRE_EQUAL(value.size(),4);
+  BOOST_CHECK_EQUAL(value[0], "step1");
+  BOOST_CHECK_EQUAL(value[1], "step2");
+  BOOST_CHECK_EQUAL(value[2], "step3");
+  BOOST_CHECK_EQUAL(value[3], "step4");
+
+}
+
 
 
 BOOST_AUTO_TEST_CASE (anything_goes_in_literals_ref) {
