@@ -333,6 +333,84 @@ namespace sqeazy {
       return value;
     }
 
+    template <typename iter_t>
+    vec_of_pairs_t to_pairs(iter_t _begin, iter_t _end){
+
+      vec_of_pairs_t value;
+      const std::size_t len = std::distance(_begin,_end);
+      
+      if(!len)
+	return value;
+      
+      if(seperators_.empty())
+	return value;
+
+      
+      boost::string_ref msg(&*_begin,len);
+      
+      vec_of_string_refs_t major_keys = split_string_ref_to_ref(msg,
+								seperators_.front());
+
+      value.reserve(major_keys.size());
+	
+      for(const boost::string_ref& maj_key : major_keys ){
+
+	auto dist = maj_key.find("(");
+	if(dist == std::string::npos)
+	  dist = maj_key.size();
+	
+	std::string key(maj_key.begin(),
+			maj_key.begin()+dist);
+	
+	std::string in_brackets = "";
+	if( key.size() < maj_key.size() ){
+
+	  in_brackets = std::string(maj_key.begin()+dist+1,
+				    maj_key.end()-1);
+	  
+	}
+	
+	value.push_back( std::make_pair(key,in_brackets) );
+      }
+
+      return value;
+    }
+
+    template <typename iter_t>
+    vec_of_strings_t major_keys(iter_t _begin, iter_t _end){
+
+      vec_of_strings_t value;
+      const std::size_t len = std::distance(_begin,_end);
+      
+      if(!len)
+	return value;
+      
+      if(seperators_.empty())
+	return value;
+
+      
+      boost::string_ref msg(&*_begin,len);
+      
+      vec_of_string_refs_t major_keys = split_string_ref_to_ref(msg,
+								seperators_.front());
+
+      value.reserve(major_keys.size());
+	
+      for(const boost::string_ref& maj_key : major_keys ){
+
+	auto dist = maj_key.find("(");
+	if(dist == std::string::npos)
+	  dist = maj_key.size();
+	
+	std::string key(maj_key.begin(),
+			maj_key.begin()+dist);
+		
+	value.push_back( key );
+      }
+
+      return value;
+    }
+
   };
   
 };
