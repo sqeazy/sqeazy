@@ -41,7 +41,7 @@ namespace sqeazy {
       tile_size(default_tile_size)
     {
       
-      pipeline_parser p;auto config_map = parse_string_by(_payload);
+      pipeline_parser p;auto config_map = p.minors(_payload.begin(),_payload.end());
 
       if(config_map.size()){
 	

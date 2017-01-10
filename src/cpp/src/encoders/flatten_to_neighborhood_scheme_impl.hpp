@@ -48,7 +48,7 @@ namespace sqeazy {
       fraction(percentage_below/100.f){
 
       pipeline_parser p;
-      auto config_map = parse_string_by(_payload);
+      auto config_map = p.minors(_payload.begin(),_payload.end());
 
       if(config_map.size()){
 	auto f_itr = config_map.find("fraction");
