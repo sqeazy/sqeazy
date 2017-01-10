@@ -199,7 +199,7 @@ BOOST_AUTO_TEST_CASE (speed_split_by) {
 
   //on ivy bridge laptop (under release conditions with gcc 5.3.1)
   //y_split 1711.59 mus, karma_split 4713.37 mus
-  BOOST_REQUIRE_LT(my_split_mus.count(),.4*karma_split_mus.count());
+  BOOST_REQUIRE_LT(my_split_mus.count(),karma_split_mus.count());
   BOOST_CHECK_EQUAL_COLLECTIONS(my_pairs.begin(), my_pairs.end(),
 				karma_pairs.begin(), karma_pairs.end());
 }
