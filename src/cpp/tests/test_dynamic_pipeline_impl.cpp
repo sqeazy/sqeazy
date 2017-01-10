@@ -541,11 +541,10 @@ BOOST_AUTO_TEST_CASE (filters_only_same_name) {
   BOOST_CHECK(encoded_end!=nullptr);
 
   //extract header
-  std::string buffer(intermediate.data(),
-		     encoded_end);
-  auto bootstrapped = sqeazy_testing::dynamic_pipeline<int>::bootstrap(buffer);
+  auto bootstrapped = sqeazy_testing::dynamic_pipeline<int>::bootstrap(intermediate.data(),
+								       encoded_end);
 
-  BOOST_CHECK_EQUAL(bootstrapped.empty(),false);
+  BOOST_REQUIRE_EQUAL(bootstrapped.empty(),false);
   BOOST_CHECK_EQUAL(filters_pipe.name(),bootstrapped.name());
 }
 
@@ -668,37 +667,44 @@ BOOST_AUTO_TEST_CASE (roundtrip_central_hibit_sink) {
 
 BOOST_AUTO_TEST_CASE (string_validates) {
 
-  bool string_passes = sqeazy_testing::dynamic_pipeline<int>::can_be_built_from("high_bits");
+  std::string pipe = "high_bits";
+  bool string_passes = sqeazy_testing::dynamic_pipeline<int>::can_be_built_from(pipe);
   BOOST_CHECK(string_passes);
 
-  string_passes = sqeazy_testing::dynamic_pipeline<int>::can_be_built_from("add_one->high_bits");
+  pipe = "add_one->high_bits";
+  string_passes = sqeazy_testing::dynamic_pipeline<int>::can_be_built_from(pipe);
   BOOST_CHECK(string_passes);
 
-  string_passes = sqeazy_testing::dynamic_pipeline<int>::can_be_built_from("add_one->high_bits->sum_up");
+  pipe = "add_one->high_bits->sum_up";
+  string_passes = sqeazy_testing::dynamic_pipeline<int>::can_be_built_from(pipe);
   BOOST_CHECK(string_passes);
 
-  string_passes = sqeazy_testing::dynamic_pipeline<int>::can_be_built_from("add_one->high_bits->sum_upper");
+  pipe = "add_one->high_bits->sum_upper";
+  string_passes = sqeazy_testing::dynamic_pipeline<int>::can_be_built_from(pipe);
   BOOST_CHECK(!string_passes);
 
 }
 
 BOOST_AUTO_TEST_CASE (string_validates_fixed_bugs) {
-  
-  bool string_passes = sqeazy_testing::dynamic_pipeline<int>::can_be_built_from("add_one->high_bits!!sum_upper");
+
+  std::string pipe = "add_one->high_bits!!sum_upper";
+  bool string_passes = sqeazy_testing::dynamic_pipeline<int>::can_be_built_from(pipe);
   BOOST_CHECK(!string_passes);
 
-  string_passes = sqeazy_testing::dynamic_pipeline<int>::can_be_built_from("add_one!!high_bits");
+  pipe = "add_one!!high_bits";
+  string_passes = sqeazy_testing::dynamic_pipeline<int>::can_be_built_from(pipe);
   BOOST_CHECK(!string_passes);
 
 }
 
 BOOST_AUTO_TEST_CASE (test_factory_template_args) {
 
+  std::string pipe = "add_one->high_bits->square";
   bool string_passes = sqy::dynamic_pipeline<int,
 					     filter_factory,
 					     sink_factory<int>,
 					     my_tail_factory<char>
-					     >::can_be_built_from("add_one->high_bits->square");
+					     >::can_be_built_from(pipe);
   BOOST_CHECK(!string_passes);
 
   //FIXME: should not compile or not pass
@@ -708,10 +714,11 @@ BOOST_AUTO_TEST_CASE (test_factory_template_args) {
   // 					filter_factory<int>
   // 					>::can_be_built_from("add_one->high_bits->square");
   // BOOST_CHECK(!string_passes);
-  
+
+  pipe = "add_one->high_bits->square";
   string_passes = sqy::dynamic_pipeline<int,
 					filter_factory,
-					sink_factory<int>>::can_be_built_from("add_one->high_bits->square");
+					sink_factory<int>>::can_be_built_from(pipe);
   BOOST_CHECK(string_passes);
 
 }

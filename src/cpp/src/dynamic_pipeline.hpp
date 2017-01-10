@@ -110,11 +110,14 @@ namespace sqeazy
       >
     static dynamic_pipeline bootstrap(iterator_t _begin, iterator_t _end)
     {
-      sqeazy::image_header hdr(_begin,_end);
 
-      std::string pipeline = hdr.pipeline();
-      
-      return from_string(pipeline);
+      const auto len = std::distance(_begin,_end);
+      if(!len)
+	return dynamic_pipeline();
+	
+      sqeazy::image_header hdr(_begin,_end);
+      auto pipe = hdr.pipeline();
+      return from_string(pipe.begin(),pipe.end());
     }
     
     /**
@@ -128,13 +131,12 @@ namespace sqeazy
        \retval 
        
     */
-    static dynamic_pipeline from_string(const char* _config_str)
+    template <typename iter_t>
+    static dynamic_pipeline from_string(iter_t _config_begin, iter_t _config_end)
     {
 
-
-      std::string _config = _config_str;
       pipeline_parser parser;
-      sqeazy::vec_of_pairs_t parsed = parser.to_pairs(_config.begin(),_config.end());
+      sqeazy::vec_of_pairs_t parsed = parser.to_pairs(_config_begin,_config_end);
       
       dynamic_pipeline value;
 
@@ -166,19 +168,24 @@ namespace sqeazy
 
     static bool can_be_built_from(const std::string& _config_str, std::string _sep = "->")
     {
-      return can_be_built_from(_config_str.c_str(),_sep);
+      return can_be_built_from(_config_str.begin(), _config_str.end(),_sep);
     }
-    
-    static bool can_be_built_from(const char* _config_str, std::string _sep = "->")
+
+    template <typename iter_t>
+    static bool can_be_built_from(iter_t _begin, iter_t _end,
+				  std::string _sep = "->")
     {
 
-
-      std::string _config = _config_str;
-
       sqeazy::pipeline_parser p;
-      auto steps_n_args = p.to_pairs(_config.begin(),	 _config.end());
+      auto steps_n_args = p.to_pairs(_begin,_end);
 
+      auto major_steps = sqeazy::split_char_range(_begin,_end,_sep);
       bool value = false;
+      
+      if(major_steps.size()!=steps_n_args.size())
+	return value;
+      
+      
       std::uint32_t found = 0;
       bool sink_matched = false;
       
@@ -210,7 +217,8 @@ namespace sqeazy
 	  rebuild_size += 2 + item.second.size();
       }
 
-      value = value && rebuild_size == _config.size();
+      const std::size_t config_len = std::distance(_begin, _end);
+      value = value && rebuild_size == config_len;
       return value;
     }
     
@@ -227,7 +235,7 @@ namespace sqeazy
     */
     static dynamic_pipeline from_string(const std::string& _config)
     {
-      return from_string(_config.c_str());
+      return from_string(_config.begin(),_config.end());
     }
 
 
