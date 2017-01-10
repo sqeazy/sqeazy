@@ -381,7 +381,7 @@ BOOST_AUTO_TEST_CASE( scheme_tile_of_4 )
 {
 
   
-  sqeazy::raster_reorder_scheme<value_type> scheme("4");
+  sqeazy::raster_reorder_scheme<value_type> scheme("tile_size=4");
 
   std::vector<std::size_t> shape(dims.begin(), dims.end());
   auto rem = scheme.encode(incrementing_cube.data(),
