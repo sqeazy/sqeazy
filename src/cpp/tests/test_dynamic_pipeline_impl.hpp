@@ -33,7 +33,8 @@ struct set_to :  public sqy::filter<T> {
     first_value()
   {
 
-    sqy::parsed_map_t parsed_map = sqy::unordered_parse_by(_payload.begin(), _payload.end());
+    sqy::pipeline_parser p;
+    sqy::parsed_map_t parsed_map = p.minors(_payload.begin(), _payload.end());
     if(parsed_map.size()){
 
       if(parsed_map.find("value")!=parsed_map.end()){
