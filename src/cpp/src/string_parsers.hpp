@@ -120,6 +120,17 @@ namespace sqeazy {
 
   }
 
+  
+  template <typename iter_t, typename string_t>
+  vec_of_string_refs_t split_char_range(iter_t _begin, iter_t _end,
+					const string_t& _sep = ","
+					){
+    const std::size_t len = std::distance(_begin,_end);
+    boost::string_ref ref(&*_begin,len);
+    return split_string_ref_to_ref(ref,_sep);
+    
+  }
+  
   template <typename string_t>
   vec_of_strings_t split_string_ref_by(const boost::string_ref& _data,
 				       const string_t& _sep = ","
