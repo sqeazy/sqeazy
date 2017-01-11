@@ -20,93 +20,90 @@ namespace sqeazy {
 
   typedef std::vector<std::string> vec_of_strings_t;
   typedef std::vector<boost::string_ref> vec_of_string_refs_t;
-  
+
   typedef std::vector<std::pair<std::string, std::string> > vec_of_pairs_t;
   typedef std::map<std::string, std::string> parsed_map_t;
 
   static const std::pair<std::string, std::string> ignore_this_delimiters = std::make_pair("<verbatim>","</verbatim>");
   static const std::pair<boost::string_ref, boost::string_ref> ignore_this_delimiters_ref = std::make_pair(boost::string_ref(ignore_this_delimiters.first),
-													   boost::string_ref(ignore_this_delimiters.second)); 
-  
+                                                                                                           boost::string_ref(ignore_this_delimiters.second));
+
   template <typename char_itr_t>
-  vec_of_strings_t split_by(char_itr_t _begin, char_itr_t _end, const std::string& _sep = ","
-				    ){
+  vec_of_strings_t split_by(char_itr_t _begin, char_itr_t _end,
+                            const std::string& _sep = ","
+                            ){
 
     std::string allowed_characters = "a-zA-Z_0-9.=";
     auto f_itr = allowed_characters.find(_sep);
 
     if(f_itr != std::string::npos)
       allowed_characters.erase(f_itr,f_itr + _sep.size());
-    
+
     vec_of_strings_t v;
 
     bool r = qi::parse( _begin,                          /*< start iterator >*/
-			_end,                           /*< end iterator >*/
-			(
-			 +qi::char_(allowed_characters) % +qi::lit(_sep)
-			 ),
-			v
-			);
+                        _end,                           /*< end iterator >*/
+                        (
+                         +qi::char_(allowed_characters) % +qi::lit(_sep)
+                         ),
+                        v
+                        );
 
     if (_begin != _end  && !r) // fail if we did not get a full match
       {
-	std::string msg(_begin,_end);
-	std::cerr << "[sqeazy::split_by] couldn't split anything in " << msg << "\n";
-	v.clear();
-	return v;
+        std::string msg(_begin,_end);
+        std::cerr << "[sqeazy::split_by] couldn't split anything in " << msg << "\n";
+        v.clear();
+        return v;
       }
-    
+
     return v;
 
   }
 
-  
-  
-  
+
   template <typename string_t>
-  vec_of_string_refs_t split_string_ref_to_ref(const boost::string_ref& _data,
-					       const string_t& _sep = ","
-					       ){
+  vec_of_string_refs_t split_string_ref_to_ref(const boost::string_ref &_data, const string_t &_sep = ",")
+  {
     vec_of_string_refs_t value;
 
     if(_sep.empty() || _data.empty())
       return value;
 
-    std::size_t approx_count = std::count(_data.begin(), _data.end(),_sep.front());
+    std::size_t approx_count = std::count(_data.begin(), _data.end(), _sep.front());
     value.reserve(approx_count);
-    
+
     std::size_t first = 0;
 
     boost::string_ref to_search(_data);
     std::size_t pos_of_ignore_delim = to_search.find(ignore_this_delimiters.first);
-    
-    while(to_search.size()){
-	
+
+    while(to_search.size())
+    {
       first = to_search.find_first_of(_sep);
 
       if(first != boost::string_ref::npos &&
-	 pos_of_ignore_delim!= boost::string_ref::npos &&
-	 pos_of_ignore_delim < first //did we pass a delimiter of ignorance?
-	 ) 
-	{
-	pos_of_ignore_delim = to_search.find(ignore_this_delimiters.second);
-	
-	boost::string_ref tmp = to_search;
-	tmp.remove_prefix(pos_of_ignore_delim+ignore_this_delimiters.second.size());
-	first = tmp.find_first_of(_sep);
-	if(first != boost::string_ref::npos)
-	  first +=  pos_of_ignore_delim+ignore_this_delimiters.second.size();
-	}	
+         pos_of_ignore_delim != boost::string_ref::npos &&
+         pos_of_ignore_delim < first  // did we pass a delimiter of ignorance?
+         ){
+        pos_of_ignore_delim = to_search.find(ignore_this_delimiters.second);
 
-      auto end_itr = first != boost::string_ref::npos ? to_search.begin()+first : to_search.end();
-      std::size_t len = std::distance(to_search.begin(),end_itr);
-      boost::string_ref result(&*to_search.begin(),
-			       len);
+        boost::string_ref tmp = to_search;
+        tmp.remove_prefix(pos_of_ignore_delim + ignore_this_delimiters.second.size());
+        first = tmp.find_first_of(_sep);
+        if(first != boost::string_ref::npos)
+          first += pos_of_ignore_delim + ignore_this_delimiters.second.size();
+      }
+
+      auto end_itr = first != boost::string_ref::npos ? to_search.begin() + first : to_search.end();
+      std::size_t len = std::distance(to_search.begin(), end_itr);
+      boost::string_ref result(&*to_search.begin(), len);
 
       value.push_back(result);
-      
-      if(first==boost::string_ref::npos){
-	break;
+
+      if(first == boost::string_ref::npos)
+      {
+        break;
       }
 
       to_search.remove_prefix(first + _sep.size());
@@ -115,42 +112,42 @@ namespace sqeazy {
 
 
     value.reserve(value.size());
-    
-    return value;
 
+    return value;
   }
 
-  
+
   template <typename iter_t, typename string_t>
   vec_of_string_refs_t split_char_range(iter_t _begin, iter_t _end,
 					const string_t& _sep = ","
 					){
+
     const std::size_t len = std::distance(_begin,_end);
     boost::string_ref ref(&*_begin,len);
     return split_string_ref_to_ref(ref,_sep);
-    
+
   }
-  
+
   template <typename string_t>
   vec_of_strings_t split_string_ref_by(const boost::string_ref& _data,
 				       const string_t& _sep = ","
 				       ){
-    
+
 
     auto tmp = split_string_ref_to_ref(_data,_sep);
     vec_of_strings_t value;
     value.reserve(tmp.size());
-    
+
     for( const boost::string_ref& ref : tmp )
       value.push_back(std::string(ref.begin(), ref.end()));
-    
+
 
     return value;
 
   }
-  
 
-  
+
+
   vec_of_strings_t split_string_by(const std::string& _data,
 				   const std::string& _sep = ","
 				   ){

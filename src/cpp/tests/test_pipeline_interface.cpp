@@ -12,6 +12,8 @@ extern "C" {
 #include "sqeazy.h"
 }
 
+
+
 static const std::string default_filter_name = "bitswap1->lz4";
 static const std::string deprecated_filter_name = "bswap1_lz4";
 
@@ -22,9 +24,8 @@ BOOST_AUTO_TEST_SUITE( pipeline )
 BOOST_AUTO_TEST_CASE( does_this_validate ){
 
   bool answer = SQY_Pipeline_Possible(default_filter_name.c_str());
-    
-  BOOST_CHECK_EQUAL(answer, true);
-  
+  Boost_CHECK_EQUAL(answer, true);
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -37,10 +38,10 @@ BOOST_AUTO_TEST_CASE( max_compressed_bytes ){
   const long data_bytes = size_in_byte;
   long length = data_bytes;
   int rvalue = SQY_Pipeline_Max_Compressed_Length_UI16(default_filter_name.c_str(), &length);
-  
+
   BOOST_CHECK_EQUAL(rvalue, 0);
   BOOST_CHECK_GT(length,data_bytes);
-  
+
 }
 
 BOOST_AUTO_TEST_CASE( max_compressed_bytes_3D ){
@@ -48,6 +49,7 @@ BOOST_AUTO_TEST_CASE( max_compressed_bytes_3D ){
   const long data_bytes = size_in_byte;
   long length = data_bytes;
   std::vector<long> ldims(dims.begin(), dims.end());
+
   int rvalue = SQY_Pipeline_Max_Compressed_Length_3D_UI16(default_filter_name.c_str(),
 						     &ldims[0],
 						     dims.size(),
