@@ -50,10 +50,10 @@ namespace sqeazy {
     //   std::string found(match[0].first,match[0].second);
     //   value.first = std::stoi(found);
     //   value.second = 1;
-      
+
     //   _text = match.suffix();
     //   std::regex_search(_text,match,expression);
-      
+
     //   if(!match.empty()){
     // 	found = std::string(match[0].first,match[0].second);
     // 	value.second = std::stoi(found);
@@ -83,32 +83,32 @@ namespace sqeazy {
     quantiser<raw_type, compressed_type> shrinker;
     static const std::string description() { return std::string("scalar histogram-based quantisation for conversion uint16->uint8; <decode_lut_path> : the lut will be taken from there (for decoding) or written there (for encoding); <decode_lut_string> : decode LUT will be taken from the argument value (for decoding) or written there (for encoding); <weighting_function>=(none, power_of_enumerator_denominator : apply power-law pow(x,<enumerator>/<denominator>) to histogram weights, offset_power_of_enumerator_denominator : apply power-law pow(x,<enumerator>/<denominator>) to histogram weights starting at first non-zero bin) ");
     };
-    
-    quantiser_scheme(const std::string& _payload = ""):
+
+    quantiser_scheme(const std::string &_payload = ""):
       quantiser_config(_payload),
       weighting_string("none"),
       config_map(),
-      shrinker(){
-      
+      shrinker()
+    {
+
       pipeline_parser p;
       if(_payload.size())
-	config_map = p.minors(_payload.begin(), _payload.end());
-      
-      auto fitr = config_map.find("weighting_function");
-      if(fitr!=config_map.end())
-	weighting_string = fitr->second;
-      
-      fitr = config_map.find("decode_lut_path");
-      if(fitr!=config_map.end())
-	shrinker.lut_from_file(fitr->second,shrinker.lut_decode_);
-      else{
-	fitr = config_map.find("decode_lut_string");
-	if(fitr!=config_map.end()){
-	  shrinker.lut_from_string(fitr->second,shrinker.lut_decode_);
-	}
-      }
+        config_map = p.minors(_payload.begin(), _payload.end());
 
-      
+      auto fitr = config_map.find("weighting_function");
+      if(fitr != config_map.end())
+        weighting_string = fitr->second;
+
+      fitr = config_map.find("decode_lut_path");
+      if(fitr != config_map.end())
+        shrinker.lut_from_file(fitr->second, shrinker.lut_decode_);
+      else{
+          fitr = config_map.find("decode_lut_string");
+          if(fitr != config_map.end())
+            {
+              shrinker.lut_from_string(fitr->second, shrinker.lut_decode_);
+            }
+        }
     }
 
     ~quantiser_scheme() override final {}
@@ -131,9 +131,9 @@ namespace sqeazy {
 	if((count++)<(config_map.size()-1))
 	  msg << ",";
       }
-      
+
       return msg.str();
-      
+
     }
 
     /**
@@ -150,7 +150,7 @@ namespace sqeazy {
       std::intmax_t payload_size = _size_bytes*sizeof(raw_type)/sizeof(compressed_type);
       std::intmax_t lut_size = shrinker.lut_decode_.size()*sizeof(raw_type);
       return payload_size+lut_size;
-      
+
     }
 
     std::string output_type() const final override {
@@ -194,32 +194,32 @@ namespace sqeazy {
 
       //safe-guard
       if(!_in || !_length)
-	return _out;
+        return _out;
 
       const raw_type* in_begin = _in;
       const raw_type* in_end = _in + _length;
 
       //TODO: this atrocious, refactor this if-else-hell
       if(weighting_string.find("none")!=std::string::npos)
-	shrinker.setup_com(in_begin, in_end);
+        shrinker.setup_com(in_begin, in_end);
       else{
-	auto ratio = sqeazy::extract_ratio(weighting_string);
-	if(weighting_string.find("offset")!=std::string::npos){
-	  sqeazy::weighters::offset_power_of w(ratio.first,ratio.second);
-	  shrinker.setup_com(in_begin, in_end,w);
-	} else {
-	  sqeazy::weighters::power_of w(ratio.first,ratio.second);
-	  shrinker.setup_com(in_begin, in_end,w);
-	}
-	  
+        auto ratio = sqeazy::extract_ratio(weighting_string);
+        if(weighting_string.find("offset")!=std::string::npos){
+          sqeazy::weighters::offset_power_of w(ratio.first,ratio.second);
+          shrinker.setup_com(in_begin, in_end,w);
+        } else {
+          sqeazy::weighters::power_of w(ratio.first,ratio.second);
+          shrinker.setup_com(in_begin, in_end,w);
+        }
+
       }
 
       auto fitr = config_map.find("decode_lut_path");
       if(fitr!=config_map.end())
-	shrinker.lut_to_file(fitr->second,shrinker.lut_decode_);
+        shrinker.lut_to_file(fitr->second,shrinker.lut_decode_);
       else
-	config_map["decode_lut_string"] = shrinker.lut_to_string(shrinker.lut_decode_);
-      
+        config_map["decode_lut_string"] = shrinker.lut_to_string(shrinker.lut_decode_);
+
       applyLUT<raw_type, compressed_type> lutApplyer(shrinker.lut_encode_);
       auto out_end = std::transform(_in,_in+_length,_out,lutApplyer);
 
@@ -238,32 +238,32 @@ namespace sqeazy {
 
 
     int decode( const compressed_type* _in,
-		raw_type* _out,
-		const std::vector<std::size_t>& _inshape,
-		std::vector<std::size_t> _outshape = std::vector<std::size_t>()
-		) const override final {
+                raw_type* _out,
+                const std::vector<std::size_t>& _inshape,
+                std::vector<std::size_t> _outshape = std::vector<std::size_t>()
+                ) const override final {
 
       if(_outshape.empty())
-	_outshape = _inshape;
-      
+        _outshape = _inshape;
+
       std::size_t inlength = std::accumulate(_inshape.begin(), _inshape.end(),1,std::multiplies<std::size_t>());
       std::size_t outlength = std::accumulate(_outshape.begin(), _outshape.end(),1,std::multiplies<std::size_t>());
 
       return decode(_in,_out,inlength,outlength);
-      
+
     }
 
     int decode( const compressed_type* _in, raw_type* _out,
-		std::size_t _inlength,
-		std::size_t _outlength = 0) const override final {
+                std::size_t _inlength,
+                std::size_t _outlength = 0) const override final {
 
-      
+
       if(!_outlength)
-	_outlength = _inlength;
+        _outlength = _inlength;
 
       size_t size = _inlength;
       if(_outlength < _inlength){
-	size = std::min(_outlength,_inlength);
+        size = std::min(_outlength,_inlength);
       }
 
       // auto fitr = config_map.find("dump_encoded_path");
@@ -277,22 +277,21 @@ namespace sqeazy {
       // 	}
 	
       // }
-      
+
       applyLUT<compressed_type, raw_type> lutApplyer(shrinker.lut_decode_);
       auto begin = _in;
       auto end   = _in+size;
       auto end_ptr = std::transform(begin, end,
-				    _out,
-				    lutApplyer);
-      
+                                    _out,
+                                    lutApplyer);
+
       return (end_ptr - _out) - _outlength;
     }
 
-    
     void dump(const std::string& _fname){
-      
+
       shrinker.dump(_fname);
-      
+
     }
   };
 

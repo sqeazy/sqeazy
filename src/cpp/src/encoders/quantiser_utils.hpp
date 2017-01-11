@@ -27,33 +27,33 @@ namespace sqeazy {
 
       int exp_enum = 1;
       int exp_denom = 1;
-      
+
       offset_power_of(int _enum = 1, int _denom = 1):
-	first_nonzero_index(std::numeric_limits<std::size_t>::max()),
-	exp_enum(_enum),
-	exp_denom(_denom){}
-      
+        first_nonzero_index(std::numeric_limits<std::size_t>::max()),
+        exp_enum(_enum),
+        exp_denom(_denom){}
+
       std::string name (){
-	std::ostringstream msg;
-	msg << "offset_power_of_" << exp_enum << "_" << exp_denom;
-	return msg.str();
+        std::ostringstream msg;
+        msg << "offset_power_of_" << exp_enum << "_" << exp_denom;
+        return msg.str();
       }
-  
+
       template <typename bin_type, typename value_type>
       float operator()(const bin_type& _bin_index, const value_type& _index_value)  {
 
-	const float exponent = float(exp_enum)/exp_denom;
-	
-	if(first_nonzero_index == std::numeric_limits<std::size_t>::max() && _index_value != value_type(0))
-	  first_nonzero_index = _bin_index;
-    
-	if(_index_value != 0)
-	  return std::pow(float(_bin_index-first_nonzero_index),exponent);
-	else
-	  return 1.f;
-    
+        const float exponent = float(exp_enum)/exp_denom;
+
+        if(first_nonzero_index == std::numeric_limits<std::size_t>::max() && _index_value != value_type(0))
+          first_nonzero_index = _bin_index;
+
+        if(_index_value != 0)
+          return std::pow(float(_bin_index-first_nonzero_index),exponent);
+        else
+          return 1.f;
+
       }
-  
+
     };
 
 
@@ -62,63 +62,50 @@ namespace sqeazy {
 
       int exp_enum = 1;
       int exp_denom = 1;
-      
+
       power_of(int _enum = 1, int _denom = 1):
-	exp_enum(_enum),
-	exp_denom(_denom){}
-      
-      
+        exp_enum(_enum),
+        exp_denom(_denom){}
       std::string name (){
-	std::ostringstream msg;
-	msg << "power_of_" << exp_enum << "_" << exp_denom;
-	return msg.str();
+        std::ostringstream msg;
+        msg << "power_of_" << exp_enum << "_" << exp_denom;
+        return msg.str();
       }
-  
+
       template <typename bin_type, typename value_type>
       float operator()(const bin_type& _bin_index, const value_type& _bin_value)  {
 
-	const float exponent = float(exp_enum)/exp_denom;
-	return std::pow(_bin_index,exponent);
+        const float exponent = float(exp_enum)/exp_denom;
+        return std::pow(_bin_index,exponent);
       }
-  
+
     };
 
-
-
-    // template<int base =  std::numeric_limits<uint16_t>::max()>
-    // struct pow4Weighter{
-
-    //   template <typename bin_type, typename value_type>
-    //   float operator()(const bin_type& _bin_index, const value_type& _bin_value)  {
-    //     return std::pow(_bin_index/double(base),4);
-    //   }
-  
-    // };
 
 
     struct none{
 
       std::string name (){
-	std::ostringstream msg;
-	msg << "no_weight";
-	return msg.str();
+        std::ostringstream msg;
+        msg << "no_weight";
+        return msg.str();
       }
-  
+
       template <typename bin_type, typename value_type>
       float operator()(const bin_type& _bin_index, const value_type& _bin_value)  {
-	return 1.f;
+        return 1.f;
       }
-  
+
     };
 
   };//weighters
 
-  template<typename raw_type, 
-	   typename compressed_type>
+  template<typename raw_type,
+           typename compressed_type>
   struct applyLUT{
 
     static const int max_size_from = std::numeric_limits<raw_type>::max() + 1;
-  
+
     std::array<compressed_type, max_size_from> lut_;
 
     applyLUT(const std::array<compressed_type, max_size_from>& _lut):
@@ -128,7 +115,7 @@ namespace sqeazy {
     compressed_type operator()(const raw_type& _value){
       return lut_[_value];
     }
-  
+
   };
 
   //all is public for now
@@ -526,8 +513,8 @@ namespace sqeazy {
       std::fstream lutf(_path,std::ios::out|std::ios::trunc);
 
       for(auto& el : _lut)
-	lutf << el << "\n";
-      
+        lutf << el << "\n";
+
       return;
     }
 
@@ -536,32 +523,30 @@ namespace sqeazy {
     std::string lut_to_string(const T& _lut){
 
       std::string value = parsing::range_to_verbatim(_lut.begin(),_lut.end());
-      
+
       return value;
     }
-    
-    
+
     //could this be replaced by a stream operator overload?
     void lut_from_file(const std::string& _path, std::array<raw_type, max_compressed_>& _lut){
 
       std::ifstream lutf(_path,std::ios::in);
 
       //TODO: safeguard received ill-defined luts!
-      
       raw_type val;
       uint32_t counter = 0;
       while (lutf >> val)
-	{
-	  _lut[counter++] = val;
-	}
+        {
+          _lut[counter++] = val;
+        }
 
     }
 
     //could this be replaced by a stream operator overload?
     //TODO: perhaps very slow
     void lut_from_string(const std::string& _lut_as_string,
-			 std::array<raw_type, max_compressed_>& _lut){
-
+                         std::array<raw_type, max_compressed_>& _lut)
+    {
       // std::istringstream lutf(_lut_as_string,std::ios::in);
 
       // const std::string sep(1,lut_field_separator);
@@ -574,10 +559,9 @@ namespace sqeazy {
       // 	_lut[counter++] = std::stol(item);
       auto res = parsing::verbatim_to_range(_lut_as_string,_lut.begin(),_lut.end());
       return ;
-      
     }
 
-    
+
     /**
        \brief load decode table from path and decode the payload given by _input to produce _output
        
