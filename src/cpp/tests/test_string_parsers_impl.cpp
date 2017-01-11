@@ -14,7 +14,7 @@ namespace sqy = sqeazy;
 
 struct string_fixture
 {
-  
+
   std::string four_digits = "0->1->2->3";
   std::vector<std::string> four_digits_as_strings = {"0","1","2","3"};
   std::string four_commands = "ls(test=0)->cd(any=..1..)->cp(from=to2)->rm(what=4)";
@@ -28,7 +28,7 @@ struct string_fixture
     {"first", "2"},
     {"long_string", "1-2-3-4"}
   };
-  
+
   std::string one_key = "ls";
   std::string one_value = "test=0";
   std::string one_command = "ls(test=0)";
@@ -39,24 +39,24 @@ struct string_fixture
   std::string serialized_longs = "step1->step2(option=1)->step3(junk=<verbatim>\\\u000B\u0000\u0000\u0000\u0000\u0000\u0000]\u000B\u0000\u0000\u0000\u0000\u0000\u0000^\u000B\u0000\u0000\u0000\u0000\u0000\u0000_\u000B\u0000\u0000\u0000\u0000\u0000\u0000`</verbatim>,option2=false)->step4(option1=true,option2=false)";
 
   std::string junk_only = "junk=<verbatim>\\\u000B\u0000\u0000\u0000\u0000\u0000\u0000]\u000B\u0000\u0000\u0000\u0000\u0000\u0000^\u000B\u0000\u0000\u0000\u0000\u0000\u0000_\u000B\u0000\u0000\u0000\u0000\u0000\u0000`</verbatim>,option2=false";
-  
+
   std::string longs_as_csv = "option=1,junk=<verbatim>\\\u000B\u0000\u0000\u0000\u0000\u0000\u0000]\u000B\u0000\u0000\u0000\u0000\u0000\u0000^\u000B\u0000\u0000\u0000\u0000\u0000\u0000_\u000B\u0000\u0000\u0000\u0000\u0000\u0000`</verbatim>";
   std::string parsing_0_githubissue_2 = "remove_background(threshold=0";
-  
+
 };
 
 BOOST_FIXTURE_TEST_SUITE( splitters, string_fixture )
 
-BOOST_AUTO_TEST_CASE (split_to_strings) {
-  auto splitted = sqy::split_by(four_digits.begin(),
-				four_digits.end(),
-				"->");
-  BOOST_CHECK_EQUAL(splitted.empty(),
-		    false);
-  
-  BOOST_CHECK_EQUAL_COLLECTIONS(splitted.begin(), splitted.end(),
-				four_digits_as_strings.begin(), four_digits_as_strings.end());
-}
+// BOOST_AUTO_TEST_CASE (split_to_strings) {
+//   auto splitted = sqy::split_by(four_digits.begin(),
+// 				four_digits.end(),
+// 				"->");
+//   BOOST_CHECK_EQUAL(splitted.empty(),
+// 		    false);
+
+//   BOOST_CHECK_EQUAL_COLLECTIONS(splitted.begin(), splitted.end(),
+// 				four_digits_as_strings.begin(), four_digits_as_strings.end());
+// }
 
 BOOST_AUTO_TEST_CASE (split_string_ref) {
 
@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE (split_string_ref) {
   auto splitted = sqy::split_string_ref_by(local_ref,sep_ref);
   BOOST_CHECK_EQUAL(splitted.empty(),
 		    false);
-  
+
   BOOST_CHECK_EQUAL_COLLECTIONS(splitted.begin(), splitted.end(),
 				four_digits_as_strings.begin(), four_digits_as_strings.end());
 
@@ -89,126 +89,125 @@ BOOST_AUTO_TEST_CASE (split_string_ref) {
 BOOST_AUTO_TEST_SUITE_END()
 
 
-BOOST_FIXTURE_TEST_SUITE( boost_parsing, string_fixture )
+// BOOST_FIXTURE_TEST_SUITE( boost_parsing, string_fixture )
 
-BOOST_AUTO_TEST_CASE (parse_digits) {
-  auto parsed_to_map = sqy::unordered_parse_by(four_keywords.begin(),
-					       four_keywords.end(),
-					       "->");
-  BOOST_CHECK_EQUAL(parsed_to_map.empty(),
-		    false);
-  BOOST_CHECK_EQUAL(parsed_to_map.size(),
-		    four_keys.size());
-  
-}
+// BOOST_AUTO_TEST_CASE (parse_digits) {
+//   auto parsed_to_map = sqy::unordered_parse_by(four_keywords.begin(),
+// 					       four_keywords.end(),
+// 					       "->");
+//   BOOST_CHECK_EQUAL(parsed_to_map.empty(),
+// 		    false);
+//   BOOST_CHECK_EQUAL(parsed_to_map.size(),
+// 		    four_keys.size());
+// }
 
-BOOST_AUTO_TEST_CASE (parse_correctly) {
-  auto parsed_to_map = sqy::unordered_parse_by(four_keywords.begin(),
-				     four_keywords.end(),
-				     "->");
-  BOOST_REQUIRE_EQUAL(parsed_to_map.empty(),
-		    false);
+// BOOST_AUTO_TEST_CASE (parse_correctly) {
+//   auto parsed_to_map = sqy::unordered_parse_by(four_keywords.begin(),
+// 				     four_keywords.end(),
+// 				     "->");
+//   BOOST_REQUIRE_EQUAL(parsed_to_map.empty(),
+// 		    false);
 
-  int count = 0;
-  for( auto & key : four_keys ){
-    if(parsed_to_map.find(key) != parsed_to_map.end())
-      count++;
-  }
+//   int count = 0;
+//   for( auto & key : four_keys ){
+//     if(parsed_to_map.find(key) != parsed_to_map.end())
+//       count++;
+//   }
 
-  BOOST_CHECK_EQUAL(count,
-		    four_keys.size());
-}
+//   BOOST_CHECK_EQUAL(count,
+// 		    four_keys.size());
+// }
 
-BOOST_AUTO_TEST_CASE (parse_preserves_order) {
-  auto parsed_to_vec = sqy::parse_by(four_keywords.begin(),
-				     four_keywords.end(),
-				     "->");
-  BOOST_REQUIRE_EQUAL(parsed_to_vec.empty(),
-		      false);
-
-
-  for( std::size_t i = 0;i<parsed_to_vec.size();++i ){
-    BOOST_CHECK_EQUAL(parsed_to_vec[i].first,four_keys[i]) ;
-  }
-
-  
-}
-
-BOOST_AUTO_TEST_CASE (parse_preserves_order_and_value) {
-  auto parsed_to_vec = sqy::parse_by(four_commands.begin(),
-				     four_commands.end(),
-				     "->");
-  BOOST_REQUIRE_EQUAL(parsed_to_vec.empty(),
-		      false);
-  BOOST_REQUIRE_EQUAL(parsed_to_vec.size(),
-		      4);
+// BOOST_AUTO_TEST_CASE (parse_preserves_order) {
+//   auto parsed_to_vec = sqy::parse_by(four_keywords.begin(),
+// 				     four_keywords.end(),
+// 				     "->");
+//   BOOST_REQUIRE_EQUAL(parsed_to_vec.empty(),
+// 		      false);
 
 
-  for( std::size_t i = 0;i<parsed_to_vec.size();++i ){
-    BOOST_CHECK_EQUAL(parsed_to_vec[i].first,four_keys[i]) ;
-    BOOST_CHECK_EQUAL(parsed_to_vec[i].second,four_values[i]) ;
-  }
+//   for( std::size_t i = 0;i<parsed_to_vec.size();++i ){
+//     BOOST_CHECK_EQUAL(parsed_to_vec[i].first,four_keys[i]) ;
+//   }
 
-  
-}
 
-BOOST_AUTO_TEST_CASE (parse_without_token) {
-  auto parsed_to_vec = sqy::parse_by(one_command.begin(),
-				     one_command.end(),
-				     "->");
-  BOOST_REQUIRE_EQUAL(parsed_to_vec.empty(),
-		      false);
+// }
 
-  BOOST_REQUIRE_EQUAL(parsed_to_vec.size(),
-		      1);
+// BOOST_AUTO_TEST_CASE (parse_preserves_order_and_value) {
+//   auto parsed_to_vec = sqy::parse_by(four_commands.begin(),
+// 				     four_commands.end(),
+// 				     "->");
+//   BOOST_REQUIRE_EQUAL(parsed_to_vec.empty(),
+// 		      false);
+//   BOOST_REQUIRE_EQUAL(parsed_to_vec.size(),
+// 		      4);
 
-  BOOST_REQUIRE_EQUAL(parsed_to_vec.at(0).first,
-		      one_key);
 
-  BOOST_REQUIRE_EQUAL(parsed_to_vec.at(0).second,
-		      one_value);
-}
+//   for( std::size_t i = 0;i<parsed_to_vec.size();++i ){
+//     BOOST_CHECK_EQUAL(parsed_to_vec[i].first,four_keys[i]) ;
+//     BOOST_CHECK_EQUAL(parsed_to_vec[i].second,four_values[i]) ;
+//   }
 
-BOOST_AUTO_TEST_CASE (speed_split_by) {
 
-  std::ostringstream msg;
-  size_t n_items = (1 << 12);
-  for( size_t i = 0; i < n_items;++i){
-    msg << "item" << i << "=" << i;
-    if(i!=(n_items-1))
-      msg << ",";
-  }
+// }
 
-  const std::string payload = msg.str();
-  std::vector<std::string> my_pairs;
-  std::vector<std::string> karma_pairs;
+// BOOST_AUTO_TEST_CASE (parse_without_token) {
+//   auto parsed_to_vec = sqy::parse_by(one_command.begin(),
+// 				     one_command.end(),
+// 				     "->");
+//   BOOST_REQUIRE_EQUAL(parsed_to_vec.empty(),
+// 		      false);
 
-  auto start_t = std::chrono::high_resolution_clock::now();
-  for(int r = 0;r<10;++r)
-    my_pairs = sqy::split_string_by(payload);
-  auto end_t = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double, std::micro> my_split_mus = (end_t-start_t);
-  
-  start_t = std::chrono::high_resolution_clock::now();
-  for(int r = 0;r<10;++r)
-    karma_pairs = sqy::split_by(payload.begin(), payload.end());
-  end_t = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double, std::micro> karma_split_mus = (end_t-start_t);
+//   BOOST_REQUIRE_EQUAL(parsed_to_vec.size(),
+// 		      1);
 
-  BOOST_TEST_MESSAGE("my_split " << my_split_mus.count() << " mus, karma_split " << karma_split_mus.count() << " mus\n");
+//   BOOST_REQUIRE_EQUAL(parsed_to_vec.at(0).first,
+// 		      one_key);
 
-  //on ivy bridge laptop (under release conditions with gcc 5.3.1)
-  //y_split 1711.59 mus, karma_split 4713.37 mus
-  BOOST_REQUIRE_LT(my_split_mus.count(),karma_split_mus.count());
-  BOOST_CHECK_EQUAL_COLLECTIONS(my_pairs.begin(), my_pairs.end(),
-				karma_pairs.begin(), karma_pairs.end());
-}
+//   BOOST_REQUIRE_EQUAL(parsed_to_vec.at(0).second,
+// 		      one_value);
+// }
 
-BOOST_AUTO_TEST_SUITE_END()
+// BOOST_AUTO_TEST_CASE (speed_split_by) {
+
+//   std::ostringstream msg;
+//   size_t n_items = (1 << 12);
+//   for( size_t i = 0; i < n_items;++i){
+//     msg << "item" << i << "=" << i;
+//     if(i!=(n_items-1))
+//       msg << ",";
+//   }
+
+//   const std::string payload = msg.str();
+//   std::vector<std::string> my_pairs;
+//   std::vector<std::string> karma_pairs;
+
+//   auto start_t = std::chrono::high_resolution_clock::now();
+//   for(int r = 0;r<10;++r)
+//     my_pairs = sqy::split_string_by(payload);
+//   auto end_t = std::chrono::high_resolution_clock::now();
+//   std::chrono::duration<double, std::micro> my_split_mus = (end_t-start_t);
+
+//   start_t = std::chrono::high_resolution_clock::now();
+//   for(int r = 0;r<10;++r)
+//     karma_pairs = sqy::split_by(payload.begin(), payload.end());
+//   end_t = std::chrono::high_resolution_clock::now();
+//   std::chrono::duration<double, std::micro> karma_split_mus = (end_t-start_t);
+
+//   BOOST_TEST_MESSAGE("my_split " << my_split_mus.count() << " mus, karma_split " << karma_split_mus.count() << " mus\n");
+
+//   //on ivy bridge laptop (under release conditions with gcc 5.3.1)
+//   //y_split 1711.59 mus, karma_split 4713.37 mus
+//   BOOST_REQUIRE_LT(my_split_mus.count(),karma_split_mus.count());
+//   BOOST_CHECK_EQUAL_COLLECTIONS(my_pairs.begin(), my_pairs.end(),
+// 				karma_pairs.begin(), karma_pairs.end());
+// }
+
+// BOOST_AUTO_TEST_SUITE_END()
 
 
 BOOST_FIXTURE_TEST_SUITE( custom_parsing,
-			  string_fixture )
+                          string_fixture )
 
 BOOST_AUTO_TEST_CASE (parse_digits) {
   auto parsed_to_map = sqy::parse_string_by(four_keywords,
@@ -282,31 +281,31 @@ BOOST_AUTO_TEST_CASE (parse_to_map_with_parser) {
 }
 
 
-BOOST_AUTO_TEST_CASE (bug_20160520) {
+// BOOST_AUTO_TEST_CASE (bug_20160520) {
 
-  std::string sep = "->";
-  sqy::vec_of_pairs_t value = sqy::parse_by(quantiser_bug_20160520.begin(),
-					    quantiser_bug_20160520.end(),
-					    sep);
-  BOOST_REQUIRE_EQUAL(value.size(),2);
-  BOOST_CHECK_EQUAL(value.front().first, "quantiser");
-  BOOST_CHECK_EQUAL(value.back().first, "h264");
-  BOOST_CHECK_EQUAL(value.front().second, "decode_lut_string=254:766:1278:1790:2302:2814:3326:3838:4350:4862:5374");
-  BOOST_CHECK_EQUAL(value.back().second, "option=1");
+//   std::string sep = "->";
+//   sqy::vec_of_pairs_t value = sqy::parse_by(quantiser_bug_20160520.begin(),
+// 					    quantiser_bug_20160520.end(),
+// 					    sep);
+//   BOOST_REQUIRE_EQUAL(value.size(),2);
+//   BOOST_CHECK_EQUAL(value.front().first, "quantiser");
+//   BOOST_CHECK_EQUAL(value.back().first, "h264");
+//   BOOST_CHECK_EQUAL(value.front().second, "decode_lut_string=254:766:1278:1790:2302:2814:3326:3838:4350:4862:5374");
+//   BOOST_CHECK_EQUAL(value.back().second, "option=1");
 
-}
+// }
 
-BOOST_AUTO_TEST_CASE (githubissue_2) {
+// BOOST_AUTO_TEST_CASE (githubissue_2) {
 
-  std::string sep = "->";
-  sqy::vec_of_pairs_t value = sqy::parse_by(parsing_0_githubissue_2.begin(),
-					    parsing_0_githubissue_2.end(),
-					    sep);
-  BOOST_REQUIRE_EQUAL(value.size(),1);
-  BOOST_CHECK_EQUAL(value.front().first, "remove_background");
-  BOOST_CHECK_EQUAL(value.front().second, "threshold=0");
+//   std::string sep = "->";
+//   sqy::vec_of_pairs_t value = sqy::parse_by(parsing_0_githubissue_2.begin(),
+// 					    parsing_0_githubissue_2.end(),
+// 					    sep);
+//   BOOST_REQUIRE_EQUAL(value.size(),1);
+//   BOOST_CHECK_EQUAL(value.front().first, "remove_background");
+//   BOOST_CHECK_EQUAL(value.front().second, "threshold=0");
 
-}
+// }
 
 BOOST_AUTO_TEST_CASE (anything_goes_test) {
 
@@ -484,7 +483,7 @@ struct verbatim_fixture
   const std::size_t len;
   std::vector<std::uint8_t >  range8;
   std::vector<std::uint32_t> range32;
-  
+
   std::size_t bytes_range8 ;
   std::size_t bytes_range32;
 
@@ -513,12 +512,12 @@ BOOST_FIXTURE_TEST_SUITE( make_verbatim, verbatim_fixture )
 
 BOOST_AUTO_TEST_CASE (encode_range8) {
 
-  
+
   auto verbatim = sqy::parsing::range_to_verbatim(range8.begin(),
 					       range8.end());
   BOOST_CHECK_EQUAL(verbatim.empty(),
 		    false);
-  
+
   BOOST_CHECK_GT(verbatim.size(),
 		 bytes_range8);
 
@@ -529,7 +528,7 @@ BOOST_AUTO_TEST_CASE (encode_range8) {
 			 verbatim.end()-sqeazy::ignore_this_delimiters.second.size());
   const std::uint8_t* last_ptr = reinterpret_cast<const std::uint8_t*>(last_entry.data());
   BOOST_CHECK_EQUAL(*last_ptr,range8.back());
-  
+
 }
 
 BOOST_AUTO_TEST_CASE (encode_range32) {
@@ -538,7 +537,7 @@ BOOST_AUTO_TEST_CASE (encode_range32) {
 					       range32.end());
   BOOST_CHECK_EQUAL(verbatim.empty(),
 		    false);
-  
+
   BOOST_CHECK_GT(verbatim.size(),
 		 bytes_range32);
 
@@ -556,7 +555,7 @@ BOOST_AUTO_TEST_CASE (rt_range8) {
 
   auto decoded_range8 = range8;
   std::fill(decoded_range8.begin(), decoded_range8.end(),0);
-  
+
   auto verbatim = sqy::parsing::range_to_verbatim(range8.begin(),
 						  range8.end());
   BOOST_CHECK_EQUAL(verbatim.empty(),
@@ -575,7 +574,7 @@ BOOST_AUTO_TEST_CASE (rt_range32) {
 
   auto decoded_range32 = range32;
   std::fill(decoded_range32.begin(), decoded_range32.end(),0);
-  
+
   auto verbatim = sqy::parsing::range_to_verbatim(range32.begin(),
 						  range32.end());
   BOOST_CHECK_EQUAL(verbatim.empty(),
@@ -589,4 +588,25 @@ BOOST_AUTO_TEST_CASE (rt_range32) {
   BOOST_CHECK_EQUAL_COLLECTIONS(range32.begin(), range32.end(),
 				decoded_range32.begin(), decoded_range32.end());
 }
+
+BOOST_AUTO_TEST_CASE (quantiser_bug) {
+
+  std::vector<std::uint16_t> buffer = {1, 2, 4, 8, 16, 32, 64, 128, 65535};
+  auto decoded_buffer = buffer;
+  std::fill(decoded_buffer.begin(), decoded_buffer.end(), 0);
+
+  auto verbatim = sqy::parsing::range_to_verbatim(buffer.begin(),
+                                                  buffer.end());
+  BOOST_CHECK_EQUAL(verbatim.empty(),
+                    false);
+
+  auto res = sqy::parsing::verbatim_to_range(verbatim,
+                                             decoded_buffer.begin(),
+                                             decoded_buffer.end());
+
+  BOOST_CHECK(res == decoded_buffer.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(buffer.begin(), buffer.end(),
+                                decoded_buffer.begin(), decoded_buffer.end());
+}
+
 BOOST_AUTO_TEST_SUITE_END()
