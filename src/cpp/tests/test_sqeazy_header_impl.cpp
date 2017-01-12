@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE( header_size_aligned_to_type )
   BOOST_CHECK(int_uneven.size() % sizeof(int) == 0);
   sqeazy::image_header int_uneven_reread(int_uneven.str());
   BOOST_CHECK(int_uneven_reread == int_uneven);
-				  
+
   sqeazy::image_header short_uneven(short(),
 				    dims,
 				    "no_pipelin",//wrong name to make header string no multiple of 2
@@ -213,4 +213,85 @@ BOOST_AUTO_TEST_CASE( type_name )
   
   BOOST_CHECK_EQUAL(rec,exp);
 }
+
+
+BOOST_AUTO_TEST_CASE( do_not_touch_whitespaces_in_verbatim )
+{
+
+  std::string msg = "these whitespaces should stay";
+  std::string pipeline = "step1(junk=<verbatim>these whitespaces should stay</verbatim>)";
+
+
+  std::string hdr_str = sqeazy::image_header::pack<value_type>(dims,pipeline,1024);
+
+  sqeazy::image_header rec_hdr = sqeazy::image_header::unpack(hdr_str);
+  std::string rec = rec_hdr.str();
+
+  auto fpos = rec.find("these whitespaces should stay");
+  BOOST_CHECK(fpos!=std::string::npos);
+  std::cout << "rec = " << rec << "\n";
+
+}
+
+
+BOOST_AUTO_TEST_CASE( property_tree_conserves_whitespaces )
+{
+
+  bpt::ptree tree;
+  std::string msg = "these whitespaces should stay";
+
+  tree.put("test_str", msg);
+
+  std::string received = tree.get<std::string>("test_str");
+
+  BOOST_CHECK_EQUAL(received,msg);
+
+}
+
+BOOST_AUTO_TEST_CASE( property_tree_conserves_whitespaces_in_json )
+{
+
+  bpt::ptree tree;
+  std::string msg = "these whitespaces should stay";
+
+  tree.put("test_str", msg);
+
+  std::stringstream json("");
+  bpt::write_json(json, tree);
+
+  std::string json_str = json.str();
+
+  std::stringstream rec_json("");
+  rec_json << json_str;
+
+  bpt::ptree rec_tree;
+  bpt::read_json(rec_json,rec_tree);
+
+  std::string received = rec_tree.get<std::string>("test_str");
+
+  BOOST_CHECK_EQUAL(received,msg);
+
+}
+
+BOOST_AUTO_TEST_CASE( remove_whitespaces )
+{
+
+  std::string plain_pipeline = "step1(  junk=123  )  ";
+  std::string plain_stripped = sqeazy::remove_whitespace(plain_pipeline);
+  BOOST_CHECK_LT(plain_stripped.size(),plain_pipeline.size());
+  BOOST_CHECK_EQUAL(plain_stripped.size(),plain_pipeline.size()-6);
+
+}
+
+BOOST_AUTO_TEST_CASE( remove_whitespaces_ignoring_verbatim )
+{
+
+
+  std::string pipeline = "step1(  junk=<verbatim>these whitespaces should stay</verbatim>  )  ";
+  std::string stripped = sqeazy::remove_whitespace(pipeline);
+  BOOST_CHECK_LT(stripped.size(),pipeline.size());
+  BOOST_CHECK_EQUAL(stripped.size(),pipeline.size()-6);
+
+}
+
 BOOST_AUTO_TEST_SUITE_END()
