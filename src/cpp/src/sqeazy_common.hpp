@@ -2,6 +2,9 @@
 #define _SQY_COMMON_HPP_
 
 #include <iostream>
+#include <utility>
+#include <string>
+
 #include "compass.hpp"
 
 namespace sqeazy {
@@ -49,8 +52,12 @@ namespace sqeazy {
       }
     };
 
-    
+
   };
+
+  static const std::pair<std::string, std::string> ignore_this_delimiters = std::make_pair("<verbatim>","</verbatim>");
+
+
 
 };//sqeazy
 
