@@ -26,14 +26,14 @@ namespace sqeazy {
 
   static std::pair<int,int> extract_ratio(std::string _text ){
 
-    
+
     std::pair<int,int> value(0,0);
     std::size_t pos_dash = _text.rfind("_");
     if(pos_dash == std::string::npos)
       return value;
 
     auto res = sqeazy::extract_ints(_text);
-    
+
     if(res.size()==1){
       value.first = res[0];
       value.second = 1;
@@ -45,7 +45,7 @@ namespace sqeazy {
     // const std::regex expression("[0-9]+");
     // std::smatch match;
     // std::regex_search(_text,match,expression);
-    
+
     // if(!match.empty()){
     //   std::string found(match[0].first,match[0].second);
     //   value.first = std::stoi(found);
@@ -60,11 +60,11 @@ namespace sqeazy {
     //   }
 
     // }
-    
+
     return value;
   }
 
-  
+
   //all is public for now
   template<typename in_type,
 	   typename out_type = char// ,
@@ -265,18 +265,6 @@ namespace sqeazy {
       if(_outlength < _inlength){
         size = std::min(_outlength,_inlength);
       }
-
-      // auto fitr = config_map.find("dump_encoded_path");
-      // if(fitr!=config_map.end()){
-      // 	std::ofstream file(fitr->second, std::ios::out );
-
-      // 	for(std::size_t i = 0;i<size;++i){
-      // 	  if(i>0 && i % 32 == 0)
-      // 	    file << "\n";
-      // 	  file << std::setw(4) << (int)_in[i];
-      // 	}
-	
-      // }
 
       applyLUT<compressed_type, raw_type> lutApplyer(shrinker.lut_decode_);
       auto begin = _in;
