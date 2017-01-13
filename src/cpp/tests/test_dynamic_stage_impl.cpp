@@ -22,13 +22,35 @@ BOOST_AUTO_TEST_CASE( to_other_type )
   add_one<char> sadder(adder);
 
   BOOST_CHECK(adder.input_type()!=sadder.input_type());
-  
+
+}
+
+BOOST_AUTO_TEST_CASE( n_threads_defaults_to_1 )
+{
+
+  add_one<int> adder;
+
+  BOOST_CHECK_NE(adder.n_threads(),0);
+  BOOST_CHECK_EQUAL(adder.n_threads(),1);
+
+}
+
+BOOST_AUTO_TEST_CASE( n_threads_is_mutable )
+{
+
+  add_one<int> adder;
+
+  auto old_value = adder.n_threads();
+  adder.set_n_threads(2);
+
+  BOOST_CHECK_EQUAL(adder.n_threads(),old_value);
+
 }
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE( stage_chain )
 
-  
+
 BOOST_AUTO_TEST_CASE( is_constructable )
 {
 
@@ -39,7 +61,7 @@ BOOST_AUTO_TEST_CASE( is_constructable )
   BOOST_CHECK_NE(local.valid(),true);
   BOOST_CHECK_EQUAL(local.name().size(),0);
   }
-  
+
   //init-list
   {
   sqy::stage_chain< sqy::filter<int> > filled_with_2 = {adder_sptr,square_sptr};
@@ -56,12 +78,12 @@ BOOST_AUTO_TEST_CASE( copy_constructable )
   {
   sqy::stage_chain< sqy::filter<int> > empty;
   sqy::stage_chain< sqy::filter<int> > local(empty);
-  
+
   BOOST_CHECK(local.empty());
   BOOST_CHECK_NE(local.valid(),true);
   BOOST_CHECK_EQUAL(local.name().size(),0);
   }
-  
+
   //from filled with 2
   {
     sqy::stage_chain< sqy::filter<int> > reference = {adder_sptr,square_sptr};
@@ -89,12 +111,12 @@ BOOST_AUTO_TEST_CASE( assignment )
   {
   sqy::stage_chain< sqy::filter<int> > empty;
   sqy::stage_chain< sqy::filter<int> > local = empty;
-  
+
   BOOST_CHECK(local.empty());
   BOOST_CHECK_NE(local.valid(),true);
   BOOST_CHECK_EQUAL(local.name().size(),0);
   }
-  
+
   //from filled with 2
   {
     sqy::stage_chain< sqy::filter<int> > reference = {adder_sptr,square_sptr};
