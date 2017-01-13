@@ -223,6 +223,7 @@ BOOST_AUTO_TEST_CASE( do_not_touch_whitespaces_in_verbatim )
 
 
   std::string hdr_str = sqeazy::image_header::pack<value_type>(dims,pipeline,1024);
+  BOOST_CHECK(sqeazy::ends_with(hdr_str.begin(),hdr_str.end(),sqeazy::image_header::header_end_delimeter()));
 
   sqeazy::image_header rec_hdr = sqeazy::image_header::unpack(hdr_str);
   std::string rec = rec_hdr.str();
@@ -292,6 +293,92 @@ BOOST_AUTO_TEST_CASE( remove_whitespaces_ignoring_verbatim )
   BOOST_CHECK_LT(stripped.size(),pipeline.size());
   BOOST_CHECK_EQUAL(stripped.size(),pipeline.size()-6);
 
+}
+
+BOOST_AUTO_TEST_CASE( ends_with )
+{
+  std::string empty = "";
+  std::string at_start = "123 Hello World";
+  std::string at_end = "123 Hello World 123";
+
+  std::string match = "123";
+
+  BOOST_CHECK(!sqeazy::ends_with(empty.begin(),empty.end(),match));
+  BOOST_CHECK(!sqeazy::ends_with(at_start.begin(),at_start.end(),match));
+  BOOST_CHECK(sqeazy::ends_with(at_end.begin(),at_end.end(),match));
+}
+
+
+BOOST_AUTO_TEST_SUITE_END()
+
+
+BOOST_FIXTURE_TEST_SUITE( valid_headers, uint16_cube_of_8 )
+
+
+BOOST_AUTO_TEST_CASE( is_valid )
+{
+  std::string header = sqeazy::image_header::pack<value_type>(dims);
+  BOOST_CHECK(sqeazy::image_header::valid_header(header));
+
+  header = sqeazy::image_header::pack<value_type>(dims,boost::unit_test::framework::current_test_case().p_name);
+  BOOST_CHECK(sqeazy::image_header::valid_header(header));
+
+  header = sqeazy::image_header::pack<value_type>(dims,boost::unit_test::framework::current_test_case().p_name,1024);
+  BOOST_CHECK(sqeazy::image_header::valid_header(header));
+
+}
+
+BOOST_AUTO_TEST_CASE( removed_end )
+{
+  std::string header = sqeazy::image_header::pack<value_type>(dims,
+                                                              boost::unit_test::framework::current_test_case().p_name,
+                                                              1024);
+  BOOST_CHECK(sqeazy::image_header::valid_header(header));
+  BOOST_CHECK(!sqeazy::image_header::valid_header(header.begin(),header.end()-10));
+  BOOST_CHECK(!sqeazy::image_header::valid_header(header.begin(),header.end()-1));
+  BOOST_CHECK(!sqeazy::image_header::valid_header(header.begin(),header.end()-2));
+  BOOST_CHECK(!sqeazy::image_header::valid_header(header.begin(),header.end()-4));
+}
+
+BOOST_AUTO_TEST_CASE( removed_start )
+{
+  std::string header = sqeazy::image_header::pack<value_type>(dims,
+                                                              boost::unit_test::framework::current_test_case().p_name,
+                                                              1024);
+  BOOST_CHECK(sqeazy::image_header::valid_header(header));
+  BOOST_CHECK(!sqeazy::image_header::valid_header(header.begin()+10,header.end()));
+  BOOST_CHECK(!sqeazy::image_header::valid_header(header.begin()+1,header.end()));
+  BOOST_CHECK(!sqeazy::image_header::valid_header(header.begin()+2,header.end()));
+  BOOST_CHECK(!sqeazy::image_header::valid_header(header.begin()+4,header.end()));
+}
+
+
+BOOST_AUTO_TEST_CASE( removed_brackets )
+{
+  std::string header = sqeazy::image_header::pack<value_type>(dims);
+  BOOST_CHECK(sqeazy::image_header::valid_header(header));
+
+  std::string stripped = header;
+  stripped.erase(std::remove_if(stripped.begin(),stripped.end(),[](const char& _item){ return _item == '{'; }),
+                 stripped.end());
+  BOOST_CHECK(!sqeazy::image_header::valid_header(stripped.begin(),stripped.end()));
+}
+
+BOOST_AUTO_TEST_CASE( header_roundtrip )
+{
+
+  sqeazy::image_header hdr(value_type(),
+                           dims,
+                           boost::unit_test::framework::current_test_case().p_name,
+                           1024);
+
+  auto serialized_hdr = hdr.str();
+  BOOST_CHECK(sqeazy::image_header::valid_header(hdr.str()));
+
+  sqeazy::image_header rt_hdr(serialized_hdr);
+  BOOST_CHECK(sqeazy::image_header::valid_header(rt_hdr.str()));
+
+  BOOST_CHECK(rt_hdr == hdr);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
