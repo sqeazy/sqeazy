@@ -1,5 +1,5 @@
-#ifndef _TILE_SHUFFLE_SCHEME_IMPL_H_
-#define _TILE_SHUFFLE_SCHEME_IMPL_H_
+#ifndef _FRAME_SHUFFLE_SCHEME_IMPL_H_
+#define _FRAME_SHUFFLE_SCHEME_IMPL_H_
 
 #include <sstream>
 #include <string>
