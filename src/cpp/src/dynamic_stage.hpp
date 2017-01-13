@@ -14,29 +14,43 @@ namespace sqeazy{
   {
 
     typedef raw_t in_type;
+
+    std::uint32_t n_threads_;
+
+    stage():
+      n_threads_(1){}
+
     virtual ~stage() {}
-    
+
     virtual std::string input_type() const {
       return typeid(raw_t).name();
     };
-    
+
     virtual std::string output_type() const = 0;
     virtual std::string name() const = 0;
     virtual std::string config() const = 0;
     virtual bool is_compressor() const = 0;
 
     virtual std::intmax_t max_encoded_size(std::intmax_t _incoming_size_byte) const = 0;
-    
+
+    virtual std::uint32_t n_threads() const {
+      return n_threads_;
+    }
+
+    virtual void set_n_threads(const std::uint32_t& _number)  {
+      n_threads_ = _number;
+    }
+
   };
-  
+
   /**
      \brief object that can filter the contents of incoming data, but will not play with their size in memory
-     
+
      \param[in] 
-     
+
      \return 
      \retval 
-     
+
   */
   template <typename raw_t>
   struct filter : public stage<raw_t>
@@ -52,7 +66,7 @@ namespace sqeazy{
     filter(const filter<T>& _rhs):
       stage<raw_t>::stage()
     {}
-    
+
     virtual ~filter() {}
 
     virtual out_type* encode(const in_type*, out_type*,const std::vector<std::size_t>&) {return nullptr;};
@@ -63,12 +77,12 @@ namespace sqeazy{
 
     };
 
-    
+
     virtual int decode(const in_type*,
 		       out_type*,
 		       const std::vector<std::size_t>&,
 		       std::vector<std::size_t>) const {return 1;};
-    
+
     virtual int decode(const in_type* _in, out_type* _out,
 		       std::size_t len,
 		       std::size_t) const {
@@ -77,18 +91,18 @@ namespace sqeazy{
       return decode(_in,_out,shape,shape);
 
     };
-    
+
     virtual std::intmax_t max_encoded_size(std::intmax_t _incoming_size_byte) const override { return 0; };
   };
 
   /**
      \brief object that can alter the contents of incoming data, it will potentially play with their size
-     
+
      \param[in] 
-     
+
      \return 
      \retval 
-     
+
   */
   template <typename raw_t, typename compressed_t = char>
   struct sink : public stage<raw_t>
@@ -97,18 +111,18 @@ namespace sqeazy{
     constexpr static bool is_compressor = true;
     typedef raw_t in_type;
     typedef compressed_t out_type;
-    
+
     virtual ~sink() {}
     sink(const std::string& _params = ""){}
-    
+
     /**
        \brief encode raw_t buffer _in of shape len and write results to _out
-       
+
        \param[in] 
-       
+
        \return out_type* pointer to the last+1 element of _out that was written (if error occurred nullptr is returned)
        \retval 
-       
+
     */
     virtual out_type* encode(const raw_t* _in, out_type* _out,std::size_t len) {
 
@@ -134,7 +148,7 @@ namespace sqeazy{
 
     virtual std::intmax_t max_encoded_size(std::intmax_t _incoming_size_byte) const override { return 0; };
   };    
-    
+
 
 
   template <typename T>
@@ -142,11 +156,11 @@ namespace sqeazy{
   // const stage<typename T::in_type>* const_stage_view(const std::shared_ptr<T>& _in){
 
     using return_t = stage<typename T::in_type>;
-    
+
     auto value = std::dynamic_pointer_cast<return_t>(_in);// using return_t = const stage<typename T::in_type>*;
-    
+
     // auto value = dynamic_cast<return_t>(_in.get());
-    
+
     if(value)
       return value;
     else
@@ -157,9 +171,9 @@ namespace sqeazy{
   std::shared_ptr<stage<typename T::in_type> > stage_view(std::shared_ptr<T>& _in){
 
     using return_t = stage<typename T::in_type>;
-    
+
     auto value = std::dynamic_pointer_cast<return_t>(_in);
-    
+
     if(value)
       return value;
     else
@@ -173,7 +187,7 @@ namespace sqeazy{
     typedef void raw_t;
     ~blank_filter() {}
     blank_filter(const std::string& _params="") {}
-    
+
     std::string input_type() const {return "";}
     std::string output_type() const {return "";}
     std::string name() const { return "blank";}
@@ -183,9 +197,9 @@ namespace sqeazy{
 
     raw_t* encode(const raw_t* _in, raw_t* _out,std::vector<std::size_t> _shape) override final { return nullptr; };
     int decode(const raw_t* _in, raw_t* _out,std::vector<std::size_t> _shape) const override final { return 1; };
-    
+
   };
-  
+
   template <typename T = void>
   struct blank_sink : public  sink<T,void>
   {
@@ -194,12 +208,12 @@ namespace sqeazy{
     typedef typename sink<void>::out_type compressed_t;
     ~blank_sink() {}
     blank_sink(const std::string& _params="") {}
-    
+
     std::string input_type() const {return "";}
     std::string output_type() const {return "";}
     std::string name() const { return "blank";}
     std::string config() const { return "";}
-    
+
     bool is_compressor() const {return false;}
 
     compressed_t* encode(const raw_t* _in, compressed_t* _out,std::vector<std::size_t> _shape) override final { return nullptr; };
@@ -207,7 +221,7 @@ namespace sqeazy{
 	       raw_t* _out,
 	       std::vector<std::size_t> _inshape,
 	       std::vector<std::size_t> _outshape = std::vector<std::size_t>()) const override final { return 1; };
-    
+
   };
 
 
@@ -228,7 +242,7 @@ namespace sqeazy{
 
       std::swap(_lhs.chain_,_rhs.chain_);
     }
-    
+
     stage_chain():
       chain_(){}
 
@@ -247,7 +261,7 @@ namespace sqeazy{
       chain_(_rhs.chain_.begin(), _rhs.chain_.end())
     {}
 
-    
+
     stage_chain& operator=(stage_chain _rhs){
 
       swap(*this, _rhs);
@@ -258,7 +272,7 @@ namespace sqeazy{
     const std::size_t size() const { return chain_.size(); }
     const bool empty() const { return chain_.empty(); }
     void clear() { chain_.clear(); };
-    
+
     template <typename pointee_t>
     void push_back(const std::shared_ptr<pointee_t>& _new){
 
@@ -266,7 +280,7 @@ namespace sqeazy{
 	auto casted = std::dynamic_pointer_cast<filter_t>(_new);
 	chain_.push_back(casted);
       }
-      
+
     }
 
     void add(const filter_ptr_t& _new){
@@ -276,11 +290,11 @@ namespace sqeazy{
     }
 
     bool is_compressor() const {
-      
+
       return filter_t::is_compressor ;
-      
+
     }
-    
+
     bool valid() const {
 
       bool value = true;
@@ -304,31 +318,31 @@ namespace sqeazy{
 	}
 
       return value;
-      
+
     }
 
     filter_ptr_t& front() {
 
       return chain_.front();
-      
+
     }
 
     const filter_ptr_t& front() const {
 
       return chain_.front();
-      
+
     }
 
     filter_ptr_t& back() {
 
       return chain_.back();
-      
+
     }
 
     const filter_ptr_t& back() const {
 
       return chain_.back();
-      
+
     }
 
     std::string name() const
@@ -366,14 +380,14 @@ namespace sqeazy{
 
     /**
        \brief encode one-dimensional array _in and write results to _out
-       
+
        \param[in] 
-       
+
        \return 
        \retval 
-       
+
     */
-    
+
     outgoing_t * encode(const incoming_t *_in, outgoing_t *_out, std::size_t _len) /*override final*/ {
 
       std::vector<std::size_t> shape(1,_len);
@@ -381,19 +395,19 @@ namespace sqeazy{
 
     }
 
-    
+
     /**
        \brief encode one-dimensional array _in and write results to _out
-       
+
        \param[in] _in input buffer
        \param[out] _out output buffer must be at least of size max_encoded_size
        \param[in] _shape shape in input buffer in nDim
 
        \return 
        \retval 
-       
+
     */
-    
+
     outgoing_t* encode(const incoming_t *_in,
 		       outgoing_t *_out,
 		       const std::vector<std::size_t>& _shape) /*override final*/ {
@@ -404,7 +418,7 @@ namespace sqeazy{
       std::vector<incoming_t> temp_in(_in, _in+len);
       std::vector<outgoing_t> temp_out(temp_in.size());
       std::size_t compressed_items = 0;
-      
+
       for( std::size_t fidx = 0;fidx<chain_.size();++fidx )
 	{
 	  
@@ -432,7 +446,7 @@ namespace sqeazy{
 		_out);
       value = _out + outgoing_size;     
       return value;
-      
+
     }
 
 
@@ -440,30 +454,30 @@ namespace sqeazy{
 
       std::vector<std::size_t> shape(1,_len);
       return decode(_in,_out,shape);
-      
+
     }
     /**
        \brief decode one-dimensional array _in and write results to _out
-       
+
        \param[in] _in input buffer
        \param[out] _out output buffer //NOTE: might be larger than _in for sink type pipelines
        \param[in] _shape of input buffer size in units of its type, aka outgoing_t
-       
+
        \return 
        \retval 
-       
+
     */
-    
+
     int decode(const outgoing_t *_in,
 	       incoming_t *_out,
 	       const std::vector<std::size_t>& _ishape,
 	       std::vector<std::size_t> _oshape = std::vector<std::size_t>()) const /*override final*/ {
-      
+
       int value = 0;
       int err_code = 0;
       if(_oshape.empty())
 	_oshape = _ishape;
-      
+
       std::size_t len = std::accumulate(_ishape.begin(), _ishape.end(),1,std::multiplies<std::size_t>());
       std::vector<incoming_t> temp(len,0);
       std::copy(_in,_in+len,temp.begin());
@@ -504,11 +518,11 @@ namespace sqeazy{
       // 	return _incoming_size_byte;
       // else
       // 	return chain_.front()->max_encoded_size(_incoming_size_byte);
-      
+
     }
   };
 
-  
+
 };
 
 #endif /* _DYNAMIC_STAGE_H_ */
