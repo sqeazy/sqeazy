@@ -90,6 +90,9 @@ target_link_libraries(test_raster_reorder_scheme_impl  ${Boost_LIBRARIES})
 add_executable(test_tile_shuffle_scheme_impl test_tile_shuffle_scheme_impl.cpp)
 target_link_libraries(test_tile_shuffle_scheme_impl  ${Boost_LIBRARIES})
 
+add_executable(test_frame_shuffle_scheme_impl test_frame_shuffle_scheme_impl.cpp)
+target_link_libraries(test_frame_shuffle_scheme_impl  ${Boost_LIBRARIES})
+
 add_executable(test_zcurve_reorder_scheme_impl test_zcurve_reorder_scheme_impl.cpp)
 target_link_libraries(test_zcurve_reorder_scheme_impl  ${Boost_LIBRARIES})
 
