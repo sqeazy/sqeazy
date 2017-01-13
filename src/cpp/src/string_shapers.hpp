@@ -55,48 +55,57 @@ namespace sqeazy {
 
   }
 
-  template <typename string_t>
-  std::string remove_whitespace(const string_t& _buffer){
+  // template <typename string_t>
+  // std::string remove_whitespace(const string_t& _buffer){
 
-    //stripped.erase(remove_if(stripped.begin(), stripped.end(), isspace),stripped.end());
+  //   //stripped.erase(remove_if(stripped.begin(), stripped.end(), isspace),stripped.end());
 
-    auto begin = _buffer.begin();
-    auto end = _buffer.end();
+  //   auto fpos = _buffer.find(sqeazy::ignore_this_delimiters.first);
 
-    auto fpos = _buffer.find(sqeazy::ignore_this_delimiters.first);
+  //   std::string value = _buffer;
 
-    std::string value;
+  //   if(fpos == std::string::npos){
+  //     auto vitr = remove_copy_if(_buffer.begin(), _buffer.end(),
+  //                                value.begin(),
+  //                                isspace);
+  //     value.erase(vitr,value.end());
+  //   }
+  //   else{
 
-    if(fpos == std::string::npos){
-      value = _buffer;
-      value.erase(remove_if(value.begin(), value.end(), isspace),
-                  value.end());
-    }
-    else{
-      value.resize(_buffer.size());
-      std::fill(value.begin(), value.end(), ' ');
-      auto vitr = value.begin();
-      auto fend = 0;
+  //     auto buffer_begin = _buffer.begin();
+  //     auto vitr = value.begin();
+  //     std::size_t fend = 0;
 
-      while(fpos != std::string::npos){
-        auto tmp = _buffer.substr(fend,fpos);
-        vitr = std::copy(tmp.begin(),
-                         remove_if(tmp.begin(), tmp.end(), isspace),
-                         vitr);
-        fend = _buffer.find(sqeazy::ignore_this_delimiters.second) + sqeazy::ignore_this_delimiters.second.size();
-        vitr = std::copy(_buffer.begin()+fpos,_buffer.begin()+fend,vitr);
-        fpos = _buffer.find(sqeazy::ignore_this_delimiters.first, fend);
-      }
+  //     while(fpos != std::string::npos){
+  //       vitr = std::remove_copy_if(buffer_begin,
+  //                                  _buffer.begin()+fpos,
+  //                                  vitr,
+  //                                  isspace);
+  //       buffer_begin = _buffer.begin()+fpos;
 
-      auto tmp = _buffer.substr(fend);
-      vitr = std::copy(tmp.begin(),
-                remove_if(tmp.begin(), tmp.end(), isspace),
-                vitr);
-      value.erase(vitr,value.end());
-    }
-    return value;
+  //       fend = _buffer.find(sqeazy::ignore_this_delimiters.second, fpos);
+  //       if(fend != std::string::npos && (_buffer.size() - fend) >= sqeazy::ignore_this_delimiters.second.size())
+  //         fend += sqeazy::ignore_this_delimiters.second.size();
 
-  }
+  //       vitr = std::copy(buffer_begin,
+  //                        (fend != std::string::npos) ? _buffer.begin()+fend : _buffer.end(),
+  //                        vitr);
+
+  //       buffer_begin = (fend != std::string::npos) ? _buffer.begin()+fend : _buffer.end();
+  //       fpos = _buffer.find(sqeazy::ignore_this_delimiters.first, fend);
+  //     }
+
+
+  //     vitr = std::remove_copy_if(buffer_begin,
+  //                                _buffer.end(),
+  //                                vitr,
+  //                                isspace);
+
+  //     value.erase(vitr,value.end());
+  //   }
+  //   return value;
+
+  // }
 
 };
 
