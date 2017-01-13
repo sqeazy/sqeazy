@@ -14,7 +14,10 @@ struct array_fixture {
 
   static const unsigned axis_length = dim;
   static const unsigned size = dim*dim*dim;
+  static const unsigned frame = dim*dim;
+
   static const unsigned size_in_byte = dim*dim*dim*sizeof(T);
+  static const unsigned frame_in_byte = dim*dim*sizeof(T);
 
   std::vector<T> constant_cube;
   std::vector<T> incrementing_cube;
