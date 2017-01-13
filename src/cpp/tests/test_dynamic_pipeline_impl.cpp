@@ -222,6 +222,16 @@ BOOST_AUTO_TEST_CASE (max_encoded_size) {
   BOOST_CHECK_LT(result,artificial_size_bytes);
 }
 
+BOOST_AUTO_TEST_CASE (n_threads_defaults_to_1) {
+  auto sink_pipe = sqeazy_testing::dynamic_pipeline<int>::from_string("add_one->sum_up");
+  BOOST_CHECK_EQUAL(sink_pipe.n_threads(),1);
+}
+
+BOOST_AUTO_TEST_CASE (n_threads_can_be_set) {
+  auto sink_pipe = sqeazy_testing::dynamic_pipeline<int>::from_string("add_one->sum_up");
+  sink_pipe.set_n_threads(2);
+  BOOST_CHECK_EQUAL(sink_pipe.n_threads(),2);
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 
