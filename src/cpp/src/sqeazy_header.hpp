@@ -194,10 +194,9 @@ namespace sqeazy {
 
       // Write property tree to XML file
       bpt::write_json(json_stream, tree);
-      std::string stripped = json_stream.str();
-      //stripped = remove_whitespace(stripped);
+      json_stream << image_header::header_end_delim;
 
-      stripped += image_header::header_end_delim;
+      std::string stripped = json_stream.str();
 
       if(stripped.size() % sizeof(raw_type) != 0){
         std::stringstream intermediate("");
@@ -284,7 +283,7 @@ namespace sqeazy {
     void set_pipeline(const std::string& _pname)
     {
       pipeline_ = _pname;
-      
+
       try{
         header_ = pack<value_type>(raw_shape_,
                                    pipeline_,
@@ -313,10 +312,7 @@ namespace sqeazy {
 
       iter_type header_end_ptr = header_end(_begin, _end);
 
-      if(!valid_header(_begin,
-                       header_end_ptr + (header_end_ptr!=_end ? header_end_delimeter().size() : 0)
-                       )
-         ){
+      if(!valid_header(_begin,header_end_ptr)){
         std::ostringstream msg;
         msg << "[image_header::unpack]\t received header: \n\t";
         std::copy(_begin,header_end_ptr,std::ostreambuf_iterator<char>(msg));
@@ -324,10 +320,8 @@ namespace sqeazy {
         throw std::runtime_error(msg.str().c_str());
       }
 
-
-
       //let's omit the header_end_delim for the JSON to be parsable
-      std::string hdr(_begin, header_end_ptr);
+      std::string hdr(_begin, header_end_ptr-header_end_delimeter().size());
 
 
       image_header value;
@@ -556,7 +550,7 @@ namespace sqeazy {
       auto fpos = buffer.find(header_end_delimeter());
 
       if(fpos!=boost::string_ref::npos)
-        value = _begin+fpos;
+        value = _begin + fpos + header_end_delimeter().size();
 
       return value;
 
