@@ -55,11 +55,11 @@ namespace sqeazy {
     frame_shuffle_scheme<T>,
     zcurve_reorder_scheme<T>
     >;
-  
+
   template <typename T>
   using dypeline = dynamic_pipeline<T, filters_factory, encoders_factory<T>, tail_filters_factory<char> >;
 
-  
+
   //FIXME: required as quantiser will emit compilation error if incoming_type == outcoming_type
   using dypeline_from_uint8 = dynamic_pipeline<std::uint8_t,
 					      filters_factory,
