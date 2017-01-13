@@ -17,6 +17,7 @@ add_test(NAME bitplane_reorder_on_ramp_impl COMMAND test_bitplane_reorder_on_ram
 add_test(NAME bitswap_scheme_impl COMMAND test_bitswap_scheme_impl)
 add_test(NAME raster_reorder_scheme_impl COMMAND test_raster_reorder_scheme_impl)
 add_test(NAME tile_shuffle_scheme_impl COMMAND test_tile_shuffle_scheme_impl)
+add_test(NAME frame_shuffle_scheme_impl COMMAND test_frame_shuffle_scheme_impl)
 add_test(NAME zcurve_reorder_scheme_impl COMMAND test_zcurve_reorder_scheme_impl)
 
 add_test(NAME shift_by_intrinsics COMMAND test_shift_by_intrinsics)
