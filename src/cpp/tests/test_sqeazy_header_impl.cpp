@@ -274,26 +274,26 @@ BOOST_AUTO_TEST_CASE( property_tree_conserves_whitespaces_in_json )
 
 }
 
-BOOST_AUTO_TEST_CASE( remove_whitespaces )
-{
+// BOOST_AUTO_TEST_CASE( remove_whitespaces )
+// {
 
-  std::string plain_pipeline = "step1(  junk=123  )  ";
-  std::string plain_stripped = sqeazy::remove_whitespace(plain_pipeline);
-  BOOST_CHECK_LT(plain_stripped.size(),plain_pipeline.size());
-  BOOST_CHECK_EQUAL(plain_stripped.size(),plain_pipeline.size()-6);
+//   std::string plain_pipeline = "step1(  junk=123  )  ";
+//   std::string plain_stripped = sqeazy::remove_whitespace(plain_pipeline);
+//   BOOST_CHECK_LT(plain_stripped.size(),plain_pipeline.size());
+//   BOOST_CHECK_EQUAL(plain_stripped.size(),plain_pipeline.size()-6);
 
-}
+// }
 
-BOOST_AUTO_TEST_CASE( remove_whitespaces_ignoring_verbatim )
-{
+// BOOST_AUTO_TEST_CASE( remove_whitespaces_ignoring_verbatim )
+// {
 
 
-  std::string pipeline = "step1(  junk=<verbatim>these whitespaces should stay</verbatim>  )  ";
-  std::string stripped = sqeazy::remove_whitespace(pipeline);
-  BOOST_CHECK_LT(stripped.size(),pipeline.size());
-  BOOST_CHECK_EQUAL(stripped.size(),pipeline.size()-6);
+//   std::string pipeline = "step1(  junk=<verbatim>these whitespaces should stay</verbatim>  )  ";
+//   std::string stripped = sqeazy::remove_whitespace(pipeline);
+//   BOOST_CHECK_LT(stripped.size(),pipeline.size());
+//   BOOST_CHECK_EQUAL(stripped.size(),pipeline.size()-6);
 
-}
+// }
 
 BOOST_AUTO_TEST_CASE( ends_with )
 {
