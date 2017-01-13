@@ -7,6 +7,7 @@
 #include "encoders/raster_reorder_scheme_impl.hpp"
 #include "encoders/zcurve_reorder_scheme_impl.hpp"
 #include "encoders/tile_shuffle_scheme_impl.hpp"
+#include "encoders/frame_shuffle_scheme_impl.hpp"
 
 //import external filters/sinks
 #include "encoders/lz4.hpp"
@@ -29,6 +30,7 @@ namespace sqeazy {
     remove_estimated_background_scheme<T>,
     raster_reorder_scheme<T>,
     tile_shuffle_scheme<T>,
+    frame_shuffle_scheme<T>,
     zcurve_reorder_scheme<T>
     >;
 
@@ -50,6 +52,7 @@ namespace sqeazy {
     lz4_scheme<T>,
     raster_reorder_scheme<T>,
     tile_shuffle_scheme<T>,
+    frame_shuffle_scheme<T>,
     zcurve_reorder_scheme<T>
     >;
   
