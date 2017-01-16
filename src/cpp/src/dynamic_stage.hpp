@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 #include <numeric>
+#include <algorithm>
 
 namespace sqeazy{
 
