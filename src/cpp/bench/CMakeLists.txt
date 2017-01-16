@@ -33,10 +33,26 @@ if(DEFINED READY_4_BUNDLE)
   set(SQY_LIB ${SQY_LIB} ${FFMPEG_LIBRARIES} )
 endif()
 
+if(EXISTS ${BENCHMARK_ROOT})
+  set(benchmark_ROOT_DIR ${BENCHMARK_ROOT})
+else(EXISTS ${BENCHMARK_ROOT})
+  if(EXISTS $ENV{BENCHMARK_ROOT})
+	set(benchmark_ROOT_DIR $ENV{BENCHMARK_ROOT})
+  endif()
+endif(EXISTS ${BENCHMARK_ROOT})
+
+find_package(GoogleBenchmark REQUIRED)
+if(NOT ${benchmark_FOUND})
+  message(FATAL_ERROR "GoogleBenchmark not found, ${benchmark_ROOT_DIR}")
+else()
+  include_directories(${benchmark_INCLUDE_DIRS})
+  message(">> GoogleBenchmark found, ${benchmark_INCLUDE_DIRS} ${benchmark_LIBRARIES}")
+endif()
+
 # message(STATUS "[bench] linking against ${SQY_LIB} ${Boost_LIBRARIES} ")
 
 add_executable(test_benchmark_fixture_impl test_benchmark_fixture_impl.cpp)
-target_link_libraries(test_benchmark_fixture_impl ${Boost_LIBRARIES} ${Google_Benchmark})
+target_link_libraries(test_benchmark_fixture_impl ${Boost_LIBRARIES} ${benchmark_LIBRARIES})
 
 # if(EXISTS ${LZ4_STATIC_LIB})
 #   #if static libsqeazy exists, it will contain lz4, no need to link against it yet another time

@@ -19,7 +19,7 @@ namespace sqeazy {
               //obtained by `getconf -a /usr|grep -i CACHE` on a Intel(R) Core(TM) i7-3520M
               const unsigned cache_size_in_byte_as_exponent = 22
               >
-    struct static_synthetic_data : public benchmark::Fixture
+    struct static_synthetic_data : public ::benchmark::Fixture
     {
 
       static const unsigned long size = (1 << (cache_size_in_byte_as_exponent+1))/sizeof(T);
@@ -36,10 +36,15 @@ namespace sqeazy {
       void fill_self(){
         float factor_frequency = .25f*axis_length();
         static const float scale = .25f*std::numeric_limits<T>::max();
+
         unsigned index = 0;
         for( T& _element : sin_data ){
           _element = scale*std::sin(factor_frequency*index++);
         }
+
+        shape[sqeazy::row_major::x] = 1 << int(std::round(std::log2(std::pow(size,1/3.f))));
+        shape[sqeazy::row_major::y] = shape[sqeazy::row_major::x];
+        shape[sqeazy::row_major::z] = std::floor(size/(shape[sqeazy::row_major::y]*shape[sqeazy::row_major::x]));
       }
 
       static_synthetic_data():
@@ -49,10 +54,18 @@ namespace sqeazy {
       {
 
         fill_self();
-        shape[sqeazy::row_major::x] = std::ceil(std::log((std::pow(size,1/3.f))));
-        shape[sqeazy::row_major::y] = std::ceil(std::log((std::pow(size,1/3.f))));
+
 
       }
+
+      void SetUp(const ::benchmark::State& st) {
+        //m = ConstructRandomMap(st.range(0));
+        fill_self();
+
+      }
+
+      void TearDown(const ::benchmark::State&) {  }
+
 
       //copy-constructor: reinit everything (don't copy)
       static_synthetic_data(const static_synthetic_data& _rhs):
@@ -86,7 +99,10 @@ namespace sqeazy {
               <<" uint16 = " << _self.data_in_byte()/(1<<20) << " MB";
         return _cout;
       }
+
+      virtual void BenchmarkCase(::benchmark::State&){}
     };
+
 
     bool file_exists(const std::string& _path){
       std::ifstream f(_path.c_str());
