@@ -98,7 +98,8 @@ target_link_libraries(test_zcurve_reorder_scheme_impl  ${Boost_LIBRARIES})
 
 add_executable(test_hist_impl test_hist_impl.cpp)
 target_link_libraries(test_hist_impl ${Boost_LIBRARIES})
-add_executable(test_bench_utils_impl test_bench_utils_impl.cpp)
+
+#add_executable(test_bench_utils_impl test_bench_utils_impl.cpp)
 
 
 add_executable(test_lz4_encoding test_lz4_encoding.cpp)
@@ -226,7 +227,7 @@ ELSE(FFMPEG_FOUND)
 ENDIF(FFMPEG_FOUND)
 
 
-target_link_libraries(test_bench_utils_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY})
+#target_link_libraries(test_bench_utils_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY})
 
 ENDIF(TIFF_FOUND)
 
