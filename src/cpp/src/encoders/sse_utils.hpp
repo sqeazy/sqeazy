@@ -7,6 +7,7 @@
 #include <iterator>
 #include <bitset>
 #include <string>
+#include <cassert>
 
 #include <xmmintrin.h>
 #include <smmintrin.h>
