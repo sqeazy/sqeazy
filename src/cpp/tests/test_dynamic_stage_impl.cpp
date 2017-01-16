@@ -43,7 +43,8 @@ BOOST_AUTO_TEST_CASE( n_threads_is_mutable )
   auto old_value = adder.n_threads();
   adder.set_n_threads(2);
 
-  BOOST_CHECK_EQUAL(adder.n_threads(),old_value);
+  BOOST_CHECK_NE(adder.n_threads(),old_value);
+  BOOST_CHECK_EQUAL(adder.n_threads(),2);
 
 }
 BOOST_AUTO_TEST_SUITE_END()
