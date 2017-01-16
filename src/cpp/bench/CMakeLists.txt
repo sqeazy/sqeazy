@@ -54,6 +54,27 @@ endif()
 add_executable(test_benchmark_fixture_impl test_benchmark_fixture_impl.cpp)
 target_link_libraries(test_benchmark_fixture_impl ${Boost_LIBRARIES} ${benchmark_LIBRARIES})
 
+add_executable(benchmark_bitswap_scheme_impl benchmark_bitswap_scheme_impl.cpp)
+target_link_libraries(benchmark_bitswap_scheme_impl ${Boost_LIBRARIES} ${benchmark_LIBRARIES})
+
+# TODO list
+#bitswap_scheme_impl.hpp
+#diff_scheme_impl.hpp
+#flatten_to_neighborhood_scheme_impl.hpp
+#frame_shuffle_scheme_impl.hpp
+#h264_scheme_impl.hpp
+#hevc_scheme_impl.hpp
+#quantiser_scheme_impl.hpp
+#raster_reorder_scheme_impl.hpp
+#remove_background_scheme_impl.hpp
+#remove_estimated_background_scheme_impl.hpp
+#tile_shuffle_scheme_impl.hpp
+#zcurve_reorder_scheme_impl.hpp
+
+
+
+
+
 # if(EXISTS ${LZ4_STATIC_LIB})
 #   #if static libsqeazy exists, it will contain lz4, no need to link against it yet another time
 #   if(NOT DEFINED READY_4_BUNDLE)
