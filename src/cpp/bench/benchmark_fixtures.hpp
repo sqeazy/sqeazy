@@ -29,8 +29,8 @@ namespace sqeazy {
       std::vector<T> output_data;
       std::vector<std::size_t> shape;
 
-      unsigned long axis_length() const {
-        return std::pow(size,1.f/3.f);
+      std::size_t axis_length(int index = sqeazy::row_major::x ) const {
+        return shape.at(index);
       }
 
       void fill_self(){
@@ -70,7 +70,9 @@ namespace sqeazy {
       //copy-constructor: reinit everything (don't copy)
       static_synthetic_data(const static_synthetic_data& _rhs):
         sin_data(size,0),
-        output_data(sin_data){
+        output_data(size,0),
+        shape(3,0)
+      {
 
         *this = _rhs;
 
@@ -83,6 +85,7 @@ namespace sqeazy {
 
           std::copy(_rhs.sin_data.begin(), _rhs.sin_data.end(), sin_data.begin());
           std::copy(_rhs.output_data.begin(), _rhs.output_data.end(), output_data.begin());
+          std::copy(_rhs.shape.begin(), _rhs.shape.end(), shape.begin());
 
         }
 
@@ -95,7 +98,10 @@ namespace sqeazy {
       }
 
       friend std::ostream& operator<<(std::ostream& _cout, const static_synthetic_data& _self){
-        _cout << _self.axis_length() <<"x"<< _self.axis_length() <<"x"<< _self.axis_length()
+        _cout << "[x,y,z] "
+              << _self.axis_length(sqeazy::row_major::x) <<"x"
+              << _self.axis_length(sqeazy::row_major::y) <<"x"
+              << _self.axis_length(sqeazy::row_major::z)
               <<" uint16 = " << _self.data_in_byte()/(1<<20) << " MB";
         return _cout;
       }
