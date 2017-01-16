@@ -572,6 +572,8 @@ IF(Boost_FOUND AND HDF5_FOUND AND LZ4_FOUND AND FFMPEG_FOUND AND TIFF_FOUND)
   ADD_SUBDIRECTORY(tests)
   enable_testing()
   include("CTestLists.txt")
+
+  add_subdirectory(bench) #
   
 ELSE()
   MESSAGE(FATAL_ERROR "++ required dependencies not found, sqeazy cannot be build")
