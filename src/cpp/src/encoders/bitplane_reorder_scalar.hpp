@@ -27,7 +27,8 @@ namespace sqeazy {
                                                            const size_type& _length,
                                                            int num_threads = 1)
     {
-
+		
+		typedef std::make_signed<size_type>::type signed_size_type;//boiler plat required for MS VS 14 2015
 
 
       static const unsigned type_width = CHAR_BIT*sizeof(raw_type);
@@ -43,7 +44,7 @@ namespace sqeazy {
   private(value) \
   shared(_input, _output) \
   num_threads(num_threads)
-      for(size_type index = 0; index < _length; ++index) {
+      for(signed_size_type index = 0; index < _length; ++index) {
 
 
         value = xor_if_signed(_input[index]);
@@ -79,6 +80,8 @@ namespace sqeazy {
                                                            const size_type& _length,
                                                            int num_threads = 1){
 
+		typedef std::make_signed<size_type>::type signed_size_type;//boiler plat required for MS VS 14 2015
+
       static const unsigned raw_type_num_bits = sizeof(raw_type)*CHAR_BIT;
       static const unsigned num_planes = raw_type_num_bits/num_bits_per_plane;
 
@@ -88,7 +91,7 @@ namespace sqeazy {
 
 #pragma omp parallel for shared(_input, _output)    \
   num_threads(num_threads)
-      for(size_type plane_index = 0; plane_index<num_planes; ++plane_index) {
+      for(signed_size_type plane_index = 0; plane_index<num_planes; ++plane_index) {
 
         size_type output_bit_offset = (plane_index*num_bits_per_plane);
 
@@ -105,7 +108,7 @@ namespace sqeazy {
 
 #pragma omp parallel for shared(_input, _output)    \
   num_threads(num_threads)
-      for(size_type index = 0; index < _length; ++index) {
+      for(signed_size_type index = 0; index < _length; ++index) {
         _output[index] = xor_if_signed(rotate_right<1>(_output[index]));
       }
 
