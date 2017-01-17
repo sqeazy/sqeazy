@@ -49,15 +49,24 @@ if(NOT ${googlebenchmark_FOUND})
 else()
   include_directories(${googlebenchmark_INCLUDE_DIR})
   message(">> GoogleBenchmark found, ${googlebenchmark_INCLUDE_DIR} ${googlebenchmark_LIBRARY}")
+  set(googlebenchmark_LIBRARY_DIR "")
+  if(EXISTS ${googlebenchmark_LIBRARY})
+	get_filename_component(googlebenchmark_LIBRARY_DIR "${googlebenchmark_LIBRARY}" DIRECTORY)
+  endif()
+  
+  if(IS_DIRECTORY "${googlebenchmark_LIBRARY_DIR}")
+	link_directories(${googlebenchmark_LIBRARY_DIR})
+  endif()	
 endif()
 
 # message(STATUS "[bench] linking against ${SQY_LIB} ${Boost_LIBRARIES} ")
 
 add_executable(test_benchmark_fixture_impl test_benchmark_fixture_impl.cpp)
-target_link_libraries(test_benchmark_fixture_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY})
+target_link_libraries(test_benchmark_fixture_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY}
+)
 
 add_executable(benchmark_bitswap_scheme_impl benchmark_bitswap_scheme_impl.cpp)
-target_link_libraries(benchmark_bitswap_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY})
+target_link_libraries(benchmark_bitswap_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
 # TODO list
 #bitswap_scheme_impl.hpp
