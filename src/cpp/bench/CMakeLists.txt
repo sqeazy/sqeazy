@@ -33,29 +33,31 @@ if(DEFINED READY_4_BUNDLE)
   set(SQY_LIB ${SQY_LIB} ${FFMPEG_LIBRARIES} )
 endif()
 
-if(EXISTS ${BENCHMARK_ROOT})
-  set(benchmark_ROOT_DIR ${BENCHMARK_ROOT})
-else(EXISTS ${BENCHMARK_ROOT})
-  if(EXISTS $ENV{BENCHMARK_ROOT})
-	set(benchmark_ROOT_DIR $ENV{BENCHMARK_ROOT})
-  endif()
-endif(EXISTS ${BENCHMARK_ROOT})
+if(EXISTS $ENV{GOOGLEBENCHMARK_ROOT})
+  set(GOOGLEBENCHMARK_ROOT "$ENV{GOOGLEBENCHMARK_ROOT}")
+endif()
 
 find_package(GoogleBenchmark REQUIRED)
-if(NOT ${benchmark_FOUND})
-  message(FATAL_ERROR "GoogleBenchmark not found, ${benchmark_ROOT_DIR}")
+if(NOT ${googlebenchmark_FOUND})
+  
+  if(IS_DIRECTORY ${GOOGLEBENCHMARK_ROOT})
+	message(FATAL_ERROR "GoogleBenchmark not found in ${GOOGLEBENCHMARK_ROOT}")
+  else(IS_DIRECTORY ${GOOGLEBENCHMARK_ROOT})
+	message(FATAL_ERROR "GoogleBenchmark not found, maybe you want to provide any custom installation path by -DGOOGLEBENCHMARK_ROOT=/path/to/library")
+  endif(IS_DIRECTORY ${GOOGLEBENCHMARK_ROOT})
+  
 else()
-  include_directories(${benchmark_INCLUDE_DIRS})
-  message(">> GoogleBenchmark found, ${benchmark_INCLUDE_DIRS} ${benchmark_LIBRARIES}")
+  include_directories(${googlebenchmark_INCLUDE_DIR})
+  message(">> GoogleBenchmark found, ${googlebenchmark_INCLUDE_DIR} ${googlebenchmark_LIBRARY}")
 endif()
 
 # message(STATUS "[bench] linking against ${SQY_LIB} ${Boost_LIBRARIES} ")
 
 add_executable(test_benchmark_fixture_impl test_benchmark_fixture_impl.cpp)
-target_link_libraries(test_benchmark_fixture_impl ${Boost_LIBRARIES} ${benchmark_LIBRARIES})
+target_link_libraries(test_benchmark_fixture_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY})
 
 add_executable(benchmark_bitswap_scheme_impl benchmark_bitswap_scheme_impl.cpp)
-target_link_libraries(benchmark_bitswap_scheme_impl ${Boost_LIBRARIES} ${benchmark_LIBRARIES})
+target_link_libraries(benchmark_bitswap_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY})
 
 # TODO list
 #bitswap_scheme_impl.hpp
