@@ -1,5 +1,5 @@
-#ifndef _BITSWAP_SCHEME_SSE_H_
-#define _BITSWAP_SCHEME_SSE_H_
+#ifndef _BITPLANE_REORDER_SSE_H_
+#define _BITPLANE_REORDER_SSE_H_
 
 
 
