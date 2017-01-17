@@ -1,6 +1,7 @@
 #ifndef _BITSWAP_SCHEME_IMPL_H_
 #define _BITSWAP_SCHEME_IMPL_H_
 
+#include "compass.hpp"
 #include "neighborhood_utils.hpp"
 #include "sqeazy_common.hpp"
 #include "traits.hpp"
