@@ -1,6 +1,7 @@
 #ifndef _COMPASS_X86_IMPL_H_
 #define _COMPASS_X86_IMPL_H_
 
+#include <iostream>
 #include <string>
 #include <bitset>
 
