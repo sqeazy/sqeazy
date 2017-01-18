@@ -110,11 +110,13 @@ namespace sqeazy {
 			static const std::uint32_t n_full_spans = bits_per_dim / span_bits;
 			static const std::uint32_t span_mask = (1 << span_bits) - 1;
 
-
-
 			typedef std::array<std::uint32_t, size> array_t;
 
+			#ifdef WIN32
 			static const array_t values;
+			#else
+			static constexpr array_t values  = fill_array<stripe_size, bitplane_width, size>();
+			#endif
 
 			static inline std::uint64_t from(std::uint32_t z,
 				std::uint32_t y,
@@ -181,11 +183,13 @@ namespace sqeazy {
 
 		};
 
+		#ifdef WIN32
 		template<int stripe_size, int bitplane_width>
 		const std::array<std::uint32_t, 256> morton_at_ct< stripe_size, bitplane_width>::values = fill_array<stripe_size, bitplane_width, 256>();
-
-		
-
+		#else
+		template<int stripe_size, int bitplane_width>
+		constexpr std::array<std::uint32_t, 256> morton_at_ct< stripe_size, bitplane_width>::values;
+		#endif
 	};
 };
 
