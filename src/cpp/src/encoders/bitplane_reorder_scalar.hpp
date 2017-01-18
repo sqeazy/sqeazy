@@ -27,24 +27,25 @@ namespace sqeazy {
                                                            const size_type& _length,
                                                            int num_threads = 1)
     {
-		
-		typedef std::make_signed<size_type>::type signed_size_type;//boiler plat required for MS VS 14 2015
+
+      typedef typename std::make_signed<size_type>::type loop_size_type;//boiler plat required for MS VS 14 2015 OpenMP implementation
 
 
       static const unsigned type_width = CHAR_BIT*sizeof(raw_type);
       static const unsigned num_planes = type_width/num_bits_per_plane;
 
       const unsigned segment_length = _length/num_planes;
+      const loop_size_type len = _length;
 
       const raw_type mask = ~(~0 << (num_bits_per_plane));//mask to extract all last bits up to bit at num_bits_per_plane
       raw_type value = 0;
 
 
-#pragma omp parallel for \
-  private(value) \
-  shared(_input, _output) \
+#pragma omp parallel for                        \
+  private(value)                                \
+  shared(_input, _output)                       \
   num_threads(num_threads)
-      for(signed_size_type index = 0; index < _length; ++index) {
+      for(loop_size_type index = 0; index < len; ++index) {
 
 
         value = xor_if_signed(_input[index]);
@@ -80,18 +81,20 @@ namespace sqeazy {
                                                            const size_type& _length,
                                                            int num_threads = 1){
 
-		typedef std::make_signed<size_type>::type signed_size_type;//boiler plat required for MS VS 14 2015
+      typedef typename std::make_signed<size_type>::type loop_size_type;//boiler plate required for MS VS 14 2015 OpenMP implementation
 
       static const unsigned raw_type_num_bits = sizeof(raw_type)*CHAR_BIT;
       static const unsigned num_planes = raw_type_num_bits/num_bits_per_plane;
 
+      const loop_size_type len = _length;
+      const loop_size_type signed_num_planes = num_planes;
       const unsigned segment_length = _length/num_planes;
       const raw_type mask = ~(~0 << (num_bits_per_plane));
       static const unsigned type_width = CHAR_BIT*sizeof(raw_type);
 
 #pragma omp parallel for shared(_input, _output)    \
   num_threads(num_threads)
-      for(signed_size_type plane_index = 0; plane_index<num_planes; ++plane_index) {
+      for(loop_size_type plane_index = 0; plane_index<signed_num_planes; ++plane_index) {
 
         size_type output_bit_offset = (plane_index*num_bits_per_plane);
 
@@ -108,7 +111,7 @@ namespace sqeazy {
 
 #pragma omp parallel for shared(_input, _output)    \
   num_threads(num_threads)
-      for(signed_size_type index = 0; index < _length; ++index) {
+      for(loop_size_type index = 0; index < len; ++index) {
         _output[index] = xor_if_signed(rotate_right<1>(_output[index]));
       }
 
