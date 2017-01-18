@@ -26,21 +26,24 @@ find_library(googlebenchmark_LIBRARY NAMES "benchmark"
   NO_DEFAULT_PATH)
 find_library(googlebenchmark_LIBRARY NAMES "benchmark")
 
-#set(googlebenchmark_AUX_LIBRARY "")
-if(WIN32)
-	find_library(googlebenchmark_AUX_LIBRARY NAMES shlwapi ShLwApi)
-	if(EXISTS ${googlebenchmark_AUX_LIBRARY})
-		message("-- [FindGoogleBenchmark] Windows detected, adding shlwapi.lib at ${googlebenchmark_AUX_LIBRARY}")
-	else()
-		message("-- [FindGoogleBenchmark] Windows detected, but shlwapi.lib not found")
-	endif()
-endif(WIN32)
 include(FindPackageHandleStandardArgs)
-# handle the QUIETLY and REQUIRED arguments and set googlebenchmark_FOUND to TRUE
-# if all listed variables are TRUE
-find_package_handle_standard_args(googlebenchmark 
-	FOUND_VAR googlebenchmark_FOUND
-	REQUIRED_VARS googlebenchmark_LIBRARY googlebenchmark_INCLUDE_DIR googlebenchmark_AUX_LIBRARY)
+if(WIN32)
+  find_library(googlebenchmark_AUX_LIBRARY NAMES shlwapi ShLwApi)
+  if(EXISTS ${googlebenchmark_AUX_LIBRARY})
+    message("-- [FindGoogleBenchmark] Windows detected, adding shlwapi.lib at ${googlebenchmark_AUX_LIBRARY}")
+  else()
+    message("-- [FindGoogleBenchmark] Windows detected, but shlwapi.lib not found")
+  endif()
+  find_package_handle_standard_args(googlebenchmark
+    FOUND_VAR googlebenchmark_FOUND
+    REQUIRED_VARS googlebenchmark_LIBRARY googlebenchmark_INCLUDE_DIR googlebenchmark_AUX_LIBRARY)
+else(WIN32)
+  find_package_handle_standard_args(googlebenchmark
+    FOUND_VAR googlebenchmark_FOUND
+    REQUIRED_VARS googlebenchmark_LIBRARY googlebenchmark_INCLUDE_DIR)
+
+endif(WIN32)
+
 
 if(googlebenchmark_FOUND)
   set(googlebenchmark_LIBRARIES ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
