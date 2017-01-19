@@ -4,6 +4,7 @@
 #include "benchmark_fixtures.hpp"
 
 typedef sqeazy::benchmark::static_synthetic_data<> static_default_fixture;
+typedef sqeazy::benchmark::dynamic_synthetic_data<> dynamic_default_fixture;
 
 BENCHMARK_DEFINE_F(static_default_fixture, one_vs_two_threads)(benchmark::State& state) {
 
@@ -84,6 +85,37 @@ BENCHMARK_DEFINE_F(static_default_fixture, sse_one_vs_two_threads)(benchmark::St
 }
 
 BENCHMARK_REGISTER_F(static_default_fixture, sse_one_vs_two_threads)->Threads(2)->Threads(1)->UseRealTime();
+
+BENCHMARK_DEFINE_F(dynamic_default_fixture, sse_one_vs_two_threads)(benchmark::State& state) {
+
+
+  if (state.thread_index == 0) {
+    SetUp(state);
+  }
+
+  //heat the caches
+  sqeazy::detail::sse_bitplane_reorder_encode<1>(sinus_.data(),
+                                                 output_.data(),
+                                                 sinus_.size(),
+                                                 state.threads);
+
+  while (state.KeepRunning()) {
+    state.PauseTiming();
+    std::fill(output_.begin(), output_.end(),0);
+    state.ResumeTiming();
+
+    sqeazy::detail::sse_bitplane_reorder_encode<1>(sinus_.data(),
+                                                   output_.data(),
+                                                   sinus_.size(),
+                                                   state.threads);
+  }
+
+  state.SetBytesProcessed(int64_t(state.iterations()) *
+                          int64_t(size_)*sizeof(sinus_.front()));
+}
+
+BENCHMARK_REGISTER_F(dynamic_default_fixture, sse_one_vs_two_threads)->Threads(2)->UseRealTime()->Range(1<< 10,1 << 25);
+
 
 
 BENCHMARK_MAIN();
