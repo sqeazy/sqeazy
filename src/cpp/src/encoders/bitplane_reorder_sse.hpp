@@ -164,7 +164,7 @@ namespace sqeazy {
               *(_reordered[output_index]+n_output_items_per_plane-1-out_offset) += (result >> out_offset) & T(~0);
             }
         }
-	
+
 
       }
 
@@ -192,7 +192,7 @@ namespace sqeazy {
     {
       //unable to perform this task input array does fit into __m128
       if(_length*sizeof(raw_type)<16)
-	return FAILURE;
+        return FAILURE;
 
       static const std::size_t raw_type_bitwidth = sizeof(raw_type)*CHAR_BIT;
       static const std::size_t input_items_per_m128 = 128/raw_type_bitwidth;
@@ -203,8 +203,8 @@ namespace sqeazy {
       std::vector<raw_type*> output_ptr(num_planes,0);
       std::size_t offset = 0;
       for(std::size_t i = 0;i<output_ptr.size();++i){
-	output_ptr[i] = _output + offset;
-	offset += output_segment_length;
+        output_ptr[i] = _output + offset;
+        offset += output_segment_length;
       }
 
       //prepare strides
@@ -213,9 +213,9 @@ namespace sqeazy {
       std::uint32_t advance_output_every = 1;
 
       if(output_items_per_m128<1){
-	advance_output_every = std::round(1./output_items_per_m128);
+        advance_output_every = std::round(1./output_items_per_m128);
       } else {
-	advance_output_by = output_items_per_m128;
+        advance_output_by = output_items_per_m128;
       }
 
       // if(raw_type_bitwidth==8){
@@ -231,27 +231,27 @@ namespace sqeazy {
 
       for(size_type index = 0; index < _length; index += input_items_per_m128, count++ ) {
 
-	input = _mm_load_si128(reinterpret_cast<const __m128i*>(&_input[index]));
+        input = _mm_load_si128(reinterpret_cast<const __m128i*>(&_input[index]));
 
-	// no need to xor, but we implement it anyway for the sake of completeness
-	if(std::numeric_limits<raw_type>::is_signed)
-	  xoring(&input);
+        // no need to xor, but we implement it anyway for the sake of completeness
+        if(std::numeric_limits<raw_type>::is_signed)
+          xoring(&input);
 
-	input = rotate(&input);
+        input = rotate(&input);
 
-	//bitplane reordering starts here
-	std::size_t shift_left_by = (count % advance_output_every == 0) ? raw_type_bitwidth/advance_output_every : 0;
-	reorder_bitplanes<nbits_per_plane>(input,
-					   output_ptr,
-					   shift_left_by);
+        //bitplane reordering starts here
+        std::size_t shift_left_by = (count % advance_output_every == 0) ? raw_type_bitwidth/advance_output_every : 0;
+        reorder_bitplanes<nbits_per_plane>(input,
+                                           output_ptr,
+                                           shift_left_by);
 
-	//moving the pointers to the output array forward
-	if(shift_left_by == 0){
-	  for(std::size_t i = 0;i<output_ptr.size();++i){
-	    output_ptr[i]+=advance_output_by;
-	  }
-	}
-	
+        //moving the pointers to the output array forward
+        if(shift_left_by == 0){
+          for(std::size_t i = 0;i<output_ptr.size();++i){
+            output_ptr[i]+=advance_output_by;
+          }
+        }
+
 
       }
 
@@ -291,7 +291,7 @@ namespace sqeazy {
         std::cerr << "[sse_bitplane_reorder_encode] " << _length << " ("<< n_bits_per_element
                   <<" bits per element) cannot be processed by "
                   << n_elements_full_sweep << " without rest\n";
-	
+
         return FAILURE;
       }
 
