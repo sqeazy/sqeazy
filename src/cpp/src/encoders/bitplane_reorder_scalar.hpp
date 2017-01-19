@@ -3,13 +3,15 @@
 #include <limits>
 #include <climits>
 #include <iostream>
-#include "traits.hpp"
-#include "sqeazy_common.hpp"
-#include "scalar_utils.hpp"
 
 #ifdef _OPENMP
 #include "omp.h"
 #endif
+
+#include "traits.hpp"
+#include "sqeazy_common.hpp"
+#include "scalar_utils.hpp"
+
 
 namespace sqeazy {
 
