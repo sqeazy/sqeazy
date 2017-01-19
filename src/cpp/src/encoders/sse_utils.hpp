@@ -158,47 +158,57 @@ namespace sqeazy {
 
     template<typename T>
     struct shift_left_m128i {
-      __m128i operator()(const __m128i& _block, int num_bits) const {return _block;}
+
+      template <typename size_type>
+      __m128i operator()(const __m128i& _block, size_type num_bits) const {return _block;}
     };
 
     template<>
     struct shift_left_m128i<unsigned short> {
-      __m128i operator()(const __m128i& _block, int num_bits) const {
+      template <typename size_type>
+      __m128i operator()(const __m128i& _block, size_type num_bits) const {
         return  _mm_slli_epi16(_block, num_bits);
       }
     };
 
     template<>
     struct shift_left_m128i<short> {
-      __m128i operator()(const __m128i& _block, int num_bits) const {
+      template <typename size_type>
+      __m128i operator()(const __m128i& _block, size_type num_bits) const {
         return  _mm_slli_epi16(_block, num_bits);
       }
     };
 
     template<>
     struct shift_left_m128i<unsigned int> {
-      __m128i operator()(const __m128i& _block, int num_bits) const {
+      template <typename size_type>
+      __m128i operator()(const __m128i& _block, size_type num_bits) const {
         return  _mm_slli_epi32(_block, num_bits);
       }
     };
 
     template<>
     struct shift_left_m128i<int> {
-      __m128i operator()(const __m128i& _block, int num_bits) const {
+      template <typename size_type>
+      __m128i operator()(const __m128i& _block, size_type num_bits) const {
         return  _mm_slli_epi32(_block, num_bits);
       }
     };
 
     template<>
     struct shift_left_m128i<unsigned long> {
-      __m128i operator()(const __m128i& _block, long num_bits) const {
+
+      template <typename size_type>
+      __m128i operator()(const __m128i& _block, size_type num_bits) const {
         return  _mm_slli_epi64(_block, num_bits);
       }
     };
 
     template<>
     struct shift_left_m128i<long> {
-      __m128i operator()(const __m128i& _block, long num_bits) const {
+
+      template <typename size_type>
+      __m128i operator()(const __m128i& _block, size_type num_bits) const {
         return  _mm_slli_epi64(_block, num_bits);
       }
     };
@@ -206,7 +216,9 @@ namespace sqeazy {
 
     template<>
     struct shift_left_m128i<unsigned char> {
-      __m128i operator()(const __m128i& _block, int num_bits) const {
+
+      template <typename size_type>
+      __m128i operator()(const __m128i& _block, size_type num_bits) const {
 
         //treat upper half
         __m128i first = _mm_cvtepu8_epi16(_block);
@@ -238,7 +250,9 @@ namespace sqeazy {
 
     template<>
     struct shift_left_m128i<char> {
-      __m128i operator()(const __m128i& _block, int num_bits) const {
+
+      template <typename size_type>
+      __m128i operator()(const __m128i& _block, size_type num_bits) const {
 
         shift_left_m128i<unsigned char> left_shifter = {};
         return left_shifter(_block,num_bits);
@@ -689,57 +703,61 @@ namespace sqeazy {
 
       in_iterator_t input;
       out_iterator_t output;  // out_iterator_t outpute = output + n_elements;
-      std::uint16_t result = 0;
       int pos = 0;
 
       #pragma omp parallel for         \
         shared(_begin, _end,_dst)      \
         num_threads(_nthreads)         \
         schedule(static,chunk_size)    \
-        private(collect,xoring,rotate_left,shift_left,pos,result)
-      for(loop_size_type s = 0;s<n_segments_signed;++s){
+        private(collect,xoring,rotate_left,shift_left,pos,input,output)
+      for(loop_size_type seg = 0;seg<n_segments_signed;++seg){
 
         input = _begin;
-        output = _dst + s*segment_offset;
-
+        output = _dst + seg*segment_offset;
         pos = 0;
 
-        for(std::size_t i = 0;i<n_iterations;i+=n_filled_segments_per_simd){
+        //TODO: it might be better to move this loop up and swap it with the seg loop
+        //      but the algorithm currently doesn't support this
+        for(std::size_t i = 0;i<n_iterations;i+=n_filled_segments_per_simd)//loop through memory
+          {
 
-          result = 0;
+            std::uint16_t result = 0;
 
-          //TODO: this could be unrolled
-      	  for(std::size_t l = 0;l<n_filled_segments_per_simd;++l){
+            //TODO: could this be unrolled?
+            for(std::size_t l = 0;l<n_filled_segments_per_simd;++l){
 
-            __m128i input_block = _mm_load_si128(reinterpret_cast<const __m128i*>(&*input));
+              __m128i input_block = _mm_load_si128(reinterpret_cast<const __m128i*>(&*input));
 
-            if(std::numeric_limits<in_value_t>::is_signed)
-              xoring(&input_block);
+              if(std::numeric_limits<in_value_t>::is_signed)
+                xoring(&input_block);
 
-            input_block = rotate_left(&input_block); //
+              input_block = rotate_left(&input_block); //
 
-            input_block = shift_left(input_block,s);
+              input_block = shift_left(input_block,seg);
 
-            std::uint16_t temp = collect(input_block);
+              std::uint16_t temp = collect(input_block);
 
-            result |= (temp >> l*(16/n_filled_segments_per_simd) );
+              result |= (temp >> l*(16/n_filled_segments_per_simd) );
 
-            input += n_elements_per_simd;
+              input += n_elements_per_simd;
 
-          }// l filled_segments
+            }// l filled_segments
 
 
-          __m128i output_block = sse_insert_epi16(output_block,result,pos);
-          pos++;
+            __m128i output_block = sse_insert_epi16(output_block,result,pos);
+            pos++;
 
-          if(pos > 7){
-            _mm_store_si128(reinterpret_cast<__m128i*>(&*output),output_block);
-            output += n_elements_per_simd;
-            pos = 0;
-          }
+            if(pos > 7){//flush to output memory
+              _mm_store_si128(reinterpret_cast<__m128i*>(&*output),output_block);
+              output += n_elements_per_simd;
+              pos = 0;
+            }
 
-        }// i iterators
-      } // s segments 
+          }// i iterators
+
+
+      } // s segments
+
     }
 
   }//detail
