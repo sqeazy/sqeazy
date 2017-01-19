@@ -111,7 +111,8 @@ namespace sqeazy {
 #endif
           err = sqeazy::detail::sse_bitplane_reorder_encode<static_num_bits_per_plane>(_input,
                                                                                        _output,
-                                                                                       max_size);
+                                                                                       max_size,
+                                                                                       this->n_threads());
 
         }
       else{
