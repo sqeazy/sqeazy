@@ -12,9 +12,10 @@ add_test(NAME background_scheme_impl COMMAND test_background_scheme_impl)
 add_test(NAME string_parsers_impl COMMAND test_string_parsers_impl)
 
 add_test(NAME bitswap_schemes COMMAND test_bitswap_schemes)
+add_test(NAME bitswap_scheme_impl COMMAND test_bitswap_scheme_impl)
 add_test(NAME bitplane_reorder_impl COMMAND test_bitplane_reorder_impl)
 add_test(NAME bitplane_reorder_on_ramp_impl COMMAND test_bitplane_reorder_on_ramp_impl)
-add_test(NAME bitswap_scheme_impl COMMAND test_bitswap_scheme_impl)
+
 add_test(NAME raster_reorder_scheme_impl COMMAND test_raster_reorder_scheme_impl)
 add_test(NAME tile_shuffle_scheme_impl COMMAND test_tile_shuffle_scheme_impl)
 add_test(NAME frame_shuffle_scheme_impl COMMAND test_frame_shuffle_scheme_impl)
