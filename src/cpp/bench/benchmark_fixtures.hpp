@@ -30,6 +30,9 @@ namespace sqeazy {
 
       void setup(std::size_t _size){
 
+        if(shape_.size()!=3)
+          shape_.resize(3);
+
         shape_[sqeazy::row_major::x] = 1 << int(std::round(std::log2(std::pow(_size,1/3.f))));
         shape_[sqeazy::row_major::y] = shape_[sqeazy::row_major::x];
         shape_[sqeazy::row_major::z] = std::floor(_size/(shape_[sqeazy::row_major::y]*shape_[sqeazy::row_major::x]));
@@ -126,7 +129,10 @@ namespace sqeazy {
       void SetUp(const ::benchmark::State& st) {
         //m = ConstructRandomMap(st.range(0));
         setup(st.range(0));
-
+        // std::cout << "setup " << size_ << " in shape (x-y-z) "
+        //           << shape_[sqeazy::row_major::x] << " "
+        //           << shape_[sqeazy::row_major::y] << " "
+        //           << shape_[sqeazy::row_major::z] << "\n";
       }
 
       void TearDown(const ::benchmark::State&) {  }
