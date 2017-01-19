@@ -66,8 +66,8 @@ target_link_libraries(bench_bitplane_reorder_impl ${Boost_LIBRARIES})
 add_executable(test_sse_utils_impl test_sse_utils_impl.cpp)
 target_link_libraries(test_sse_utils_impl ${Boost_LIBRARIES})
 
-add_executable(test_sse_bitshuffle_impl test_sse_bitshuffle_impl.cpp)
-target_link_libraries(test_sse_bitshuffle_impl ${Boost_LIBRARIES})
+# add_executable(test_sse_bitshuffle_impl test_sse_bitshuffle_impl.cpp)
+# target_link_libraries(test_sse_bitshuffle_impl ${Boost_LIBRARIES})
 
 add_executable(test_shift_by_intrinsics test_shift_by_intrinsics.cpp)
 target_link_libraries(test_shift_by_intrinsics ${Boost_LIBRARIES})
