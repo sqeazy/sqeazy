@@ -382,21 +382,21 @@ BOOST_AUTO_TEST_CASE( versus_default_all ){
   int ret2 = sqeazy::detail::scalar_bitplane_reorder_encode<1>(&input[0], &reference[0], input.size());
 
 
-    BOOST_REQUIRE(ret1 == ret2);
-    for(unsigned i = 0;i<input.size();++i){
-      try{
-	BOOST_REQUIRE(output[i] == reference[i]);
-      }
-      catch(...){
-	//BOOST_TEST_MESSAGE("[check-sse-default zick-zack] " << i << " / "<< input.size()<<" item does not match" );
-	std::cerr << "[versus_default_all] " << i << " / "<< input.size()<<" item does not match "
-		  << "scalar :" <<  output[i] << ", "
-		  << "sse    :" <<  reference[i]
-		  << "\n";
-	throw;
-      }
+  BOOST_REQUIRE(ret1 == ret2);
+  for(unsigned i = 0;i<input.size();++i){
+    try{
+      BOOST_REQUIRE(output[i] == reference[i]);
+    }
+    catch(...){
+      //BOOST_TEST_MESSAGE("[check-sse-default zick-zack] " << i << " / "<< input.size()<<" item does not match" );
+      std::cerr << "[versus_default_all] " << i << " / "<< input.size()<<" item does not match "
+                << "scalar = " <<  output[i] << ", "
+                << "sse    = " <<  reference[i]
+                << "\n";
+      throw;
     }
   }
+}
 
 BOOST_AUTO_TEST_CASE( versus_default_all_2threads ){
 
@@ -404,21 +404,21 @@ BOOST_AUTO_TEST_CASE( versus_default_all_2threads ){
   int ret2 = sqeazy::detail::scalar_bitplane_reorder_encode<1>(&input[0], &reference[0], input.size(),2);
 
 
-    BOOST_REQUIRE(ret1 == ret2);
-    for(unsigned i = 0;i<input.size();++i){
-      try{
-    BOOST_REQUIRE(output[i] == reference[i]);
-      }
-      catch(...){
-    //BOOST_TEST_MESSAGE("[check-sse-default zick-zack] " << i << " / "<< input.size()<<" item does not match" );
-    std::cerr << "[versus_default_all] " << i << " / "<< input.size()<<" item does not match "
-          << "scalar :" <<  output[i] << ", "
-          << "sse    :" <<  reference[i]
-          << "\n";
-    throw;
-      }
+  BOOST_REQUIRE(ret1 == ret2);
+  for(unsigned i = 0;i<input.size();++i){
+    try{
+      BOOST_REQUIRE(output[i] == reference[i]);
+    }
+    catch(...){
+      //BOOST_TEST_MESSAGE("[check-sse-default zick-zack] " << i << " / "<< input.size()<<" item does not match" );
+      std::cerr << "[versus_default_all] " << i << " / "<< input.size()<<" item does not match "
+                << "scalar :" <<  output[i] << ", "
+                << "sse    :" <<  reference[i]
+                << "\n";
+      throw;
     }
   }
+}
 
 BOOST_AUTO_TEST_CASE( versus_expanded_ramp ){
 
