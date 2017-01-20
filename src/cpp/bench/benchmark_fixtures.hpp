@@ -11,19 +11,27 @@
 #include "traits.hpp"
 #include "benchmark/benchmark.h"
 
+#include "boost/align/aligned_allocator.hpp"
+
+//boost::alignment::aligned_allocator<uint16_t, 32>
 
 namespace sqeazy {
 
+  template <typename value_type>
+  using aligned_vector = std::vector<value_type, boost::alignment::aligned_allocator<value_type,32> >;
+
   namespace benchmark {
+
 
     template <typename T = std::uint16_t
               >
     struct dynamic_synthetic_data : public ::benchmark::Fixture
     {
-      std::vector<T> sinus_;
-      std::vector<T> embryo_;
-      std::vector<T> noisy_embryo_;
-      std::vector<T> output_;
+
+      aligned_vector<T> sinus_;
+      aligned_vector<T> embryo_;
+      aligned_vector<T> noisy_embryo_;
+      aligned_vector<T> output_;
 
       std::vector<std::size_t> shape_;
       std::size_t size_;
@@ -127,12 +135,7 @@ namespace sqeazy {
       {}
 
       void SetUp(const ::benchmark::State& st) {
-        //m = ConstructRandomMap(st.range(0));
         setup(st.range(0));
-        // std::cout << "setup " << size_ << " in shape (x-y-z) "
-        //           << shape_[sqeazy::row_major::x] << " "
-        //           << shape_[sqeazy::row_major::y] << " "
-        //           << shape_[sqeazy::row_major::z] << "\n";
       }
 
       void TearDown(const ::benchmark::State&) {  }
@@ -157,8 +160,8 @@ namespace sqeazy {
       static const unsigned long size = (1 << (cache_size_in_byte_as_exponent+1))/sizeof(T);
       static const unsigned long size_in_byte = sizeof(T)*size;
 
-      std::vector<T> sin_data;
-      std::vector<T> output_data;
+      aligned_vector<T> sin_data;
+      aligned_vector<T> output_data;
       std::vector<std::size_t> shape;
 
       std::size_t axis_length(int index = sqeazy::row_major::x ) const {
