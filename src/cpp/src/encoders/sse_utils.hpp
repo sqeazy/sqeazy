@@ -686,7 +686,7 @@ namespace sqeazy {
       const loop_size_type chunk_size = n_segments_signed/_nthreads;
       assert(chunk_size % _nthreads == 0);
 
-      const std::size_t n_elements		= _end - _begin;
+      const std::size_t n_elements		= std::distance(_begin,_end);
       const std::size_t segment_offset	= n_elements/n_segments;
       const std::size_t n_elements_per_seg	= n_elements*1/n_bits_in_value_t;
       const std::size_t n_iterations	= n_elements/n_elements_per_simd;
