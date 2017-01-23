@@ -1,4 +1,9 @@
 #define BOOST_TEST_MODULE TEST_VIDEO_UTILS_IMPL
+
+#include <numeric>
+#include <vector>
+#include <cstdint>
+
 #include "boost/test/unit_test.hpp"
 #include "encoders/video_utils.hpp"
 
