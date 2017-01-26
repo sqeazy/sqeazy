@@ -111,8 +111,8 @@ BOOST_AUTO_TEST_CASE( on_buffer )
 
   sqy::zcurve_reorder_scheme<value_type> morton_of4("tile_size=4");
   auto rem = morton_of4.encode(constant_cube.data(),
-           to_play_with.data(),
-           shape);
+                               to_play_with.data(),
+                               shape);
   BOOST_REQUIRE(rem != nullptr);
   BOOST_REQUIRE_EQUAL(rem,to_play_with.data()+to_play_with.size());
 
