@@ -137,35 +137,37 @@ namespace sqeazy {
 		typedef typename std::iterator_traits<decltype(_shape.begin())>::value_type shape_value_type;
 		typedef typename std::remove_cv<shape_value_type>::type shape_value_t;
 
-		const auto common = common_power_of_2(_shape);
+		const std::size_t n_elements_per_tile = std::pow(tile_size,_shape.size());
 
-		const std::size_t n_elements_per_tile = std::pow(common,_shape.size());
-		// const std::size_t n_elements_per_tile_frame = std::pow(common,_shape.size()-1);
 
 		shape_container_t shape_in_tiles = _shape;
 
-		for(shape_value_t & tile_dim : shape_itile_dim )
-		  tile_dim = tile_dim / common;
+		for(shape_value_t & tile_dim : shape_in_tiles )
+		  tile_dim = tile_dim / tile_size;
 
 		std::size_t dst_offset  = 0;
 		in_iterator_t src = _begin;
 		out_iterator_t dst = _out;
-		std::uint32_t tile_z = 0;
-		std::uint32_t tile_y = 0;
-		std::uint32_t tile_x = 0;
+
+		std::uint32_t tile_offset_in_z = 0;
+		std::uint32_t tile_offset_in_y = 0;
+		std::uint32_t tile_offset_in_x = 0;
+
 		std::uint32_t tile_index = 0;
 
 		for(shape_value_t z = 0;z<_shape[row_major::z];z+=1){
-		  tile_z = z / common;
+		  tile_offset_in_z = z / tile_size;
 
 		  for(shape_value_t y = 0;y<_shape[row_major::y];y+=1){
-			tile_y = y / common;
+			tile_offset_in_y = y / tile_size;
 
 			for(shape_value_t x = 0;x<_shape[row_major::x];x+=1){
-			  tile_x = x / common;
-			  tile_index = tile_z*shape_in_tiles[row_major::x]*shape_in_tiles[row_major::y] + tile_y*shape_in_tiles[row_major::x] + tile_x;
+			  tile_offset_in_x = x / tile_size;
+			  tile_index = tile_offset_in_z*shape_in_tiles[row_major::x]*shape_in_tiles[row_major::y] + tile_offset_in_y*shape_in_tiles[row_major::x] + tile_offset_in_x;
 			  dst = _out + (tile_index*n_elements_per_tile);
-			  dst_offset = zcurve_encode(z % common, y % common, x % common);
+			  dst_offset = zcurve_encode(z % tile_size,
+										 y % tile_size,
+										 x % tile_size);
 
 			  auto dst_ptr = dst + dst_offset;
 			  *dst_ptr = *(src++);
@@ -186,36 +188,35 @@ namespace sqeazy {
 		typedef typename std::iterator_traits<decltype(_shape.begin())>::value_type shape_value_type;
 		typedef typename std::remove_cv<shape_value_type>::type shape_value_t;
 
-		const auto common = common_power_of_2(_shape);
 		const shape_container_t rem = remainder(_shape);
 		const bool has_remainder = std::count_if(rem.begin(), rem.end(), [](shape_value_t el){ return el > 0;});
 
 
 		shape_container_t tiles_per_dim = _shape;
 		for(shape_value_t & tile : tiles_per_dim )
-		  tile = (tile + common - 1)/ common;
+		  tile = (tile + tile_size - 1)/ tile_size;
 
 		const std::size_t n_tiles = std::accumulate(tiles_per_dim.begin(), tiles_per_dim.end(),
 													1,
 													std::multiplies<std::size_t>());
 
-		std::array<std::size_t, 3> tile_shape; tile_shape.fill(common);
-		std::vector<std::array<std::size_t, 3> > value (n_tiles, tile_shape);
+		std::array<std::size_t, 3> full_tile_shape; full_tile_shape.fill(tile_size);
+		std::vector<std::array<std::size_t, 3> > value (n_tiles, full_tile_shape);
 
 		if(has_remainder){
 		  auto current_tile_shape = value.begin();
 
 
-		  for(shape_value_t z = 0;z<_shape[row_major::z];z+=common){
-			tile_shape[row_major::z] = ((_shape[row_major::z] - z ) < common) ? (_shape[row_major::z] - z) : common;
+		  for(shape_value_t z = 0;z<_shape[row_major::z];z+=tile_size){
+			full_tile_shape[row_major::z] = ((_shape[row_major::z] - z ) < tile_size) ? (_shape[row_major::z] - z) : tile_size;
 
-			for(shape_value_t y = 0;y<_shape[row_major::y];y+=common){
-			  tile_shape[row_major::y] = ((_shape[row_major::y] - y) < common) ? (_shape[row_major::y] - y) : common;
+			for(shape_value_t y = 0;y<_shape[row_major::y];y+=tile_size){
+			  full_tile_shape[row_major::y] = ((_shape[row_major::y] - y) < tile_size) ? (_shape[row_major::y] - y) : tile_size;
 
-			  for(shape_value_t x = 0;x<_shape[row_major::x];x+=common){
-				tile_shape[row_major::x] = ((_shape[row_major::x] - x) < common) ? (_shape[row_major::x] - x) : common;
+			  for(shape_value_t x = 0;x<_shape[row_major::x];x+=tile_size){
+				full_tile_shape[row_major::x] = ((_shape[row_major::x] - x) < tile_size) ? (_shape[row_major::x] - x) : tile_size;
 
-				*current_tile_shape = tile_shape;
+				*current_tile_shape = full_tile_shape;
 				++current_tile_shape;
 
 
@@ -241,13 +242,13 @@ namespace sqeazy {
 		typedef typename std::iterator_traits<decltype(_shape.begin())>::value_type shape_value_type;
 		typedef typename std::remove_cv<shape_value_type>::type shape_value_t;
 
-		const auto common = common_power_of_2(_shape);
+		// const auto common = common_power_of_2(_shape);
 
 		shape_container_t tiles_per_dim = _shape;
 		for(shape_value_t & tile : tiles_per_dim )
-		  tile = (tile + common - 1)/ common;
+		  tile = (tile + tile_size - 1)/ tile_size;
 
-		std::array<std::size_t, 3> tile_shape; tile_shape.fill(common);
+		std::array<std::size_t, 3> full_tile_shape; full_tile_shape.fill(tile_size);
 
 		std::vector<std::array<std::size_t, 3> > tile_shapes = generate_tile_shapes(_shape);
 		const std::size_t n_tiles = tile_shapes.size();
@@ -277,13 +278,13 @@ namespace sqeazy {
 
 		for(shape_value_t z = 0;z<_shape[row_major::z];++z){
 
-		  ztile = z / common;
-		  z_intile = z % common;
+		  ztile = z / tile_size;
+		  z_intile = z % tile_size;
 
 		  for(shape_value_t y = 0;y<_shape[row_major::y];++y){
 
-			ytile = y / common;
-			y_intile = y % common;
+			ytile = y / tile_size;
+			y_intile = y % tile_size;
 
 
 			xtile = 0;
@@ -293,14 +294,14 @@ namespace sqeazy {
 
 
 			for(shape_value_t x = 0;x<_shape[row_major::x];++x){
-			  xtile = x / common;
-			  x_intile = x % common;
+			  xtile = x / tile_size;
+			  x_intile = x % tile_size;
 
 			  tile_output_offset = tile_output_offsets[tile_index+xtile];
 			  auto current_shape = tile_shapes[tile_index+xtile];
 			  if(std::equal(current_shape.begin(),
 							current_shape.end(),
-							tile_shape.begin()))
+							full_tile_shape.begin()))
 				tile_output_offset += zcurve_encode(z_intile, y_intile, x_intile);
 			  else
 				tile_output_offset += z_intile*current_shape[row_major::x]*current_shape[row_major::y] + y_intile*current_shape[row_major::x] + x_intile;
@@ -364,13 +365,11 @@ namespace sqeazy {
 		typedef typename std::iterator_traits<decltype(_shape.begin())>::value_type shape_value_type;
 		typedef typename std::remove_cv<shape_value_type>::type shape_value_t;
 
-		const auto common = common_power_of_2(_shape);
+		shape_container_t shape_in_tiles = _shape;
+		for(shape_value_t & tile_dim : shape_in_tiles )
+		  tile_dim = (tile_dim + tile_size - 1)/ tile_size;
 
-		shape_container_t tiles_per_dim = _shape;
-		for(shape_value_t & tile : tiles_per_dim )
-		  tile = (tile + common - 1)/ common;
-
-		std::array<std::size_t, 3> tile_shape; tile_shape.fill(common);
+		std::array<std::size_t, 3> full_tile_shape; full_tile_shape.fill(tile_size);
 
 		std::vector<std::array<std::size_t, 3> > tile_shapes = generate_tile_shapes(_shape);
 		const std::size_t n_tiles = tile_shapes.size();
@@ -400,30 +399,26 @@ namespace sqeazy {
 
 		for(shape_value_t z = 0;z<_shape[row_major::z];++z){
 
-		  ztile = z / common;
-		  z_intile = z % common;
+		  ztile = z / tile_size;
+		  z_intile = z % tile_size;
 
 		  for(shape_value_t y = 0;y<_shape[row_major::y];++y){
 
-			ytile = y / common;
-			y_intile = y % common;
-
-
 			xtile = 0;
+			ytile = y / tile_size;
+			y_intile = y % tile_size;
 
-
-			tile_index = (ztile*tiles_per_dim[row_major::x]*tiles_per_dim[row_major::y] + ytile*tiles_per_dim[row_major::x]);
-
+			tile_index = (ztile*shape_in_tiles[row_major::x]*shape_in_tiles[row_major::y] + ytile*shape_in_tiles[row_major::x]);
 
 			for(shape_value_t x = 0;x<_shape[row_major::x];++x){
-			  xtile = x / common;
-			  x_intile = x % common;
+			  xtile = x / tile_size;
+			  x_intile = x % tile_size;
 
 			  tile_output_offset = tile_output_offsets[tile_index+xtile];
 			  auto current_shape = tile_shapes[tile_index+xtile];
 			  if(std::equal(tile_shapes[tile_index+xtile].begin(),
 							tile_shapes[tile_index+xtile].end(),
-							tile_shape.begin()))
+							full_tile_shape.begin()))
 				tile_output_offset += zcurve_encode(z_intile, y_intile, x_intile);
 			  else
 				tile_output_offset += z_intile*current_shape[row_major::x]*current_shape[row_major::y] + y_intile*current_shape[row_major::x] + x_intile;

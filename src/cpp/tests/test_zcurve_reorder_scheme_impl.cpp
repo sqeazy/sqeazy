@@ -254,9 +254,9 @@ BOOST_AUTO_TEST_CASE( tile_of_2_prime )
 
   std::vector<std::size_t> shape = {7,16,7};
   std::size_t len = std::accumulate(shape.begin(), shape.end(),
-            1.,
-            std::multiplies<std::size_t>()
-            );
+                                    1.,
+                                    std::multiplies<std::size_t>()
+    );
 
   std::vector<std::uint16_t> src(len,0);
   label_stack_by_tile(src.begin(),shape,2);
@@ -267,14 +267,14 @@ BOOST_AUTO_TEST_CASE( tile_of_2_prime )
 
   sqy::zcurve_reorder_scheme<std::uint16_t> morton_of;
   auto rem = morton_of.encode(src.data(),
-          enc.data(),
-          shape);
+                              enc.data(),
+                              shape);
   BOOST_REQUIRE(rem != nullptr);
   BOOST_REQUIRE_EQUAL(rem,enc.data()+enc.size());
 
   auto res = morton_of.decode(enc.data(),
-          dec.data(),
-          shape);
+                              dec.data(),
+                              shape);
 
   BOOST_REQUIRE_EQUAL(res,0);
   for(std::size_t i = 0;i<src.size();++i)
