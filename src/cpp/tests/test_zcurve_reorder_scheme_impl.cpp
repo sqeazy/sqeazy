@@ -18,8 +18,8 @@ namespace sqyd = sqy::detail;
 
 template <typename iterator_t, typename shape_t>
 void label_stack_by_tile(iterator_t _begin,
-			 const shape_t& _shape,
-			 std::uint32_t tile_size){
+             const shape_t& _shape,
+             std::uint32_t tile_size){
 
   typedef typename std::iterator_traits<decltype(_shape.begin())>::value_type shape_value_type;
   typedef typename std::remove_cv<shape_value_type>::type shape_value_t;
@@ -41,13 +41,13 @@ void label_stack_by_tile(iterator_t _begin,
       ytile = y / tile_size;
 
       for(shape_value_t x = 0;x<_shape[sqeazy::row_major::x];++x){
-	xtile = x/ tile_size;
+    xtile = x/ tile_size;
 
-	tile_id = ztile*n_tiles_per_dim[sqeazy::row_major::y]*n_tiles_per_dim[sqeazy::row_major::x]
-	  + ytile*n_tiles_per_dim[sqeazy::row_major::x]
-	  + xtile;
+    tile_id = ztile*n_tiles_per_dim[sqeazy::row_major::y]*n_tiles_per_dim[sqeazy::row_major::x]
+      + ytile*n_tiles_per_dim[sqeazy::row_major::x]
+      + xtile;
 
-	*(_begin++) = tile_id;
+    *(_begin++) = tile_id;
 
       }
     }
@@ -57,8 +57,8 @@ void label_stack_by_tile(iterator_t _begin,
 
 template <typename iterator_t, typename shape_t>
 void encoded_tile_labels(iterator_t _begin,
-			 const shape_t& _shape,
-			 std::uint32_t tile_size){
+             const shape_t& _shape,
+             std::uint32_t tile_size){
 
   typedef typename std::iterator_traits<decltype(_shape.begin())>::value_type shape_value_type;
   typedef typename std::remove_cv<shape_value_type>::type shape_value_t;
@@ -66,8 +66,8 @@ void encoded_tile_labels(iterator_t _begin,
   for(shape_value_t el : _shape){
     if(el % tile_size != 0){
       std::cerr << "unable to generate encoded_tile_labels for shape ("
-		<< _shape[sqeazy::row_major::z] << "x" << _shape[sqeazy::row_major::y] << "x" << _shape[sqeazy::row_major::x]
-		<< ") at tile_size = " << tile_size << "\n";
+        << _shape[sqeazy::row_major::z] << "x" << _shape[sqeazy::row_major::y] << "x" << _shape[sqeazy::row_major::x]
+        << ") at tile_size = " << tile_size << "\n";
       return;
     }
 
@@ -118,8 +118,8 @@ BOOST_AUTO_TEST_CASE( on_buffer )
 
   sqy::zcurve_reorder_scheme<value_type> morton_of1;
   rem = morton_of1.encode(constant_cube.data(),
-			  to_play_with.data(),
-			  shape);
+              to_play_with.data(),
+              shape);
   BOOST_REQUIRE(rem != nullptr);
   BOOST_REQUIRE_EQUAL(rem,to_play_with.data()+to_play_with.size());
 
@@ -232,7 +232,7 @@ BOOST_AUTO_TEST_CASE( tile_of_2 )
 
 
   sqy::zcurve_reorder_scheme<std::uint16_t> morton_of;
-  auto rem = morton_of.encode(src.data(), 
+  auto rem = morton_of.encode(src.data(),
           enc.data(),
           shape);
   BOOST_REQUIRE(rem != nullptr);
@@ -244,7 +244,7 @@ BOOST_AUTO_TEST_CASE( tile_of_2 )
 
   BOOST_REQUIRE_EQUAL(res,0);
   for(std::size_t i = 0;i<src.size();++i)
-    BOOST_REQUIRE_MESSAGE(src[i]==dec[i], "odd_shapes::tile_of_2 failed at item "<< i << ", obs: " << dec[i] << " exp: " << src[i]); 
+    BOOST_REQUIRE_MESSAGE(src[i]==dec[i], "odd_shapes::tile_of_2 failed at item "<< i << ", obs: " << dec[i] << " exp: " << src[i]);
 
 
 }
@@ -266,7 +266,7 @@ BOOST_AUTO_TEST_CASE( tile_of_2_prime )
 
 
   sqy::zcurve_reorder_scheme<std::uint16_t> morton_of;
-  auto rem = morton_of.encode(src.data(), 
+  auto rem = morton_of.encode(src.data(),
           enc.data(),
           shape);
   BOOST_REQUIRE(rem != nullptr);
@@ -278,7 +278,7 @@ BOOST_AUTO_TEST_CASE( tile_of_2_prime )
 
   BOOST_REQUIRE_EQUAL(res,0);
   for(std::size_t i = 0;i<src.size();++i)
-    BOOST_REQUIRE_MESSAGE(src[i]==dec[i], "odd_shapes::tile_of_2_prime failed at item "<< i << ", obs: " << dec[i] << " exp: " << src[i]); 
+    BOOST_REQUIRE_MESSAGE(src[i]==dec[i], "odd_shapes::tile_of_2_prime failed at item "<< i << ", obs: " << dec[i] << " exp: " << src[i]);
 
 
 }
