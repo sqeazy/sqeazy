@@ -21,8 +21,9 @@
 
 #include "sqeazy_common.hpp"
 #include "string_shapers.hpp"
+#include "header_tag.hpp"
 
-namespace bpt = boost::property_tree;
+//namespace bpt = boost::property_tree;
 
 namespace sqeazy {
 
@@ -166,46 +167,38 @@ namespace sqeazy {
                                   ) {
 
       // Create an empty property tree object.
-      bpt::ptree tree;
-      std::stringstream json_stream("");
+      header::tag tree;
 
       // Put the simple values into the tree. The integer is automatically
       // converted to a string. Note that the "debug" node is automatically
       // created if it doesn't exist.
-      tree.put("pipename", _pipe_name);
+      tree.pipename_ = _pipe_name;
 
       std::string raw_type_name = typeid(raw_type).name();
       auto space_pos = raw_type_name.find(" ");
 	  if (space_pos != std::string::npos)
         raw_type_name.replace(space_pos, 1, "_");
 
-      tree.put("raw.type", raw_type_name);
-      tree.put("raw.rank",_dims.size());
+      tree.raw_type_id_ = raw_type_name;
 
-      for(unsigned i = 0;i<_dims.size();++i){
-        tree.add("raw.shape.dim", _dims[i]);
-      }
+      tree.raw_shape_.resize(_dims.size());
+      std::copy(_dims.begin(), _dims.end(),tree.raw_shape_.begin());
 
-      tree.put("encoded.bytes", _payload_bytes);
+      tree.encoded_bytes_ = _payload_bytes;
+      // tree.put("encoded.bytes", _payload_bytes);
 
       // Add all the modules. Unlike put, which overwrites existing nodes, add
       // adds a new node at the lowest level, so the "modules" node will have
       // multiple "module" children.
 
-      // Write property tree to XML file
-      bpt::write_json(json_stream, tree);
-      json_stream << image_header::header_end_delim;
+      std::stringstream serialized_stream;
+      serialized_stream << header::to_string(tree)
+        ;
 
-      std::string stripped = json_stream.str();
+      serialized_stream << std::setw(sizeof(raw_type) - (serialized_stream.str().size() % sizeof(raw_type))) << " ";
+      serialized_stream  << image_header::header_end_delim;
 
-      if(stripped.size() % sizeof(raw_type) != 0){
-        std::stringstream intermediate("");
-        intermediate << std::setw(sizeof(raw_type) - (stripped.size() % sizeof(raw_type))) << " ";
-        intermediate << stripped;
-        stripped = intermediate.str();
-      }
-
-      return std::string(stripped);
+      return std::string(serialized_stream.str());
     }
 
     template <typename value_type,
@@ -325,37 +318,28 @@ namespace sqeazy {
 
 
       image_header value;
-      std::stringstream incoming;
-      incoming << hdr;
+      // std::stringstream incoming(hdr);
+      // incoming << hdr;
 
-      bpt::ptree tree;
+      header::tag tree;
       try{
-        bpt::read_json(incoming, tree);
+        tree = header::from_string(hdr);
       }
       catch (std::exception &e){
-        std::stringstream msg;
-        std::cerr << "[image_header::unpack]\t received header: \n\t>>"<< hdr << "<<\n"
-                  << "cannot create property tree from JSON\nreason: " <<  e.what() << "\n";
+
+        std::cerr << "[image_header::unpack]\t received header: \n\n"<< hdr << "\n\n"
+                  << "[image_header::unpack]\t cannot create property tree from JSON\treason: " <<  e.what() << "\n";
         return image_header(value);
       }
 
-      value.pipeline_ = tree.get("pipename", "");
-      value.raw_type_name_ = tree.get("raw.type", typeid(void).name());
+      value.pipeline_ = tree.pipename_;
+      value.raw_type_name_ = tree.raw_type_id_;
 
-	  if (value.raw_type_name_.find("_") != std::string::npos)
-        value.raw_type_name_.replace(value.raw_type_name_.find("_"), 1, " ");
+      value.raw_shape_ = tree.raw_shape_;
+      value.compressed_size_byte_ = tree.encoded_bytes_;
 
-      unsigned rank = tree.get("raw.rank", (unsigned)0);//TODO: could be replaced by (tend - tbegin)
-      value.raw_shape_.reserve(rank);
-
-      bpt::ptree::const_iterator tbegin = tree.get_child("raw.shape").begin();
-      bpt::ptree::const_iterator tend = tree.get_child("raw.shape").end();
-
-      for(;tbegin!=tend;++tbegin)
-        value.raw_shape_.push_back(boost::lexical_cast<unsigned long>(tbegin->second.data()));
-
-      value.compressed_size_byte_ = tree.get("encoded.bytes", (unsigned long)0);
       value.header_ = hdr;
+
       if(!ends_with(value.header_.begin(),value.header_.end(),header_end_delim))
         value.header_ += header_end_delim;
 
@@ -525,13 +509,13 @@ namespace sqeazy {
     template <typename Iter>
     static const bool valid_header(Iter _begin, Iter _end){
 
-      bool value = std::count(_begin,_end, '}');
-      value = value && std::count(_begin,_end, '}') ==  std::count(_begin,_end, '{');
-      value = value && std::count(_begin,_end, ':')>1;
+      bool value = ends_with(_begin,_end,header_end_delimeter());
 
-      value = value && ends_with(_begin,_end,header_end_delimeter());
+      if(!value)
+        return value;
+
+      value = value && header::can_deserialize(_begin, _end - header_end_delimeter().size() );
       return value;
-
 
     }
 

@@ -16,8 +16,8 @@ BOOST_AUTO_TEST_CASE( split_by_single_character )
   std::string to_test = "tell-me-what";
   std::string token = "-";
   std::vector<std::string> result = sqy::split(to_test,token);
-  BOOST_CHECK_EQUAL(result.size(),3);
-  
+  BOOST_CHECK_EQUAL(result.size(),3u);
+
 }
 
 BOOST_AUTO_TEST_CASE( split_by_word )
@@ -26,12 +26,12 @@ BOOST_AUTO_TEST_CASE( split_by_word )
   std::string to_test = "tell->me->what";
   std::string token = "->";
   std::vector<std::string> result = sqy::split(to_test,token);
-  BOOST_CHECK_EQUAL(result.size(),3);
+  BOOST_CHECK_EQUAL(result.size(),3u);
 
   for(size_t i = 0;i<data.size();++i)
     BOOST_CHECK_EQUAL(result[i],data[i]);
-    
-  
+
+
 }
 
 

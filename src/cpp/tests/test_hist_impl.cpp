@@ -26,10 +26,10 @@ BOOST_AUTO_TEST_CASE( implemented )
     sqeazy::histogram<value_type> of_constant_by_size(&constant_cube[0], uint8_cube_of_8::size );
     unsigned size = uint8_cube_of_8::size;
     BOOST_CHECK_EQUAL(of_constant_by_size.entries(),size);
-    BOOST_CHECK_GT(of_constant_by_size.integral(),0);
+    BOOST_CHECK_GT(of_constant_by_size.integral(),0u);
 
     sqeazy::histogram<value_type> of_constant_begin_end(&constant_cube[0], &constant_cube[0] + uint8_cube_of_8::size );
-    BOOST_CHECK_GT(of_constant_begin_end.integral(),0);
+    BOOST_CHECK_GT(of_constant_begin_end.integral(),0u);
 
     sqeazy::histogram<value_type> of_constant_begin_end_copied(of_constant_by_size);
     BOOST_CHECK_EQUAL(of_constant_begin_end_copied.integral(),of_constant_by_size.integral());
@@ -111,11 +111,11 @@ BOOST_AUTO_TEST_CASE( median_vs_mean )
 
     for(unsigned i=0; i<to_play_with.size(); ++i)
         to_play_with_acc(to_play_with[i]);
-                   
-                   
-                   
+
+
+
     sqeazy::histogram<value_type> of_variable(&to_play_with[0], size);
-    
+
     float rec_median = of_variable.median();
     float exp_median = boost::accumulators::median(to_play_with_acc);
     BOOST_CHECK_NE(of_variable.calc_mean(),of_variable.calc_median());
@@ -239,7 +239,7 @@ BOOST_AUTO_TEST_CASE( entropy )
     for(unsigned num = 0; num<size; ++num) {
 
         to_play_with[num] = (num % 2 == 0) ? 1 : 0;
-	incrementing_cube[num] = (num) % 4;
+    incrementing_cube[num] = (num) % 4;
 
     }
     sqeazy::histogram<value_type> of_norm(&to_play_with[0], size);
@@ -252,7 +252,7 @@ BOOST_AUTO_TEST_CASE( calc_support )
 {
   const float mean = 128;
   const float sigma = 8;
-  
+
     boost::random::mt19937 rng;
     boost::random::normal_distribution<float> norm(mean,sigma);
 
@@ -261,7 +261,7 @@ BOOST_AUTO_TEST_CASE( calc_support )
     }
 
     sqeazy::histogram<value_type> of_norm(&to_play_with[0], size);
-    
+
     BOOST_CHECK_LT(of_norm.mean(), of_norm.calc_support());
     BOOST_CHECK_CLOSE(mean+(2*sigma), of_norm.calc_support(.95f),3.f);
 
@@ -271,7 +271,7 @@ BOOST_AUTO_TEST_CASE( add_from_source )
 {
   const float mean = 128;
   const float sigma = 8;
-  
+
     boost::random::mt19937 rng;
     boost::random::normal_distribution<float> norm(mean,sigma);
 
@@ -292,7 +292,7 @@ BOOST_AUTO_TEST_CASE( add_from_source )
       end = &to_play_with[0] + (i+1)*chunk_size;
       of_norm_acc.add_from_image(begin,end);
     }
-    
+
     of_norm_acc.fill_stats();
 
     BOOST_CHECK_CLOSE(of_norm.mean(), of_norm_acc.mean(),.1f);
@@ -304,7 +304,7 @@ BOOST_AUTO_TEST_CASE( add_from_source )
 BOOST_AUTO_TEST_CASE( clear_support )
 {
   sqeazy::histogram<value_type> of_const(&constant_cube[0], size);
-  of_const.clear();  
+  of_const.clear();
   BOOST_CHECK_EQUAL(of_const.mean(),0);
 }
 BOOST_AUTO_TEST_SUITE_END()

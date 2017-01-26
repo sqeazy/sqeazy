@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_SUITE( tiff_fixture_interface )
 BOOST_AUTO_TEST_CASE( castable )
 {
   sqeazy::data_interface* ptr = new sqeazy::tiff_fixture<unsigned short>();
-  BOOST_CHECK_EQUAL(ptr->size_in_byte(),0);
+  BOOST_CHECK_EQUAL(ptr->size_in_byte(),0u);
 }
 
 BOOST_AUTO_TEST_CASE( loads_through_interface )
@@ -104,7 +104,7 @@ BOOST_AUTO_TEST_CASE( dims_extracted )
   sqeazy::tiff_facet handle( path_to_8bit_stack );
   std::vector<int> dims;
   handle.dimensions(dims);
-  BOOST_CHECK_EQUAL(dims.size(),3);
+  BOOST_CHECK_EQUAL(dims.size(),3u);
   BOOST_CHECK_EQUAL(dims[0],256);
   BOOST_CHECK_EQUAL(dims[1],256);
   BOOST_CHECK_EQUAL(dims[2],256);

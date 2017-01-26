@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE( extract_group ){
   grp = sqeazy::extract_group_path("dataset_name");
   BOOST_REQUIRE(!grp.empty());
   BOOST_CHECK(grp[0] == '/');
-  BOOST_CHECK_EQUAL(grp.size(),1);
+  BOOST_CHECK_EQUAL(grp.size(),1u);
 
   path = path.substr(1);
   grp = sqeazy::extract_group_path(path);
@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE( open_close ){
 
   BOOST_CHECK(testme.ready());
   H5::DataSet tds = testme.load_h5_dataset(dname);
-  BOOST_REQUIRE_NE(tds.getStorageSize(),0);
+  BOOST_REQUIRE_NE(tds.getStorageSize(),0u);
   BOOST_REQUIRE_NE(tds.getId(),0);
 
   testme.close();
@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_CASE( open_close ){
   sqeazy::h5_file testme_ro = testme;
   BOOST_CHECK(testme_ro.ready());
   H5::DataSet tds_ro = testme_ro.load_h5_dataset(dname);
-  BOOST_REQUIRE_NE(tds_ro.getStorageSize(),0);
+  BOOST_REQUIRE_NE(tds_ro.getStorageSize(),0u);
   BOOST_REQUIRE_NE(tds_ro.getId(),0);
 
 }
@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE( query_for_dataset_shape ){
   sqeazy::h5_file testme(tfile);
   testme.shape(shape,dname);
 
-  BOOST_REQUIRE_EQUAL(shape.size(), 2);
+  BOOST_REQUIRE_EQUAL(shape.size(), 2u);
   BOOST_CHECK_EQUAL(shape[0], 5);
   BOOST_CHECK_EQUAL(shape[1], 6);
 }
@@ -430,7 +430,7 @@ BOOST_AUTO_TEST_CASE( write_compressed_dataset ){
   compressed.resize(compressed_bytes);
 
   BOOST_REQUIRE(rvalue == 0);
-  BOOST_REQUIRE_GT(compressed_bytes,0);
+  BOOST_REQUIRE_GT(compressed_bytes,0u);
 
   sqeazy::h5_file* testme = new sqeazy::h5_file(test_output_name, H5F_ACC_TRUNC);
 

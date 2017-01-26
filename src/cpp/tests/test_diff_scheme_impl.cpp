@@ -23,7 +23,7 @@ BOOST_AUTO_TEST_CASE( offset_called )
     sqeazy::halo<sqeazy::last_pixels_in_cube_neighborhood<3> , unsigned> geometry(axis_size,axis_size,axis_size);
     geometry.compute_offsets_in_x(offsets);
 
-    BOOST_CHECK_GT(offsets.size(),0);
+    BOOST_CHECK_GT(offsets.size(),0u);
     unsigned expected = (axis_size-1)*(axis_size-1);
     BOOST_CHECK_EQUAL(offsets.size(),expected);
 }
@@ -38,7 +38,7 @@ BOOST_AUTO_TEST_CASE( offset_exact )
     geometry.compute_offsets_in_x(offsets);
 
     for(int dim_idx = 0; dim_idx<3; ++dim_idx) {
-        BOOST_CHECK_EQUAL(geometry.non_halo_begin(dim_idx),1);
+        BOOST_CHECK_EQUAL(geometry.non_halo_begin(dim_idx),1u);
         BOOST_CHECK_EQUAL(geometry.non_halo_end(dim_idx),axis_size);
     }
 
@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_CASE( offset_exact_last_plane )
 
     for(int dim_idx = 0; dim_idx<2; ++dim_idx) {
         try {
-            BOOST_REQUIRE_EQUAL(geometry.non_halo_begin(dim_idx),1);
+            BOOST_REQUIRE_EQUAL(geometry.non_halo_begin(dim_idx),1u);
         }
         catch(...) {
             std::cerr << "offset_exact_last_plane failed!\n"
@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE( offset_exact_last_plane )
         }
     }
 
-    BOOST_CHECK_EQUAL(geometry.non_halo_begin(2),1);
+    BOOST_CHECK_EQUAL(geometry.non_halo_begin(2),1u);
     BOOST_CHECK_EQUAL(geometry.non_halo_end(2),axis_size);
 
 
@@ -92,14 +92,14 @@ BOOST_AUTO_TEST_CASE( Neighborhood_size )
 {
 //   sqeazy::last_plane_neighborhood<3> local;
     unsigned last_plane_traversed_pixels = sqeazy::num_traversed_pixels<sqeazy::last_plane_neighborhood<3> >();
-    BOOST_CHECK_GT(last_plane_traversed_pixels,0);
-    BOOST_CHECK_EQUAL(last_plane_traversed_pixels,9);
+    BOOST_CHECK_GT(last_plane_traversed_pixels,0u);
+    BOOST_CHECK_EQUAL(last_plane_traversed_pixels,9u);
     last_plane_traversed_pixels = sqeazy::num_traversed_pixels<sqeazy::last_plane_neighborhood<3> >();
-    BOOST_CHECK_EQUAL(last_plane_traversed_pixels,9);
+    BOOST_CHECK_EQUAL(last_plane_traversed_pixels,9u);
 
     unsigned last_in_cube_traversed_pixels = sqeazy::num_traversed_pixels<sqeazy::last_pixels_in_cube_neighborhood<3> >();
-    BOOST_CHECK_GT(last_in_cube_traversed_pixels,0);
-    BOOST_CHECK_EQUAL(last_in_cube_traversed_pixels,8);
+    BOOST_CHECK_GT(last_in_cube_traversed_pixels,0u);
+    BOOST_CHECK_EQUAL(last_in_cube_traversed_pixels,8u);
 
 }
 
@@ -107,8 +107,8 @@ BOOST_AUTO_TEST_CASE( last_pixels_Neighborhood_size )
 {
     typedef sqeazy::last_pixels_on_line_neighborhood<> last_pixels_nb;
     unsigned num_traversed = sqeazy::num_traversed_pixels<last_pixels_nb>();
-    BOOST_CHECK_GT(num_traversed,0);
-    BOOST_CHECK_EQUAL(num_traversed,8);
+    BOOST_CHECK_GT(num_traversed,0u);
+    BOOST_CHECK_EQUAL(num_traversed,8u);
     BOOST_CHECK_EQUAL(sqeazy::offset_begin_on_axis<last_pixels_nb>(0),-8);
     BOOST_CHECK_EQUAL(sqeazy::offset_end_on_axis<last_pixels_nb>(0),0);
 
@@ -118,11 +118,11 @@ BOOST_AUTO_TEST_CASE( last_pixels_Neighborhood_size )
     const unsigned len = size;
 
     BOOST_CHECK_LT(*std::max_element(offsets.begin(), offsets.end()),len);
-    BOOST_CHECK_GE(*std::min_element(offsets.begin(), offsets.end()),0);
+    BOOST_CHECK_GE(*std::min_element(offsets.begin(), offsets.end()),0u);
 
-    BOOST_CHECK_GE(geometry.non_halo_begin(0),0);
-    BOOST_CHECK_EQUAL(geometry.non_halo_end(0),8);
-    BOOST_CHECK_EQUAL(offsets.size(),1);
+    BOOST_CHECK_GE(geometry.non_halo_begin(0),0u);
+    BOOST_CHECK_EQUAL(geometry.non_halo_end(0),8u);
+    BOOST_CHECK_EQUAL(offsets.size(),1u);
 
 }
 BOOST_AUTO_TEST_SUITE_END()

@@ -16,14 +16,14 @@ BOOST_AUTO_TEST_CASE( compass_works_at_runtime ){
   auto value = compass::runtime::works();
 
   BOOST_CHECK(value);
-  
+
 }
 
 BOOST_AUTO_TEST_CASE( compass_yields_vendor_name ){
 
   auto value = compass::runtime::vendor();
-  BOOST_CHECK_NE(value.size(),0);
-  
+  BOOST_CHECK_NE(value.size(),0u);
+
 }
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -33,15 +33,15 @@ BOOST_AUTO_TEST_CASE( vendor_right  ){
 
   auto value = compass::runtime::vendor();
 
-  BOOST_CHECK_NE(value.size(),0);
+  BOOST_CHECK_NE(value.size(),0u);
 
   std::transform(value.begin(), value.end(),
-		 value.begin(),
-		 ::tolower);
+         value.begin(),
+         ::tolower);
 
   //  std::cout << "vendor " << value << " =?= "<<  expected_vendor << "\n";
   BOOST_CHECK(value.find(expected_vendor)!=std::string::npos);
-  
+
 }
 
 BOOST_AUTO_TEST_CASE( ncores_right  ){

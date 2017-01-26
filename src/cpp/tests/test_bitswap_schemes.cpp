@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE( encode_constant_correct )
 
   BOOST_CHECK_EQUAL(retcode,0);
   BOOST_CHECK_EQUAL(to_play_with[0],0);
-  BOOST_CHECK_EQUAL(std::accumulate(&to_play_with[0],&to_play_with[0]+ uint16_cube_of_8::size,0),expected_sum);
+  BOOST_CHECK_EQUAL(std::accumulate(&to_play_with[0],&to_play_with[0]+ uint16_cube_of_8::size,0u),expected_sum);
   BOOST_CHECK_EQUAL(to_play_with[uint16_cube_of_8::size-1],condensed);
 
 }
@@ -265,7 +265,7 @@ BOOST_AUTO_TEST_CASE( encode_constant_correct )
   BOOST_CHECK_EQUAL(to_play_with[0],0);
   BOOST_CHECK_EQUAL(to_play_with[uint16_cube_of_8::size-1],condensed);
 
-  BOOST_CHECK_EQUAL(std::accumulate(&to_play_with[0],&to_play_with[0]+ uint16_cube_of_8::size,0),expected_sum);
+  BOOST_CHECK_EQUAL(std::accumulate(&to_play_with[0],&to_play_with[0]+ uint16_cube_of_8::size,0u),expected_sum);
 
 }
 

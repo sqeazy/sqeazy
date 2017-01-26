@@ -146,9 +146,9 @@ BOOST_AUTO_TEST_CASE (split_string_ref) {
   sep_ref = (sep);
   splitted = sqy::split_string_ref_by(junk_ref,sep_ref);
   BOOST_CHECK_EQUAL(splitted.empty(),
-            false);
+                    false);
   BOOST_CHECK_EQUAL(splitted.size(),
-            2);
+                    2u);
 
   auto second_key = splitted[1].substr(0,7);
   auto second_value = splitted[1].substr(8);
@@ -302,8 +302,8 @@ BOOST_AUTO_TEST_CASE (parse_correctly) {
       count++;
   }
 
-  BOOST_CHECK_EQUAL(count,
-            four_keys.size());
+  BOOST_CHECK_EQUAL((std::size_t)count,
+                    four_keys.size());
 }
 
 
@@ -311,7 +311,7 @@ BOOST_AUTO_TEST_CASE (parse_to_map) {
 
 
   std::vector<std::string> pairs = sqy::split_string_by(multiple_args,",");
-  BOOST_CHECK_EQUAL(pairs.size(),3);
+  BOOST_CHECK_EQUAL(pairs.size(),3u);
   BOOST_TEST_MESSAGE("split_by \'" << multiple_args << "\'");
   for(auto p : pairs)
     BOOST_TEST_MESSAGE(">> " << p);
@@ -513,7 +513,7 @@ BOOST_AUTO_TEST_CASE (serialized_longs_test) {
   BOOST_REQUIRE(parsed_map["step3"].find("option2") != parsed_map["step2"].end());
 
   boost::string_ref step3_junk = parsed_map["step3"]["junk"];
-  BOOST_CHECK_GT(step3_junk.size(), 0);
+  BOOST_CHECK_GT(step3_junk.size(), 0u);
   BOOST_CHECK_EQUAL(step3_junk.starts_with("<verbatim>"), true);
   BOOST_CHECK_EQUAL(step3_junk.ends_with("</verbatim>"), true);
 
