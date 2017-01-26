@@ -91,6 +91,28 @@ namespace sqeazy {
 
             return value;
         }
+
+        template <typename iter_type>
+        static bool can_deserialize(iter_type begin, iter_type end){
+
+
+            bool value = false;
+            std::stringstream ifs;
+            std::copy(begin,end,std::ostreambuf_iterator<char>(ifs));
+
+            try{
+                boost::archive::text_iarchive ia(ifs);
+                // unsigned test =
+                    ia.get_library_version();
+                value = true;
+            }
+            catch(...){
+
+            }
+            return value;
+        }
+
+
     }
 
 
