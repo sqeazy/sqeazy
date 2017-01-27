@@ -782,6 +782,7 @@ namespace sqeazy {
                                  _position);
       }
     };
+
     template <>  struct sse_scalar<std::int8_t> {
       static inline __m128i insert(const __m128i& _data,
                                    int _value,
@@ -789,6 +790,16 @@ namespace sqeazy {
         return sse_insert_epi8( _data,
                                  _value,
                                  _position);
+      }
+    };
+
+    template <>  struct sse_scalar<char> {
+      static inline __m128i insert(const __m128i& _data,
+                                   int _value,
+                                   int _position){
+        return sse_insert_epi8( _data,
+                                _value,
+                                _position);
       }
     };
 
@@ -1105,7 +1116,9 @@ namespace sqeazy {
       static_assert(std::is_integral<in_value_t>::value, "[sse_segment_broadcast] received value is not integral");
       //static_assert((std::is_same<value_t,std::uint16_t>::value || std::is_same<value_t,std::int16_t>::value) && sizeof(value_t) == 2, "[simd_copy] unsigned short != 2");
 
+      static const std::size_t n_bits_per_simd      = sizeof(__m128i)*CHAR_BIT;
       static const std::size_t n_bits_in_value_t	= sizeof(in_value_t)*CHAR_BIT;
+      static const std::size_t n_elements_per_simd	= n_bits_per_simd/(n_bits_in_value_t);
 
       //TODO: the segments are the bitplane chunks that are to be extracted from each value_type
       //      we here assume n_bits_per_plane = 1
