@@ -223,3 +223,348 @@ BOOST_AUTO_TEST_CASE( gather_msb_32_order_right ){
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+template <typename T>
+struct mini_sse_fixture {
+
+  typedef T value_type;
+
+  static const int size = 1024 << 2;
+  std::vector<T> msb_at_1_full;
+  std::vector<T> msb_at_1_half;
+
+  mini_sse_fixture():
+    msb_at_1_full (size,~0),
+    msb_at_1_half (size,~0)
+    {
+
+      std::fill(msb_at_1_half .begin()+(size/2), msb_at_1_half .end(),0);
+
+    }
+
+
+
+};
+
+using mini_sse_fixture_8 = mini_sse_fixture<std::uint8_t>;
+using mini_sse_fixture_16 = mini_sse_fixture<std::uint16_t>;
+using mini_sse_fixture_32 = mini_sse_fixture<std::uint32_t>;
+
+BOOST_FIXTURE_TEST_SUITE( reduce_bitplane_16 , mini_sse_fixture_16 )
+
+BOOST_AUTO_TEST_CASE( creates_non_zero_output ){
+
+  auto output = msb_at_1_full;
+  std::fill(output.begin(), output.end(),0u);
+  auto ret_itr = sqeazy::detail::simd_collect_single_bitplane(msb_at_1_full.begin(),
+                                                              msb_at_1_full.end(),
+                                                              output.begin()
+    );
+
+  BOOST_CHECK_EQUAL(sizeof(__m128i)*CHAR_BIT,128u);
+
+
+  BOOST_CHECK(ret_itr != output.begin());
+  BOOST_CHECK_NE(output.front(),0u);
+}
+
+BOOST_AUTO_TEST_CASE( creates_correct_first_item){
+
+  auto output = msb_at_1_full;
+  std::fill(output.begin(), output.end(),0u);
+  auto ret_itr = sqeazy::detail::simd_collect_single_bitplane(msb_at_1_full.begin(),
+                                                              msb_at_1_full.end(),
+                                                              output.begin()
+    );
+
+
+  BOOST_CHECK(ret_itr != output.begin());
+  BOOST_CHECK_EQUAL(output.front(),0xffff);
+}
+
+BOOST_AUTO_TEST_CASE( creates_correct_full_item_range){
+
+  auto output = msb_at_1_full;
+  std::fill(output.begin(), output.end(),0u);
+
+  auto expected = output;
+
+  const std::size_t n_bits_in_value_t  = sizeof(expected.front())*CHAR_BIT;
+  const std::size_t n_bits_filled  = expected.size();
+  const std::size_t n_items_filled = n_bits_filled/n_bits_in_value_t;
+  const std::size_t n_bits_in_remainder = n_bits_filled % n_bits_in_value_t;
+
+  std::fill(expected.begin(), expected.begin()+n_items_filled,~0);
+  expected[n_items_filled] = ~0 << (n_bits_in_value_t - n_bits_in_remainder);
+
+  auto ret_itr = sqeazy::detail::simd_collect_single_bitplane(msb_at_1_full.begin(),
+                                                              msb_at_1_full.end(),
+                                                              output.begin()
+    );
+
+
+  BOOST_CHECK(ret_itr != output.begin());
+  BOOST_CHECK_EQUAL(output.front(),expected.front());
+  BOOST_CHECK_EQUAL(output.back(),expected.back());
+
+  for(std::size_t i = 0;i<expected.size();++i){
+    BOOST_REQUIRE_MESSAGE(output[i] == expected[i], output[i] << " != " << expected[i]
+                          << " at item at index " << i << ", size = " << output.size() );
+  }
+}
+
+BOOST_AUTO_TEST_CASE( creates_correct_half_item_range){
+
+  auto output = msb_at_1_full;
+  std::fill(output.begin(), output.end(),0u);
+
+  auto expected = output;
+
+  const std::size_t n_bits_in_value_t  = sizeof(expected.front())*CHAR_BIT;
+  const std::size_t n_bits_filled  = expected.size()/2;
+  const std::size_t n_items_filled = n_bits_filled/n_bits_in_value_t;
+  const std::size_t n_bits_in_remainder = n_bits_filled % n_bits_in_value_t;
+
+  std::fill(expected.begin(), expected.begin()+n_items_filled,~0);
+  expected[n_items_filled] = ~0 << (n_bits_in_value_t - n_bits_in_remainder);
+
+  auto ret_itr = sqeazy::detail::simd_collect_single_bitplane(msb_at_1_half.begin(),
+                                                              msb_at_1_half.end(),
+                                                              output.begin()
+    );
+
+
+  BOOST_CHECK(ret_itr != output.begin());
+  BOOST_CHECK_EQUAL(output.front(),expected.front());
+  BOOST_CHECK_EQUAL(output.back(),expected.back());
+
+  for(std::size_t i = 0;i<expected.size();++i){
+    BOOST_REQUIRE_MESSAGE(output[i] == expected[i], output[i] << " != " << expected[i]
+                          << " at item at index " << i << ", size = " << output.size() );
+  }
+}
+
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE( reduce_bitplane_32 , mini_sse_fixture_32 )
+
+
+BOOST_AUTO_TEST_CASE( creates_non_zero_output){
+
+  auto output = msb_at_1_full;
+  std::fill(output.begin(), output.end(),0u);
+  auto ret_itr = sqeazy::detail::simd_collect_single_bitplane(msb_at_1_full.begin(),
+                                                              msb_at_1_full.end(),
+                                                              output.begin()
+    );
+
+  BOOST_CHECK_EQUAL(sizeof(__m128i)*CHAR_BIT,128u);
+
+
+  BOOST_CHECK(ret_itr != output.begin());
+  BOOST_CHECK_NE(output.front(),0u);
+}
+
+BOOST_AUTO_TEST_CASE( creates_correct_first_item){
+
+  auto output = msb_at_1_full;
+  std::fill(output.begin(), output.end(),0u);
+  auto ret_itr = sqeazy::detail::simd_collect_single_bitplane(msb_at_1_full.begin(),
+                                                              msb_at_1_full.end(),
+                                                              output.begin()
+    );
+
+  BOOST_CHECK(ret_itr != output.begin());
+
+  const std::size_t n_bits_in_value_t  = sizeof(output.front())*CHAR_BIT;
+  const std::size_t n_bits_filled  = output.size();
+  const std::size_t n_items_filled = n_bits_filled/n_bits_in_value_t;
+  const std::size_t n_bits_in_remainder = n_bits_filled % n_bits_in_value_t;
+
+  std::uint32_t expected_value = 0;
+  if(n_items_filled)
+    expected_value = ~0u;
+  else{
+    expected_value = ~0u << (n_bits_in_value_t - n_bits_in_remainder);
+  }
+  BOOST_CHECK_EQUAL(output.front(),expected_value);
+}
+
+
+BOOST_AUTO_TEST_CASE( creates_correct_full_item_range){
+
+  auto output = msb_at_1_full;
+  std::fill(output.begin(), output.end(),0u);
+
+  auto expected = output;
+
+  const std::size_t n_bits_in_value_t  = sizeof(expected.front())*CHAR_BIT;
+  const std::size_t n_bits_filled  = expected.size();
+  const std::size_t n_items_filled = n_bits_filled/n_bits_in_value_t;
+  const std::size_t n_bits_in_remainder = n_bits_filled % n_bits_in_value_t;
+
+  std::fill(expected.begin(), expected.begin()+n_items_filled,~0);
+  if(n_bits_in_remainder)
+    expected[n_items_filled] = ~0 << (n_bits_in_value_t - n_bits_in_remainder);
+
+  auto ret_itr = sqeazy::detail::simd_collect_single_bitplane(msb_at_1_full.begin(),
+                                                              msb_at_1_full.end(),
+                                                              output.begin()
+    );
+
+
+  BOOST_CHECK(ret_itr != output.begin());
+  BOOST_CHECK_EQUAL(output.front(),expected.front());
+  BOOST_CHECK_EQUAL(output.back(),expected.back());
+
+  for(std::size_t i = 0;i<expected.size();++i){
+    BOOST_REQUIRE_MESSAGE(output[i] == expected[i], output[i] << " != " << expected[i]
+                          << " at item at index " << i << ", size = " << output.size() );
+  }
+}
+
+BOOST_AUTO_TEST_CASE( creates_correct_half_item_range){
+
+  auto output = msb_at_1_half;
+  std::fill(output.begin(), output.end(),0u);
+
+  auto expected = output;
+
+  const std::size_t n_bits_in_value_t  = sizeof(expected.front())*CHAR_BIT;
+  const std::size_t n_bits_filled  = expected.size()/2;
+  const std::size_t n_items_filled = n_bits_filled/n_bits_in_value_t;
+  const std::size_t n_bits_in_remainder = n_bits_filled % n_bits_in_value_t;
+
+  std::fill(expected.begin(), expected.begin()+n_items_filled,~0);
+  if(n_bits_in_remainder)
+    expected[n_items_filled] = ~0 << (n_bits_in_value_t - n_bits_in_remainder);
+
+  auto ret_itr = sqeazy::detail::simd_collect_single_bitplane(msb_at_1_half.begin(),
+                                                              msb_at_1_half.end(),
+                                                              output.begin()
+    );
+
+
+  BOOST_CHECK(ret_itr != output.begin());
+  BOOST_CHECK_EQUAL(output.front(),expected.front());
+  BOOST_CHECK_EQUAL(output.back(),expected.back());
+
+  for(std::size_t i = 0;i<expected.size();++i){
+    BOOST_REQUIRE_MESSAGE(output[i] == expected[i], output[i] << " != " << expected[i]
+                          << " at item at index " << i << ", size = " << output.size() );
+  }
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE( reduce_bitplane_8 , mini_sse_fixture_8 )
+
+
+BOOST_AUTO_TEST_CASE( creates_non_zero_output ){
+
+  auto output = msb_at_1_full;
+  std::fill(output.begin(), output.end(),0u);
+  auto ret_itr = sqeazy::detail::simd_collect_single_bitplane(msb_at_1_full.begin(),
+                                                              msb_at_1_full.end(),
+                                                              output.begin()
+    );
+
+  BOOST_CHECK(ret_itr != output.begin());
+  BOOST_CHECK_NE(output.front(),0u);
+}
+
+BOOST_AUTO_TEST_CASE( creates_correct_first_item){
+
+  auto output = msb_at_1_full;
+  std::fill(output.begin(), output.end(),0u);
+  auto ret_itr = sqeazy::detail::simd_collect_single_bitplane(msb_at_1_full.begin(),
+                                                              msb_at_1_full.end(),
+                                                              output.begin()
+    );
+
+  BOOST_CHECK(ret_itr != output.begin());
+
+  const std::size_t n_bits_in_value_t  = sizeof(output.front())*CHAR_BIT;
+  const std::size_t n_bits_filled  = output.size();
+  const std::size_t n_items_filled = n_bits_filled/n_bits_in_value_t;
+  const std::size_t n_bits_in_remainder = n_bits_filled % n_bits_in_value_t;
+
+  std::uint8_t expected_value = 0;
+  if(n_items_filled)
+    expected_value = ~0u;
+  else{
+    expected_value = ~0u << (n_bits_in_value_t - n_bits_in_remainder);
+  }
+  BOOST_CHECK_EQUAL(output.front(),expected_value);
+}
+
+
+BOOST_AUTO_TEST_CASE( creates_correct_full_item_range){
+
+  auto output = msb_at_1_full;
+  std::fill(output.begin(), output.end(),0u);
+
+  auto expected = output;
+
+  const std::size_t n_bits_in_value_t  = sizeof(expected.front())*CHAR_BIT;
+  const std::size_t n_bits_filled  = expected.size();
+  const std::size_t n_items_filled = n_bits_filled/n_bits_in_value_t;
+  const std::size_t n_bits_in_remainder = n_bits_filled % n_bits_in_value_t;
+
+  std::fill(expected.begin(), expected.begin()+n_items_filled,~0);
+  if(n_bits_in_remainder)
+    expected[n_items_filled] = ~0 << (n_bits_in_value_t - n_bits_in_remainder);
+
+  auto ret_itr = sqeazy::detail::simd_collect_single_bitplane(msb_at_1_full.begin(),
+                                                              msb_at_1_full.end(),
+                                                              output.begin()
+    );
+
+
+  BOOST_CHECK(ret_itr != output.begin());
+  BOOST_CHECK_EQUAL(output.front(),expected.front());
+  BOOST_CHECK_EQUAL(output.back(),expected.back());
+
+  for(std::size_t i = 0;i<expected.size();++i){
+    BOOST_REQUIRE_MESSAGE(output[i] == expected[i], output[i] << " != " << expected[i]
+                          << " at item at index " << i << ", size = " << output.size() );
+  }
+}
+
+
+BOOST_AUTO_TEST_CASE( creates_correct_half_item_range){
+
+  auto output = msb_at_1_half;
+  std::fill(output.begin(), output.end(),0u);
+
+  auto expected = output;
+
+  const std::size_t n_bits_in_value_t  = sizeof(expected.front())*CHAR_BIT;
+  const std::size_t n_bits_filled  = expected.size()/2;
+  const std::size_t n_items_filled = n_bits_filled/n_bits_in_value_t;
+  const std::size_t n_bits_in_remainder = n_bits_filled % n_bits_in_value_t;
+
+  std::fill(expected.begin(), expected.begin()+n_items_filled,~0);
+  if(n_bits_in_remainder){
+    expected[n_items_filled] = ~0;
+    expected[n_items_filled] <<= (n_bits_in_value_t - n_bits_in_remainder);
+  }
+
+  auto ret_itr = sqeazy::detail::simd_collect_single_bitplane(msb_at_1_half.begin(),
+                                                              msb_at_1_half.end(),
+                                                              output.begin()
+    );
+
+
+  BOOST_CHECK(ret_itr != output.begin());
+  BOOST_CHECK_EQUAL(output.front(),expected.front());
+  BOOST_CHECK_EQUAL(output.back(),expected.back());
+
+  for(std::size_t i = 0;i<expected.size();++i){
+    BOOST_REQUIRE_MESSAGE(output[i] == expected[i], output[i] << " != " << expected[i]
+                          << " at item at index " << i << ", size = " << output.size() );
+  }
+}
+
+BOOST_AUTO_TEST_SUITE_END()
