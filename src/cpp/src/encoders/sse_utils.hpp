@@ -1054,7 +1054,42 @@ namespace sqeazy {
     }
 
 
+    /**
+       \brief function to perform a full bitplane reshuffle on the input where each bitplane is 1bit wide
 
+       example:
+       input array  (8 bit, 128 items): 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0, 0 , 0, 0, 0, 0 , 0, 0,...
+
+       msb   per item                 : 1     1     1     1     1     1     1     1     0, 0 , 0, 0, 0, 0 , 0, 0,...
+       msb+1 per item                 : 1     1     1     1     1     1     1     1     0, 0 , 0, 0, 0, 0 , 0, 0,...
+       msb+2 per item                 : 1     1     1     1     1     1     1     1     0, 0 , 0, 0, 0, 0 , 0, 0,...
+       msb+3 per item                 : 1     1     1     1     1     1     1     1     0, 0 , 0, 0, 0, 0 , 0, 0,...
+       msb+4 per item                 : 0     0     0     0     0     0     0     0     0, 0 , 0, 0, 0, 0 , 0, 0,...
+       msb+5 per item                 : 0     0     0     0     0     0     0     0     0, 0 , 0, 0, 0, 0 , 0, 0,...
+       msb+6 per item                 : 0     0     0     0     0     0     0     0     0, 0 , 0, 0, 0, 0 , 0, 0,...
+       msb+7 per item                 : 0     0     0     0     0     0     0     0     0, 0 , 0, 0, 0, 0 , 0, 0,...
+
+       output array (8 bit, 128 items):
+       [ 0:15] 11111111, 0, 0, 0 ...
+       [16:31] 11111111, 0, 0, 0 ...
+       [32:47] 11111111, 0, 0, 0 ...
+       [48:63] 11111111, 0, 0, 0 ...
+       [64:  ] 0, 0, 0, 0 ...
+       [80:  ] 0, 0, 0, 0 ...
+       [96:  ] 0, 0, 0, 0 ...
+       [112: ] 0, 0, 0, 0 ...
+
+       Note this implementation allows only 8-bit integer types
+
+       \param[in] _begin iterator/pointer to beginning of input array
+       \param[in] _end   iterator/pointer to 1+ end of input array
+       \param[inout] _dst   iterator/pointer to beginning of output array
+       \param[in] _nthreads   number of threads to use
+
+       \return
+       \retval iterator to 1+ the end element of the output array
+
+    */
     template <typename in_iterator_t, typename out_iterator_t>
     void simd_segment_broadcast(in_iterator_t _begin,
                                 in_iterator_t _end,
@@ -1070,10 +1105,7 @@ namespace sqeazy {
       static_assert(std::is_integral<in_value_t>::value, "[sse_segment_broadcast] received value is not integral");
       //static_assert((std::is_same<value_t,std::uint16_t>::value || std::is_same<value_t,std::int16_t>::value) && sizeof(value_t) == 2, "[simd_copy] unsigned short != 2");
 
-      // static const std::size_t n_bytes_simd		= sizeof(__m128i);
-      //      static const std::size_t n_bits_simd		= n_bytes_simd*CHAR_BIT;
       static const std::size_t n_bits_in_value_t	= sizeof(in_value_t)*CHAR_BIT;
-      constexpr    std::size_t n_elements_per_simd	= 128/(CHAR_BIT*sizeof(in_value_t));
 
       //TODO: the segments are the bitplane chunks that are to be extracted from each value_type
       //      we here assume n_bits_per_plane = 1
@@ -1092,75 +1124,39 @@ namespace sqeazy {
       }
 
       const std::size_t n_elements_per_seg	= len/n_bits_in_value_t;
-      const std::size_t n_iterations	= len/n_elements_per_simd;
-      //TODO: get rid of the magic number optimised for short like input
-      constexpr std::size_t n_filled_output_items_per_simd	= 16/n_elements_per_simd;
 
       assert(len >= n_elements_per_simd && "received iterator range is smaller than SIMD register");
       if(n_elements_per_seg > segment_offset)
         return;
 
 
+      static_assert(std::is_same<in_value_t,out_value_t>::value, "[simd_collect_bitplane] iterators for input and output differ!");
+      static_assert(std::is_integral<in_value_t>::value, "[simd_collect_bitplane] received value is not integral");
 
-      in_iterator_t input;
-      out_iterator_t output;  // out_iterator_t outpute = output + len;
-      int pos = 0;
+
 
 #pragma omp parallel for                        \
   shared(_begin, _end,_dst)                     \
   num_threads(_nthreads)                        \
-  schedule(static,chunk_size)                   \
-  private(pos,input,output)
+  schedule(static,chunk_size)
       for(loop_size_type seg = 0;seg<n_segments_signed;++seg){
 
-        input = _begin;
-        output = _dst + seg*segment_offset;
-        pos = 0;
+        out_iterator_t output = _dst + seg*segment_offset;
 
-        sqeazy::detail::gather_msb<in_value_t> collect;
-        sqeazy::detail::vec_xor<in_value_t> xoring;
-        sqeazy::detail::vec_rotate_left<in_value_t> rotate_left;
-        sqeazy::detail::shift_left_m128i<in_value_t> shift_left;
+        auto functor = [=](__m128i& _block){
 
-        //TODO: it might be better to move this loop up and swap it with the seg loop
-        //      but the algorithm currently doesn't support this
-        for(std::size_t i = 0;i<n_iterations;i+=n_filled_output_items_per_simd)//loop through memory
-        {
+          sqeazy::detail::vec_xor<in_value_t> xoring;
+          sqeazy::detail::vec_rotate_left<in_value_t> rotate_left;
 
-          std::uint16_t result = 0;
+          if(std::numeric_limits<in_value_t>::is_signed)
+            xoring(&_block);
 
-          //TODO: could this be unrolled?
-          for(std::size_t l = 0;l<n_filled_output_items_per_simd;++l){
+          _block = rotate_left(&_block); //
 
-            __m128i input_block = _mm_load_si128(reinterpret_cast<const __m128i*>(&*input));
+          return _block;
+        };
 
-            if(std::numeric_limits<in_value_t>::is_signed)
-              xoring(&input_block);
-
-            input_block = rotate_left(&input_block); //
-
-            input_block = shift_left(input_block,seg);
-
-            std::uint16_t temp = collect(input_block);
-
-            result |= (temp >> l*(16/n_filled_output_items_per_simd) );//right shift??????
-
-            input += n_elements_per_simd;
-
-          }// l filled_segments
-
-
-          __m128i output_block = sse_insert_epi16(output_block,result,pos);
-          pos++;
-
-          if(pos > 8){//flush to output memory
-            _mm_store_si128(reinterpret_cast<__m128i*>(&*output),output_block);
-            output += n_elements_per_simd;
-            pos = 0;
-          }
-
-        }// i iterators
-
+        simd_collect_single_bitplane(_begin, _end, output, functor, seg);
 
       } // s segments
 

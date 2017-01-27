@@ -9,7 +9,7 @@
 #include "encoders/sqeazy_impl.hpp"
 #include "sse_test_utils.hpp"
 
-typedef ramp_fixture<(1 << 15)> default_ramp_fixture; 
+typedef ramp_fixture<(1 << 15)> default_ramp_fixture;
 
 
 BOOST_FIXTURE_TEST_SUITE( check_sse_ramp_16bit, default_ramp_fixture )
@@ -42,9 +42,9 @@ BOOST_AUTO_TEST_CASE( insert_into_simd_128 ){
     }
     catch(...){
       std::cerr << "[insert_into_simd_128] " << i << " / "<< 128<<" item does not match "
-		<< "scalar :" <<  output[i] << ", "
-		<< "sse    :" <<  reference[i]
-		<< "\n";
+        << "scalar :" <<  output[i] << ", "
+        << "sse    :" <<  reference[i]
+        << "\n";
       throw;
     }
 
@@ -60,12 +60,12 @@ BOOST_AUTO_TEST_CASE( rotate_left_128 ){
 
   //scalar
   std::transform(input.cbegin(),input.cbegin()+128,
-		 output.begin(),
-		 [](const std::uint16_t& el){
-		   std::uint16_t value = sqeazy::detail::xor_if_signed(el);
-		   value = sqeazy::detail::rotate_left<1>(value);
-		   return value;
-		 });
+         output.begin(),
+         [](const std::uint16_t& el){
+           std::uint16_t value = sqeazy::detail::xor_if_signed(el);
+           value = sqeazy::detail::rotate_left<1>(value);
+           return value;
+         });
 
   __m128i block;
   sqeazy::detail::vec_xor<value_t> xoring;
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE( rotate_left_128 ){
 
     if(std::numeric_limits<value_t>::is_signed)
       xoring(&block);
-    block = vrotate_left(&block); // 
+    block = vrotate_left(&block); //
 
     _mm_store_si128(reinterpret_cast<__m128i*>(&reference[i]),block);
   }
@@ -88,9 +88,9 @@ BOOST_AUTO_TEST_CASE( rotate_left_128 ){
     }
     catch(...){
       std::cerr << "[rotate_left_first_128] " << i << " / "<< 128<<" item does not match "
-		<< "scalar :" <<  output[i] << ", "
-		<< "sse    :" <<  reference[i]
-		<< "\n";
+        << "scalar :" <<  output[i] << ", "
+        << "sse    :" <<  reference[i]
+        << "\n";
       throw;
     }
 
@@ -105,12 +105,12 @@ BOOST_AUTO_TEST_CASE( rotate_left_all ){
 
   //scalar
   std::transform(input.cbegin(),input.cend(),
-		 output.begin(),
-		 [](const std::uint16_t& el){
-		   std::uint16_t value = sqeazy::detail::xor_if_signed(el);
-		   value = sqeazy::detail::rotate_left<1>(value);
-		   return value;
-		 });
+         output.begin(),
+         [](const std::uint16_t& el){
+           std::uint16_t value = sqeazy::detail::xor_if_signed(el);
+           value = sqeazy::detail::rotate_left<1>(value);
+           return value;
+         });
 
   __m128i block;
   sqeazy::detail::vec_xor<value_t> xoring;
@@ -121,7 +121,7 @@ BOOST_AUTO_TEST_CASE( rotate_left_all ){
 
     if(std::numeric_limits<value_t>::is_signed)
       xoring(&block);
-    block = vrotate_left(&block); // 
+    block = vrotate_left(&block); //
 
     _mm_store_si128(reinterpret_cast<__m128i*>(&reference[i]),block);
   }
@@ -133,9 +133,9 @@ BOOST_AUTO_TEST_CASE( rotate_left_all ){
     }
     catch(...){
       std::cerr << "[rotate_left_first_128] " << i << " / "<< input.size()<<" item does not match "
-		<< "scalar :" <<  output[i] << ", "
-		<< "sse    :" <<  reference[i]
-		<< "\n";
+        << "scalar :" <<  output[i] << ", "
+        << "sse    :" <<  reference[i]
+        << "\n";
       throw;
     }
 
@@ -151,10 +151,10 @@ BOOST_AUTO_TEST_CASE( shift_left_by_1_all ){
 
   //scalar
   std::transform(input.cbegin(),input.cend(),
-		 output.begin(),
-		 [](const std::uint16_t& el){
-		   return el << 1;
-		 });
+         output.begin(),
+         [](const std::uint16_t& el){
+           return el << 1;
+         });
 
   //simd
   __m128i block;
@@ -163,7 +163,7 @@ BOOST_AUTO_TEST_CASE( shift_left_by_1_all ){
   for(std::size_t i = 0;i<input.size();i+=n_elements_per_simd){
     block = _mm_load_si128(reinterpret_cast<const __m128i*>(&input[i]));
 
-    block = vshift_left(block,1); // 
+    block = vshift_left(block,1); //
 
     _mm_store_si128(reinterpret_cast<__m128i*>(&reference[i]),block);
   }
@@ -175,9 +175,9 @@ BOOST_AUTO_TEST_CASE( shift_left_by_1_all ){
     }
     catch(...){
       std::cerr << "[shift_left_first_128] " << i << " / "<< input.size()<<" item does not match "
-		<< "scalar :" <<  output[i] << ", "
-		<< "sse    :" <<  reference[i]
-		<< "\n";
+        << "scalar :" <<  output[i] << ", "
+        << "sse    :" <<  reference[i]
+        << "\n";
       throw;
     }
 
@@ -192,10 +192,10 @@ BOOST_AUTO_TEST_CASE( shift_left_by_2_all ){
 
   //scalar
   std::transform(input.cbegin(),input.cend(),
-		 output.begin(),
-		 [](const std::uint16_t& el){
-		   return el << 2;
-		 });
+         output.begin(),
+         [](const std::uint16_t& el){
+           return el << 2;
+         });
 
   //simd
   __m128i block;
@@ -204,7 +204,7 @@ BOOST_AUTO_TEST_CASE( shift_left_by_2_all ){
   for(std::size_t i = 0;i<input.size();i+=n_elements_per_simd){
     block = _mm_load_si128(reinterpret_cast<const __m128i*>(&input[i]));
 
-    block = vshift_left(block,2); // 
+    block = vshift_left(block,2); //
 
     _mm_store_si128(reinterpret_cast<__m128i*>(&reference[i]),block);
   }
@@ -216,9 +216,9 @@ BOOST_AUTO_TEST_CASE( shift_left_by_2_all ){
     }
     catch(...){
       std::cerr << "[shift_left_first_128] " << i << " / "<< input.size()<<" item does not match "
-		<< "scalar :" <<  output[i] << ", "
-		<< "sse    :" <<  reference[i]
-		<< "\n";
+        << "scalar :" <<  output[i] << ", "
+        << "sse    :" <<  reference[i]
+        << "\n";
       throw;
     }
 
@@ -234,10 +234,10 @@ BOOST_AUTO_TEST_CASE( shift_left_by_4_all ){
 
   //scalar
   std::transform(input.cbegin(),input.cend(),
-		 output.begin(),
-		 [](const std::uint16_t& el){
-		   return el << 4;
-		 });
+         output.begin(),
+         [](const std::uint16_t& el){
+           return el << 4;
+         });
 
   //simd
   __m128i block;
@@ -246,7 +246,7 @@ BOOST_AUTO_TEST_CASE( shift_left_by_4_all ){
   for(std::size_t i = 0;i<input.size();i+=n_elements_per_simd){
     block = _mm_load_si128(reinterpret_cast<const __m128i*>(&input[i]));
 
-    block = vshift_left(block,4); // 
+    block = vshift_left(block,4); //
 
     _mm_store_si128(reinterpret_cast<__m128i*>(&reference[i]),block);
   }
@@ -258,9 +258,9 @@ BOOST_AUTO_TEST_CASE( shift_left_by_4_all ){
     }
     catch(...){
       std::cerr << "[shift_left_first_128] " << i << " / "<< input.size()<<" item does not match "
-		<< "scalar :" <<  output[i] << ", "
-		<< "sse    :" <<  reference[i]
-		<< "\n";
+        << "scalar :" <<  output[i] << ", "
+        << "sse    :" <<  reference[i]
+        << "\n";
       throw;
     }
 
@@ -276,10 +276,10 @@ BOOST_AUTO_TEST_CASE( shift_left_by_8_all ){
 
   //scalar
   std::transform(input.cbegin(),input.cend(),
-		 output.begin(),
-		 [](const std::uint16_t& el){
-		   return el << 8;
-		 });
+         output.begin(),
+         [](const std::uint16_t& el){
+           return el << 8;
+         });
 
   //simd
   __m128i block;
@@ -288,7 +288,7 @@ BOOST_AUTO_TEST_CASE( shift_left_by_8_all ){
   for(std::size_t i = 0;i<input.size();i+=n_elements_per_simd){
     block = _mm_load_si128(reinterpret_cast<const __m128i*>(&input[i]));
 
-    block = vshift_left(block,8); // 
+    block = vshift_left(block,8); //
 
     _mm_store_si128(reinterpret_cast<__m128i*>(&reference[i]),block);
   }
@@ -300,9 +300,9 @@ BOOST_AUTO_TEST_CASE( shift_left_by_8_all ){
     }
     catch(...){
       std::cerr << "[shift_left_first_128] " << i << " / "<< input.size()<<" item does not match "
-		<< "scalar :" <<  output[i] << ", "
-		<< "sse    :" <<  reference[i]
-		<< "\n";
+        << "scalar :" <<  output[i] << ", "
+        << "sse    :" <<  reference[i]
+        << "\n";
       throw;
     }
 
@@ -318,10 +318,10 @@ BOOST_AUTO_TEST_CASE( shift_left_by_9_all ){
 
   //scalar
   std::transform(input.cbegin(),input.cend(),
-		 output.begin(),
-		 [](const std::uint16_t& el){
-		   return el << 9;
-		 });
+         output.begin(),
+         [](const std::uint16_t& el){
+           return el << 9;
+         });
 
   //simd
   __m128i block;
@@ -330,7 +330,7 @@ BOOST_AUTO_TEST_CASE( shift_left_by_9_all ){
   for(std::size_t i = 0;i<input.size();i+=n_elements_per_simd){
     block = _mm_load_si128(reinterpret_cast<const __m128i*>(&input[i]));
 
-    block = vshift_left(block,9); // 
+    block = vshift_left(block,9); //
 
     _mm_store_si128(reinterpret_cast<__m128i*>(&reference[i]),block);
   }
@@ -342,9 +342,9 @@ BOOST_AUTO_TEST_CASE( shift_left_by_9_all ){
     }
     catch(...){
       std::cerr << "[shift_left_first_128] " << i << " / "<< input.size()<<" item does not match "
-		<< "scalar :" <<  output[i] << ", "
-		<< "sse    :" <<  reference[i]
-		<< "\n";
+        << "scalar :" <<  output[i] << ", "
+        << "sse    :" <<  reference[i]
+        << "\n";
       throw;
     }
 
@@ -367,9 +367,9 @@ BOOST_AUTO_TEST_CASE( versus_default_first_128 ){
     }
     catch(...){
       std::cerr << "[versus_default_first_128] " << i << " / "<< 128<<" item does not match "
-		<< "scalar :" <<  output[i] << ", "
-		<< "sse    :" <<  reference[i]
-		<< "\n";
+        << "scalar :" <<  output[i] << ", "
+        << "sse    :" <<  reference[i]
+        << "\n";
       throw;
     }
 
