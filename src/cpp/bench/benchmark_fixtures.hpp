@@ -132,7 +132,10 @@ namespace sqeazy {
         output_(),
         shape_(3,0),
         size_()
-      {}
+      {
+
+        setup(1 << 16);
+      }
 
       void SetUp(const ::benchmark::State& st) {
         setup(st.range(0));
@@ -145,7 +148,9 @@ namespace sqeazy {
       }
 
 
-      virtual void BenchmarkCase(::benchmark::State&){}
+      virtual void BenchmarkCase(::benchmark::State& st){
+        setup(st.range(0));
+      }
 
     };
 
