@@ -20,7 +20,26 @@ namespace sqeazy {
 
   namespace detail {
 
+    struct is_aligned
+    {
 
+      template <typename T>
+      static bool for_sse(T* _data){
+
+        const std::size_t address = (std::size_t)_data;
+        return address % 16 == 0;
+
+      }
+
+      template <typename T>
+      static bool for_avx(T* _data){
+
+        const std::size_t address = (std::size_t)_data;
+        return address % 32 == 0;
+
+      }
+
+    };
 
     /**
        \brief functor to collect the MSBs of the input block, the template parameter dictates the interpretation of the argument SSE block
@@ -887,6 +906,16 @@ namespace sqeazy {
       static_assert(std::is_same<in_value_t,out_value_t>::value, "[simd_collect_bitplane] iterators for input and output differ!");
       static_assert(std::is_integral<in_value_t>::value, "[simd_collect_bitplane] received value is not integral");
 
+      if(!is_aligned::for_sse(&*_begin)){
+        std::cerr << "[sqeazy::detail::simd_collect_single_bitplane_impl] unable to use input for SSE operations due to misalignment\n";
+        return _dst;
+      }
+
+      if(!is_aligned::for_sse(&*_dst)){
+        std::cerr << "[sqeazy::detail::simd_collect_single_bitplane_impl] unable to use output for SSE operations due to misalignment\n";
+        return _dst;
+      }
+
       if(sizeof(*_begin)>1)
         return simd_collect_single_bitplane_impl(_begin, _end, _dst, precondition, _bitplane_offset_from_msb);
       else
@@ -940,6 +969,8 @@ namespace sqeazy {
 
       /* will be .5 for uint8, 2 for uint16 and 4 for uint32 */
       const        std::size_t n_inner_loops        = n_bits_in_value_t / n_collected_bits_per_simd;
+
+
 
       sqeazy::detail::gather_msb<in_value_t>        collect;
       sqeazy::detail::shift_left_m128i<in_value_t>  shift_left;
@@ -1138,7 +1169,11 @@ namespace sqeazy {
 
       const std::size_t n_elements_per_seg	= len/n_bits_in_value_t;
 
-      assert(len >= n_elements_per_simd && "received iterator range is smaller than SIMD register");
+      if(len <= n_elements_per_simd){
+        std::cerr << "received iterator range (size "<< len <<") is smaller than SIMD register width ("<< n_elements_per_simd <<")\n";
+        return;
+      }
+
       if(n_elements_per_seg > segment_offset)
         return;
 
