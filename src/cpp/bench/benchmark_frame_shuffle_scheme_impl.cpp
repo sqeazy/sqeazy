@@ -8,7 +8,7 @@
 typedef sqeazy::benchmark::static_synthetic_data<> static_default_fixture;
 typedef sqeazy::benchmark::dynamic_synthetic_data<> dynamic_default_fixture;
 
-BENCHMARK_DEFINE_F(static_default_fixture, one_vs_two_threads)(benchmark::State& state) {
+BENCHMARK_DEFINE_F(static_default_fixture, one_thread)(benchmark::State& state) {
 
   sqeazy::frame_shuffle_scheme<std::uint16_t> local;
   local.set_n_threads(state.threads);
@@ -32,36 +32,34 @@ BENCHMARK_DEFINE_F(static_default_fixture, one_vs_two_threads)(benchmark::State&
                           int64_t(sin_data.size())*sizeof(sin_data.front()));
 }
 
-BENCHMARK_REGISTER_F(static_default_fixture, one_vs_two_threads)->Threads(2)->Threads(1)->UseRealTime();
+BENCHMARK_REGISTER_F(static_default_fixture, one_thread)->UseRealTime();
 
-// BENCHMARK_DEFINE_F(static_default_fixture, scalar_one_vs_two_threads)(benchmark::State& state) {
+BENCHMARK_DEFINE_F(static_default_fixture, scalar_two_threads)(benchmark::State& state) {
 
-//   sqeazy::bitswap_scheme<std::uint16_t> local;
-//   local.set_n_threads(state.threads);
+  sqeazy::frame_shuffle_scheme<std::uint16_t> local;
+  local.set_n_threads(2);
 
 
-//   //heat the caches
-//   sqeazy::detail::scalar_bitplane_reorder_encode<1>(sin_data.data(),
-//                                                     output_data.data(),
-//                                                     shape,
-//                                                     state.threads);
+  local.encode(sin_data.data(),
+               output_data.data(),
+               shape);
 
-//   while (state.KeepRunning()) {
-//     state.PauseTiming();
-//     std::fill(output_data.begin(), output_data.end(),0);
-//     state.ResumeTiming();
 
-//     sqeazy::detail::scalar_bitplane_reorder_encode<1>(sin_data.data(),
-//                                                       output_data.data(),
-//                                                       shape,
-//                                                       state.threads);
-//   }
+  while (state.KeepRunning()) {
+    state.PauseTiming();
+    std::fill(output_data.begin(), output_data.end(),0);
+    state.ResumeTiming();
 
-//   state.SetBytesProcessed(int64_t(state.iterations()) *
-//                           int64_t(sin_data.size())*sizeof(sin_data.front()));
-// }
+    local.encode(sin_data.data(),
+                 output_data.data(),
+                 shape);
+  }
 
-// BENCHMARK_REGISTER_F(static_default_fixture, scalar_one_vs_two_threads)->Threads(2)->Threads(1)->UseRealTime();
+  state.SetBytesProcessed(int64_t(state.iterations()) *
+                          int64_t(sin_data.size())*sizeof(sin_data.front()));
+}
+
+BENCHMARK_REGISTER_F(static_default_fixture, scalar_two_threads)->UseRealTime();
 
 // BENCHMARK_DEFINE_F(static_default_fixture, sse_one_vs_two_threads)(benchmark::State& state) {
 
