@@ -11,3 +11,4 @@ libsqeazy.dylib
 *.log
 *.sqy
 *.h5
+*pp~
