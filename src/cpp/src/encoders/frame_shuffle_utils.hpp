@@ -351,29 +351,34 @@ namespace sqeazy {
 		const shape_value_t n_chunks = (_shape[row_major::z] + frame_chunk_size - 1)/frame_chunk_size;
 		// const auto len = std::distance(_begin,_end);
 
-		auto dst = _out;
-		auto src = _begin;
+		const omp_size_type loop_count = decode_map.size();
+		auto decode_map_itr = decode_map.data();
 
-		for(shape_value_t i =0;i<decode_map.size();++i){
-
-		  dst = _out + (decode_map[i])*n_elements_per_frame_chunk;
-		  dst = std::copy(src,
-						  src+n_elements_per_frame_chunk,
-						  dst);
-
-		  src += n_elements_per_frame_chunk;
+#pragma omp parallel for												\
+		  shared(_out)																		\
+  firstprivate(decode_map_itr,_begin) \
+		  num_threads(nthreads)
+		for(omp_size_type i =0;i<loop_count;++i){
+		  auto src = _begin + i*n_elements_per_frame_chunk;
+		  auto offset = *(decode_map_itr+i);
+		  auto dst = _out + (offset*n_elements_per_frame_chunk);
+		  std::copy(src,
+					src+n_elements_per_frame_chunk,
+					dst);
 		}
+
+		auto dst = _out;
 
 		if(has_remainder){
-		  dst = std::copy(src,_end,
+		  dst = std::copy(_begin+decode_map.size()*n_elements_per_frame_chunk,
+						  _end,
 						  _out+decode_map.size()*n_elements_per_frame_chunk);
-		  src = _end;
+		}
+		else{
+		  dst += decode_map.size()*n_elements_per_frame_chunk;
 		}
 
-		if(src == _end)
-		  return _out+n_elements;
-		else
-		  return dst;
+		return dst;
 	  };
 	};
 
