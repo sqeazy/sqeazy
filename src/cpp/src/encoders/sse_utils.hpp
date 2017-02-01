@@ -1138,7 +1138,7 @@ namespace sqeazy {
                                 out_iterator_t _dst,
                                 int _nthreads = 1){
 
-      typedef typename std::make_signed<std::size_t>::type loop_size_type;//boiler plate required for MS VS 14 2015 OpenMP implementation
+      typedef typename std::make_signed<std::size_t>::type omp_size_type;//boiler plate required for MS VS 14 2015 OpenMP implementation
 
       typedef typename std::iterator_traits<in_iterator_t>::value_type in_value_t;
       typedef typename std::iterator_traits<out_iterator_t>::value_type out_value_t;
@@ -1154,8 +1154,8 @@ namespace sqeazy {
       //TODO: the segments are the bitplane chunks that are to be extracted from each value_type
       //      we here assume n_bits_per_plane = 1
       const std::size_t n_segments		= n_bits_in_value_t;
-      const loop_size_type n_segments_signed		= n_segments;
-      const loop_size_type chunk_size = n_segments_signed/_nthreads;
+      const omp_size_type n_segments_signed		= n_segments;
+      const omp_size_type chunk_size = n_segments_signed/_nthreads;
       assert(chunk_size % _nthreads == 0);
 
       const std::size_t len		= std::distance(_begin,_end);
@@ -1187,7 +1187,7 @@ namespace sqeazy {
   shared(_begin, _end,_dst)                     \
   num_threads(_nthreads)                        \
   schedule(static,chunk_size)
-      for(loop_size_type seg = 0;seg<n_segments_signed;++seg){
+      for(omp_size_type seg = 0;seg<n_segments_signed;++seg){
 
         out_iterator_t output = _dst + seg*segment_offset;
 
