@@ -71,9 +71,11 @@ target_link_libraries(benchmark_bitswap_scheme_impl ${Boost_LIBRARIES} ${googleb
 add_executable(benchmark_frame_shuffle_scheme_impl benchmark_frame_shuffle_scheme_impl.cpp)
 target_link_libraries(benchmark_frame_shuffle_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
+add_executable(benchmark_diff_scheme_impl benchmark_diff_scheme_impl.cpp)
+target_link_libraries(benchmark_diff_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+
 # TODO list
-#frame_shuffle_scheme_impl.hpp
-#diff_scheme_impl.hpp
+#diff_scheme_impl.hpp STARTED
 #flatten_to_neighborhood_scheme_impl.hpp
 #h264_scheme_impl.hpp
 #hevc_scheme_impl.hpp
@@ -83,7 +85,7 @@ target_link_libraries(benchmark_frame_shuffle_scheme_impl ${Boost_LIBRARIES} ${g
 #remove_estimated_background_scheme_impl.hpp
 #tile_shuffle_scheme_impl.hpp
 #zcurve_reorder_scheme_impl.hpp
-
+#histogram_impl
 
 
 
