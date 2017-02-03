@@ -74,7 +74,7 @@ namespace sqeazy {
         noisy_embryo_.resize(size_);
         output_.resize(size_);
 
-        float factor_frequency = shape_.front();
+
         static const T     maxv  = .5f*std::numeric_limits<T>::max();
 
         //sinus_
@@ -174,7 +174,7 @@ namespace sqeazy {
       }
 
       void fill_self(){
-        float factor_frequency = .25f*axis_length();
+
         static const T maxv = .25f*std::numeric_limits<T>::max();
 
         unsigned index = 0;
