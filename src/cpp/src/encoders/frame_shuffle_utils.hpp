@@ -340,7 +340,7 @@ namespace sqeazy {
 		const bool has_remainder = std::accumulate(rem.begin(), rem.end(),0) > 0;
 
 		const std::size_t n_elements_per_frame = _shape[row_major::y]*_shape[row_major::x];
-		const std::size_t n_elements = std::distance(_begin,_end);
+		// const std::size_t n_elements = std::distance(_begin,_end);
 
 		const std::size_t n_elements_per_frame_chunk = n_elements_per_frame*frame_chunk_size;
 
