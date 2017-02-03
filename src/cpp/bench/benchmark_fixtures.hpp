@@ -75,12 +75,12 @@ namespace sqeazy {
         output_.resize(size_);
 
         float factor_frequency = shape_.front();
-        static const float scale = .25f*std::numeric_limits<T>::max();
+        static const T     maxv  = .5f*std::numeric_limits<T>::max();
 
         //sinus_
         unsigned index = 0;
         for( T& _element : sinus_ ){
-          _element = scale*(1+std::sin(factor_frequency*index++));
+          _element = (index++) % maxv;
         }
 
         std::random_device rd;
@@ -175,11 +175,11 @@ namespace sqeazy {
 
       void fill_self(){
         float factor_frequency = .25f*axis_length();
-        static const float scale = .25f*std::numeric_limits<T>::max();
+        static const T maxv = .25f*std::numeric_limits<T>::max();
 
         unsigned index = 0;
         for( T& _element : sin_data ){
-          _element = scale*std::sin(factor_frequency*index++);
+          _element = (index++) % maxv;
         }
 
         shape[sqeazy::row_major::x] = 1 << int(std::round(std::log2(std::pow(size,1/3.f))));
