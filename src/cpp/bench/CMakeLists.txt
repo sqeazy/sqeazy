@@ -70,3 +70,6 @@ target_link_libraries(benchmark_diff_scheme_impl ${Boost_LIBRARIES} ${googlebenc
 
 add_executable(benchmark_flatten_to_neighborhood_scheme_impl benchmark_flatten_to_neighborhood_scheme_impl.cpp)
 target_link_libraries(benchmark_flatten_to_neighborhood_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+
+add_executable(benchmark_h264_scheme_impl benchmark_h264_scheme_impl.cpp)
+target_link_libraries(benchmark_h264_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
