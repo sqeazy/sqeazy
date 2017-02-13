@@ -173,15 +173,25 @@ namespace sqeazy {
       sum_type local_sum = 0;
       const sum_type n_traversed_pixels = sqeazy::num_traversed_pixels<Neighborhood>();
       const out_type* signed_in = reinterpret_cast<const out_type*>(_in);
+      int nthreads = this->n_threads();
+      const omp_size_type offset_size = offsets.size();
+      auto offsets_begin = offsets.begin();
+      auto shape_begin   = _shape.data();
 
-      for(; offsetsItr!=offsets.end(); ++offsetsItr) {
-        for(unsigned long index = 0; index < (unsigned long)halo_size_x; ++index) {
+#pragma omp parallel for                               \
+  shared(_out)                            \
+  firstprivate( offsets_begin, offset_size, n_traversed_pixels, signed_in, shape_begin ) \
+  num_threads(nthreads)
+      for(omp_size_type offset=0; offset<offset_size; ++offset) {
 
-          const size_type local_index = index + *offsetsItr;
-          local_sum = naive_sum<Neighborhood>(_out,local_index,
-                                              _shape[row_major::w],
-                                              _shape[row_major::h],
-                                              _shape[row_major::d]);
+        for(std::size_t index = 0; index < (std::size_t)halo_size_x; ++index) {
+
+          const size_type local_index = index + *(offsets_begin + offset);
+          sum_type  local_sum = naive_sum<Neighborhood>(_out,
+                                                        local_index,
+                                                        *(shape_begin + row_major::w),
+                                                        *(shape_begin + row_major::h),
+                                                        *(shape_begin + row_major::d));
           _out[local_index] = signed_in[local_index] + local_sum/n_traversed_pixels;
 
         }
