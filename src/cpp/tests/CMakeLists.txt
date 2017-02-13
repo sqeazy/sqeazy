@@ -11,17 +11,17 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/include)
 SET(Boost_USE_STATIC_LIBS OFF)
 FIND_PACKAGE (Boost 1.55 COMPONENTS regex unit_test_framework filesystem system serialization REQUIRED QUIET)
 if(Boost_FOUND)
-	MESSAGE("++ [tests] Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES} : ${Boost_LIBRARIES}")
-	INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-	link_directories(${Boost_LIBRARY_DIRS})
-	IF(MSVC)
-	add_definitions(/DBOOST_TEST_DYN_LINK)
+    MESSAGE("++ [tests] Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES} : ${Boost_LIBRARIES}")
+    INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+    link_directories(${Boost_LIBRARY_DIRS})
+    IF(MSVC)
+    add_definitions(/DBOOST_TEST_DYN_LINK)
 
-	ELSE(MSVC)
-	add_definitions(-DBOOST_TEST_DYN_LINK)
-	ENDIF(MSVC)	
+    ELSE(MSVC)
+    add_definitions(-DBOOST_TEST_DYN_LINK)
+    ENDIF(MSVC)
 else(Boost_FOUND)
-	MESSAGE(FATAL_ERROR "++ Boost not found!")
+    MESSAGE(FATAL_ERROR "++ Boost not found!")
 endif(Boost_FOUND)
 
 
@@ -178,22 +178,22 @@ target_link_libraries(test_volume_fixtures ${Boost_LIBRARIES} ${TIFF_LIBRARY})
 
 IF(FFMPEG_FOUND)
   if(WIN32)
-	LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}\\lib)
-	else()
-	LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
+    LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}\\lib)
+    else()
+    LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
     endif()
-	
+
   SET(SQY_FFMPEG_Libraries ${FFMPEG_LIBRARIES})
-  
+
   #if(NOT EXTRA_LIBM_NOT_NEEDED)
-	#set(SQY_FFMPEG_Libraries ${SQY_FFMPEG_Libraries} m)
+    #set(SQY_FFMPEG_Libraries ${SQY_FFMPEG_Libraries} m)
   #endif()
 
   if(DEFINED FFMPEG_EXTRA_LINK_FLAGS AND DEFINED FFMPEG_USE_STATIC_LIBS)
-	set(SQY_FFMPEG_Libraries ${SQY_FFMPEG_Libraries} ${FFMPEG_EXTRA_LINK_FLAGS})
+    set(SQY_FFMPEG_Libraries ${SQY_FFMPEG_Libraries} ${FFMPEG_EXTRA_LINK_FLAGS})
   endif()
 
-  
+
   add_executable(test_avcodec_sandbox test_avcodec_sandbox.cpp)
   target_link_libraries(test_avcodec_sandbox ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries})
 
