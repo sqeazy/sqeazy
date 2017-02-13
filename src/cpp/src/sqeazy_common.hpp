@@ -7,8 +7,17 @@
 
 #include "compass.hpp"
 
+
+#ifdef _OPENMP
+#include "omp.h"
+typedef typename std::make_signed<std::size_t>::type omp_size_type;//boiler plate required for MS VS 14 2015 OpenMP implementation
+#else
+typedef std::size_t omp_size_type;//boiler plate required for MS VS 14 2015 OpenMP implementation
+#endif
+
+
 namespace sqeazy {
-  
+
   enum error_code {
 
     SUCCESS = 0,
@@ -21,22 +30,22 @@ namespace sqeazy {
 
   /**
      \brief this namespace is meant for helpers related to the platform sqeazy was compiled on
-          
+
   */
   namespace platform {
-  
+
     namespace ct = compass::compiletime;
     namespace ft = compass::feature;
-    
+
     // struct use_vectorisation {
     //   const static bool value = (ct::has<ft::sse2>() && ct::has<ft::sse3>() && ct::has<ft::sse4>()) && _SQY_X_;
 
     //   static void debug() {
 
-    // 	std::cout << "sse2 ? " << ct::has<ft::sse2>() << "\n"
-    // 		  << "sse3 ? " << ct::has<ft::sse3>() << "\n"
-    // 		  << "sse4 ? " << ct::has<ft::sse4>() << "\n"
-    // 	  	  << "sqyx ? " << _SQY_X_ << "\n";
+    //  std::cout << "sse2 ? " << ct::has<ft::sse2>() << "\n"
+    //        << "sse3 ? " << ct::has<ft::sse3>() << "\n"
+    //        << "sse4 ? " << ct::has<ft::sse4>() << "\n"
+    //        << "sqyx ? " << _SQY_X_ << "\n";
     //   }
     // };
 
@@ -45,10 +54,10 @@ namespace sqeazy {
 
       static void debug() {
 
-    	std::cout << "sse2 ? " << ct::has<ft::sse2>::enabled << "\n"
-    		  << "sse3 ? " << ct::has<ft::sse3>::enabled << "\n"
-    		  << "sse4 ? " << ct::has<ft::sse4>::enabled << "\n"
-    	  	  << "sqyx ? " << _SQY_X_ << "\n";
+        std::cout << "sse2 ? " << ct::has<ft::sse2>::enabled << "\n"
+              << "sse3 ? " << ct::has<ft::sse3>::enabled << "\n"
+              << "sse4 ? " << ct::has<ft::sse4>::enabled << "\n"
+              << "sqyx ? " << _SQY_X_ << "\n";
       }
     };
 
