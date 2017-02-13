@@ -8,13 +8,6 @@
 #include "dynamic_stage.hpp"
 
 
-#ifdef _OPENMP
-#include "omp.h"
-typedef typename std::make_signed<std::size_t>::type omp_size_type;//boiler plate required for MS VS 14 2015 OpenMP implementation
-#else
-typedef std::size_t omp_size_type;//boiler plate required for MS VS 14 2015 OpenMP implementation
-#endif
-
 
 namespace sqeazy {
 
@@ -117,7 +110,7 @@ namespace sqeazy {
 
       auto offsets_begin = offsets.begin();
       const omp_size_type offset_size = offsets.size();
-      int nthreads = this->n_threads();
+      const int nthreads = this->n_threads();
       auto shape_begin = _shape.data();
 
 #pragma omp parallel for                        \
@@ -173,7 +166,7 @@ namespace sqeazy {
       sum_type local_sum = 0;
       const sum_type n_traversed_pixels = sqeazy::num_traversed_pixels<Neighborhood>();
       const out_type* signed_in = reinterpret_cast<const out_type*>(_in);
-      int nthreads = this->n_threads();
+      const int nthreads = this->n_threads();
       const omp_size_type offset_size = offsets.size();
       auto offsets_begin = offsets.begin();
       auto shape_begin   = _shape.data();
