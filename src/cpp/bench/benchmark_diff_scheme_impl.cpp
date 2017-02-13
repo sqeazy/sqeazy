@@ -2,8 +2,7 @@
 
 /*
   notes/TODOs:
-  - [2017-02-03] performance of diff appears to be stuck at 80 MB/s, first profiling pointed at boost::accumulators to be the cause
-  - [2017-02-03] potential other bottleneck could be the single threaded std::sort containted therein
+  - none so far
 
 */
 
@@ -67,31 +66,6 @@ BENCHMARK_DEFINE_F(static_default_fixture, scalar_two_threads)(benchmark::State&
 }
 
 BENCHMARK_REGISTER_F(static_default_fixture, scalar_two_threads)->UseRealTime();
-
-// BENCHMARK_DEFINE_F(static_default_fixture, sse_one_vs_two_threads)(benchmark::State& state) {
-
-//   //heat the caches
-//   sqeazy::detail::sse_bitplane_reorder_encode<1>(sin_data.data(),
-//                                                  output_data.data(),
-//                                                  shape,
-//                                                  state.threads);
-
-//   while (state.KeepRunning()) {
-//     state.PauseTiming();
-//     std::fill(output_data.begin(), output_data.end(),0);
-//     state.ResumeTiming();
-
-//     sqeazy::detail::sse_bitplane_reorder_encode<1>(sin_data.data(),
-//                                                       output_data.data(),
-//                                                       sin_data.size(),
-//                                                       state.threads);
-//   }
-
-//   state.SetBytesProcessed(int64_t(state.iterations()) *
-//                           int64_t(sin_data.size())*sizeof(sin_data.front()));
-// }
-
-// BENCHMARK_REGISTER_F(static_default_fixture, sse_one_vs_two_threads)->Threads(2)->Threads(1)->UseRealTime();
 
 BENCHMARK_DEFINE_F(dynamic_default_fixture, single_thread)(benchmark::State& state) {
 
@@ -186,36 +160,5 @@ BENCHMARK_DEFINE_F(dynamic_default_fixture, max_threads)(benchmark::State& state
 }
 
 BENCHMARK_REGISTER_F(dynamic_default_fixture, max_threads)->UseRealTime()->Range(1 << 16,1 << 25);
-
-// BENCHMARK_DEFINE_F(dynamic_default_fixture, max_threads)(benchmark::State& state) {
-
-
-//   // if (state.thread_index == 0) {
-//   //   SetUp(state);
-//   // }
-//   int nthreads = std::thread::hardware_concurrency();
-
-//   //heat the caches
-//   sqeazy::detail::sse_bitplane_reorder_encode<1>(sinus_.data(),
-//                                                  output_.data(),
-//                                                  sinus_.size(),
-//                                                  nthreads);
-
-//   while (state.KeepRunning()) {
-//     state.PauseTiming();
-//     std::fill(output_.begin(), output_.end(),0);
-//     state.ResumeTiming();
-
-//     sqeazy::detail::sse_bitplane_reorder_encode<1>(sinus_.data(),
-//                                                    output_.data(),
-//                                                    sinus_.size(),
-//                                                    nthreads);
-//   }
-
-//   state.SetBytesProcessed(int64_t(state.iterations()) *
-//                           int64_t(size_)*sizeof(sinus_.front()));
-// }
-
-// BENCHMARK_REGISTER_F(dynamic_default_fixture, max_threads)->UseRealTime()->Range(1 << 16,1 << 25);
 
 BENCHMARK_MAIN();
