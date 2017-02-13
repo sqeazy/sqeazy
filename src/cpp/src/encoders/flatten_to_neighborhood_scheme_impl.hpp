@@ -51,25 +51,25 @@ namespace sqeazy {
       auto config_map = p.minors(_payload.begin(),_payload.end());
 
       if(config_map.size()){
-    auto f_itr = config_map.find("fraction");
-    if(f_itr!=config_map.end())
-      fraction = std::stof(f_itr->second);
+        auto f_itr = config_map.find("fraction");
+        if(f_itr!=config_map.end())
+          fraction = std::stof(f_itr->second);
 
-    f_itr = config_map.find("threshold");
-    if(f_itr!=config_map.end())
-      threshold = std::stoi(f_itr->second);
+        f_itr = config_map.find("threshold");
+        if(f_itr!=config_map.end())
+          threshold = std::stoi(f_itr->second);
       }
     }
 
     std::string name() const override final {
 
       std::ostringstream msg;
-        msg << "rmbkrd_neighbor"
-            << Neighborhood::x_offset_end - Neighborhood::x_offset_begin << "x"
-            << Neighborhood::y_offset_end - Neighborhood::y_offset_begin << "x"
-            << Neighborhood::z_offset_end - Neighborhood::z_offset_begin ;
+      msg << "rmbkrd_neighbor"
+          << Neighborhood::x_offset_end - Neighborhood::x_offset_begin << "x"
+          << Neighborhood::y_offset_end - Neighborhood::y_offset_begin << "x"
+          << Neighborhood::z_offset_end - Neighborhood::z_offset_begin ;
 
-        return msg.str();
+      return msg.str();
 
     }
 
@@ -88,76 +88,95 @@ namespace sqeazy {
     }
 
     compressed_type* encode( const raw_type* _input,
-                 compressed_type* _output,
-                 const std::vector<std::size_t>& _shape) override final {
+                             compressed_type* _output,
+                             const std::vector<std::size_t>& _shape) override final {
 
       typedef std::size_t size_type;
-        unsigned long length = std::accumulate(_shape.begin(), _shape.end(), 1, std::multiplies<size_type>());
+      unsigned long length = std::accumulate(_shape.begin(), _shape.end(), 1, std::multiplies<size_type>());
 
-        std::vector<size_type> offsets;
-        sqeazy::halo<Neighborhood, size_type> geometry(_shape.begin(), _shape.end());
-        geometry.compute_offsets_in_x(offsets);
+      std::vector<size_type> offsets;
+      sqeazy::halo<Neighborhood, size_type> geometry(_shape.begin(), _shape.end());
+      geometry.compute_offsets_in_x(offsets);
 
-        size_type halo_size_x = length - offsets[row_major::x];
+      size_type halo_size_x = length - offsets[row_major::x];
 
-        //no offsets in other dimensions than x
-        if(offsets.size()!=1)
-        {
-            halo_size_x = geometry.non_halo_end(row_major::x) - geometry.non_halo_begin(row_major::x) + 1;
+      //no offsets in other dimensions than x
+      if(offsets.size()!=1)
+      {
+        halo_size_x = geometry.non_halo_end(row_major::x) - geometry.non_halo_begin(row_major::x) + 1;
+      }
+
+
+      unsigned n_neighbors_below_threshold = 0;
+      typename std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
+
+
+      const float cut_fraction = fraction*(size<Neighborhood>()-1);
+
+      const int nthreads = this->n_threads();
+      const omp_size_type offset_size = offsets.size();
+      auto offsets_begin = offsets.begin();
+
+
+#pragma omp parallel for                  \
+  shared(_output)                                                          \
+  firstprivate( _input, offsets_begin, offset_size, threshold, _shape , n_neighbors_below_threshold, cut_fraction) \
+  num_threads(nthreads)
+      for(omp_size_type offset=0; offset<offset_size; ++offset) {
+
+        for(std::size_t index = 0; index < (std::size_t)halo_size_x; ++index) {
+
+          const size_type local_index = index + *(offsets_begin + offset);
+
+          //skip pixels that are below threshold
+          if(*(_input + local_index)<threshold)
+            continue;
+
+          n_neighbors_below_threshold = count_neighbors_if<Neighborhood>(_input + local_index,
+                                                                         _shape,
+                                                                         // std::bind2nd(std::less<raw_type>(), threshold)
+                                                                         [&](raw_type element){
+                                                                           return element < threshold;
+                                                                         }
+            );
+
+          if(n_neighbors_below_threshold>cut_fraction){
+            _output[local_index] = 0;
+          }
+          else
+            _output[local_index] = _input[local_index];
+
         }
-
-        unsigned long local_index=0;
-        unsigned n_neighbors_below_threshold = 0;
-        typename std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
-
-#ifdef _SQY_VERBOSE_
-    unsigned long num_pixels_discarded=0;
-#endif
-
-        const float cut_fraction = fraction*(size<Neighborhood>()-1);
-        for(; offsetsItr!=offsets.end(); ++offsetsItr) {
-      for(unsigned long index = 0; index < (unsigned long)halo_size_x; ++index) {
-
-                local_index = index + *offsetsItr;
-
-        //skip pixels that are below threshold
-        if(*(_input + local_index)<threshold)
-          continue;
-
-                n_neighbors_below_threshold = count_neighbors_if<Neighborhood>(_input + local_index,
-                                              _shape,
-                                              std::bind2nd(std::less<raw_type>(), threshold)
-                                                                              );
-                if(n_neighbors_below_threshold>cut_fraction){
-#ifdef _SQY_VERBOSE_
-          num_pixels_discarded++;
-#endif
-          _output[local_index] = 0;
-        }
-                else
-                    _output[local_index] = _input[local_index];
-
-            }
-        }
-#ifdef _SQY_VERBOSE_
-    int prec = std::cout.precision();
-    std::cout.precision(3);
-    std::cout << "[SQY_VERBOSE] flatten_to_neighborhood " << num_pixels_discarded << " / " << length << " ("<< 100*double(num_pixels_discarded)/length <<" %) discarded due to neighborhood\n";
-    std::cout.precision(prec);
-#endif
+      }
 
 
-    return _output+length;
+      return _output+length;
 
     }
 
     int decode( const compressed_type* _input, raw_type* _output,
-        const std::vector<std::size_t>& _shape,
-        std::vector<std::size_t>) const override final {
+                const std::vector<std::size_t>& _shape,
+                std::vector<std::size_t>) const override final {
 
       std::size_t total_size = std::accumulate(_shape.begin(), _shape.end(), 1, std::multiplies<std::size_t>());
-      if(_input!=_output )
-    std::copy(_input, _input + total_size, _output);
+
+      if(_input!=_output ){
+
+        if(this->n_threads() == 1)
+          std::copy(_input, _input + total_size, _output);
+        else{
+          const int nthreads = this->n_threads();
+          omp_size_type len = total_size;
+
+          #pragma omp parallel for                  \
+            shared(_output)                                             \
+            firstprivate( _input )                                      \
+            num_threads(nthreads)
+          for(omp_size_type i = 0;i<len;++i){
+            _output[i] = _input[i];
+          }
+        }
+      }
       return 0;
 
     }
@@ -176,6 +195,8 @@ namespace sqeazy {
       return base_type::is_compressor;
 
     }
+
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // DEPRECATED API
 
@@ -189,13 +210,13 @@ namespace sqeazy {
      */
     static const std::string static_name() {
 
-        std::ostringstream msg;
-        msg << "rmbkrd_neighbor"
-            << Neighborhood::x_offset_end - Neighborhood::x_offset_begin << "x"
-            << Neighborhood::y_offset_end - Neighborhood::y_offset_begin << "x"
-            << Neighborhood::z_offset_end - Neighborhood::z_offset_begin ;
+      std::ostringstream msg;
+      msg << "rmbkrd_neighbor"
+          << Neighborhood::x_offset_end - Neighborhood::x_offset_begin << "x"
+          << Neighborhood::y_offset_end - Neighborhood::y_offset_begin << "x"
+          << Neighborhood::z_offset_end - Neighborhood::z_offset_begin ;
 
-        return msg.str();
+      return msg.str();
 
     }
 
@@ -214,11 +235,11 @@ namespace sqeazy {
      * @return sqeazy::error_code
      */
     static const error_code static_encode(const raw_type* _input,
-                      raw_type* _output,
-                      const std::vector<size_type>& _dims,
-                      const raw_type& _threshold,
-                      float _frac_neighb_to_null = percentage_below/100.f)
-    {
+                                          raw_type* _output,
+                                          const std::vector<size_type>& _dims,
+                                          const raw_type& _threshold,
+                                          float _frac_neighb_to_null = percentage_below/100.f)
+      {
 
 
         unsigned long length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<size_type>());
@@ -232,7 +253,7 @@ namespace sqeazy {
         //no offsets in other dimensions than x
         if(offsets.size()!=1)
         {
-            halo_size_x = geometry.non_halo_end(row_major::x) - geometry.non_halo_begin(row_major::x) + 1;
+          halo_size_x = geometry.non_halo_end(row_major::x) - geometry.non_halo_begin(row_major::x) + 1;
         }
 
         unsigned long local_index=0;
@@ -240,42 +261,42 @@ namespace sqeazy {
         typename std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
 
 #ifdef _SQY_VERBOSE_
-    unsigned long num_pixels_discarded=0;
+        unsigned long num_pixels_discarded=0;
 #endif
 
         const float cut_fraction = _frac_neighb_to_null*(size<Neighborhood>()-1);
         for(; offsetsItr!=offsets.end(); ++offsetsItr) {
-      for(unsigned long index = 0; index < (unsigned long)halo_size_x; ++index) {
+          for(unsigned long index = 0; index < (unsigned long)halo_size_x; ++index) {
 
-                local_index = index + *offsetsItr;
+            local_index = index + *offsetsItr;
 
-        //skip pixels that are below threshold
-        if(*(_input + local_index)<_threshold)
-          continue;
+            //skip pixels that are below threshold
+            if(*(_input + local_index)<_threshold)
+              continue;
 
-                n_neighbors_below_threshold = count_neighbors_if<Neighborhood>(_input + local_index,
-                                              _dims,
-                                              std::bind2nd(std::less<raw_type>(), _threshold)
-                                                                              );
-                if(n_neighbors_below_threshold>cut_fraction){
+            n_neighbors_below_threshold = count_neighbors_if<Neighborhood>(_input + local_index,
+                                                                           _dims,
+                                                                           std::bind2nd(std::less<raw_type>(), _threshold)
+              );
+            if(n_neighbors_below_threshold>cut_fraction){
 #ifdef _SQY_VERBOSE_
-          num_pixels_discarded++;
+              num_pixels_discarded++;
 #endif
-          _output[local_index] = 0;
-        }
-                else
-                    _output[local_index] = _input[local_index];
-
+              _output[local_index] = 0;
             }
+            else
+              _output[local_index] = _input[local_index];
+
+          }
         }
 #ifdef _SQY_VERBOSE_
-    int prec = std::cout.precision();
-    std::cout.precision(3);
-    std::cout << "[SQY_VERBOSE] flatten_to_neighborhood " << num_pixels_discarded << " / " << length << " ("<< 100*double(num_pixels_discarded)/length <<" %) discarded due to neighborhood\n";
-    std::cout.precision(prec);
+        int prec = std::cout.precision();
+        std::cout.precision(3);
+        std::cout << "[SQY_VERBOSE] flatten_to_neighborhood " << num_pixels_discarded << " / " << length << " ("<< 100*double(num_pixels_discarded)/length <<" %) discarded due to neighborhood\n";
+        std::cout.precision(prec);
 #endif
         return SUCCESS;
-    }
+      }
 
 
     template <typename SizeType>
@@ -286,13 +307,13 @@ namespace sqeazy {
      * @return sqeazy::error_code
      */
     static const error_code static_decode(const raw_type* _input,
-                                   raw_type* _output,
-                                   const SizeType& _length)
-    {
+                                          raw_type* _output,
+                                          const SizeType& _length)
+      {
         if(_input!=_output )
-            std::copy(_input, _input + _length, _output);
+          std::copy(_input, _input + _length, _output);
         return SUCCESS;
-    }
+      }
 
     template <typename SizeType>
     /**
@@ -303,13 +324,13 @@ namespace sqeazy {
      * @return sqeazy::error_code
      */
     static const error_code static_decode(const raw_type* _input,
-                                   raw_type* _output,
-                                   const std::vector<SizeType>& _length)
-    {
+                                          raw_type* _output,
+                                          const std::vector<SizeType>& _length)
+      {
         unsigned long total_size = std::accumulate(_length.begin(), _length.end(), 1, std::multiplies<SizeType>());
 
         return static_decode(_input, _output, total_size);
-    }
+      }
 
 
 
