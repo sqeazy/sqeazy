@@ -6,15 +6,8 @@
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
 #include "traits.hpp"
+#include "sqeazy_common.hpp"
 
-
-
-#ifdef _OPENMP
-#include "omp.h"
-typedef typename std::make_signed<std::size_t>::type omp_size_type;//boiler plate required for MS VS 14 2015 OpenMP implementation
-#else
-typedef std::size_t omp_size_type;//boiler plate required for MS VS 14 2015 OpenMP implementation
-#endif
 
 namespace sqeazy {
 
