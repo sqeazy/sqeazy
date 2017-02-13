@@ -23,10 +23,6 @@ else(Boost_FOUND)
     MESSAGE(FATAL_ERROR "++ Boost not found!")
 endif(Boost_FOUND)
 
-
-# if(DEFINED FFMPEG_EXTRA_LINK_FLAGS)
-#   set(SQY_LIB ${SQY_LIB} ${FFMPEG_EXTRA_LINK_FLAGS})
-# endif()
 set(SQY_LIB ${PROJECT_NAME})
 
 if(DEFINED READY_4_BUNDLE)
@@ -59,8 +55,6 @@ else()
   endif()
 endif()
 
-# message(STATUS "[bench] linking against ${SQY_LIB} ${Boost_LIBRARIES} ")
-
 add_executable(test_benchmark_fixture_impl test_benchmark_fixture_impl.cpp)
 target_link_libraries(test_benchmark_fixture_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY}
 )
@@ -74,76 +68,3 @@ target_link_libraries(benchmark_frame_shuffle_scheme_impl ${Boost_LIBRARIES} ${g
 add_executable(benchmark_diff_scheme_impl benchmark_diff_scheme_impl.cpp)
 target_link_libraries(benchmark_diff_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
-# TODO list
-#diff_scheme_impl.hpp STARTED
-#flatten_to_neighborhood_scheme_impl.hpp
-#h264_scheme_impl.hpp
-#hevc_scheme_impl.hpp
-#quantiser_scheme_impl.hpp
-#raster_reorder_scheme_impl.hpp
-#remove_background_scheme_impl.hpp
-#remove_estimated_background_scheme_impl.hpp
-#tile_shuffle_scheme_impl.hpp
-#zcurve_reorder_scheme_impl.hpp
-#histogram_impl
-#string_parsers_impl
-
-
-
-# if(EXISTS ${LZ4_STATIC_LIB})
-#   #if static libsqeazy exists, it will contain lz4, no need to link against it yet another time
-#   if(NOT DEFINED READY_4_BUNDLE)
-#     target_link_libraries(test_lz4_encoding ${PROJECT_NAME}_static ${Boost_LIBRARIES})
-#     target_link_libraries(test_hdf5_interface ${PROJECT_NAME}_static ${Boost_LIBRARIES})
-#     target_link_libraries(test_pipeline_interface ${PROJECT_NAME}_static ${Boost_LIBRARIES})
-#   else()
-#     target_link_libraries(test_lz4_encoding ${PROJECT_NAME}_static ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES})
-#     target_link_libraries(test_hdf5_interface ${PROJECT_NAME}_static ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES})
-#     target_link_libraries(test_pipeline_interface ${PROJECT_NAME}_static ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES})
-#   endif()
-# else()
-#   target_link_libraries(test_lz4_encoding ${SQY_LIB} ${Boost_LIBRARIES} ${LZ4_LIBRARY})
-#   target_link_libraries(test_hdf5_interface ${SQY_LIB} ${Boost_LIBRARIES} ${LZ4_LIBRARY} ${HDF5_LIBRARIES})
-#   target_link_libraries(test_pipeline_interface ${SQY_LIB} ${Boost_LIBRARIES} ${LZ4_LIBRARY})
-# endif()
-
-
-# add_executable(test_diff_schemes test_diff_schemes.cpp)
-# target_link_libraries(test_diff_schemes ${SQY_LIB} ${Boost_LIBRARIES})
-
-
-# IF(TIFF_FOUND)
-
-# # add_executable(test_tiff_fixture test_tiff_fixture.cpp)
-# # target_link_libraries(test_tiff_fixture ${Boost_LIBRARIES} ${TIFF_LIBRARY})
-# # set_target_properties(test_tiff_fixture PROPERTIES COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/bench")
-
-
-# IF(FFMPEG_FOUND)
-#   if(WIN32)
-#   LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}\\lib)
-#   else()
-#   LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
-#     endif()
-
-#   SET(SQY_FFMPEG_Libraries ${FFMPEG_LIBRARIES})
-
-#   if(DEFINED FFMPEG_EXTRA_LINK_FLAGS AND DEFINED FFMPEG_USE_STATIC_LIBS)
-#   set(SQY_FFMPEG_Libraries ${SQY_FFMPEG_Libraries} ${FFMPEG_EXTRA_LINK_FLAGS})
-#   endif()
-
-#   add_executable(test_avcodec_sandbox test_avcodec_sandbox.cpp)
-#   target_link_libraries(test_avcodec_sandbox ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries})
-
-#   add_executable(deprecated_pipeline_select_impl deprecated_pipeline_select_impl.cpp)
-#   target_link_libraries(deprecated_pipeline_select_impl ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} ${TIFF_LIBRARY} ${LZ4_LIBRARY} ${SQY_FFMPEG_Libraries})
-
-# ELSE(FFMPEG_FOUND)
-#   MESSAGE(">> [tests] libavcodec not found. skipping test_avcodec_sandbox ...")
-# ENDIF(FFMPEG_FOUND)
-
-# ELSE(FFMPEG_FOUND)
-#   MESSAGE(">> [tests] libtiff not found. skipping related tests ...")
-# ENDIF(FFMPEG_FOUND)
-
-# ENDIF(TIFF_FOUND)
