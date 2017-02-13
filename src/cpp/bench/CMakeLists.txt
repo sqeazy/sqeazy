@@ -71,5 +71,27 @@ target_link_libraries(benchmark_diff_scheme_impl ${Boost_LIBRARIES} ${googlebenc
 add_executable(benchmark_flatten_to_neighborhood_scheme_impl benchmark_flatten_to_neighborhood_scheme_impl.cpp)
 target_link_libraries(benchmark_flatten_to_neighborhood_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
-add_executable(benchmark_h264_scheme_impl benchmark_h264_scheme_impl.cpp)
-target_link_libraries(benchmark_h264_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+IF(FFMPEG_FOUND)
+  if(WIN32)
+    LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}\\lib)
+    else()
+    LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
+    endif()
+
+  SET(SQY_FFMPEG_Libraries ${FFMPEG_LIBRARIES})
+
+  #if(NOT EXTRA_LIBM_NOT_NEEDED)
+    #set(SQY_FFMPEG_Libraries ${SQY_FFMPEG_Libraries} m)
+  #endif()
+
+  if(DEFINED FFMPEG_EXTRA_LINK_FLAGS AND DEFINED FFMPEG_USE_STATIC_LIBS)
+    set(SQY_FFMPEG_Libraries ${SQY_FFMPEG_Libraries} ${FFMPEG_EXTRA_LINK_FLAGS})
+  endif()
+
+  add_executable(benchmark_h264_scheme_impl benchmark_h264_scheme_impl.cpp)
+  target_link_libraries(benchmark_h264_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY} ${SQY_FFMPEG_Libraries})
+
+  add_executable(benchmark_hevc_scheme_impl benchmark_hevc_scheme_impl.cpp)
+  target_link_libraries(benchmark_hevc_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY} ${SQY_FFMPEG_Libraries})
+
+endif()
