@@ -25,10 +25,10 @@ namespace sqeazy {
 *
 */
   template <typename in_type,
-	    typename Neighborhood = cube_neighborhood<5>,
-	    short percentage_below = 50>
+        typename Neighborhood = cube_neighborhood<5>,
+        short percentage_below = 50>
   struct flatten_to_neighborhood_scheme : public filter<in_type> {
-  
+
     typedef filter<in_type> base_type;
     typedef in_type raw_type;
     typedef in_type compressed_type;
@@ -42,7 +42,7 @@ namespace sqeazy {
       fraction(_frac){
     }
 
-    
+
     flatten_to_neighborhood_scheme(const std::string& _payload=""):
       threshold(1),
       fraction(percentage_below/100.f){
@@ -51,13 +51,13 @@ namespace sqeazy {
       auto config_map = p.minors(_payload.begin(),_payload.end());
 
       if(config_map.size()){
-	auto f_itr = config_map.find("fraction");
-	if(f_itr!=config_map.end())
-	  fraction = std::stof(f_itr->second);
+    auto f_itr = config_map.find("fraction");
+    if(f_itr!=config_map.end())
+      fraction = std::stof(f_itr->second);
 
-	f_itr = config_map.find("threshold");
-	if(f_itr!=config_map.end())
-	  threshold = std::stoi(f_itr->second);
+    f_itr = config_map.find("threshold");
+    if(f_itr!=config_map.end())
+      threshold = std::stoi(f_itr->second);
       }
     }
 
@@ -70,7 +70,7 @@ namespace sqeazy {
             << Neighborhood::z_offset_end - Neighborhood::z_offset_begin ;
 
         return msg.str();
-	
+
     }
 
     std::string config() const override final {
@@ -79,17 +79,17 @@ namespace sqeazy {
       msg << "threshold=" << std::to_string(threshold) << ",";
       msg << "fraction=" << std::to_string(fraction);
       return msg.str();
-    
+
     }
 
     std::intmax_t max_encoded_size(std::intmax_t _size_bytes) const override final {
-    
+
       return _size_bytes;
     }
 
     compressed_type* encode( const raw_type* _input,
-			     compressed_type* _output,
-			     const std::vector<std::size_t>& _shape) override final {
+                 compressed_type* _output,
+                 const std::vector<std::size_t>& _shape) override final {
 
       typedef std::size_t size_type;
         unsigned long length = std::accumulate(_shape.begin(), _shape.end(), 1, std::multiplies<size_type>());
@@ -111,18 +111,18 @@ namespace sqeazy {
         typename std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
 
 #ifdef _SQY_VERBOSE_
-	unsigned long num_pixels_discarded=0;
+    unsigned long num_pixels_discarded=0;
 #endif
 
         const float cut_fraction = fraction*(size<Neighborhood>()-1);
         for(; offsetsItr!=offsets.end(); ++offsetsItr) {
-	  for(unsigned long index = 0; index < (unsigned long)halo_size_x; ++index) {
+      for(unsigned long index = 0; index < (unsigned long)halo_size_x; ++index) {
 
                 local_index = index + *offsetsItr;
 
-		//skip pixels that are below threshold
-		if(*(_input + local_index)<threshold)
-		  continue;
+        //skip pixels that are below threshold
+        if(*(_input + local_index)<threshold)
+          continue;
 
                 n_neighbors_below_threshold = count_neighbors_if<Neighborhood>(_input + local_index,
                                               _shape,
@@ -130,55 +130,55 @@ namespace sqeazy {
                                                                               );
                 if(n_neighbors_below_threshold>cut_fraction){
 #ifdef _SQY_VERBOSE_
-		  num_pixels_discarded++;
+          num_pixels_discarded++;
 #endif
-		  _output[local_index] = 0;
-		}
+          _output[local_index] = 0;
+        }
                 else
                     _output[local_index] = _input[local_index];
 
             }
         }
 #ifdef _SQY_VERBOSE_
-	int prec = std::cout.precision();
-	std::cout.precision(3);
-	std::cout << "[SQY_VERBOSE] flatten_to_neighborhood " << num_pixels_discarded << " / " << length << " ("<< 100*double(num_pixels_discarded)/length <<" %) discarded due to neighborhood\n";
-	std::cout.precision(prec);
+    int prec = std::cout.precision();
+    std::cout.precision(3);
+    std::cout << "[SQY_VERBOSE] flatten_to_neighborhood " << num_pixels_discarded << " / " << length << " ("<< 100*double(num_pixels_discarded)/length <<" %) discarded due to neighborhood\n";
+    std::cout.precision(prec);
 #endif
 
 
-	return _output+length;
-      
+    return _output+length;
+
     }
 
     int decode( const compressed_type* _input, raw_type* _output,
-		const std::vector<std::size_t>& _shape,
-		std::vector<std::size_t>) const override final {
+        const std::vector<std::size_t>& _shape,
+        std::vector<std::size_t>) const override final {
 
       std::size_t total_size = std::accumulate(_shape.begin(), _shape.end(), 1, std::multiplies<std::size_t>());
       if(_input!=_output )
-	std::copy(_input, _input + total_size, _output);
+    std::copy(_input, _input + total_size, _output);
       return 0;
 
     }
 
-    
+
     ~flatten_to_neighborhood_scheme(){};
 
     std::string output_type() const final override {
 
       return typeid(compressed_type).name();
-    
+
     }
 
     bool is_compressor() const final override {
-    
+
       return base_type::is_compressor;
-    
+
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // DEPRECATED API
-    
+
     static const bool is_sink = false;
 
 
@@ -214,10 +214,10 @@ namespace sqeazy {
      * @return sqeazy::error_code
      */
     static const error_code static_encode(const raw_type* _input,
-					  raw_type* _output,
-					  const std::vector<size_type>& _dims,
-					  const raw_type& _threshold,
-					  float _frac_neighb_to_null = percentage_below/100.f)
+                      raw_type* _output,
+                      const std::vector<size_type>& _dims,
+                      const raw_type& _threshold,
+                      float _frac_neighb_to_null = percentage_below/100.f)
     {
 
 
@@ -240,18 +240,18 @@ namespace sqeazy {
         typename std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
 
 #ifdef _SQY_VERBOSE_
-	unsigned long num_pixels_discarded=0;
+    unsigned long num_pixels_discarded=0;
 #endif
 
         const float cut_fraction = _frac_neighb_to_null*(size<Neighborhood>()-1);
         for(; offsetsItr!=offsets.end(); ++offsetsItr) {
-	  for(unsigned long index = 0; index < (unsigned long)halo_size_x; ++index) {
+      for(unsigned long index = 0; index < (unsigned long)halo_size_x; ++index) {
 
                 local_index = index + *offsetsItr;
 
-		//skip pixels that are below threshold
-		if(*(_input + local_index)<_threshold)
-		  continue;
+        //skip pixels that are below threshold
+        if(*(_input + local_index)<_threshold)
+          continue;
 
                 n_neighbors_below_threshold = count_neighbors_if<Neighborhood>(_input + local_index,
                                               _dims,
@@ -259,20 +259,20 @@ namespace sqeazy {
                                                                               );
                 if(n_neighbors_below_threshold>cut_fraction){
 #ifdef _SQY_VERBOSE_
-		  num_pixels_discarded++;
+          num_pixels_discarded++;
 #endif
-		  _output[local_index] = 0;
-		}
+          _output[local_index] = 0;
+        }
                 else
                     _output[local_index] = _input[local_index];
 
             }
         }
 #ifdef _SQY_VERBOSE_
-	int prec = std::cout.precision();
-	std::cout.precision(3);
-	std::cout << "[SQY_VERBOSE] flatten_to_neighborhood " << num_pixels_discarded << " / " << length << " ("<< 100*double(num_pixels_discarded)/length <<" %) discarded due to neighborhood\n";
-	std::cout.precision(prec);
+    int prec = std::cout.precision();
+    std::cout.precision(3);
+    std::cout << "[SQY_VERBOSE] flatten_to_neighborhood " << num_pixels_discarded << " / " << length << " ("<< 100*double(num_pixels_discarded)/length <<" %) discarded due to neighborhood\n";
+    std::cout.precision(prec);
 #endif
         return SUCCESS;
     }
