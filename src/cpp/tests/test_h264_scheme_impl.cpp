@@ -240,6 +240,91 @@ BOOST_AUTO_TEST_CASE( lossless_roundtrip_step_ramp ){
 
 }
 
+BOOST_AUTO_TEST_CASE( lossless_roundtrip_step_ramp_with_2_threads ){
+
+  av_register_all();
+
+
+  std::vector<std::size_t> shape = {static_cast<uint32_t>(embryo_.shape()[sqy::row_major::z]),
+                    static_cast<uint32_t>(embryo_.shape()[sqy::row_major::y]),
+                    static_cast<uint32_t>(embryo_.shape()[sqy::row_major::x])};
+
+  // shape[sqy::row_major::w] = 352;
+  // shape[sqy::row_major::h] = 288;
+  // embryo_.resize(shape);
+  std::vector<char> encoded(embryo_.num_elements(),0);
+
+  sqeazy::h264_scheme<std::uint8_t> scheme;
+  scheme.set_n_threads(2);
+
+  for(std::size_t i = 0;i<embryo_.num_elements();++i){
+    embryo_.data()[i] = 1 << (i % 8);
+
+  }
+
+  auto encoded_end = scheme.encode(embryo_.data(),
+                   encoded.data(),
+                   shape);
+  std::size_t bytes_written = encoded_end - encoded.data();
+  encoded.resize(bytes_written);
+
+  BOOST_CHECK(encoded_end!=nullptr);
+  BOOST_CHECK_NE(bytes_written,0u);
+  BOOST_CHECK_LT(bytes_written,embryo_.num_elements());
+
+
+  sqy::uint8_image_stack roundtrip = embryo_;
+  int err = scheme.decode(encoded.data(),
+              roundtrip.data(),
+              shape);
+
+  BOOST_CHECK_EQUAL(err,0);
+
+  sqy::uint8_image_stack_cref roundtripcref(roundtrip.data(),shape);
+  sqy::uint8_image_stack_cref embryo_cref(embryo_.data(),shape);
+  double l2norm = sqeazy::l2norm(roundtripcref,embryo_cref);
+  double l1norm = sqeazy::l1norm(roundtripcref,embryo_cref);
+
+  BOOST_TEST_MESSAGE(boost::unit_test::framework::current_test_case().p_name << "\t l2norm = " << l2norm << ", l1norm = " << l1norm );
+
+  try{
+    BOOST_REQUIRE_LT(l2norm,1);
+    BOOST_REQUIRE_MESSAGE(std::equal(roundtrip.data(),
+                     roundtrip.data()+roundtrip.num_elements(),
+                     embryo_.data()),
+            "raw noisy volume and encoded/decoded volume do not match exactly, l2norm " << l2norm);
+
+
+  }
+  catch(...){
+    sqeazy::write_image_stack(embryo_,"step_ramp.tiff");
+    sqeazy::write_stack_as_y4m(embryo_,"step_ramp.y4m");
+    sqeazy::write_image_stack(roundtrip,"step_ramp_rt.tiff");
+    sqeazy::write_stack_as_y4m(roundtrip,"step_ramp_rt.y4m");
+    std::ofstream h264_file("step_ramp.h264", std::ios_base::binary | std::ios_base::out);
+    h264_file.write((char*)encoded.data(),bytes_written);
+    h264_file.close();
+
+    const std::size_t frame_size = embryo_.shape()[sqy::row_major::y]*embryo_.shape()[sqy::row_major::x];
+
+    for(std::size_t i = 0;i < frame_size;++i){
+      if(embryo_.data()[i]!=roundtrip.data()[i])
+    std::cout << "frame:0 pixel:" << i<< " differ, " << (int)embryo_.data()[i] << " != " << (int)roundtrip.data()[i] << "\n";
+    }
+    throw;
+  }
+  const size_t len = embryo_.num_elements();
+
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(embryo_.data(), embryo_.data()+10,
+                  roundtrip.data(), roundtrip.data()+10);
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(embryo_.data()+len-10, embryo_.data()+len,
+                  roundtrip.data()+len-10, roundtrip.data()+len);
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(embryo_.data(), embryo_.data()+len,
+                  roundtrip.data(), roundtrip.data()+len);
+
+}
+
+
 BOOST_AUTO_TEST_CASE( lossy_vs_lossless ){
     av_register_all();
 
