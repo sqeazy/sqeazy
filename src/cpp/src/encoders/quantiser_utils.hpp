@@ -16,6 +16,8 @@
 
 #include "traits.hpp"
 #include "string_parsers.hpp"
+#include "sqeazy_common.hpp"
+#include "histogram_utils.hpp"
 
 namespace sqeazy {
 
@@ -137,7 +139,7 @@ namespace sqeazy {
     static const char lut_field_separator = ':';
 
     long sum_;
-    std::array<uint32_t, max_raw_> histo_;
+    std::array<std::uint32_t, max_raw_> histo_;
     std::array<float, max_raw_> weights_;
     std::array<float, max_raw_> importance_;
 
@@ -146,27 +148,29 @@ namespace sqeazy {
     typedef compressed_type compressed_t;
     typedef raw_type raw_t;
 
-
     lut_encode_t lut_encode_;
     lut_decode_t lut_decode_;
+    int nthreads_;
 
     template <typename weight_functor_t = weighters::none>
     quantiser(const raw_type* _begin = 0,
-	      const raw_type* _end = 0,
-	      weight_functor_t _weight_functor = weighters::none()) :
+              const raw_type* _end = 0,
+              weight_functor_t _weight_functor = weighters::none(),
+              int _nt = 1) :
       sum_(0),
       histo_(),
       weights_(),
       importance_(),
       lut_encode_(),
-      lut_decode_()
-    {
+      lut_decode_(),
+      nthreads_(_nt)
+      {
 
-      reset();
+        reset();
 
-      setup_com(_begin, _end, _weight_functor);
+        setup_com(_begin, _end, _weight_functor);
 
-    };
+      };
 
 
     void reset() {
@@ -182,18 +186,24 @@ namespace sqeazy {
 
     inline raw_type max_value() const {
       auto max_filled_itr = std::find_if(histo_.rbegin(),
-					 histo_.rend(),
-					 std::bind(std::not_equal_to<uint32_t>(),std::placeholders::_1,0)
-					 );
+                                         histo_.rend(),
+                                         //std::bind(std::not_equal_to<uint32_t>(),std::placeholders::_1,0)
+                                         [](uint32_t value){
+                                           return value != 0;
+                                         }
+        );
       raw_type max_value = max_filled_itr.base() - 1 - histo_.begin();
       return max_value;
     }
 
     inline raw_type min_value() const {
       auto min_filled_itr = std::find_if(histo_.begin(),
-					 histo_.end(),
-					 std::bind(std::not_equal_to<uint32_t>(),std::placeholders::_1,0)
-					 );
+                                         histo_.end(),
+                                         //std::bind(std::not_equal_to<uint32_t>(),std::placeholders::_1,0)
+                                         [](uint32_t value){
+                                           return value != 0;
+                                         }
+        );
       raw_type min_value = min_filled_itr - histo_.begin();
       return min_value;
     }
@@ -205,22 +215,34 @@ namespace sqeazy {
       computeHistogram(_data,_data + _nelems);
     }
 
-    void computeHistogram(const raw_type* _begin, const raw_type* _end){
-      std::fill(histo_.begin(),histo_.end(),0.);
 
-      for(;_begin!=_end;++_begin){
-      	histo_[*_begin]++;
-      }
+
+    void computeHistogram(const raw_type* _begin, const raw_type* _end){
+
+      //TODO: does it make sense to fill the histo_ with (n>1) threads if the histo fits into L2?
+      if(nthreads_ == 1)
+        this->histo_ = detail::serial_fill_histogram(_begin, _end);
+      else
+        this->histo_ = detail::parallel_fill_histogram(_begin, _end, nthreads_);
 
       sum_ = std::accumulate(histo_.begin(), histo_.end(),0);
+
     }
 
-    void computeImportance(){
-      std::fill(importance_.begin(),importance_.end(),0.);
 
-      //loop fixed at compile time (unrolled?)
-      for(uint32_t idx = 0;idx<quantiser::max_raw_;idx++){
-        importance_[idx] = histo_[idx]*weights_[idx];
+    void computeImportance(){
+
+      auto importance_itr = importance_.data();
+      const auto histo_itr = histo_.data();
+      const auto weights_itr = weights_.data();
+      const omp_size_type len = quantiser::max_raw_;
+
+#pragma omp parallel for                        \
+  shared(importance_itr )                      \
+  firstprivate( histo_itr, weights_itr )        \
+  num_threads(nthreads_)
+      for(omp_size_type idx = 0;idx<len;idx++){
+        *(importance_itr + idx) = (*(histo_itr + idx)) * (*(weights_itr + idx));
       }
     }
 
@@ -287,9 +309,9 @@ namespace sqeazy {
       float importanceSum = 0;
 
       if(_imp_sum)
-	importanceSum = _imp_sum;
+        importanceSum = _imp_sum;
       else
-	importanceSum = std::accumulate(importance_.begin(),importance_.end(),0.);
+        importanceSum = std::accumulate(importance_.begin(),importance_.end(),0.);
 
       size_t levels_available = max_compressed_;//-1 one because we are assuming to use 0 already
       float bucketSize = importanceSum/levels_available;
@@ -302,35 +324,35 @@ namespace sqeazy {
 
       for(uint32_t raw_idx = 1;raw_idx<quantiser::max_raw_;++raw_idx){
 	
-	//bucket overflow 
-	if(quantile_sum >= bucketSize && (comp_idx<lut_decode_.size()-1)){
+        //bucket overflow
+        if(quantile_sum >= bucketSize && (comp_idx<lut_decode_.size()-1)){
 
-	  //FIXME: using std::array::at is expected to harm performance
-	  lut_decode_.at(comp_idx) = static_cast<raw_type>(index_weighted_mean_importance);
-	  comp_idx++;
-	  levels_available--;
+          //FIXME: using std::array::at is expected to harm performance
+          lut_decode_.at(comp_idx) = static_cast<raw_type>(index_weighted_mean_importance);
+          comp_idx++;
+          levels_available--;
 	  
-	  quantile_sum = importance_[raw_idx];//or 0?
-	  weighted_mean_importance_in_bucket = raw_idx*importance_[raw_idx];
+          quantile_sum = importance_[raw_idx];//or 0?
+          weighted_mean_importance_in_bucket = raw_idx*importance_[raw_idx];
 	  
-	  if(importanceIntegral<importanceSum)
-	    bucketSize = (importanceSum-importanceIntegral)/levels_available;
+          if(importanceIntegral<importanceSum)
+            bucketSize = (importanceSum-importanceIntegral)/levels_available;
 	  
-	  if(quantile_sum!=0.)
-	    index_weighted_mean_importance = std::round(weighted_mean_importance_in_bucket/quantile_sum);
+          if(quantile_sum!=0.)
+            index_weighted_mean_importance = std::round(weighted_mean_importance_in_bucket/quantile_sum);
 
-	} else {
-	  quantile_sum += importance_[raw_idx];
-	  weighted_mean_importance_in_bucket += raw_idx*importance_[raw_idx];
+        } else {
+          quantile_sum += importance_[raw_idx];
+          weighted_mean_importance_in_bucket += raw_idx*importance_[raw_idx];
 
-	  if(quantile_sum!=0.)
-	    index_weighted_mean_importance = std::round(weighted_mean_importance_in_bucket/quantile_sum);
+          if(quantile_sum!=0.)
+            index_weighted_mean_importance = std::round(weighted_mean_importance_in_bucket/quantile_sum);
 	 	 
 	
-	}
+        }
 
-	lut_encode_[raw_idx] = static_cast<compressed_type>(comp_idx);
-	importanceIntegral+=importance_[raw_idx];
+        lut_encode_[raw_idx] = static_cast<compressed_type>(comp_idx);
+        importanceIntegral+=importance_[raw_idx];
 	
       }
 
@@ -345,11 +367,11 @@ namespace sqeazy {
 
       for(uint32_t raw_idx = 0;raw_idx < max_raw_ && comp_idx < lut_decode_.size();++raw_idx){
 
-	lut_encode_[raw_idx] = static_cast<compressed_type>(comp_idx);
-	lut_decode_[comp_idx] = static_cast<raw_type>(raw_idx);
+        lut_encode_[raw_idx] = static_cast<compressed_type>(comp_idx);
+        lut_decode_[comp_idx] = static_cast<raw_type>(raw_idx);
 	
-	if(importance_[raw_idx])
-	  comp_idx++;
+        if(importance_[raw_idx])
+          comp_idx++;
 
       }
 
@@ -360,7 +382,7 @@ namespace sqeazy {
     void computeWeights(weight_functor_t _weight_functor = weighters::none()){
 
       for(std::size_t bin = 0;bin<histo_.size();++bin)
-    weights_[bin] = _weight_functor(bin,histo_[bin]);
+        weights_[bin] = _weight_functor(bin,histo_[bin]);
 
     }
 
@@ -370,16 +392,16 @@ namespace sqeazy {
 
       //nothing to do here
       if(!(importanceSum!=0))
-	return;
+        return;
 
       uint32_t n_levels = std::count_if(importance_.begin(), importance_.end(),
-					std::bind(std::not_equal_to<uint32_t>(),std::placeholders::_1,0));
+                                        std::bind(std::not_equal_to<uint32_t>(),std::placeholders::_1,0));
 	
       if(n_levels <= max_compressed_)
       	linear_mapping_quantisation();
       else
       	// adaptive_lloyd_max(importanceSum);
-    adaptive_lloyd_max(importanceSum);
+        adaptive_lloyd_max(importanceSum);
 
     }
 
@@ -395,11 +417,11 @@ namespace sqeazy {
     */
     template <typename weight_functor_t = weighters::none>
     void setup(const raw_type* _begin, const raw_type* _end,
-	      weight_functor_t _weight_functor = weighters::none()){
+               weight_functor_t _weight_functor = weighters::none()){
 
       //safe-guard
       if(!_begin || !(_end - _begin))
-    return;
+        return;
 
       computeHistogram(_begin, _end);
 
@@ -424,11 +446,11 @@ namespace sqeazy {
     */
     template <typename weight_functor_t = weighters::none>
     void setup_com(const raw_type* _begin, const raw_type* _end,
-	      weight_functor_t _weight_functor = weighters::none()){
+                   weight_functor_t _weight_functor = weighters::none()){
 
       //safe-guard
       if(!_begin || !(_end - _begin))
-    return;
+        return;
 
       computeHistogram(_begin, _end);
 
@@ -439,10 +461,10 @@ namespace sqeazy {
       float importanceSum = std::accumulate(importance_.begin(),importance_.end(),0.);
       //nothing to do here, no data available
       if(!(importanceSum!=0))
-	return;
+        return;
 
       uint32_t n_levels = std::count_if(importance_.begin(), importance_.end(),
-					std::bind(std::not_equal_to<uint32_t>(),std::placeholders::_1,0));
+                                        std::bind(std::not_equal_to<uint32_t>(),std::placeholders::_1,0));
 
       //compute the LUT
       if(n_levels <= max_compressed_)
@@ -466,12 +488,12 @@ namespace sqeazy {
     */
     template <typename weight_functor_t = weighters::none>
     void setup(const raw_type* _input,
-	       const size_t& _in_nelems,
-	       weight_functor_t _weight_functor = weighters::none()){
+               const size_t& _in_nelems,
+               weight_functor_t _weight_functor = weighters::none()){
 
       //safe-guard
       if(!_input || !_in_nelems)
-    return;
+        return;
 
       computeHistogram(_input, _input+ _in_nelems);
       computeWeights(_weight_functor);
@@ -482,11 +504,11 @@ namespace sqeazy {
     }
 
     void encode(const raw_type* _input, const size_t& _in_nelems,
-		compressed_type* _output){
+                compressed_type* _output){
 
       //safe-guard
       if(!_input || !_in_nelems)
-    return;
+        return;
 
       setup(_input,_in_nelems);
 
@@ -532,9 +554,9 @@ namespace sqeazy {
       raw_type val;
       uint32_t counter = 0;
       while (lutf >> val)
-        {
-          _lut[counter++] = val;
-        }
+      {
+        _lut[counter++] = val;
+      }
 
     }
 
@@ -542,20 +564,20 @@ namespace sqeazy {
     //TODO: perhaps very slow
     void lut_from_string(const std::string& _lut_as_string,
                          std::array<raw_type, max_compressed_>& _lut)
-    {
-      // std::istringstream lutf(_lut_as_string,std::ios::in);
+      {
+        // std::istringstream lutf(_lut_as_string,std::ios::in);
 
-      // const std::string sep(1,lut_field_separator);
-      // std::vector<std::string> splitted = split_by(_lut_as_string.begin(),
-      // 						   _lut_as_string.end(),
-      // 						   sep);
+        // const std::string sep(1,lut_field_separator);
+        // std::vector<std::string> splitted = split_by(_lut_as_string.begin(),
+        // 						   _lut_as_string.end(),
+        // 						   sep);
 
-      // uint32_t counter = 0;
-      // for( const std::string& item : splitted )
-      // 	_lut[counter++] = std::stol(item);
-      parsing::verbatim_to_range(_lut_as_string,_lut.begin(),_lut.end());
-      return ;
-    }
+        // uint32_t counter = 0;
+        // for( const std::string& item : splitted )
+        // 	_lut[counter++] = std::stol(item);
+        parsing::verbatim_to_range(_lut_as_string,_lut.begin(),_lut.end());
+        return ;
+      }
 
 
     /**
@@ -568,17 +590,17 @@ namespace sqeazy {
 
     */
     void decode(const std::string& _path,
-    		const compressed_type* _input,
-    		const size_t& _in_nelems,
-    		raw_type* _output){
+                const compressed_type* _input,
+                const size_t& _in_nelems,
+                raw_type* _output){
 
 
       std::array<raw_type, max_compressed_> loaded_lut_decode_;
       lut_from_file(_path,loaded_lut_decode_);
 
       if(!std::accumulate(loaded_lut_decode_.begin(), loaded_lut_decode_.end(),0)){
-	std::cerr << "lut from " << _path << " cannot be loaded, decoding skipped\n";
-	return;
+        std::cerr << "lut from " << _path << " cannot be loaded, decoding skipped\n";
+        return;
       }
 
       applyLUT<compressed_type, raw_type> lutApplyer(loaded_lut_decode_);
@@ -605,8 +627,8 @@ namespace sqeazy {
       // lut_from_file(_path,loaded_lut_decode_);
 
       if(!std::accumulate(_lut_decode.begin(), _lut_decode.end(),0)){
-	std::cerr << "incoming lut does not contain any data!\n";
-	return;
+        std::cerr << "incoming lut does not contain any data!\n";
+        return;
       }
 
       applyLUT<compressed_type, raw_type> lutApplyer(_lut_decode);
@@ -614,6 +636,13 @@ namespace sqeazy {
 
     }
 
+    void set_n_threads(int nt) {
+      nthreads_ = nt;
+    }
+
+    const int get_n_threads() const {
+      return nthreads_;
+    }
 
     const std::array<int, quantiser::max_raw_>* get_histogram() const {
       return &histo_;
