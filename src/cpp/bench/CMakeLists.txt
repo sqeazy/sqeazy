@@ -71,6 +71,10 @@ target_link_libraries(benchmark_diff_scheme_impl ${Boost_LIBRARIES} ${googlebenc
 add_executable(benchmark_flatten_to_neighborhood_scheme_impl benchmark_flatten_to_neighborhood_scheme_impl.cpp)
 target_link_libraries(benchmark_flatten_to_neighborhood_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
+add_executable(benchmark_remove_background_scheme_impl benchmark_remove_background_scheme_impl.cpp)
+target_link_libraries(benchmark_remove_background_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+
+
 IF(FFMPEG_FOUND)
   if(WIN32)
     LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}\\lib)

@@ -85,7 +85,7 @@ namespace sqeazy {
       //                                   return 0;
       //                               });
       // } else {
-      const omp_size_type nthreads  = this->nthreads();
+      const omp_size_type nthreads  = this->n_threads();
       const omp_size_type chunk_size = (_input_size + nthreads -1)/nthreads;
       const omp_size_type len = _input_size;
 
