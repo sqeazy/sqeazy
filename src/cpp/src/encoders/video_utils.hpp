@@ -275,7 +275,7 @@ namespace sqeazy {
 
   };
 
-  //TODO: we could detect the current architecture
+  //TODO: we could detect the current architecture, see the compass extension!
   typedef av_frame_t_any<32> av_frame_t;
 
 
