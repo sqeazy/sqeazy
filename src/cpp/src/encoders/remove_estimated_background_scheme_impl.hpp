@@ -119,7 +119,25 @@ namespace sqeazy {
                 std::size_t _input_size,
                 std::size_t _output_size = 0) const override final {
 
-      std::copy(_input, _input + _input_size,_output);
+      if(_input!=_output ){
+
+        if(this->n_threads() == 1)
+          std::copy(_input, _input + _input_size, _output);
+        else{
+          const int nthreads = this->n_threads();
+          omp_size_type len = _input_size;
+
+          #pragma omp parallel for                  \
+            shared(_output)                                             \
+            firstprivate( _input )                                      \
+            num_threads(nthreads)
+          for(omp_size_type i = 0;i<len;++i){
+            _output[i] = _input[i];
+          }
+        }
+      }
+
+      // std::copy(_input, _input + _input_size,_output);
 
       return 0;
     }
