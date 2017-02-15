@@ -40,8 +40,8 @@ BOOST_AUTO_TEST_CASE( constructs_with_payload_and_weighter ){
                            );
 
   sqeazy::quantiser<uint16_t,uint8_t> weighted(embryo_.data(),
-                           embryo_.data()+embryo_.num_elements(),
-                           sqeazy::weighters::offset_power_of());
+                                               embryo_.data()+embryo_.num_elements(),1,
+                                               sqeazy::weighters::offset_power_of());
 
   BOOST_CHECK_NE(std::equal(default_ctor.weights_.begin(), default_ctor.weights_.end(),
                 weighted.weights_.cbegin()), true);
@@ -123,6 +123,25 @@ BOOST_AUTO_TEST_CASE( embryo_roundtrip ){
   BOOST_CHECK_EQUAL_COLLECTIONS(reconstructed.begin(), reconstructed.end(),embryo_.data(),
                 embryo_.data()+ embryo_.num_elements());
 }
+
+BOOST_AUTO_TEST_CASE( embryo_roundtrip_2threads ){
+
+  std::vector<uint8_t> encoded(embryo_.num_elements(),0);
+
+  sqeazy::quantiser<uint16_t,uint8_t> shrinker(embryo_.data(),
+                                               embryo_.data() + embryo_.num_elements(),
+                                               2);
+  shrinker.encode(embryo_.data(),embryo_.num_elements(),&encoded[0]);
+
+  std::vector<uint16_t> reconstructed(encoded.size(),0);
+  shrinker.decode(&encoded[0],
+                  encoded.size(),
+                  &reconstructed[0]);
+
+  BOOST_CHECK_EQUAL_COLLECTIONS(reconstructed.begin(), reconstructed.end(),embryo_.data(),
+                                embryo_.data()+ embryo_.num_elements());
+}
+
 
 BOOST_AUTO_TEST_CASE( embryo_roundtrip_scheme_api ){
 

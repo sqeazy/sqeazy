@@ -155,8 +155,9 @@ namespace sqeazy {
     template <typename weight_functor_t = weighters::none>
     quantiser(const raw_type* _begin = 0,
               const raw_type* _end = 0,
-              weight_functor_t _weight_functor = weighters::none(),
-              int _nt = 1) :
+              int _nt = 1,
+              weight_functor_t _weight_functor = weighters::none()
+              ) :
       sum_(0),
       histo_(),
       weights_(),
