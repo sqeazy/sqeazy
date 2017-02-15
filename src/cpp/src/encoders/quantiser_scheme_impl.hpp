@@ -109,6 +109,8 @@ namespace sqeazy {
               shrinker.lut_from_string(fitr->second, shrinker.lut_decode_);
             }
         }
+
+      shrinker.set_n_threads(this->n_threads());
     }
 
     ~quantiser_scheme() override final {}
@@ -221,18 +223,24 @@ namespace sqeazy {
         config_map["decode_lut_string"] = shrinker.lut_to_string(shrinker.lut_decode_);
 
       applyLUT<raw_type, compressed_type> lutApplyer(shrinker.lut_encode_);
-      auto out_end = std::transform(_in,_in+_length,_out,lutApplyer);
+      compressed_type* out_end = nullptr;
 
-      // fitr = config_map.find("dump_encoded_path");
-      // if(fitr!=config_map.end()){
-      // 	std::ofstream file(fitr->second, std::ios::out );
-      // 	std::size_t osize = out_end - _out;
-      // 	for(std::size_t i = 0;i<osize;++i){
-      // 	  if(i>0 && i % 32 == 0)
-      // 	    file << "\n";
-      // 	  file << std::setw(4) << (int)_out[i];
-      // 	}
-      // }
+      if(this->n_threads()==1)
+        out_end = std::transform(_in,_in+_length,_out,lutApplyer);
+      else{
+        const omp_size_type len = _length;
+        const omp_size_type nthreads = this->n_threads();
+
+#pragma omp parallel for                        \
+  shared(_out )                              \
+  firstprivate( len, _in, lutApplyer )       \
+  num_threads(nthreads)
+        for(omp_size_type idx = 0;idx<len;idx++){
+          _out[idx] = lutApplyer(_in[idx]);
+        }
+        out_end = _out + len;
+      }
+
       return out_end;
     }
 
@@ -269,9 +277,25 @@ namespace sqeazy {
       applyLUT<compressed_type, raw_type> lutApplyer(shrinker.lut_decode_);
       auto begin = _in;
       auto end   = _in+size;
-      auto end_ptr = std::transform(begin, end,
-                                    _out,
-                                    lutApplyer);
+      raw_type* end_ptr = nullptr;
+
+      if(this->n_threads()==1)
+        end_ptr = std::transform(begin, end,
+                                      _out,
+                                      lutApplyer);
+      else{
+        const omp_size_type len = size;
+        const omp_size_type nthreads = this->n_threads();
+
+#pragma omp parallel for                        \
+  shared(_out )                              \
+  firstprivate( len, _in, lutApplyer )       \
+  num_threads(nthreads)
+        for(omp_size_type idx = 0;idx<len;idx++){
+          _out[idx] = lutApplyer(_in[idx]);
+        }
+        end_ptr = _out + len;
+      }
 
       return (end_ptr - _out) - _outlength;
     }

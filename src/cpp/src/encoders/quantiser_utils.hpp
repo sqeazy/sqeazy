@@ -220,12 +220,13 @@ namespace sqeazy {
 
     void computeHistogram(const raw_type* _begin, const raw_type* _end){
 
-      //TODO: does it make sense to fill the histo_ with (n>1) threads if the histo fits into L2?
+
       if(nthreads_ == 1)
         this->histo_ = detail::serial_fill_histogram(_begin, _end);
       else
         this->histo_ = detail::parallel_fill_histogram(_begin, _end, nthreads_);
 
+      //TODO: does it make sense to acc the histo_ with (n>1) threads if the histo fits into L2?
       sum_ = std::accumulate(histo_.begin(), histo_.end(),0);
 
     }
@@ -239,7 +240,7 @@ namespace sqeazy {
       const omp_size_type len = quantiser::max_raw_;
 
 #pragma omp parallel for                        \
-  shared(importance_itr )                      \
+  shared(importance_itr )                       \
   firstprivate( histo_itr, weights_itr )        \
   num_threads(nthreads_)
       for(omp_size_type idx = 0;idx<len;idx++){
@@ -249,7 +250,7 @@ namespace sqeazy {
 
     void adaptive_lloyd_max(const float& _imp_sum){
 
-
+//TODO: does it make sense to acc the histo_ with (n>1) threads if the histo fits into L2?
       float importanceSum = 0;
 
       if(_imp_sum)
@@ -324,7 +325,7 @@ namespace sqeazy {
       float index_weighted_mean_importance = 0;
 
       for(uint32_t raw_idx = 1;raw_idx<quantiser::max_raw_;++raw_idx){
-	
+
         //bucket overflow
         if(quantile_sum >= bucketSize && (comp_idx<lut_decode_.size()-1)){
 
@@ -332,13 +333,13 @@ namespace sqeazy {
           lut_decode_.at(comp_idx) = static_cast<raw_type>(index_weighted_mean_importance);
           comp_idx++;
           levels_available--;
-	  
+
           quantile_sum = importance_[raw_idx];//or 0?
           weighted_mean_importance_in_bucket = raw_idx*importance_[raw_idx];
-	  
+
           if(importanceIntegral<importanceSum)
             bucketSize = (importanceSum-importanceIntegral)/levels_available;
-	  
+
           if(quantile_sum!=0.)
             index_weighted_mean_importance = std::round(weighted_mean_importance_in_bucket/quantile_sum);
 
@@ -348,13 +349,13 @@ namespace sqeazy {
 
           if(quantile_sum!=0.)
             index_weighted_mean_importance = std::round(weighted_mean_importance_in_bucket/quantile_sum);
-	 	 
-	
+
+
         }
 
         lut_encode_[raw_idx] = static_cast<compressed_type>(comp_idx);
         importanceIntegral+=importance_[raw_idx];
-	
+
       }
 
       //FIXME: using std::array::at is expected to harm performance
@@ -370,7 +371,7 @@ namespace sqeazy {
 
         lut_encode_[raw_idx] = static_cast<compressed_type>(comp_idx);
         lut_decode_[comp_idx] = static_cast<raw_type>(raw_idx);
-	
+
         if(importance_[raw_idx])
           comp_idx++;
 
@@ -396,25 +397,29 @@ namespace sqeazy {
         return;
 
       uint32_t n_levels = std::count_if(importance_.begin(), importance_.end(),
-                                        std::bind(std::not_equal_to<uint32_t>(),std::placeholders::_1,0));
-	
+                                        // std::bind(std::not_equal_to<uint32_t>(),std::placeholders::_1,0)
+                                        [](float value){
+                                           return value != 0.f;
+                                         }
+        );
+
       if(n_levels <= max_compressed_)
-      	linear_mapping_quantisation();
+        linear_mapping_quantisation();
       else
-      	// adaptive_lloyd_max(importanceSum);
+        // adaptive_lloyd_max(importanceSum);
         adaptive_lloyd_max(importanceSum);
 
     }
 
     /**
        \brief setup of quantiser with max value per bucket
-       
+
        \param[in] _begin pointer to begin of input data
        \param[in] _end pointer to end of input data
-       
-       \return 
-       \retval 
-       
+
+       \return
+       \retval
+
     */
     template <typename weight_functor_t = weighters::none>
     void setup(const raw_type* _begin, const raw_type* _end,
@@ -440,10 +445,10 @@ namespace sqeazy {
        \param[in] _begin pointer to begin of input data
        \param[in] _end pointer to end of input data
        \param[in] _ pointer to end of input data
-       
-       \return 
-       \retval 
-       
+
+       \return
+       \retval
+
     */
     template <typename weight_functor_t = weighters::none>
     void setup_com(const raw_type* _begin, const raw_type* _end,
@@ -465,11 +470,14 @@ namespace sqeazy {
         return;
 
       uint32_t n_levels = std::count_if(importance_.begin(), importance_.end(),
-                                        std::bind(std::not_equal_to<uint32_t>(),std::placeholders::_1,0));
+                                        [](float value){
+                                           return value != 0.f;
+                                         }// std::bind(std::not_equal_to<uint32_t>(),std::placeholders::_1,0)
+        );
 
       //compute the LUT
       if(n_levels <= max_compressed_)
-      	linear_mapping_quantisation();
+        linear_mapping_quantisation();
       else
         adaptive_lloyd_com(importanceSum);
 
@@ -478,14 +486,14 @@ namespace sqeazy {
 
     /**
        \brief kept for legacy reasons
-       
+
        \param[in] _input incoming data
        \param[in] _in_nelemens number of elements of incoming data
 
-       
-       \return 
-       \retval 
-       
+
+       \return
+       \retval
+
     */
     template <typename weight_functor_t = weighters::none>
     void setup(const raw_type* _input,
@@ -514,14 +522,41 @@ namespace sqeazy {
       setup(_input,_in_nelems);
 
       applyLUT<raw_type, compressed_type> lutApplyer(lut_encode_);
-      std::transform(_input,_input+_in_nelems,_output,lutApplyer);
+
+      if(nthreads_==1)
+        std::transform(_input,_input+_in_nelems,_output,lutApplyer);
+      else{
+        const omp_size_type len = _in_nelems;
+
+#pragma omp parallel for                        \
+  shared(_output )                              \
+  firstprivate( len, _input, lutApplyer )       \
+  num_threads(nthreads_)
+        for(omp_size_type idx = 0;idx<len;idx++){
+          _output[idx] = lutApplyer(_input[idx]);
+        }
+      }
 
     }
 
     void decode(const compressed_type* _input, const size_t& _in_nelems, raw_type* _output){
 
       applyLUT<compressed_type, raw_type> lutApplyer(lut_decode_);
-      std::transform(_input,_input+_in_nelems,_output,lutApplyer);
+
+      if(nthreads_==1)
+        std::transform(_input,_input+_in_nelems,_output,lutApplyer);
+      else{
+        const omp_size_type len = _in_nelems;
+
+#pragma omp parallel for                        \
+  shared(_output )                       \
+  firstprivate( len, _input, lutApplyer )           \
+  num_threads(nthreads_)
+        for(omp_size_type idx = 0;idx<len;idx++){
+          _output[idx] = lutApplyer(_input[idx]);
+        }
+      }
+
 
     }
 
@@ -566,16 +601,7 @@ namespace sqeazy {
     void lut_from_string(const std::string& _lut_as_string,
                          std::array<raw_type, max_compressed_>& _lut)
       {
-        // std::istringstream lutf(_lut_as_string,std::ios::in);
 
-        // const std::string sep(1,lut_field_separator);
-        // std::vector<std::string> splitted = split_by(_lut_as_string.begin(),
-        // 						   _lut_as_string.end(),
-        // 						   sep);
-
-        // uint32_t counter = 0;
-        // for( const std::string& item : splitted )
-        // 	_lut[counter++] = std::stol(item);
         parsing::verbatim_to_range(_lut_as_string,_lut.begin(),_lut.end());
         return ;
       }
@@ -605,7 +631,21 @@ namespace sqeazy {
       }
 
       applyLUT<compressed_type, raw_type> lutApplyer(loaded_lut_decode_);
-      std::transform(_input,_input+_in_nelems,_output,lutApplyer);
+
+      if(nthreads_==1)
+        std::transform(_input,_input+_in_nelems,_output,lutApplyer);
+      else{
+        const omp_size_type len = _in_nelems;
+
+#pragma omp parallel for                        \
+  shared(_output )                              \
+  firstprivate( len, _input, lutApplyer )       \
+  num_threads(nthreads_)
+        for(omp_size_type idx = 0;idx<len;idx++){
+          _output[idx] = lutApplyer(_input[idx]);
+        }
+      }
+      // std::transform(_input,_input+_in_nelems,_output,lutApplyer);
 
     }
 
@@ -633,7 +673,19 @@ namespace sqeazy {
       }
 
       applyLUT<compressed_type, raw_type> lutApplyer(_lut_decode);
-      std::transform(_input,_input+_in_nelems,_output,lutApplyer);
+      if(nthreads_==1)
+        std::transform(_input,_input+_in_nelems,_output,lutApplyer);
+      else{
+        const omp_size_type len = _in_nelems;
+
+#pragma omp parallel for                        \
+  shared(_output )                              \
+  firstprivate( len, _input, lutApplyer )       \
+  num_threads(nthreads_)
+        for(omp_size_type idx = 0;idx<len;idx++){
+          _output[idx] = lutApplyer(_input[idx]);
+        }
+      }// std::transform(_input,_input+_in_nelems,_output,lutApplyer);
 
     }
 

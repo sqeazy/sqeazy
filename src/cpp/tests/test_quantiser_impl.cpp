@@ -159,6 +159,22 @@ BOOST_AUTO_TEST_CASE( embryo_roundtrip_scheme_api ){
                 embryo_.data()+ embryo_.num_elements());
 }
 
+BOOST_AUTO_TEST_CASE( embryo_roundtrip_scheme_api_2_threads ){
+
+  std::vector<uint8_t> encoded(embryo_.num_elements(),0);
+
+  sqeazy::quantiser_scheme<uint16_t,uint8_t> shrinker;
+  shrinker.set_n_threads(2);
+  shrinker.encode(embryo_.data(),&encoded[0],embryo_.num_elements());
+
+  std::vector<uint16_t> reconstructed(encoded.size(),0);
+  shrinker.decode(&encoded[0],
+          &reconstructed[0],
+          encoded.size());
+
+  BOOST_CHECK_EQUAL_COLLECTIONS(reconstructed.begin(), reconstructed.end(),embryo_.data(),
+                embryo_.data()+ embryo_.num_elements());
+}
 
 BOOST_AUTO_TEST_CASE( noisy_embryo_roundtrip ){
 
