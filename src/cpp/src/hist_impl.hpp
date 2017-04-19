@@ -11,6 +11,8 @@
 #include <algorithm>
 
 #include "traits.hpp"
+#include "sqeazy_common.hpp"
+#include "encoders/histogram_utils.hpp"
 
 namespace sqeazy {
 
@@ -111,6 +113,7 @@ struct histogram {
     T small_pop_bin_value;
     T large_pop_bin_value;
 
+    std::uint32_t nthreads;
 
     histogram():
         bins(num_bins,0),
@@ -124,13 +127,14 @@ struct histogram {
         support_value(0),
         mode_value(0),
         small_pop_bin_value(0),
-        large_pop_bin_value(std::numeric_limits<T>::max())
+        large_pop_bin_value(std::numeric_limits<T>::max()),
+        nthreads(1)
         {
 
         }
 
 
-    histogram(T* _image, const integral_type& _size):
+    histogram(T* _image, const integral_type& _size, const std::uint32_t& _nthreads = 1):
         bins(num_bins,0),
         num_entries(_size),
         integral_value(0),
@@ -142,7 +146,8 @@ struct histogram {
         support_value(0),
         mode_value(0),
         small_pop_bin_value(0),
-        large_pop_bin_value(std::numeric_limits<T>::max())
+        large_pop_bin_value(std::numeric_limits<T>::max()),
+        nthreads(_nthreads)
         {
             if(_size>0)
                 fill_from_image(_image, _image + _size);
@@ -150,7 +155,7 @@ struct histogram {
         }
 
     template <typename ItrT>
-    histogram(ItrT _begin, ItrT _end):
+    histogram(ItrT _begin, ItrT _end, const std::uint32_t& _nthreads = 1):
         bins(num_bins,0),
         num_entries(_end - _begin),
         integral_value(0),
@@ -162,7 +167,8 @@ struct histogram {
         support_value(0),
         mode_value(0),
         small_pop_bin_value(0),
-        large_pop_bin_value(std::numeric_limits<T>::max())
+        large_pop_bin_value(std::numeric_limits<T>::max()),
+        nthreads(_nthreads)
         {
             if(num_entries)
                 fill_from_image(_begin, _end);
@@ -190,10 +196,7 @@ struct histogram {
     void add_from_image(ItrT _image_begin, ItrT _image_end) {
         num_entries += _image_end - _image_begin;
 
-        for(ItrT Itr = _image_begin; Itr!=_image_end; ++Itr) {
-            bins[*Itr]++;
-        }
-
+        sqeazy::detail::dense_parallel_fill_histogram(_image_begin, _image_end, bins.data(), nthreads);
 
     }
 
@@ -220,10 +223,7 @@ struct histogram {
 
         std::fill(bins.begin(), bins.end(),0);
 
-        for(ItrT Itr = _image_begin; Itr!=_image_end; ++Itr) {
-            bins[*Itr]++;
-        }
-
+        sqeazy::detail::dense_parallel_fill_histogram(_image_begin, _image_end, bins.data(), nthreads);
 
         fill_stats();
 
@@ -231,7 +231,7 @@ struct histogram {
 
     integral_type calc_integral() const {
 
-        integral_type value = std::accumulate(bins.begin(),bins.end(),0);
+        integral_type value = sqeazy::detail::accumulate(bins.begin(),bins.end(),integral_type(0));// std::accumulate(bins.begin(),bins.end(),0);
 
         return value;
     }
@@ -247,7 +247,8 @@ struct histogram {
     }
 
     T calc_mode() const {
-        T value = std::max_element(bins.begin(),bins.end()) - bins.begin();
+        T value = sqeazy::detail::max_element_distance(bins.begin(),bins.end());// std::distance(bins.begin(),
+                  //               std::max_element(bins.begin(),bins.end());
         return value;
     }
 

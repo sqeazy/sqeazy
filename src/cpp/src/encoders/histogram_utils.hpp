@@ -15,7 +15,7 @@ namespace sqeazy {
         {
 
             static_assert(std::is_integral<T>::value,"[dense_histo] input type is not integral");
-            static const std::uint32_t n_possible_values = (1 << (sizeof(T)*CHAR_BIT));
+            static const std::size_t n_possible_values = (1 << (sizeof(T)*CHAR_BIT));
             typedef std::array<std::uint32_t,n_possible_values> type;
 
 
@@ -57,9 +57,9 @@ namespace sqeazy {
 
 
             //mapping the partitions of [_begin, _end) to histo_clones
-#pragma omp parallel                         \
-    shared( histo_clones_itr )                     \
-    firstprivate( _begin, _end, chunk_size )        \
+#pragma omp parallel                            \
+    shared( histo_clones_itr )                  \
+    firstprivate( _begin, _end, chunk_size )    \
     num_threads(nthreads)
             {
                 auto tid            = omp_get_thread_num();
@@ -76,10 +76,10 @@ namespace sqeazy {
             const omp_size_type histo_len = histo.size();
             const omp_size_type n_clones = histo_clones.size();
 
-            #pragma omp parallel for                        \
-                shared(histo_itr )                     \
-                firstprivate( histo_clones_itr, n_clones )      \
-                num_threads(nthreads)
+#pragma omp parallel for                        \
+    shared(histo_itr )                          \
+    firstprivate( histo_clones_itr, n_clones )  \
+    num_threads(nthreads)
             for(omp_size_type idx = 0;idx<histo_len;idx++){
                 for(omp_size_type clone = 0;clone<n_clones;++clone){
                     *(histo_itr + idx) += (histo_clones_itr+clone)->data()[idx];
@@ -89,6 +89,203 @@ namespace sqeazy {
 
             return histo;
 
+        }
+
+        /**
+         *  \brief fill the histogram represented by _bins sequentially with the value counts/frequency observed in [_begin,_end); it is assumed that _bins yields a linear range of range(0,max_value(*_begin))
+         *
+         *  \param _begin input iterator pointing to element 0 of the values to histogram (const iterators allowed)
+         *  \param _end input iterator pointing to the last+1 element of the values to histogram (const iterators allowed)
+         *  \param _bins input iterator of the histogram bins (assumed to yield a linear range of range(0,max_value(*_begin)))
+         *  \return void
+         */
+        template <typename iter_type, typename bin_iter_type>
+        void dense_serial_fill_histogram(iter_type _begin,
+                                         iter_type _end,
+                                         bin_iter_type _bins
+            )
+        {
+
+            // typedef typename std::iterator_traits<iter_type>::value_type value_type;
+            // static const std::uint32_t n_possible_values = (1 << (sizeof(value_type)*CHAR_BIT));
+
+            for(;_begin!=_end;++_begin){
+                *(_bins + *_begin)+=1;
+            }
+
+            return;
+        }
+
+        /**
+         *  \brief fill the histogram represented by _bins concurrently with the value counts/frequency observed in [_begin,_end); it is assumed that _bins yields a linear range of range(0,max_value(*_begin))
+         *
+         *  \param _begin input iterator pointing to element 0 of the values to histogram (const iterators allowed)
+         *  \param _end input iterator pointing to the last+1 element of the values to histogram (const iterators allowed)
+         *  \param _bins input iterator of the histogram bins (assumed to yield a linear range of range(0,max_value(*_begin)))
+         *  \param nthreads number of threads to use
+         *  \return void
+         */
+        template <typename iter_type, typename bin_iter_type>
+        void dense_parallel_fill_histogram(iter_type _begin,
+                                           iter_type _end,
+                                           bin_iter_type _bins,
+                                           int nthreads = 1
+            )
+        {
+
+            if(nthreads == 1)
+                return dense_serial_fill_histogram(_begin, _end, _bins);
+
+            if(nthreads <= 0)
+                nthreads = std::thread::hardware_concurrency();
+
+            typedef typename std::iterator_traits<iter_type>::value_type value_type;
+
+            using histo_t = typename dense_histo<value_type>::type;
+            histo_t histo;
+            histo.fill(0u);
+
+            std::vector<histo_t> histo_clones(nthreads, histo);
+            auto histo_clones_itr = histo_clones.data();
+            const auto len = std::distance(_begin,_end);
+            const omp_size_type chunk_size = (len + nthreads - 1)/nthreads;
+
+
+            //mapping the partitions of [_begin, _end) to histo_clones
+#pragma omp parallel                            \
+    shared( histo_clones_itr )                  \
+    firstprivate( _begin, _end, chunk_size )    \
+    num_threads(nthreads)
+            {
+                auto tid            = omp_get_thread_num();
+                auto chunk_begin    = _begin + tid*chunk_size;
+                auto chunk_end      = chunk_begin + chunk_size >= _end ? _end : chunk_begin + chunk_size;
+                auto my_histo_itr   = &(*(histo_clones_itr+tid))[0];
+
+                for(;chunk_begin!=chunk_end;++chunk_begin)
+                    my_histo_itr[*chunk_begin]++;
+
+            }
+
+            const omp_size_type histo_len = histo.size();
+            const omp_size_type n_clones = histo_clones.size();
+
+#pragma omp parallel for                        \
+    shared( _bins )                             \
+    firstprivate( histo_clones_itr, n_clones )  \
+    num_threads(nthreads)
+            for(omp_size_type idx = 0;idx<histo_len;idx++){
+                for(omp_size_type clone = 0;clone<n_clones;++clone){
+                    *(_bins + idx) += (histo_clones_itr+clone)->data()[idx];
+                }
+
+            }
+
+            return ;
+
+        }
+
+
+        /**
+         *  \brief simple accumulate clone that assumes an addition over all entries in [_begin,_end)
+
+         *  Note: the serial version is better for small ranges of [_begin,_end), whereas the large ones tend to run faster in parallel (cache line or threading overhead effects suspected)
+         *
+         *  Run on (4 X 3600 MHz CPU s)
+         *  ----------------------------------------------------------------------------------------
+         *  Benchmark                                                 Time           CPU Iterations
+         *  ----------------------------------------------------------------------------------------
+         *  BM_serial_accumulate<std::uint32_t>/256                 224 ns        223 ns    3153560   4.27013GB/s
+         *  BM_serial_accumulate<std::uint32_t>/65535             55585 ns      55323 ns      12172   4.41291GB/s
+         *  BM_serial_accumulate<std::uint32_t>/2147483647   1984397518 ns 1961781342 ns          1   4.07793GB/s
+         *  BM_parallel_accumulate<std::uint32_t>/256               898 ns        888 ns     850214   1099.42MB/s
+         *  BM_parallel_accumulate<std::uint32_t>/65535           32438 ns      31136 ns      21112   7.84102GB/s
+         *  BM_parallel_accumulate<std::uint32_t>/2147483647 1025681803 ns  916335018 ns          1   8.73043GB/s
+         *
+         *  \param _begin start of range [_begin,_end)
+         *  \param _begin end of range [_begin,_end)
+         *  \param _start starting value of the result
+         *  \param _nthreads how many threads to use
+         *  \return decltype(_start)
+         */
+        template <typename iter, typename value_type>
+        value_type accumulate(iter _begin, iter _end, value_type _start, int _nthreads = 0){
+
+            if(_nthreads == 1)
+                return std::accumulate(_begin, _end, _start);
+
+            if(_nthreads <= 0)
+                _nthreads = std::thread::hardware_concurrency();
+
+            const std::size_t len = std::distance(_begin,_end);
+            value_type value = _start;
+            omp_size_type chunk = (len + _nthreads -1)/_nthreads;
+
+#pragma omp parallel for                        \
+    shared(_begin)                              \
+    schedule(static,chunk)                      \
+    reduction(+:value)                          \
+    num_threads(_nthreads)
+            for(omp_size_type i = 0;i<len;++i){
+                value += *(_begin+i);
+            }
+
+            return value;
+        }
+
+        /**
+         *  \brief function to determine the offset of the largest element in [_begin,_end)
+         *
+         *  Detailed description
+         *  Run on (4 X 3600 MHz CPU s)
+         *  -----------------------------------------------------------------------------------------
+         *  Benchmark                                                  Time           CPU Iterations
+         *  -----------------------------------------------------------------------------------------
+         *  BM_serial_max_element<std::uint32_t>/256                 629 ns        626 ns    1113816   1.52368GB/s
+         *  BM_serial_max_element<std::uint32_t>/65535            166827 ns     166020 ns       4198   1.47053GB/s
+         *  BM_serial_max_element<std::uint32_t>/2147483647   5521365086 ns 5500957139 ns          1   1.45429GB/s
+         *  BM_parallel_max_element<std::uint32_t>/256               862 ns        856 ns     680501   1.11451GB/s
+         *  BM_parallel_max_element<std::uint32_t>/65535           26867 ns      25819 ns      24894   9.45553GB/s
+         *  BM_parallel_max_element<std::uint32_t>/2147483647  942780948 ns  901011798 ns          1   8.87891GB/s
+
+         *  \param _begin start of range [_begin,_end)
+         *  \param _begin end of range [_begin,_end)
+         *  \param _nthreads how many threads to use
+         *  \return std::size_t
+         */
+        template <typename iter>
+        std::size_t max_element_distance(iter _begin, iter _end, int _nthreads = 0)
+        {
+
+            typedef typename std::iterator_traits<iter>::value_type value_t;
+
+            if(_nthreads == 1)
+                return std::distance(_begin,
+                                     std::max_element(_begin,_end));
+
+            if(_nthreads <= 0)
+                _nthreads = std::thread::hardware_concurrency();
+
+            const omp_size_type len = std::distance(_begin,_end);
+            value_t max_value = std::numeric_limits<value_t>::min();
+            std::size_t value = len;
+
+#pragma omp parallel for                        \
+    shared(_begin, value)
+            for (omp_size_type i = 0; i < len; ++i)
+            {
+                auto current = *(_begin + i);
+                if (current > max_value)
+                {
+#pragma omp critical
+                    {
+                        max_value = *(_begin + i);
+                        value = i;
+                    }
+                }
+            }
+
+            return value;
         }
     }  // detail
 
