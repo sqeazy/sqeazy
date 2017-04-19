@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <numeric>
 #include <algorithm>
+
 #include "traits.hpp"
 
 namespace sqeazy {
@@ -49,10 +50,10 @@ IteratorT median_index(IteratorT begin, IteratorT end) {
 
      \param[in] begin starting iterator of the array to calculate the support of
      \param[in] end end+1 iterator of the array to calculate the support of
-     \param[in] threshold 
+     \param[in] threshold
 
      \return iterator pointing to the index in question
-     \retval 
+     \retval
 
   */
   template <typename IteratorT,typename ValueT>
@@ -120,13 +121,13 @@ struct histogram {
         median_value(0),
         median_variation_value(0),
         entropy_value(0),
-	support_value(0),
+        support_value(0),
         mode_value(0),
         small_pop_bin_value(0),
         large_pop_bin_value(std::numeric_limits<T>::max())
-    {
+        {
 
-    }
+        }
 
 
     histogram(T* _image, const integral_type& _size):
@@ -138,15 +139,15 @@ struct histogram {
         median_value(0),
         median_variation_value(0),
         entropy_value(0),
-	support_value(0),
+        support_value(0),
         mode_value(0),
         small_pop_bin_value(0),
         large_pop_bin_value(std::numeric_limits<T>::max())
-    {
-        if(_size>0)
-            fill_from_image(_image, _image + _size);
+        {
+            if(_size>0)
+                fill_from_image(_image, _image + _size);
 
-    }
+        }
 
     template <typename ItrT>
     histogram(ItrT _begin, ItrT _end):
@@ -158,46 +159,46 @@ struct histogram {
         median_value(0),
         median_variation_value(0),
         entropy_value(0),
-	support_value(0),
+        support_value(0),
         mode_value(0),
         small_pop_bin_value(0),
         large_pop_bin_value(std::numeric_limits<T>::max())
-    {
-        if(num_entries)
-            fill_from_image(_begin, _end);
+        {
+            if(num_entries)
+                fill_from_image(_begin, _end);
 
-    }
+        }
 
 
-  void clear(){
-    
+    void clear(){
+
         num_entries= (0);
-	std::fill(bins.begin(), bins.end(),0);
+        std::fill(bins.begin(), bins.end(),0);
         integral_value= (0);
         mean_value= (0);
         mean_variation_value= (0);
         median_value= (0);
         median_variation_value= (0);
         entropy_value= (0);
-	support_value= (0);
+        support_value= (0);
         mode_value= (0);
         small_pop_bin_value= (0);
         large_pop_bin_value= (std::numeric_limits<T>::max());
-  }
-
-  template <typename ItrT>
-  void add_from_image(ItrT _image_begin, ItrT _image_end) {
-    num_entries += _image_end - _image_begin;
-   
-    for(ItrT Itr = _image_begin; Itr!=_image_end; ++Itr) {
-      bins[*Itr]++;
     }
 
+    template <typename ItrT>
+    void add_from_image(ItrT _image_begin, ItrT _image_end) {
+        num_entries += _image_end - _image_begin;
 
-  }
+        for(ItrT Itr = _image_begin; Itr!=_image_end; ++Itr) {
+            bins[*Itr]++;
+        }
 
-  void fill_stats(){
-      small_pop_bin_value = calc_smallest_populated_bin();
+
+    }
+
+    void fill_stats(){
+        small_pop_bin_value = calc_smallest_populated_bin();
         large_pop_bin_value = calc_largest_populated_bin();
 
         integral_value = calc_integral();
@@ -209,7 +210,7 @@ struct histogram {
         entropy_value = calc_entropy();
 
 
-  }
+    }
 
 
     //TODO: use SFINAE to fill bins for signed histo as well
@@ -217,14 +218,14 @@ struct histogram {
     void fill_from_image(ItrT _image_begin, ItrT _image_end) {
         num_entries = _image_end - _image_begin;
 
-	std::fill(bins.begin(), bins.end(),0);
+        std::fill(bins.begin(), bins.end(),0);
 
         for(ItrT Itr = _image_begin; Itr!=_image_end; ++Itr) {
             bins[*Itr]++;
         }
 
-  
-	fill_stats();
+
+        fill_stats();
 
     }
 
@@ -317,7 +318,7 @@ struct histogram {
     T calc_smallest_populated_bin() const {
 
         T value = 0;
-	const twice_value_type size = num_bins;
+        const twice_value_type size = num_bins;
         for(twice_value_type i = 0; i<size; ++i) {
             if(bins[i]) {
                 value = i;
@@ -338,7 +339,7 @@ struct histogram {
 
         T mindex = median_index(bins.begin()+smallest_populated_bin(),
                                 bins.begin()+largest_populated_bin() +1
-                               ) - bins.begin();
+            ) - bins.begin();
         float result = 0;
         if(mindex>0 ) //the underlying distribution has always even number of entries
             result = (bins[mindex]*mindex + bins[mindex-1]*(mindex-1))/float(bins[mindex-1] + bins[mindex]);
@@ -347,39 +348,39 @@ struct histogram {
 
     }
 
-  /**
-     \brief calculate the support of the histogram
-     the support is the value of the histogram x-axis at which the cumulative PDF reaches the threshold given, here the weighted mean between the support index bin found and the bin before it is calculated
+    /**
+       \brief calculate the support of the histogram
+       the support is the value of the histogram x-axis at which the cumulative PDF reaches the threshold given, here the weighted mean between the support index bin found and the bin before it is calculated
 
-     \param[in] _threshold value of cumulative PDF at which the bin value is returned (threshold is required to be inside the closed real interval [0.,1.]
+       \param[in] _threshold value of cumulative PDF at which the bin value is returned (threshold is required to be inside the closed real interval [0.,1.]
 
-     \return 
-     \retval 
+       \return
+       \retval
 
-  */
-  float calc_support(float _threshold = .99) const {
+    */
+    float calc_support(float _threshold = .99) const {
 
-    float result = 0;
-      
-    if(_threshold>1.){
-      return result;
+        float result = 0;
+
+        if(_threshold>1.){
+            return result;
+        }
+
+        if(_threshold<0.){
+            return result;
+        }
+
+        T mindex = support_index(bins.begin()+smallest_populated_bin(),
+                                 bins.begin()+largest_populated_bin() +1,
+                                 _threshold
+            ) - bins.begin();
+
+        if(mindex>0 ) //the underlying distribution has always even number of entries
+            result = (bins[mindex]*mindex + bins[mindex-1]*(mindex-1))/float(bins[mindex-1] + bins[mindex]);
+
+        return result;
+
     }
-
-    if(_threshold<0.){
-      return result;
-    }
-
-    T mindex = support_index(bins.begin()+smallest_populated_bin(),
-			     bins.begin()+largest_populated_bin() +1,
-			     _threshold
-			     ) - bins.begin();
-        
-    if(mindex>0 ) //the underlying distribution has always even number of entries
-      result = (bins[mindex]*mindex + bins[mindex-1]*(mindex-1))/float(bins[mindex-1] + bins[mindex]);
-
-    return result;
-
-  }
 
 
 
@@ -435,9 +436,9 @@ struct histogram {
 
     }
 
-  float support() const {
-    return support_value;
-  }
+    float support() const {
+        return support_value;
+    }
 
     ~histogram() {
 
@@ -458,8 +459,8 @@ struct histogram {
               << "\t" << _h.median_variation()
               << "\t" << _h.entropy()
               << "\t" << max_compr_ratio
-              // << "\n"
-              ;
+            // << "\n"
+            ;
 
         return _cout;
     }
