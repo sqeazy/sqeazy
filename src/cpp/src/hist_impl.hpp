@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <numeric>
 #include <algorithm>
+#include <functional>
 
 #include "traits.hpp"
 #include "sqeazy_common.hpp"
@@ -278,12 +279,6 @@ namespace sqeazy {
 
             const twice_value_type end = large_pop_bin_value +1;
 
-            // float mean_variation = 0;
-            // float temp;
-            // for(twice_value_type i = smallest_populated_bin(); i<(end); ++i) {
-            //     temp = float(i) - mean();
-            //     mean_variation += (temp)*(temp)*bins[i];
-            // }
             float mean_variation = detail::unnormalized_mean_variation(bins.begin()+small_pop_bin_value,
                                                                        bins.begin()+end,
                                                                        0.f,
@@ -302,15 +297,8 @@ namespace sqeazy {
 
         T calc_largest_populated_bin() const {
 
-            T value = 0;
-
-            for(twice_value_type i = num_bins-1; i>=0; i-=1) {
-                if(bins[i]) {
-                    value = i;
-                    break;
-                }
-            }
-
+            auto fitr = std::find_if_not(bins.rbegin(),bins.rend(),[](bins_type value){ return value == 0;});
+            T value = bins.size() - std::distance(bins.rbegin(),fitr) - 1;
             return value;
         }
 
@@ -322,14 +310,8 @@ namespace sqeazy {
 
         T calc_smallest_populated_bin() const {
 
-            T value = 0;
-            const twice_value_type size = num_bins;
-            for(twice_value_type i = 0; i<size; ++i) {
-                if(bins[i]) {
-                    value = i;
-                    break;
-                }
-            }
+            auto fitr = std::find_if_not(bins.begin(),bins.end(),[](bins_type value){ return value == 0;});
+            T value = std::distance(bins.begin(),fitr);
 
             return value;
         }
