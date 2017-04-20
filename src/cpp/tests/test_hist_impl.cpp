@@ -196,6 +196,35 @@ BOOST_AUTO_TEST_CASE( mode_and_mean )
     BOOST_CHECK_NE(of_variable.mode(),of_variable.mean());
 
 }
+
+BOOST_AUTO_TEST_CASE( median_variation )
+{
+    boost::accumulators::accumulator_set<float,
+          boost::accumulators::stats<boost::accumulators::tag::mean,
+          boost::accumulators::tag::median,
+          boost::accumulators::tag::variance
+          >
+          > to_play_with_acc;
+    boost::random::mt19937 rng;
+    boost::random::lognormal_distribution<float> lnorm(1.f,1.f);
+
+    for(unsigned num = 0; num<size; ++num) {
+
+        to_play_with[num] = lnorm(rng);
+        to_play_with_acc(to_play_with[num]);
+    }
+
+    sqeazy::histogram<value_type> of_variable(&to_play_with[0], size);
+    of_variable.set_n_threads(std::thread::hardware_concurrency());
+
+    BOOST_CHECK_NE(boost::accumulators::mean(to_play_with_acc),boost::accumulators::median(to_play_with_acc));
+    BOOST_CHECK_NE(of_variable.median(),of_variable.median_variation());
+    BOOST_CHECK_NE(of_variable.median(),of_variable.mean());
+    BOOST_CHECK_NE(of_variable.mean_variation(),of_variable.median_variation());
+
+
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 

@@ -276,15 +276,20 @@ namespace sqeazy {
 
         float calc_mean_variation() const {
 
-            float mean_variation = 0;
             const twice_value_type end = large_pop_bin_value +1;
 
-            float temp;
-            for(twice_value_type i = smallest_populated_bin(); i<(end); ++i) {
-                temp = float(i) - mean();
-                mean_variation += (temp)*(temp)*bins[i];
-            }
-
+            // float mean_variation = 0;
+            // float temp;
+            // for(twice_value_type i = smallest_populated_bin(); i<(end); ++i) {
+            //     temp = float(i) - mean();
+            //     mean_variation += (temp)*(temp)*bins[i];
+            // }
+            float mean_variation = detail::unnormalized_mean_variation(bins.begin()+small_pop_bin_value,
+                                                                       bins.begin()+end,
+                                                                       0.f,
+                                                                       mean(),
+                                                                       small_pop_bin_value,
+                                                                       n_threads());
             mean_variation/=integral();
 
             return std::sqrt(mean_variation);
