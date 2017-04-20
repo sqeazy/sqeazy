@@ -324,11 +324,11 @@ namespace sqeazy {
          *  \return decltype(_start)
          */
         template <typename iter, typename value_type>
-        value_type unnormalized_mean_variation(iter _begin, iter _end,
-                                  value_type _start_value,
-                                  value_type _mean,
-                                  omp_size_type _start_index = 0,
-                                  int _nthreads = 0){
+        value_type unnormalized_variation(iter _begin, iter _end,
+                                          value_type _start_value,
+                                          value_type _mean,
+                                          omp_size_type _start_index = 0,
+                                          int _nthreads = 0){
 
             if(_nthreads <= 0)
                 _nthreads = std::thread::hardware_concurrency();

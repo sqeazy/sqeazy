@@ -279,7 +279,7 @@ namespace sqeazy {
 
             const twice_value_type end = large_pop_bin_value +1;
 
-            float mean_variation = detail::unnormalized_mean_variation(bins.begin()+small_pop_bin_value,
+            float mean_variation = detail::unnormalized_variation(bins.begin()+small_pop_bin_value,
                                                                        bins.begin()+end,
                                                                        0.f,
                                                                        mean(),
@@ -373,15 +373,21 @@ namespace sqeazy {
 
         float calc_median_variation() const {
 
-            float median_variation = 0;
+
             const twice_value_type end = large_pop_bin_value +1;
 
-
-            float temp = 0;
-            for(twice_value_type i = smallest_populated_bin(); i<(end); ++i) {
-                temp = i - median();
-                median_variation += (temp)*(temp)*bins[i];
-            }
+            float median_variation = detail::unnormalized_variation(bins.begin()+small_pop_bin_value,
+                                                                       bins.begin()+end,
+                                                                       0.f,
+                                                                       median(),
+                                                                       small_pop_bin_value,
+                                                                       n_threads());
+            // float median_variation = 0;
+            // float temp = 0;
+            // for(twice_value_type i = smallest_populated_bin(); i<(end); ++i) {
+            //     temp = i - median();
+            //     median_variation += (temp)*(temp)*bins[i];
+            // }
 
             median_variation/=integral();
 
