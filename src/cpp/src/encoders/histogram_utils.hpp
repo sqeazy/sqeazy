@@ -304,17 +304,17 @@ namespace sqeazy {
          *  Note: the serial version is better for small ranges of [_begin,_end), whereas the large ones tend to run faster in parallel (cache line or threading overhead effects suspected)
          *  Note: this could be converted to a dot-product where the second container holds the index values to weight by
          *
-         *  Run on (4 X 3577.92 MHz CPU s)
-         *  2017-04-20 16:24:43
+         *  Run on (4 X 3371 MHz CPU s)
+         *  2017-04-20 16:39:48
          *  ***WARNING*** CPU scaling is enabled, the benchmark real time measurements may be noisy and will incur extra overhead.
-         *  Benchmark                                                      Time           CPU Iterations
-         *  --------------------------------------------------------------------------------------------
-         *  BM_serial_index_weighted_sum<std::uint32_t>/256              222 ns        222 ns    3155531   4.29228GB/s
-         *  BM_serial_index_weighted_sum<std::uint32_t>/63.999k        55733 ns      55660 ns      11788   4.38621GB/s
-         *  BM_serial_index_weighted_sum<std::uint32_t>/48M         45664822 ns   45367840 ns         15   4.13288GB/s
-         *  BM_parallel_index_weighted_sum<std::uint32_t>/256            881 ns        872 ns     831324   1120.02MB/s
-         *  BM_parallel_index_weighted_sum<std::uint32_t>/63.999k      34093 ns      33114 ns      21384   7.37264GB/s
-         *  BM_parallel_index_weighted_sum<std::uint32_t>/48M       24234586 ns   23387437 ns         30   8.01712GB/s
+         *  Benchmark                                                               Time           CPU Iterations
+         *  -----------------------------------------------------------------------------------------------------
+         *  BM_serial_unnormalized_mean_variation<std::uint32_t>/256              386 ns        384 ns    1879320    2.4816GB/s
+         *  BM_serial_unnormalized_mean_variation<std::uint32_t>/63.999k        96004 ns      95688 ns       7089   2.55138GB/s
+         *  BM_serial_unnormalized_mean_variation<std::uint32_t>/48M         73735729 ns   73143725 ns         10   2.56345GB/s
+         *  BM_parallel_unnormalized_mean_variation<std::uint32_t>/256            970 ns        945 ns     815958   1032.98MB/s
+         *  BM_parallel_unnormalized_mean_variation<std::uint32_t>/63.999k      69403 ns      61754 ns      13774   3.95336GB/s
+         *  BM_parallel_unnormalized_mean_variation<std::uint32_t>/48M       40995208 ns   36816906 ns         19   5.09277GB/s
          *
          *  \param _begin start of range [_begin,_end)
          *  \param _begin end of range [_begin,_end)
