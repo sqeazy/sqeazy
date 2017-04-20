@@ -209,7 +209,7 @@ namespace sqeazy {
          *  \return decltype(_start)
          */
         template <typename iter, typename value_type>
-        value_type accumulate(iter _begin, iter _end, value_type _start, int _nthreads = 0){
+        value_type sum(iter _begin, iter _end, value_type _start, int _nthreads = 0){
 
             if(_nthreads == 1)
                 return std::accumulate(_begin, _end, _start);
@@ -217,7 +217,7 @@ namespace sqeazy {
             if(_nthreads <= 0)
                 _nthreads = std::thread::hardware_concurrency();
 
-            const std::size_t len = std::distance(_begin,_end);
+            const omp_size_type  len = std::distance(_begin,_end);
             value_type value = _start;
             omp_size_type chunk = (len + _nthreads -1)/_nthreads;
 
@@ -228,6 +228,68 @@ namespace sqeazy {
     num_threads(_nthreads)
             for(omp_size_type i = 0;i<len;++i){
                 value += *(_begin+i);
+            }
+
+            return value;
+        }
+
+        /**
+         *  \brief calculate the weighted sum of the array, where the weight per item is it's index
+         *
+         *  Example: array = {5,4,3,2,1,0};
+         *           index_weighted_sum = 5*0 + 4*1 + 3*2 + 2*3 + 1*4 + 0*5;
+         *
+         *  Note: the serial version is better for small ranges of [_begin,_end), whereas the large ones tend to run faster in parallel (cache line or threading overhead effects suspected)
+         *  Note: this could be converted to a dot-product where the second container holds the index values to weight by
+         *
+         *  Run on (4 X 3577.92 MHz CPU s)
+         *  2017-04-20 16:24:43
+         *  ***WARNING*** CPU scaling is enabled, the benchmark real time measurements may be noisy and will incur extra overhead.
+         *  Benchmark                                                      Time           CPU Iterations
+         *  --------------------------------------------------------------------------------------------
+         *  BM_serial_index_weighted_sum<std::uint32_t>/256              222 ns        222 ns    3155531   4.29228GB/s
+         *  BM_serial_index_weighted_sum<std::uint32_t>/63.999k        55733 ns      55660 ns      11788   4.38621GB/s
+         *  BM_serial_index_weighted_sum<std::uint32_t>/48M         45664822 ns   45367840 ns         15   4.13288GB/s
+         *  BM_parallel_index_weighted_sum<std::uint32_t>/256            881 ns        872 ns     831324   1120.02MB/s
+         *  BM_parallel_index_weighted_sum<std::uint32_t>/63.999k      34093 ns      33114 ns      21384   7.37264GB/s
+         *  BM_parallel_index_weighted_sum<std::uint32_t>/48M       24234586 ns   23387437 ns         30   8.01712GB/s
+         *
+         *  \param _begin start of range [_begin,_end)
+         *  \param _begin end of range [_begin,_end)
+         *  \param _start_value starting value of the result
+         *  \param _start_index starting offset of the index to use for weighting
+         *  \param _nthreads how many threads to use
+         *  \return decltype(_start)
+         */
+        template <typename iter, typename value_type>
+        value_type index_weighted_sum(iter _begin, iter _end,
+                                      value_type _start_value,
+                                      omp_size_type _start_index = 0,
+                                      int _nthreads = 0){
+
+            if(_nthreads <= 0)
+                _nthreads = std::thread::hardware_concurrency();
+
+            const omp_size_type  len = std::distance(_begin,_end);
+            value_type value = _start_value;
+
+            if(len < _nthreads || _nthreads == 1){
+                for(omp_size_type i = 0;i<len;++i){
+                    value += (i+_start_index)*(*(_begin+i));
+                }
+                return value;
+            }
+
+            omp_size_type chunk = (len + _nthreads -1)/_nthreads;
+
+#pragma omp parallel for                        \
+    shared(_begin)                              \
+    firstprivate(_start_index)                              \
+    schedule(static,chunk)                      \
+    reduction(+:value)                          \
+    num_threads(_nthreads)
+            for(omp_size_type i = 0;i<len;++i){
+                value += (i+_start_index)*(*(_begin+i));
             }
 
             return value;

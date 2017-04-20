@@ -80,6 +80,9 @@ target_link_libraries(benchmark_remove_estimated_background_scheme_impl ${Boost_
 add_executable(benchmark_quantiser_scheme_impl benchmark_quantiser_scheme_impl.cpp)
 target_link_libraries(benchmark_quantiser_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
+add_executable(benchmark_histogram_utils benchmark_histogram_utils.cpp)
+target_link_libraries(benchmark_histogram_utils ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+
 
 IF(FFMPEG_FOUND)
   if(WIN32)
