@@ -280,11 +280,11 @@ namespace sqeazy {
             const twice_value_type end = large_pop_bin_value +1;
 
             float mean_variation = detail::unnormalized_variation(bins.begin()+small_pop_bin_value,
-                                                                       bins.begin()+end,
-                                                                       0.f,
-                                                                       mean(),
-                                                                       small_pop_bin_value,
-                                                                       n_threads());
+                                                                  bins.begin()+end,
+                                                                  0.f,
+                                                                  mean(),
+                                                                  small_pop_bin_value,
+                                                                  n_threads());
             mean_variation/=integral();
 
             return std::sqrt(mean_variation);
@@ -377,11 +377,11 @@ namespace sqeazy {
             const twice_value_type end = large_pop_bin_value +1;
 
             float median_variation = detail::unnormalized_variation(bins.begin()+small_pop_bin_value,
-                                                                       bins.begin()+end,
-                                                                       0.f,
-                                                                       median(),
-                                                                       small_pop_bin_value,
-                                                                       n_threads());
+                                                                    bins.begin()+end,
+                                                                    0.f,
+                                                                    median(),
+                                                                    small_pop_bin_value,
+                                                                    n_threads());
             // float median_variation = 0;
             // float temp = 0;
             // for(twice_value_type i = smallest_populated_bin(); i<(end); ++i) {
@@ -405,20 +405,21 @@ namespace sqeazy {
             return median_variation_value;
         }
 
-        float calc_entropy() {
-
-            float value = 0;
+        float calc_entropy() const {
 
             const float inv_integral = 1.f/integral();
-            const float inv_log_2 = 1.f/std::log(2.f);
-            float temp = 0;
+
             bins_citer_t binsI = bins.begin() + smallest_populated_bin();
             bins_citer_t binsE = bins.begin() + largest_populated_bin() + 1;
 
-            for(; binsI!=binsE; ++binsI) {
-                temp = *binsI * inv_integral;
-                value += (*binsI) ? temp*std::log(temp)*inv_log_2 : 0.f;
-            }
+            float value = detail::reduce_to_entropy(binsI,binsE, inv_integral, n_threads());
+            // float value = 0;
+            // float temp = 0;
+            // const float inv_log_2 = 1.f/std::log(2.f);
+            // for(; binsI!=binsE; ++binsI) {
+            //     temp = *binsI * inv_integral;
+            //     value += (*binsI) ? temp*std::log(temp)*inv_log_2 : 0.f;
+            // }
 
             return -value;
         }
@@ -428,6 +429,8 @@ namespace sqeazy {
             return entropy_value;
 
         }
+
+
 
         template <typename int_type>
         void set_n_threads(int_type _nthreads){
@@ -487,31 +490,31 @@ namespace sqeazy {
 
     };
 
-    template <typename T>
-    float mad(T begin, T end) {
+            template <typename T>
+        float mad(T begin, T end) {
 
-        typedef typename T::value_type value_type;
-        typedef std::vector<value_type> local_vector;
+            typedef typename T::value_type value_type;
+            typedef std::vector<value_type> local_vector;
 
-        histogram<value_type> h_original(begin, end);
-        unsigned size = end - begin;
-        const float median = h_original.median();
+            histogram<value_type> h_original(begin, end);
+            unsigned size = end - begin;
+            const float median = h_original.median();
 
-        typename local_vector::const_iterator intensity = begin;
-        typename local_vector::const_iterator image_end = end;
+            typename local_vector::const_iterator intensity = begin;
+            typename local_vector::const_iterator image_end = end;
 
-        local_vector reduced(size);
-        typename local_vector::iterator rbegin = reduced.begin();
-        for(; intensity!=image_end; ++intensity, ++rbegin) {
-            *rbegin = std::fabs(*intensity - median);
+            local_vector reduced(size);
+            typename local_vector::iterator rbegin = reduced.begin();
+            for(; intensity!=image_end; ++intensity, ++rbegin) {
+                *rbegin = std::fabs(*intensity - median);
+
+            }
+
+            histogram<value_type> h_reduced(reduced.begin(), reduced.end());
+
+            return h_reduced.median();
 
         }
-
-        histogram<value_type> h_reduced(reduced.begin(), reduced.end());
-
-        return h_reduced.median();
-
-    }
 
 
 

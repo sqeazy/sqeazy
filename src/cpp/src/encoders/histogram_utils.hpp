@@ -414,6 +414,33 @@ namespace sqeazy {
 
             return value;
         }
+
+        template <typename iter_t, typename result_t = float>
+        result_t reduce_to_entropy(iter_t _begin, iter_t _end, result_t _inv_integral, int _nthreads = 0){
+
+            if(_nthreads <= 0)
+                _nthreads = std::thread::hardware_concurrency();
+
+            const omp_size_type len = std::distance(_begin,_end);
+            const result_t inv_log_2 = result_t(1.)/std::log(result_t(2.f));
+            const result_t const_zero = result_t(0.);
+            const omp_size_type chunk = (len + _nthreads -1)/_nthreads;
+            result_t value = 0;
+
+#pragma omp parallel for                        \
+    shared(_begin)                              \
+    firstprivate(_inv_integral, const_zero)     \
+    schedule(static,chunk)                      \
+    reduction(+:value)                          \
+    num_threads(_nthreads)
+            for(omp_size_type i = 0;i<len;++i){
+                const result_t temp = (*(_begin + i)) * _inv_integral;
+                value += (*(_begin + i)) > 0 ? temp*std::log(temp)*inv_log_2 : const_zero;
+            }
+
+            return value;
+        }
+
     }  // detail
 
 }  // sqeazy

@@ -224,6 +224,74 @@ BOOST_AUTO_TEST_CASE( median_variation )
 
 
 }
+BOOST_AUTO_TEST_CASE( data_of_all_zeroes )
+{
+    std::fill(constant_cube.begin(), constant_cube.end(), 0);
+    sqeazy::histogram<value_type> of_variable(constant_cube.begin(), constant_cube.end());
+    of_variable.set_n_threads(std::thread::hardware_concurrency());
+
+    typedef typename sqeazy::histogram<value_type>::bins_type h_bins_t;
+    typename std::vector<h_bins_t>::const_iterator median_itr = sqeazy::median_index(of_variable.bins.begin(),of_variable.bins.end());
+    BOOST_CHECK_EQUAL(median_itr - of_variable.bins.begin(),0);
+    BOOST_CHECK_EQUAL(of_variable.smallest_populated_bin(),0);
+    BOOST_CHECK_EQUAL(of_variable.largest_populated_bin(),0);
+    BOOST_CHECK_EQUAL(of_variable.calc_median(),0);
+    BOOST_CHECK_EQUAL(of_variable.calc_mean(),0);
+    BOOST_CHECK_EQUAL(of_variable.calc_median_variation(),0.f);
+    BOOST_CHECK_EQUAL(of_variable.calc_mean_variation(),0.f);
+}
+
+
+BOOST_AUTO_TEST_CASE( median_variance_vs_boost )
+{
+    boost::accumulators::accumulator_set<float,
+          boost::accumulators::stats<boost::accumulators::tag::mean,
+          boost::accumulators::tag::variance,boost::accumulators::tag::moment<2>
+          >
+          > to_play_with_acc;
+
+    boost::random::mt19937 rng;
+    boost::random::normal_distribution<float> norm(128,8);
+
+    for(unsigned num = 0; num<size; ++num) {
+
+        to_play_with[num] = norm(rng);
+        to_play_with_acc(to_play_with[num]);
+
+    }
+    sqeazy::histogram<value_type> of_norm(&to_play_with[0], size);
+    of_norm.set_n_threads(std::thread::hardware_concurrency());
+
+    BOOST_CHECK_CLOSE(of_norm.mean(), 128, 10);
+    BOOST_CHECK_CLOSE(of_norm.mean(), boost::accumulators::mean(to_play_with_acc),1);
+    BOOST_CHECK_CLOSE(of_norm.mean_variation(),
+                      std::sqrt(boost::accumulators::variance(to_play_with_acc)),1e-1);
+
+}
+BOOST_AUTO_TEST_CASE( entropy )
+{
+    boost::accumulators::accumulator_set<float,
+          boost::accumulators::stats<boost::accumulators::tag::mean,
+          boost::accumulators::tag::variance,boost::accumulators::tag::moment<2>
+          >
+          > to_play_with_acc;
+
+
+    for(unsigned num = 0; num<size; ++num) {
+
+        to_play_with[num] = (num % 2 == 0) ? 1 : 0;
+        incrementing_cube[num] = (num) % 4;
+
+    }
+
+    sqeazy::histogram<value_type> of_norm(&to_play_with[0], size);
+    of_norm.set_n_threads(std::thread::hardware_concurrency());
+    BOOST_CHECK_EQUAL(of_norm.calc_entropy(), 1);
+
+    sqeazy::histogram<value_type> of_inc(incrementing_cube.begin(), incrementing_cube.end());
+    of_inc.set_n_threads(std::thread::hardware_concurrency());
+    BOOST_CHECK_EQUAL(of_inc.calc_entropy(), 2);
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 
