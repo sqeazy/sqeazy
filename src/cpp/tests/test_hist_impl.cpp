@@ -293,6 +293,25 @@ BOOST_AUTO_TEST_CASE( entropy )
     BOOST_CHECK_EQUAL(of_inc.calc_entropy(), 2);
 }
 
+BOOST_AUTO_TEST_CASE( calc_support )
+{
+  const float mean = 128;
+  const float sigma = 8;
+
+    boost::random::mt19937 rng;
+    boost::random::normal_distribution<float> norm(mean,sigma);
+
+    for(unsigned num = 0; num<size; ++num) {
+        to_play_with[num] = norm(rng);
+    }
+
+    sqeazy::histogram<value_type> of_norm(&to_play_with[0], size);
+    of_norm.set_n_threads(std::thread::hardware_concurrency());
+
+    BOOST_CHECK_LT(of_norm.mean(), of_norm.calc_support());
+    BOOST_CHECK_CLOSE(mean+(2*sigma), of_norm.calc_support(.95f),3.f);
+
+}
 BOOST_AUTO_TEST_SUITE_END()
 
 

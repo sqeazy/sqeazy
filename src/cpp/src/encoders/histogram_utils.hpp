@@ -295,7 +295,7 @@ namespace sqeazy {
             return value;
         }
 
-                /**
+        /**
          *  \brief calculate the variance around _mean
          *
          *  Example: array = {5,4,3,2,1,0};
@@ -415,8 +415,32 @@ namespace sqeazy {
             return value;
         }
 
+        /**
+         *  \brief compute the shannon entropy of the histogram or frequencies specified by the range [_begin, _end)
+         *
+         *  the definition of shannon entropy given here is based on the log2 algorithm.
+         *  H_1 = - sum_i(freq_i/total * log2(freq_i/total))
+         *
+         *  Run on (4 X 2114.29 MHz CPU s)
+         *  2017-04-21 14:59:57
+         *  ***WARNING*** CPU scaling is enabled, the benchmark real time measurements may be noisy and will incur extra overhead.
+         *  Benchmark                                                     Time           CPU Iterations
+         *  -------------------------------------------------------------------------------------------
+         *  BM_serial_reduce_to_entropy<std::uint32_t>/256             3646 ns       3636 ns     190316   268.582MB/s
+         *  BM_serial_reduce_to_entropy<std::uint32_t>/63.999k       876031 ns     872896 ns        805   286.399MB/s
+         *  BM_serial_reduce_to_entropy<std::uint32_t>/48M        677572517 ns  674886160 ns          1   284.492MB/s
+         *  BM_parallel_reduce_to_entropy<std::uint32_t>/256           7015 ns       6860 ns     109097   142.356MB/s
+         *  BM_parallel_reduce_to_entropy<std::uint32_t>/63.999k    1578043 ns    1488346 ns        498   167.969MB/s
+         *  BM_parallel_reduce_to_entropy<std::uint32_t>/48M     1099013001 ns  293529946 ns          2   654.107MB/s
+         *
+         *  \param _begin start of range [_begin,_end)
+         *  \param _end end of range [_begin,_end)
+         *  \param _inv_integral normalisation constant to replace 1/(total) from above to *_inv_integral
+         *  \param _nthreads how many threads to use
+         *  \return result_t
+         */
         template <typename iter_t, typename result_t = float>
-        result_t reduce_to_entropy(iter_t _begin, iter_t _end, result_t _inv_integral, int _nthreads = 0){
+        result_t reduce_to_entropy(iter_t _begin, iter_t _end, const result_t _inv_integral, int _nthreads = 0){
 
             if(_nthreads <= 0)
                 _nthreads = std::thread::hardware_concurrency();
@@ -439,12 +463,71 @@ namespace sqeazy {
     num_threads(_nthreads)
             for(omp_size_type i = 0;i<len;++i){
                 result_t temp = (*(_begin + i)) > 0 ? (*(_begin + i)) * _inv_integral : 1.;
-                // result_t log2 = std::log2(temp);
                 value += temp*std::log2(temp);
             }
 
             return value;
         }
+
+                /**
+         *  \brief calculate the absolute distance to value
+         *
+         *  Run on (4 X 3371 MHz CPU s)
+         *  2017-04-20 16:39:48
+         *  ***WARNING*** CPU scaling is enabled, the benchmark real time measurements may be noisy and will incur extra overhead.
+         *  Benchmark                                                               Time           CPU Iterations
+         *  -----------------------------------------------------------------------------------------------------
+         *  BM_serial_unnormalized_mean_variation<std::uint32_t>/256              386 ns        384 ns    1879320    2.4816GB/s
+         *  BM_serial_unnormalized_mean_variation<std::uint32_t>/63.999k        96004 ns      95688 ns       7089   2.55138GB/s
+         *  BM_serial_unnormalized_mean_variation<std::uint32_t>/48M         73735729 ns   73143725 ns         10   2.56345GB/s
+         *  BM_parallel_unnormalized_mean_variation<std::uint32_t>/256            970 ns        945 ns     815958   1032.98MB/s
+         *  BM_parallel_unnormalized_mean_variation<std::uint32_t>/63.999k      69403 ns      61754 ns      13774   3.95336GB/s
+         *  BM_parallel_unnormalized_mean_variation<std::uint32_t>/48M       40995208 ns   36816906 ns         19   5.09277GB/s
+         *
+         *  \param _begin start of range [_begin,_end)
+         *  \param _end end of range [_begin,_end)
+         *  \param _obegin start iterator to output range
+         *  \param _start_index starting offset of the index to use for weighting
+         *  \param _nthreads how many threads to use
+         *  \return decltype(_start)
+         */
+        template <typename iter, typename out_iter, typename value_type>
+        out_iter abs_diff_to(iter _begin, iter _end,
+                               out_iter _obegin,
+                               value_type _diff_to,
+                               int _nthreads = 0){
+
+            using iter_value_t = typename std::iterator_traits<iter>::value_type;
+            // using oiter_value_t = typename std::iterator_traits<out_iter>::value_type;
+            using iter_pointer_t = typename std::iterator_traits<iter>::pointer;
+            using oiter_pointer_t = typename std::iterator_traits<out_iter>::pointer;
+
+            if(_nthreads <= 0)
+                _nthreads = std::thread::hardware_concurrency();
+
+            const omp_size_type  len = std::distance(_begin,_end);
+
+            if(len < _nthreads || _nthreads == 1){
+                return std::transform(_begin, _end, _obegin, [&]( iter_value_t _element ){ return std::fabs(_element - _diff_to);});
+            }
+
+            iter_pointer_t idata = &(*_begin);
+            oiter_pointer_t odata = &(*_obegin);
+
+            omp_size_type chunk = (len + _nthreads -1)/_nthreads;
+
+#pragma omp parallel for                        \
+    shared(odata,idata)                                    \
+    firstprivate(_diff_to)                 \
+    schedule(static,chunk)                      \
+    num_threads(_nthreads)
+            for(omp_size_type i = 0;i<len;++i){
+                odata[i] = std::fabs(idata[i] - _diff_to);
+            }
+
+            return _obegin+len;
+        }
+
 
     }  // detail
 

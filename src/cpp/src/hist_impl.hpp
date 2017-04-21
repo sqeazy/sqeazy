@@ -405,6 +405,15 @@ namespace sqeazy {
             return median_variation_value;
         }
 
+        /**
+         *  \brief calculate the shannon entropy of the bin entries
+         *
+         *  the definition of shannon entropy given here is based on the log2 algorithm.
+         *  H_1 = - sum_i(freq_i/total * log2(freq_i/total))
+         *
+         *  \param param
+         *  \return return type
+         */
         float calc_entropy() const {
 
             const float inv_integral = 1.f/integral();
@@ -413,13 +422,6 @@ namespace sqeazy {
             bins_citer_t binsE = bins.begin() + largest_populated_bin() + 1;
 
             float value = detail::reduce_to_entropy(binsI,binsE, inv_integral, n_threads());
-            // float value = 0;
-            // float temp = 0;
-            // const float inv_log_2 = 1.f/std::log(2.f);
-            // for(; binsI!=binsE; ++binsI) {
-            //     temp = *binsI * inv_integral;
-            //     value += (*binsI) ? temp*std::log(temp)*inv_log_2 : 0.f;
-            // }
 
             return -value;
         }
@@ -490,31 +492,34 @@ namespace sqeazy {
 
     };
 
-            template <typename T>
-        float mad(T begin, T end) {
+    template <typename T>
+    float mad(T begin, T end, int _nthreads = 1) {
 
-            typedef typename T::value_type value_type;
-            typedef std::vector<value_type> local_vector;
+        typedef typename std::iterator_traits<T>::value_type value_type;
+        // typedef typename std::iterator_traits<T>::pointer ptr_type;
 
-            histogram<value_type> h_original(begin, end);
-            unsigned size = end - begin;
-            const float median = h_original.median();
+        typedef std::vector<value_type> local_vector;
 
-            typename local_vector::const_iterator intensity = begin;
-            typename local_vector::const_iterator image_end = end;
+        histogram<value_type> h_original(begin, end);
+        unsigned size = end - begin;
+        const float median = h_original.median();
 
-            local_vector reduced(size);
-            typename local_vector::iterator rbegin = reduced.begin();
-            for(; intensity!=image_end; ++intensity, ++rbegin) {
-                *rbegin = std::fabs(*intensity - median);
+        local_vector reduced(size);
 
-            }
+        // typename local_vector::const_iterator ibegin = begin;
+        // typename local_vector::const_iterator iend = end;
 
-            histogram<value_type> h_reduced(reduced.begin(), reduced.end());
+        // ptr_type red = reduced.data();
+        // ptr_type input = &(*begin);
+        // for(; ibegin!=iend; ++ibegin, ++redbegin) {
+        //     red[i] = std::fabs(*ibegin - median);
+        // }
+        detail::abs_diff_to(begin,end,reduced.begin(), median, _nthreads);
+        histogram<value_type> h_reduced(reduced.begin(), reduced.end());
 
-            return h_reduced.median();
+        return h_reduced.median();
 
-        }
+    }
 
 
 
