@@ -422,20 +422,25 @@ namespace sqeazy {
                 _nthreads = std::thread::hardware_concurrency();
 
             const omp_size_type len = std::distance(_begin,_end);
-            const result_t inv_log_2 = result_t(1.)/std::log(result_t(2.f));
-            const result_t const_zero = result_t(0.);
+
+            if(len < _nthreads)
+                _nthreads = 1;
+
+            // const result_t inv_log_2 = result_t(1.)/std::log(result_t(2.f));
+            // const result_t const_zero = result_t(0.);
             const omp_size_type chunk = (len + _nthreads -1)/_nthreads;
             result_t value = 0;
 
 #pragma omp parallel for                        \
     shared(_begin)                              \
-    firstprivate(_inv_integral, const_zero)     \
+    firstprivate(_inv_integral)     \
     schedule(static,chunk)                      \
     reduction(+:value)                          \
     num_threads(_nthreads)
             for(omp_size_type i = 0;i<len;++i){
-                const result_t temp = (*(_begin + i)) * _inv_integral;
-                value += (*(_begin + i)) > 0 ? temp*std::log(temp)*inv_log_2 : const_zero;
+                result_t temp = (*(_begin + i)) > 0 ? (*(_begin + i)) * _inv_integral : 1.;
+                // result_t log2 = std::log2(temp);
+                value += temp*std::log2(temp);
             }
 
             return value;

@@ -358,4 +358,52 @@ BENCHMARK_TEMPLATE(BM_parallel_unnormalized_variation,std::uint32_t)
 ->Args({48 << 20})
 
 ;
+
+template <typename value_t>
+static void BM_serial_reduce_to_entropy(benchmark::State& state) {
+
+  std::vector<value_t> src(state.range(0),43u);
+
+  fill_beginend(src.begin(), src.end());
+    const float arbitrary_inv_integral = 1/42.f;
+
+  float reduce_to_entropy = sqeazy::detail::reduce_to_entropy(src.begin(), src.end(),arbitrary_inv_integral,1);
+  while (state.KeepRunning()){
+    benchmark::DoNotOptimize(reduce_to_entropy = sqeazy::detail::reduce_to_entropy(src.begin(), src.end(),arbitrary_inv_integral,1));
+  }
+
+  state.SetBytesProcessed(int64_t(state.iterations()) *
+                          int64_t(state.range(0)*sizeof(value_t)));
+}
+
+BENCHMARK_TEMPLATE(BM_serial_reduce_to_entropy,std::uint32_t)
+->Args({256    })
+->Args({std::numeric_limits<std::uint16_t>::max()})
+->Args({48 << 20})
+;
+
+
+template <typename value_t>
+static void BM_parallel_reduce_to_entropy(benchmark::State& state) {
+
+  std::vector<value_t> src(state.range(0),43u);
+
+  fill_beginend(src.begin(), src.end());
+  const float arbitrary_inv_integral = 1/42.f;
+
+  float reduce_to_entropy = sqeazy::detail::reduce_to_entropy(src.begin(), src.end(), arbitrary_inv_integral);
+  while (state.KeepRunning()){
+    benchmark::DoNotOptimize(reduce_to_entropy = sqeazy::detail::reduce_to_entropy(src.begin(), src.end(), arbitrary_inv_integral));
+  }
+
+  state.SetBytesProcessed(int64_t(state.iterations()) *
+                          int64_t(state.range(0))*sizeof(value_t));
+}
+
+BENCHMARK_TEMPLATE(BM_parallel_reduce_to_entropy,std::uint32_t)
+->Args({256    })
+->Args({std::numeric_limits<std::uint16_t>::max()})
+->Args({48 << 20})
+
+;
 BENCHMARK_MAIN();
