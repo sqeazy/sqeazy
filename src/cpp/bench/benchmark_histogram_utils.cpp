@@ -406,4 +406,54 @@ BENCHMARK_TEMPLATE(BM_parallel_reduce_to_entropy,std::uint32_t)
 ->Args({48 << 20})
 
 ;
+
+template <typename value_t>
+static void BM_serial_abs_diff_to(benchmark::State& state) {
+
+  std::vector<value_t> src(state.range(0),43u);
+  std::vector<value_t> dst(state.range(0),0);
+
+  fill_beginend(src.begin(), src.end());
+  const float arbitrary = 42.f;
+
+  sqeazy::detail::abs_diff_to(src.begin(), src.end(),dst.begin(),arbitrary,1);
+  while (state.KeepRunning()){
+    benchmark::DoNotOptimize(sqeazy::detail::abs_diff_to(src.begin(), src.end(),dst.begin(),arbitrary,1));
+  }
+
+  state.SetBytesProcessed(int64_t(state.iterations()) *
+                          int64_t(state.range(0)*sizeof(value_t)));
+}
+
+BENCHMARK_TEMPLATE(BM_serial_abs_diff_to,std::uint32_t)
+->Args({256    })
+->Args({std::numeric_limits<std::uint16_t>::max()})
+->Args({48 << 20})
+;
+
+
+template <typename value_t>
+static void BM_parallel_abs_diff_to(benchmark::State& state) {
+
+  std::vector<value_t> src(state.range(0),43u);
+  std::vector<value_t> dst(state.range(0),0);
+
+  fill_beginend(src.begin(), src.end());
+  const float arbitrary = 42.f;
+
+  sqeazy::detail::abs_diff_to(src.begin(), src.end(),dst.begin(),arbitrary);
+  while (state.KeepRunning()){
+    benchmark::DoNotOptimize(sqeazy::detail::abs_diff_to(src.begin(), src.end(),dst.begin(),arbitrary));
+  }
+
+  state.SetBytesProcessed(int64_t(state.iterations()) *
+                          int64_t(state.range(0))*sizeof(value_t));
+}
+
+BENCHMARK_TEMPLATE(BM_parallel_abs_diff_to,std::uint32_t)
+->Args({256    })
+->Args({std::numeric_limits<std::uint16_t>::max()})
+->Args({48 << 20})
+
+;
 BENCHMARK_MAIN();
