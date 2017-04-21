@@ -1,5 +1,6 @@
 #include project relevant directories
 INCLUDE_DIRECTORIES(.)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/tests)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/include)
 
@@ -8,7 +9,7 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/include)
 #boost unit test framework has some defects if we wanna bind against shared and/or static libs
 ##that's why we bind against the dynamic loaded libraries primarily
 SET(Boost_USE_STATIC_LIBS OFF)
-FIND_PACKAGE (Boost 1.55 COMPONENTS regex unit_test_framework filesystem system REQUIRED QUIET)
+FIND_PACKAGE (Boost 1.55 COMPONENTS regex unit_test_framework filesystem system serialization REQUIRED QUIET)
 if(Boost_FOUND)
     MESSAGE("++ [tests] Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES} : ${Boost_LIBRARIES}")
     INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
@@ -82,6 +83,9 @@ target_link_libraries(benchmark_quantiser_scheme_impl ${Boost_LIBRARIES} ${googl
 
 add_executable(benchmark_histogram_utils benchmark_histogram_utils.cpp)
 target_link_libraries(benchmark_histogram_utils ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+
+add_executable(benchmark_pipeline_construction benchmark_pipeline_construction.cpp)
+target_link_libraries(benchmark_pipeline_construction ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
 
 IF(FFMPEG_FOUND)
