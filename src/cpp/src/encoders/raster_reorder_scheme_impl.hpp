@@ -28,26 +28,26 @@ namespace sqeazy {
 
     raster_reorder_scheme(const std::string& _payload=""):
       tile_size(default_tile_size)
-    {
+      {
 
-      pipeline_parser p;
-      auto config_map = p.minors(_payload.begin(),_payload.end());
+        pipeline_parser p;
+        auto config_map = p.minors(_payload.begin(),_payload.end());
 
-      if(config_map.size()){
+        if(config_map.size()){
 
-        auto f_itr = config_map.find("tile_size");
-        if(f_itr!=config_map.end())
-          tile_size = std::stoi(f_itr->second);
+          auto f_itr = config_map.find("tile_size");
+          if(f_itr!=config_map.end())
+            tile_size = std::stoi(f_itr->second);
 
+        }
       }
-    }
 
     std::string name() const override final {
 
       std::ostringstream msg;
-        msg << "raster_reorder";
+      msg << "raster_reorder";
 
-        return msg.str();
+      return msg.str();
 
     }
 
@@ -97,8 +97,8 @@ namespace sqeazy {
      *  \return return type
      */
     compressed_type* encode( const raw_type* _input,
-                 compressed_type* _output,
-                 const std::vector<std::size_t>& _shape) override final {
+                             compressed_type* _output,
+                             const std::vector<std::size_t>& _shape) override final {
 
       typedef std::size_t size_type;
       unsigned long length = std::accumulate(_shape.begin(), _shape.end(), 1, std::multiplies<size_type>());
@@ -106,29 +106,33 @@ namespace sqeazy {
       detail::reorder tiles_of(tile_size);
 
       auto value = tiles_of.encode(_input, _input+length,
-                   _output,
-                   _shape);
+                                   _output,
+                                   _shape,
+                                   this->n_threads()
+        );
 
       return value;
     }
 
     int decode( const compressed_type* _input,
-        raw_type* _output,
-        const std::vector<std::size_t>& _ishape,
-        std::vector<std::size_t> _oshape = std::vector<std::size_t>()) const override final {
+                raw_type* _output,
+                const std::vector<std::size_t>& _ishape,
+                std::vector<std::size_t> _oshape = std::vector<std::size_t>()) const override final {
 
       std::size_t length = std::accumulate(_ishape.begin(), _ishape.end(), 1, std::multiplies<std::size_t>());
 
       detail::reorder tiles_of(tile_size);
 
       auto value = tiles_of.decode(_input, _input+length,
-                   _output,
-                   _ishape);
+                                   _output,
+                                   _ishape,
+                                   this->n_threads()
+        );
 
       if(value==(_output+length))
-    return SUCCESS;
+        return SUCCESS;
       else
-    return FAILURE;
+        return FAILURE;
 
     }
 
