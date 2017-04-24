@@ -428,6 +428,7 @@ BOOST_AUTO_TEST_CASE( scheme_tile_of_4 )
 
 BOOST_AUTO_TEST_SUITE_END()
 
+
 BOOST_FIXTURE_TEST_SUITE( big_roundtrips , uint16_cube_of_32 )
 BOOST_AUTO_TEST_CASE( tile_of_simd_fitted )
 {
@@ -454,4 +455,110 @@ BOOST_AUTO_TEST_CASE( tile_of_simd_fitted )
 
 
 }
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE( parallel_on_ramp_roundtrip , uint16_cube_of_8 )
+
+BOOST_AUTO_TEST_CASE( tile_of_2 )
+{
+
+  sqyd::reorder in_tiles_of(2);
+  auto rem = in_tiles_of.encode(incrementing_cube.cbegin(), incrementing_cube.cend(),
+                                to_play_with.begin(),
+                                dims,
+                                std::thread::hardware_concurrency());
+  BOOST_REQUIRE(rem == to_play_with.end());
+
+  auto decoded = constant_cube;
+  std::fill(decoded.begin(), decoded.end(),0);
+
+  rem = in_tiles_of.decode(to_play_with.cbegin(),to_play_with.cend(),
+                           decoded.begin(),
+                           dims,
+                           std::thread::hardware_concurrency()
+    );
+  BOOST_REQUIRE(rem == decoded.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(incrementing_cube.begin(), incrementing_cube.end(),
+                decoded.begin(), decoded.end());
+
+
+}
+
+BOOST_AUTO_TEST_CASE( tile_of_4 )
+{
+
+  sqyd::reorder in_tiles_of(4);
+  auto rem = in_tiles_of.encode(incrementing_cube.cbegin(), incrementing_cube.cend(),
+                                to_play_with.begin(),
+                                dims,
+                                std::thread::hardware_concurrency());
+
+  BOOST_REQUIRE(rem == to_play_with.end());
+
+  auto decoded = constant_cube;
+  std::fill(decoded.begin(), decoded.end(),0);
+
+  rem = in_tiles_of.decode(to_play_with.cbegin(),to_play_with.cend(),
+                           decoded.begin(),
+                           dims,
+                           std::thread::hardware_concurrency());
+  BOOST_REQUIRE(rem == decoded.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(incrementing_cube.begin(), incrementing_cube.end(),
+                decoded.begin(), decoded.end());
+
+
+}
+
+BOOST_AUTO_TEST_CASE( tile_of_3 )
+{
+
+  sqyd::reorder in_tiles_of(3);
+  auto rem = in_tiles_of.encode(incrementing_cube.cbegin(), incrementing_cube.cend(),
+                                to_play_with.begin(),
+                                dims,
+                                std::thread::hardware_concurrency());
+  BOOST_REQUIRE(rem == to_play_with.end());
+
+  auto decoded = constant_cube;
+  std::fill(decoded.begin(), decoded.end(),0);
+
+  rem = in_tiles_of.decode(to_play_with.cbegin(),to_play_with.cend(),
+                           decoded.begin(),
+                           dims,
+                           std::thread::hardware_concurrency());
+  BOOST_REQUIRE(rem == decoded.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(incrementing_cube.begin(), incrementing_cube.end(),
+                decoded.begin(), decoded.end());
+
+
+}
+
+BOOST_AUTO_TEST_CASE( scheme_tile_of_4 )
+{
+
+
+  sqeazy::raster_reorder_scheme<value_type> scheme("tile_size=4");
+  scheme.set_n_threads(std::thread::hardware_concurrency());
+
+  std::vector<std::size_t> shape(dims.begin(), dims.end());
+  auto rem = scheme.encode(incrementing_cube.data(),
+               to_play_with.data(),
+               shape);
+  BOOST_REQUIRE(rem == (to_play_with.data() + to_play_with.size()));
+
+  auto decoded = constant_cube;
+  std::fill(decoded.begin(), decoded.end(),0);
+
+  auto rv = scheme.decode(to_play_with.data(),
+              decoded.data(),
+              shape);
+
+  BOOST_REQUIRE(rv == 0);
+  BOOST_CHECK_EQUAL_COLLECTIONS(incrementing_cube.begin(), incrementing_cube.end(),
+                decoded.begin(), decoded.end());
+
+
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()
