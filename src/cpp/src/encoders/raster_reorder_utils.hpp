@@ -37,7 +37,9 @@ namespace sqeazy {
 	  out_iterator_t encode(in_iterator_t _begin,
 							in_iterator_t _end,
 							out_iterator_t _out,
-							const shape_container_t& _shape) const {
+							const shape_container_t& _shape,
+							int nthreads = 0
+		) const {
 
 		typedef typename std::iterator_traits<in_iterator_t>::value_type in_value_type;
 		typedef typename std::remove_cv<in_value_type>::type in_value_t;
@@ -73,9 +75,9 @@ namespace sqeazy {
 		  static const std::size_t n_elements_per_simd_block = 16/sizeof(in_value_t);
 
 		  if(tile_size % n_elements_per_simd_block == 0)
-			return encode_full_simd(_begin,_end,_out,_shape);
+			return encode_full_simd(_begin,_end,_out,_shape,nthreads);
 		  else
-			return encode_full(_begin,_end,_out,_shape);
+			return encode_full(_begin,_end,_out,_shape,nthreads);
 		}
 
 	  }
@@ -85,7 +87,8 @@ namespace sqeazy {
 	  out_iterator_t encode_full(in_iterator_t _begin,
 								 in_iterator_t _end,
 								 out_iterator_t _out,
-								 const shape_container_t& _shape) const {
+								 const shape_container_t& _shape,
+								 int nthreads = 0) const {
 
 		typedef typename std::iterator_traits<decltype(_shape.begin())>::value_type shape_value_type;
 		typedef typename std::remove_cv<shape_value_type>::type shape_value_t;
@@ -154,7 +157,8 @@ namespace sqeazy {
 	  out_iterator_t encode_full_simd(in_iterator_t _begin,
 									  in_iterator_t _end,
 									  out_iterator_t _out,
-									  const shape_container_t& _shape) const {
+									  const shape_container_t& _shape,
+									  int nthreads = 0) const {
 
 		typedef typename std::iterator_traits<decltype(_shape.begin())>::value_type shape_value_type;
 		typedef typename std::remove_cv<shape_value_type>::type shape_value_t;
@@ -238,7 +242,8 @@ namespace sqeazy {
 	  out_iterator_t encode_with_remainder(in_iterator_t _begin,
 										   in_iterator_t _end,
 										   out_iterator_t _out,
-										   const shape_container_t& _shape) const {
+										   const shape_container_t& _shape,
+										   int nthreads = 0) const {
 
 
 		typedef typename std::iterator_traits<decltype(_shape.begin())>::value_type shape_value_type;
@@ -356,7 +361,8 @@ namespace sqeazy {
 	  out_iterator_t decode(in_iterator_t _begin,
 							in_iterator_t _end,
 							out_iterator_t _out,
-							const shape_container_t& _shape) const {
+							const shape_container_t& _shape,
+							int nthreads = 0) const {
 
 		typedef typename std::iterator_traits<in_iterator_t>::value_type in_value_type;
 		typedef typename std::remove_cv<in_value_type>::type in_value_t;
@@ -395,7 +401,8 @@ namespace sqeazy {
 	  out_iterator_t decode_with_remainder(in_iterator_t _begin,
 										   in_iterator_t _end,
 										   out_iterator_t _out,
-										   const shape_container_t& _shape) const {
+										   const shape_container_t& _shape,
+										   int nthreads = 0) const {
 
 
 		typedef typename std::iterator_traits<decltype(_shape.begin())>::value_type shape_value_type;
