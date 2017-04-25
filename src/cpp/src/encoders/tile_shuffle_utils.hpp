@@ -107,10 +107,12 @@ namespace sqeazy {
 		typedef typename bacc::accumulator_set<in_value_t,
 											   bacc::stats<bacc::tag::median>
 											   > median_acc_t ;
+
 		// 75% quantile?
 		// typedef typename boost::accumulators::accumulator_set<double, stats<boost::accumulators::tag::pot_quantile<boost::right>(.75)> > quantile_acc_t;
 
 		const shape_container_t rem = remainder(_shape);
+		const std::size_t n_elements          = std::distance(_begin,_end);
 		const std::size_t n_elements_per_tile = std::pow(tile_size,_shape.size());
 		const std::size_t n_elements_per_tile_frame = std::pow(tile_size,_shape.size()-1);
 
@@ -124,35 +126,32 @@ namespace sqeazy {
 		// COLLECT TILE CONTENT /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		std::vector< std::vector<in_value_t> > tiles(len_tiles, std::vector<in_value_t>(n_elements_per_tile,0) );
+		auto ptiles = tiles.data();
+		auto pshape = _shape.data();
+		auto pn_full_tiles = n_full_tiles.data();
 
-		std::size_t ztile = 0;
-		std::size_t ytile = 0;
-		// std::size_t xtile = 0;
+#pragma omp parallel for												\
+  shared( _begin, ptiles)												\
+  firstprivate(pshape, pn_full_tiles)													\
+  num_threads(_nthreads)
+		for(shape_value_t z = 0;z<pshape[row_major::z];++z){
+		  std::size_t ztile = z / tile_size;
+		  std::size_t z_intile = z % tile_size;
 
-		std::size_t z_intile = 0;
-		std::size_t y_intile = 0;
+		  for(shape_value_t y = 0;y<pshape[row_major::y];++y){
+			std::size_t ytile = y / tile_size;
+			std::size_t y_intile = y % tile_size;
 
-		std::size_t tile_id = 0;
-
-		auto acc_iter = _begin;
-		auto tiles_iter = tiles[0].begin();
-
-		for(shape_value_t z = 0;z<_shape[row_major::z];++z){
-		  ztile = z / tile_size;
-		  z_intile = z % tile_size;
-
-		  for(shape_value_t y = 0;y<_shape[row_major::y];++y){
-			ytile = y / tile_size;
-			y_intile = y % tile_size;
-
-			tile_id = ztile*n_full_tiles[sqeazy::row_major::y]*n_full_tiles[sqeazy::row_major::x]
-			  + ytile*n_full_tiles[sqeazy::row_major::x]
+			std::size_t linear_tile_id = ztile*pn_full_tiles[sqeazy::row_major::y]*pn_full_tiles[sqeazy::row_major::x]
+			  + ytile*pn_full_tiles[sqeazy::row_major::x]
 			  ;
 
-			for(shape_value_t x = 0;x<_shape[row_major::x];x+=tile_size, acc_iter+=tile_size,++tile_id){
+			auto acc_iter = _begin + z*pshape[row_major::y]*pshape[row_major::x] + y*pshape[row_major::x];
+
+			for(shape_value_t x = 0;x<pshape[row_major::x];x+=tile_size,++linear_tile_id,acc_iter+=tile_size){
 			  // xtile = x / tile_size;
 
-			  tiles_iter = tiles[tile_id].begin();
+			  auto tiles_iter = tiles[linear_tile_id].begin();
 
 			  std::copy(acc_iter, acc_iter + tile_size,
 						tiles_iter + (z_intile*n_elements_per_tile_frame) + y_intile*tile_size);
@@ -166,16 +165,20 @@ namespace sqeazy {
 		// median plus stddev around median or take 75% quantile directly
 
 		std::vector<in_value_t> metric(len_tiles,0.);
-		//std::vector<median_acc_t> acc   (len_tiles, median_acc_t());
+		auto pmetric = metric.data();
 
+#pragma omp parallel for												\
+  shared( pmetric)														\
+  firstprivate(ptiles)													\
+  num_threads(_nthreads)
 		for(std::size_t i = 0;i<len_tiles;++i){
 		  median_acc_t acc;
 
 		  for(std::size_t p = 0;p<n_elements_per_tile;++p){
-			acc(tiles[i][p]);
+			acc(ptiles[i][p]);
 		  }
 
-		  metric[i] = std::round(bacc::median(acc));
+		  pmetric[i] = std::round(bacc::median(acc));
 		}
 
 		// PERFORM SHUFFLE /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -184,16 +187,24 @@ namespace sqeazy {
 		auto sorted_metric = metric;
 		std::sort(sorted_metric.begin(), sorted_metric.end());
 
-		auto dst = _out;
+		// WRITE TILES 2 OUTPUT ////////////////////////////////////////////////////////////////////////////////////////////////
+		// auto dst = _out;
+		auto pdecode_map = decode_map.data();
+		auto psorted_metric = sorted_metric.data();
+#pragma omp parallel for						\
+  shared( pdecode_map, _out)					\
+  firstprivate(ptiles,pmetric, psorted_metric)					\
+  num_threads(_nthreads)
 		for(shape_value_t i =0;i<metric.size();++i){
-		  auto original_index = std::find(metric.begin(), metric.end(), sorted_metric[i]) - metric.begin();
-		  decode_map[i] = original_index;
-		  dst = std::copy(tiles[original_index].begin(), tiles[original_index].end(),
-						  dst);
+		  auto original_index = std::find(pmetric, pmetric + len_tiles, psorted_metric[i]) - pmetric;
+
+		  pdecode_map[i] = original_index;
+		  std::copy(ptiles[original_index].begin(), ptiles[original_index].end(),
+					_out + i*n_elements_per_tile);
 		}
 
 
-		return dst;
+		return _out + n_elements;
 
 	  }
 
@@ -244,76 +255,36 @@ namespace sqeazy {
 		// SETUP TILE CONTENT /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		std::vector< std::vector<in_value_t> > tiles(len_tiles, std::vector<in_value_t>(n_elements_per_tile,0));
-
-		std::size_t ztile = 0;
-		std::size_t ytile = 0;
-		std::size_t xtile = 0;
-
-		std::size_t ztile_shape = 0;
-		std::size_t ytile_shape = 0;
-		std::size_t xtile_shape = 0;
-
-		std::size_t tile_id = 0;
-
-		for(shape_value_t z = 0;z<_shape[row_major::z];z+=tile_size){
-		  ztile = z / tile_size;
-		  ztile_shape = (ztile+1)*tile_size > _shape[row_major::z] ? (_shape[row_major::z]-(ztile*tile_size)) : tile_size;
-
-		  for(shape_value_t y = 0;y<_shape[row_major::y];y+=tile_size){
-			ytile = y / tile_size;
-			ytile_shape = (ytile+1)*tile_size > _shape[row_major::y] ? (_shape[row_major::y]-(ytile*tile_size)) : tile_size;
-
-			tile_id = ztile*n_tiles[sqeazy::row_major::y]*n_tiles[sqeazy::row_major::x]
-			  + ytile*n_tiles[sqeazy::row_major::x]
-			  ;
-
-			for(shape_value_t x = 0;x<_shape[row_major::x];x+=tile_size, ++tile_id){
-			  xtile = x / tile_size;
-			  xtile_shape = (xtile+1)*tile_size > _shape[row_major::x] ? (_shape[row_major::x]-(xtile*tile_size)) : tile_size;
-
-			  tiles[tile_id].resize(ztile_shape*ytile_shape*xtile_shape);
-			}
-		  }
-		}
+		auto ptiles = tiles.data();
+		auto pshape = _shape.data();
+		auto pn_tiles = n_tiles.data();
 
 		// COLLECT TILE CONTENT /////////////////////////////////////////////////////////////////////////////////////////////////////
-		ztile = 0;
-		ytile = 0;
-		xtile = 0;
+#pragma omp parallel for												\
+  shared( ptiles )														\
+  firstprivate(pshape, _begin,pn_tiles)									\
+  num_threads(_nthreads)
+		for(shape_value_t z = 0;z<pshape[row_major::z];++z){
+		  std::size_t ztile = z / tile_size;
+		  std::size_t z_intile = z % tile_size;
+		  std::size_t ztile_shape = (ztile+1)*tile_size > pshape[row_major::z] ? (pshape[row_major::z]-(ztile*tile_size)) : tile_size;
 
-		ztile_shape = 0;
-		ytile_shape = 0;
-		xtile_shape = 0;
-
-		tile_id = 0;
-
-
-		std::size_t z_intile = 0;
-		std::size_t y_intile = 0;
-
-		auto acc_iter = _begin;
-		auto tiles_iter = tiles[0].begin();
-
-		for(shape_value_t z = 0;z<_shape[row_major::z];++z){
-		  ztile = z / tile_size;
-		  z_intile = z % tile_size;
-
-		  ztile_shape = (ztile+1)*tile_size > _shape[row_major::z] ? (_shape[row_major::z]-(ztile*tile_size)) : tile_size;
-
-		  for(shape_value_t y = 0;y<_shape[row_major::y];++y){
-			ytile = y / tile_size;
-			y_intile = y % tile_size;
-			ytile_shape = (ytile+1)*tile_size > _shape[row_major::y] ? (_shape[row_major::y]-(ytile*tile_size)) : tile_size;
-
-			tile_id = ztile*n_tiles[sqeazy::row_major::y]*n_tiles[sqeazy::row_major::x]
-			  + ytile*n_tiles[sqeazy::row_major::x]
+		  for(shape_value_t y = 0;y<pshape[row_major::y];++y){
+			std::size_t ytile = y / tile_size;
+			std::size_t y_intile = y % tile_size;
+			std::size_t ytile_shape = (ytile+1)*tile_size > pshape[row_major::y] ? (pshape[row_major::y]-(ytile*tile_size)) : tile_size;
+			std::size_t tile_id = ztile*pn_tiles[sqeazy::row_major::y]*pn_tiles[sqeazy::row_major::x]
+			  + ytile*pn_tiles[sqeazy::row_major::x]
 			  ;
 
-			for(shape_value_t x = 0;x<_shape[row_major::x];x+=tile_size, ++tile_id){
-			  xtile = x / tile_size;
-			  xtile_shape = (xtile+1)*tile_size > _shape[row_major::x] ? (_shape[row_major::x]-(xtile*tile_size)) : tile_size;
+			auto acc_iter = _begin + z*pshape[row_major::y]*pshape[row_major::x] + y*pshape[row_major::x];
 
-			  tiles_iter = tiles[tile_id].begin();
+			for(shape_value_t x = 0;x<pshape[row_major::x];x+=tile_size, ++tile_id){
+			  std::size_t xtile = x / tile_size;
+			  std::size_t xtile_shape = (xtile+1)*tile_size > pshape[row_major::x] ? (pshape[row_major::x]-(xtile*tile_size)) : tile_size;
+			  ptiles[tile_id].resize(ztile_shape*ytile_shape*xtile_shape);
+			  auto tiles_iter = ptiles[tile_id].begin();
+
 			  std::copy(acc_iter, acc_iter + xtile_shape,
 						tiles_iter + (z_intile*xtile_shape*ytile_shape) + y_intile*xtile_shape);
 
@@ -327,16 +298,20 @@ namespace sqeazy {
 		// median plus stddev around median or take 75% quantile directly
 
 		std::vector<in_value_t> metric(len_tiles,0.);
-		//std::vector<median_acc_t> acc   (len_tiles, median_acc_t());
+		auto pmetric = metric.data();
 
+#pragma omp parallel for												\
+  shared( pmetric)														\
+  firstprivate(ptiles)													\
+  num_threads(_nthreads)
 		for(std::size_t i = 0;i<len_tiles;++i){
 		  median_acc_t acc;
 
 		  for(std::size_t p = 0;p<n_elements_per_tile;++p){
-			acc(tiles[i][p]);
+			acc(ptiles[i][p]);
 		  }
 
-		  metric[i] = std::round(bacc::median(acc));
+		  pmetric[i] = std::round(bacc::median(acc));
 		}
 
 		// PERFORM SHUFFLE /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -345,9 +320,10 @@ namespace sqeazy {
 		auto sorted_metric = metric;
 		std::sort(sorted_metric.begin(), sorted_metric.end());
 
+		// COMPUTE SHUFFLED-ORIGINAL INDEX MAP //////////////////////////////////////////////////////////////////////////////////
 		std::vector<bool> tile_written(len_tiles,false);
 
-		auto dst = _out;
+
 		for(shape_value_t i =0;i<metric.size();++i){
 		  auto original_index = std::find(metric.begin(), metric.end(), sorted_metric[i]) - metric.begin();
 
@@ -355,15 +331,36 @@ namespace sqeazy {
 			original_index++;
 
 		  decode_map[i] = original_index;
-		  dst = std::copy(tiles[original_index].begin(),
-						  tiles[original_index].end(),
-						  dst);
+		  // auto dst = _out + prefix_n_elements[i];
+		  // dst = std::copy(tiles[original_index].begin(),
+		  // 				  tiles[original_index].end(),
+		  // 				  dst);
 
 		  tile_written[original_index] = true;
 		}
 
 
-		return dst;
+		// COMPUTE PREFIX SUM //////////////////////////////////////////////////////////////////////////////////
+		std::vector<std::size_t> prefix_sum(len_tiles,0);
+		std::size_t sum = 0;
+		for(shape_value_t i =0;i<decode_map.size();++i){
+		  prefix_sum[i] = sum;
+		  sum += tiles[decode_map[i]].size();
+		}
+
+
+		// STORE CONTENT TO OUTPUT //////////////////////////////////////////////////////////////////////////////////
+		for(shape_value_t i =0;i<decode_map.size();++i){
+
+		  std::copy(tiles[decode_map[i]].begin(),
+					tiles[decode_map[i]].end(),
+					_out + prefix_sum[i]
+			);
+
+		}
+
+
+		return _out + std::distance(_begin,_end);
 	  }
 
 
