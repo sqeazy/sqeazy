@@ -48,7 +48,7 @@ add_test(NAME compass_impl COMMAND test_compass_impl)
 endif()
 
 add_test(NAME hdf5_interface COMMAND test_hdf5_interface)
-
+add_test(NAME algorithms_impl COMMAND test_algorithms_impl)
 set_tests_properties(hdf5_interface PROPERTIES ENVIRONMENT "HDF5_PLUGIN_PATH=${PROJECT_BINARY_DIR}/src")
 
 #TODO: not used by sqeazy yet and constantly gave problems on OSX
