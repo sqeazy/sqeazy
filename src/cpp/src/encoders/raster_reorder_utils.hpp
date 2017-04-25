@@ -114,10 +114,10 @@ namespace sqeazy {
 		shape_ptr_t shape = _shape.data();
 		shape_ptr_t full_tiles = n_full_tiles.data();
 		auto len = std::distance(_begin,_end);
-		out_iterator_t dst = _out;
+
 
 #pragma omp parallel for									\
-  shared( _begin, dst )										\
+  shared( _begin, _out )										\
   schedule(static,chunk)									\
   firstprivate(shape,full_tiles)							\
   num_threads(_nthreads)
@@ -317,7 +317,6 @@ namespace sqeazy {
 		}
 
 
-		out_iterator_t dst = _out;
 		const int chunk = tile_size;
 		shape_ptr_t shape = _shape.data();
 		shape_ptr_t ptiles_per_dim = tiles_per_dim.data();
@@ -326,7 +325,7 @@ namespace sqeazy {
 		auto len = std::distance(_begin,_end);
 
 #pragma omp parallel for									\
-  shared( _begin, dst )										\
+  shared( _begin, _out )										\
   schedule(static,chunk)									\
   firstprivate(shape,ptiles_per_dim, ptile_shapes)			\
   num_threads(_nthreads)
@@ -351,9 +350,9 @@ namespace sqeazy {
 			  std::size_t intile_row_offset = (z_intile_row_offset*ptile_shapes[tile_index][row_major::x]*ptile_shapes[tile_index][row_major::y]) + y_intile_row_offset*ptile_shapes[tile_index][row_major::x];
 			  std::size_t tile_output_offset = ptile_output_offsets[tile_index];
 
-			  dst = std::copy(_begin + in_row + x,
-							  _begin + in_row + x + tile_shapes[tile_index][row_major::x],
-							  _out + tile_output_offset + intile_row_offset
+			  std::copy(_begin + in_row + x,
+						_begin + in_row + x + tile_shapes[tile_index][row_major::x],
+						_out + tile_output_offset + intile_row_offset
 				);
 
 			}
@@ -380,6 +379,7 @@ namespace sqeazy {
 		typedef typename std::iterator_traits<out_iterator_t>::value_type out_value_type;
 		typedef typename std::remove_cv<out_value_type>::type out_value_t;
 
+
 		static_assert(sizeof(in_value_t) == sizeof(out_value_t), "[sqeazy::detail::reorder::encode] reorder received non-matching types");
 
 		if(_shape.size()!=3){
@@ -387,7 +387,7 @@ namespace sqeazy {
 		  return _out;
 		}
 
-		std::size_t n_elements = _end - _begin;
+		std::size_t n_elements = std::distance(_begin,_end);
 		std::size_t n_elements_from_shape = std::accumulate(_shape.begin(), _shape.end(),
 															1,
 															std::multiplies<std::size_t>());
@@ -398,7 +398,7 @@ namespace sqeazy {
 
 		const shape_container_t rem = remainder(_shape);
 
-		return decode_with_remainder(_begin, _end, _out,_shape);
+		return decode_with_remainder(_begin, _end, _out,_shape, _nthreads);
 
 	  }
 
@@ -416,8 +416,20 @@ namespace sqeazy {
 		typedef typename std::iterator_traits<in_iterator_t>::value_type in_value_type;
 		typedef typename std::remove_cv<in_value_type>::type in_value_t;
 
+		typedef typename std::iterator_traits<decltype(_shape.begin())>::value_type shape_value_type;
+		typedef typename std::remove_cv<shape_value_type>::type shape_value_t;
+		typedef decltype(_shape.data()) shape_ptr_t;
+
+		if(_nthreads <= 0)
+		  _nthreads = std::thread::hardware_concurrency();
+
+		if(_shape[row_major::z] < (shape_value_t)_nthreads)
+		  _nthreads = _shape[row_major::z];
+
+
 		const shape_container_t rem = remainder(_shape);
 		const bool has_remainder = std::count_if(rem.begin(), rem.end(), [](shape_value_t el){ return el > 0;});
+		const std::size_t n_elements = std::distance(_begin,_end);
 
 		shape_container_t full_tiles_per_dim = _shape;
 		for(shape_value_t & tile : full_tiles_per_dim )
@@ -435,14 +447,10 @@ namespace sqeazy {
 		std::vector<std::array<std::size_t, 3> > tile_shapes(n_tiles, tile_shape);
 		std::vector<std::size_t>		 tile_sizes  (n_tiles, std::pow(tile_size,_shape.size()));
 
-		const std::size_t max_n_rows_per_tile = std::pow(tile_size,_shape.size()-1);
-		std::vector<std::size_t>		 tile_n_rows (n_tiles, max_n_rows_per_tile);
-
 
 		if(has_remainder){
 		  auto current_tile_shape = tile_shapes.begin();
 		  auto current_tile_sizes = tile_sizes.begin()  ;
-		  auto current_tile_n_rows = tile_n_rows.begin()  ;
 
 		  for(shape_value_t z = 0;z<tiles_per_dim[row_major::z];++z){
 			tile_shape[row_major::z] = z != tiles_per_dim[row_major::z]-1 ? tile_size : rem[row_major::z];
@@ -459,8 +467,6 @@ namespace sqeazy {
 				*current_tile_sizes = std::accumulate(tile_shape.begin(), tile_shape.end(),1,std::multiplies<std::size_t>());
 				++current_tile_sizes;
 
-				*current_tile_n_rows = std::accumulate(tile_shape.begin(), tile_shape.end(),1,std::multiplies<std::size_t>())/tile_shape[row_major::x];
-				++current_tile_n_rows;
 			  }
 			}
 		  }
@@ -477,11 +483,9 @@ namespace sqeazy {
 		shape_value_t ytile = 0;
 		shape_value_t xtile = 0;
 
-		const std::size_t output_frame_size = _shape[row_major::x]*_shape[row_major::y];
 
-
-		std::vector<std::array<std::size_t, 3> > tile_offsets(n_tiles, tile_shape);
-		auto linear_offsets_begin = tile_offsets.begin();
+		std::vector<std::array<std::size_t, 3> > tile_spatial_offsets(n_tiles, tile_shape);
+		auto linear_offsets_begin = tile_spatial_offsets.begin();
 		std::array<std::size_t, 3> loc;
 
 		for(shape_value_t z = 0;z<_shape[row_major::z];z+=tile_size){
@@ -490,67 +494,73 @@ namespace sqeazy {
 			  loc[row_major::x] = x;
 			  loc[row_major::y] = y;
 			  loc[row_major::z] = z;
-			  *linear_offsets_begin = loc;
+			  *linear_offsets_begin = loc;//copy-by-assignment
 			  ++linear_offsets_begin;
 			}
 		  }
 		}
 
-		auto dst = _out;
-		shape_value_t z_in_tile = 0;
-
-		shape_value_t y_in_tile = 0;
-		shape_value_t output_offset = 0;
 
 		std::vector<in_value_t> buffer_row(_shape[row_major::x],0);
-		auto buffer_row_begin = buffer_row.begin();
-		in_iterator_t src = _begin;
+		std::vector<std::vector<in_value_t>> buffer_row_per_thread(_nthreads, buffer_row);
+		auto pbuffer_row_per_thread = buffer_row_per_thread.data();
 
-		std::array<std::size_t, 3> dst_offset;dst_offset.fill(0);
-		std::size_t dst_start_tile = 0;
 		std::size_t write_count = 0;
+		const std::array<std::size_t, 3>* ptile_shapes = tile_shapes.data();
 
-		for(std::size_t row_in_tile = 0;row_in_tile<max_n_rows_per_tile;++row_in_tile){
+		shape_ptr_t pshape = _shape.data();
+		const std::size_t* ptile_size_sums = tile_size_sums.data();
+		shape_value_t n_rows_in_output = _shape[row_major::z]*_shape[row_major::y];
+
+#pragma omp parallel for												\
+  shared( _begin, _out, write_count )									\
+  firstprivate(pshape,ptile_shapes,  ptile_size_sums, pbuffer_row_per_thread) \
+  num_threads(_nthreads)
+		for(std::size_t row_in_output = 0;row_in_output<n_rows_in_output;++row_in_output)
+		{
+
+		  int tid = omp_get_thread_num();
+		  auto buffer_row_begin = pbuffer_row_per_thread[tid].begin();
+		  auto row_global_offset = row_in_output*pshape[row_major::x];
+
+		  std::size_t global_y = row_in_output % pshape[row_major::y];
+		  std::size_t global_z = row_in_output / pshape[row_major::y];
+
+		  std::size_t tile_y = global_y / tile_size;
+		  std::size_t tile_z = global_z / tile_size;
+
+		  std::size_t in_tile_y = global_y % tile_size;
+		  std::size_t in_tile_z = global_z % tile_size;
 
 
-		  for(std::size_t tile = 0;tile<n_tiles;++tile){
+		  std::size_t tile_offset = tile_z*tiles_per_dim[row_major::x]*tiles_per_dim[row_major::y];
+		  tile_offset += tile_y*tiles_per_dim[row_major::x];
 
-			src = _begin + tile_size_sums[tile];
+		  for(std::size_t tile = tile_offset;tile<(tile_offset+tiles_per_dim[row_major::x]);++tile)
+		  {
 
-			if(!(row_in_tile<tile_n_rows[tile]))
-			  continue;
 
-			src += row_in_tile*tile_shapes[tile][row_major::x];
+			const std::size_t tile_extent_x = ptile_shapes[tile][row_major::x];
+			const std::size_t tile_extent_y = ptile_shapes[tile][row_major::y];
+			std::size_t in_tile_offset = in_tile_z*tile_extent_y*tile_extent_x + in_tile_y*tile_extent_x;
 
-			buffer_row_begin = std::copy(src, src + tile_shapes[tile][row_major::x],
+			auto src = _begin + ptile_size_sums[tile] + in_tile_offset;
+
+			buffer_row_begin = std::copy(src, src + tile_extent_x,
 										 buffer_row_begin);
 
-			if(buffer_row_begin == buffer_row.end()){
+		  }
 
-			  dst_offset = tile_offsets[tile];
-
-			  z_in_tile = row_in_tile / tile_shapes[tile][row_major::y];
-			  y_in_tile = row_in_tile % tile_shapes[tile][row_major::y];
-
-			  dst_start_tile = (dst_offset[row_major::z]+z_in_tile)*output_frame_size;
-			  dst_start_tile += (dst_offset[row_major::y]+y_in_tile)*_shape[row_major::x]  ;
-			  dst_start_tile += dst_offset[row_major::x] + tile_shapes[tile][row_major::x] ;
-			  dst_start_tile -= buffer_row.size();
-
-			  dst = _out + dst_start_tile ;
-
-			  dst = std::copy(buffer_row.begin(),
-							  buffer_row.end(),
-							  dst);
-			  write_count += buffer_row.size();
-			  buffer_row_begin = buffer_row.begin();
-
-			}
-
+		  std::copy(pbuffer_row_per_thread[tid].begin(),
+					pbuffer_row_per_thread[tid].end(),
+					_out + row_global_offset);
+#pragma omp critical
+		  {
+			write_count += pshape[row_major::x];
 		  }
 		}
 
-		const std::size_t n_elements = (_end - _begin);
+
 		if(write_count == n_elements)
 		  return _out + write_count;
 		else
