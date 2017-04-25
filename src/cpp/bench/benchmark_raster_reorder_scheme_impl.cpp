@@ -1,10 +1,5 @@
 #define __BENCHMARK_RASTER_REORDER_SCHEME_IMPL_CPP__
 
-/*
-  notes:
-
-*/
-
 #include <thread>
 
 #include "encoders/raster_reorder_scheme_impl.hpp"
