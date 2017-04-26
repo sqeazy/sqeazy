@@ -36,6 +36,19 @@ namespace sqeazy {
 		return rem;
 	  }
 
+	  /**
+	   *  \brief perform a tile shuffle on the input
+	   *
+	   *  the input stack is partitioned in equisized boxes of dimension tile_size^3. for each tile,
+	   *  the median intensity value is computed; all medians are sorted; following the order of the medians,
+	   *  the input is rearranged so that small-median tiles are at the beginning of the output array
+	   *  large-median tiles are at the end of the output array
+	   *
+	   *  TODO: parallelize the sort if the compression ratio is enhanced
+	   *
+	   *  \param param
+	   *  \return return type
+	   */
 	  template <typename in_iterator_t, typename out_iterator_t, typename shape_container_t>
 	  out_iterator_t encode(in_iterator_t _begin,
 							in_iterator_t _end,
@@ -74,11 +87,6 @@ namespace sqeazy {
 		if(has_remainder)
 		  return encode_with_remainder(_begin,_end,_out,_shape);
 		else{
-		  // static const std::size_t n_elements_per_simd_block = 16/sizeof(in_value_t);
-
-		  // if(tile_size % n_elements_per_simd_block == 0)
-		  //   return encode_full_simd(_begin,_end,_out,_shape);
-		  // else
 		  return encode_full(_begin,_end,_out,_shape);
 		}
 
@@ -374,7 +382,14 @@ namespace sqeazy {
 		return _out + std::distance(_begin,_end);
 	  }
 
-
+	  /**
+	   *  \brief decode a tile_shuffled stack into it's original form
+	   *
+	   *  TODO: parallelize this!
+	   *
+	   *  \param param
+	   *  \return return type
+	   */
 	  template <typename in_iterator_t, typename out_iterator_t, typename shape_container_t>
 	  out_iterator_t decode(in_iterator_t _begin,
 							in_iterator_t _end,
