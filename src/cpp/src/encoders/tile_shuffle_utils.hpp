@@ -6,6 +6,7 @@
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
 #include "traits.hpp"
+#include "sqeazy_algorithms.hpp"
 
 namespace sqeazy {
 
@@ -321,40 +322,48 @@ namespace sqeazy {
 		std::sort(sorted_metric.begin(), sorted_metric.end());
 
 		// COMPUTE SHUFFLED-ORIGINAL INDEX MAP //////////////////////////////////////////////////////////////////////////////////
-		std::vector<bool> tile_written(len_tiles,false);
+		std::vector<char> tile_written(len_tiles,false);
+		auto ptile_written = tile_written.data();
+		auto psorted_metric = sorted_metric.data();
+		auto pdecode_map = decode_map.data();
 
-
+#pragma omp parallel for												\
+  shared( ptile_written,pdecode_map)										\
+  firstprivate(pmetric, psorted_metric)												\
+  num_threads(_nthreads)
 		for(shape_value_t i =0;i<metric.size();++i){
 		  auto original_index = std::find(metric.begin(), metric.end(), sorted_metric[i]) - metric.begin();
 
-		  while(tile_written[original_index] == true)
+		  while(ptile_written[original_index] == true)
 			original_index++;
 
 		  decode_map[i] = original_index;
-		  // auto dst = _out + prefix_n_elements[i];
-		  // dst = std::copy(tiles[original_index].begin(),
-		  // 				  tiles[original_index].end(),
-		  // 				  dst);
 
-		  tile_written[original_index] = true;
+		  #pragma omp critical
+		  {
+		  ptile_written[original_index] = true;
+		  }
 		}
 
 
 		// COMPUTE PREFIX SUM //////////////////////////////////////////////////////////////////////////////////
 		std::vector<std::size_t> prefix_sum(len_tiles,0);
-		std::size_t sum = 0;
-		for(shape_value_t i =0;i<decode_map.size();++i){
-		  prefix_sum[i] = sum;
-		  sum += tiles[decode_map[i]].size();
-		}
-
+		auto resitr = prefix_sum_of(decode_map.begin(), decode_map.end(), prefix_sum.begin(),
+									[&](const std::size_t& _index){ return ptiles[_index].size(); },
+									_nthreads);
 
 		// STORE CONTENT TO OUTPUT //////////////////////////////////////////////////////////////////////////////////
+		auto pprefix_sum = prefix_sum.data();
+
+		#pragma omp parallel for												\
+		  shared( _out)													\
+		  firstprivate(ptiles,pdecode_map,pprefix_sum)								\
+		  num_threads(_nthreads)
 		for(shape_value_t i =0;i<decode_map.size();++i){
 
-		  std::copy(tiles[decode_map[i]].begin(),
-					tiles[decode_map[i]].end(),
-					_out + prefix_sum[i]
+		  std::copy(ptiles[decode_map[i]].begin(),
+					ptiles[decode_map[i]].end(),
+					_out + pprefix_sum[i]
 			);
 
 		}
@@ -376,9 +385,6 @@ namespace sqeazy {
 
 		typedef typename std::iterator_traits<out_iterator_t>::value_type out_value_type;
 		typedef typename std::remove_cv<out_value_type>::type out_value_t;
-
-		// typedef typename std::iterator_traits<decltype(_shape.begin())>::value_type shape_value_type;
-		// typedef typename std::remove_cv<shape_value_type>::type shape_value_t;
 
 		static_assert(sizeof(in_value_t) == sizeof(out_value_t), "[sqeazy::detail::tile_shuffle::encode] tile_shuffle received non-matching types");
 
