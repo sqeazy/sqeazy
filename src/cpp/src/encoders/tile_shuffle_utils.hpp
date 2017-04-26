@@ -319,6 +319,8 @@ namespace sqeazy {
 		decode_map.resize(len_tiles);
 
 		auto sorted_metric = metric;
+
+		//TODO: this sort is the bottleneck currently
 		std::sort(sorted_metric.begin(), sorted_metric.end());
 
 		// COMPUTE SHUFFLED-ORIGINAL INDEX MAP //////////////////////////////////////////////////////////////////////////////////
@@ -332,12 +334,12 @@ namespace sqeazy {
   firstprivate(pmetric, psorted_metric)												\
   num_threads(_nthreads)
 		for(shape_value_t i =0;i<metric.size();++i){
-		  auto original_index = std::find(metric.begin(), metric.end(), sorted_metric[i]) - metric.begin();
+		  auto original_index = std::find(pmetric, pmetric+len_tiles, psorted_metric[i]) - pmetric;
 
 		  while(ptile_written[original_index] == true)
 			original_index++;
 
-		  decode_map[i] = original_index;
+		  pdecode_map[i] = original_index;
 
 		  #pragma omp critical
 		  {
@@ -348,9 +350,9 @@ namespace sqeazy {
 
 		// COMPUTE PREFIX SUM //////////////////////////////////////////////////////////////////////////////////
 		std::vector<std::size_t> prefix_sum(len_tiles,0);
-		auto resitr = prefix_sum_of(decode_map.begin(), decode_map.end(), prefix_sum.begin(),
-									[&](const std::size_t& _index){ return ptiles[_index].size(); },
-									_nthreads);
+		prefix_sum_of(decode_map.begin(), decode_map.end(), prefix_sum.begin(),
+					  [&](const std::size_t& _index){ return ptiles[_index].size(); },
+					  _nthreads);
 
 		// STORE CONTENT TO OUTPUT //////////////////////////////////////////////////////////////////////////////////
 		auto pprefix_sum = prefix_sum.data();
@@ -361,8 +363,8 @@ namespace sqeazy {
 		  num_threads(_nthreads)
 		for(shape_value_t i =0;i<decode_map.size();++i){
 
-		  std::copy(ptiles[decode_map[i]].begin(),
-					ptiles[decode_map[i]].end(),
+		  std::copy(ptiles[pdecode_map[i]].begin(),
+					ptiles[pdecode_map[i]].end(),
 					_out + pprefix_sum[i]
 			);
 
