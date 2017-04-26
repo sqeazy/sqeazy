@@ -90,6 +90,9 @@ target_link_libraries(benchmark_pipeline_construction ${Boost_LIBRARIES} ${googl
 add_executable(benchmark_raster_reorder_scheme_impl benchmark_raster_reorder_scheme_impl.cpp)
 target_link_libraries(benchmark_raster_reorder_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
+add_executable(benchmark_tile_shuffle_scheme_impl benchmark_tile_shuffle_scheme_impl.cpp)
+target_link_libraries(benchmark_tile_shuffle_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+
 
 IF(FFMPEG_FOUND)
   if(WIN32)
