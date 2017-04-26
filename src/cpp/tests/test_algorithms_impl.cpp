@@ -55,5 +55,24 @@ BOOST_AUTO_TEST_CASE( in_parallel ){
     BOOST_CHECK_MESSAGE(psum[i] == psum[i-1]+2, i << "] prefix sum doesn't match [i]: " << psum[i] << " with previous one [i-1]: " << psum[i-1]+2);
 }
 
+BOOST_AUTO_TEST_CASE( in_parallel_with_functor ){
 
+
+  std::vector<char> simple(2,0);
+  std::vector<std::vector<char>> src(1024, simple);
+  std::vector<std::uint32_t> psum(1024, 0);
+
+  auto retrieve = [=](const std::vector<char>& _el){return _el.size();};
+  auto resitr = sqeazy::prefix_sum_of(src.begin(),src.end(),psum.begin(),
+                                      retrieve,
+                                      std::thread::hardware_concurrency());
+
+  BOOST_CHECK(resitr == psum.end());
+  BOOST_CHECK_EQUAL(psum[0],0u);
+  BOOST_CHECK_EQUAL(psum[0],psum[1]-2);
+  BOOST_CHECK_EQUAL(psum[1],psum[2]-2);
+
+  for(std::size_t i = 1;i<src.size();++i)
+    BOOST_CHECK_MESSAGE(psum[i] == psum[i-1]+2, i << "] prefix sum doesn't match [i]: " << psum[i] << " with previous one [i-1]: " << psum[i-1]+2);
+}
 BOOST_AUTO_TEST_SUITE_END()

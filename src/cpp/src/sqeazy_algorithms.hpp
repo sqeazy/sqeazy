@@ -217,6 +217,73 @@ namespace sqeazy {
       return _out + len;
     }
 
+  template <typename iter_t, typename out_iter_t, typename functor_t>
+    out_iter_t prefix_sum_of(iter_t _begin, iter_t _end,
+                             out_iter_t _out,
+                             functor_t&& _my_functor,
+                             int _nthreads = 1){
+
+      typedef typename std::iterator_traits<iter_t>::pointer in_ptr_t;
+      // typedef typename std::iterator_traits<iter_t>::value_type in_value_t;
+      typedef typename std::iterator_traits<out_iter_t>::value_type out_value_t;
+      typedef typename std::iterator_traits<out_iter_t>::pointer out_ptr_t;
+
+      if(_nthreads <= 0)
+        _nthreads = std::thread::hardware_concurrency();
+
+      const omp_size_type len = std::distance(_begin,_end);
+
+      if(len < _nthreads)
+        _nthreads = 1;
+
+      if(_nthreads == 1){
+        out_value_t sum = 0;
+        for(omp_size_type i = 0;i<len;++i){
+          *(_out++) = sum;
+          sum += _my_functor(*(_begin + i));
+        }
+
+        return _out;
+      }
+
+      in_ptr_t pdata = &(*_begin);
+      out_ptr_t psum = &(*_out);
+
+      out_value_t *suma = nullptr;
+#pragma omp parallel
+      {
+        const int ithread = omp_get_thread_num();
+        const int nthreads = omp_get_num_threads();
+#pragma omp single
+        {
+          suma = new out_value_t[nthreads+1];
+          suma[0] = 0;
+        }
+
+        out_value_t sum = 0;
+#pragma omp for schedule(static)
+        for (omp_size_type i=0; i<len; i++) {
+          psum[i] = sum;
+          sum += _my_functor(pdata[i]);
+
+        }
+        suma[ithread+1] = sum;
+#pragma omp barrier
+        out_value_t offset = 0;
+        for(omp_size_type i=0; i<(ithread+1); i++) {
+          offset += suma[i];
+        }
+#pragma omp for schedule(static)
+        for (omp_size_type i=0; i<len; i++) {
+          psum[i] += offset;
+        }
+      }
+      delete[] suma;
+
+      return _out + len;
+    }
+
+
 };
 
 #endif /* _SQEAZY_ALGORITHMS_H_ */
