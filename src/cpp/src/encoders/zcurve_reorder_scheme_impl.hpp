@@ -90,7 +90,8 @@ namespace sqeazy {
       auto value = encoder.encode(_input,
                                   _input + len,
                                   _output,
-                                  _shape);
+                                  _shape,
+                                  this->n_threads());
       return value;
     }
 
@@ -104,7 +105,8 @@ namespace sqeazy {
       auto value = encoder.decode(_input,
                                   _input + len,
                                   _output,
-                                  _ishape);
+                                  _ishape,
+                                  this->n_threads());
       if(value==(_output+len))
         return SUCCESS;
       else
