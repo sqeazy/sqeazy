@@ -85,9 +85,9 @@ namespace sqeazy {
 		const bool has_remainder = std::count_if(rem.begin(), rem.end(), [](shape_value_t el){ return el > 0;});
 
 		if(has_remainder)
-		  return encode_with_remainder(_begin,_end,_out,_shape);
+		  return encode_with_remainder(_begin,_end,_out,_shape,_nthreads);
 		else{
-		  return encode_full(_begin,_end,_out,_shape);
+		  return encode_full(_begin,_end,_out,_shape,_nthreads);
 		}
 
 	  }
@@ -291,11 +291,16 @@ namespace sqeazy {
 			for(shape_value_t x = 0;x<pshape[row_major::x];x+=tile_size, ++tile_id){
 			  std::size_t xtile = x / tile_size;
 			  std::size_t xtile_shape = (xtile+1)*tile_size > pshape[row_major::x] ? (pshape[row_major::x]-(xtile*tile_size)) : tile_size;
+			  #pragma omp critical
+			  {
 			  ptiles[tile_id].resize(ztile_shape*ytile_shape*xtile_shape);
-			  auto tiles_iter = ptiles[tile_id].begin();
+			  }
+
+			  auto tiles_iter = ptiles[tile_id].data();
+			  auto tiles_offset = (z_intile*xtile_shape*ytile_shape) + y_intile*xtile_shape;
 
 			  std::copy(acc_iter, acc_iter + xtile_shape,
-						tiles_iter + (z_intile*xtile_shape*ytile_shape) + y_intile*xtile_shape);
+						tiles_iter + tiles_offset);
 
 			  acc_iter+=xtile_shape;
 
@@ -344,15 +349,17 @@ namespace sqeazy {
 		for(shape_value_t i =0;i<metric.size();++i){
 		  auto original_index = std::find(pmetric, pmetric+len_tiles, psorted_metric[i]) - pmetric;
 
-		  while(ptile_written[original_index] == true)
-			original_index++;
+		  #pragma omp critical
+		  {
+			while(ptile_written[original_index] == true)
+			  original_index++;
+
+			ptile_written[original_index] = true;
+		  }
+
 
 		  pdecode_map[i] = original_index;
 
-		  #pragma omp critical
-		  {
-		  ptile_written[original_index] = true;
-		  }
 		}
 
 
@@ -364,7 +371,7 @@ namespace sqeazy {
 
 		// STORE CONTENT TO OUTPUT //////////////////////////////////////////////////////////////////////////////////
 		auto pprefix_sum = prefix_sum.data();
-
+		auto len = std::distance(_begin,_end);
 		#pragma omp parallel for												\
 		  shared( _out)													\
 		  firstprivate(ptiles,pdecode_map,pprefix_sum)								\
@@ -379,7 +386,7 @@ namespace sqeazy {
 		}
 
 
-		return _out + std::distance(_begin,_end);
+		return _out + len;
 	  }
 
 	  /**
