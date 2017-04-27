@@ -100,7 +100,7 @@ before_install:
   - tar xf boost.tar.bz2
   - cd boost_1_*/
   - if [[ ! -e /home/travis/sw/lib/libboost_date_time.so ]]; then
-      ./bootstrap.sh --with-toolset=gcc --with-libraries=date_time,system,filesystem,test,thread,program_options,regex --prefix=/home/travis/sw &&
+      ./bootstrap.sh --with-toolset=gcc --with-libraries=date_time,system,filesystem,test,thread,program_options,regex,serialization --prefix=/home/travis/sw &&
       ./b2 -j2 &&
       sudo ./b2 install &&
       echo "boost installed in /home/travis/sw" &&
