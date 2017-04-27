@@ -74,7 +74,7 @@ Here is how to build sqeazy on Windows from the command line (GUI based cmake in
 > cd X:\path\to\sqy\repo
 > mkdir build
 > cd build
-> cmake.exe -G "Visual Studio 14 2015 Win64" -DCMAKE_INSTALL_PREFIX=C:\Users\steinbac\temp_sqy -DHDF5_ROOT=C:\Users\steinbac\software\hdf5\1.8.16 -DBOOST_ROOT=C:\Users\steinbac\software\boost\1_59_0_static -DLZ4_ROOT=C:\Users\steinbac\software\lz4\master -DTIFF_INCLUDE_DIR=C:\Users\steinbac\software\tiff\3.8.2-1\include -DTIFF_LIBRARY=C:\Users\steinbac\software\tiff\3.8.2-1\lib\libtiff.dll -DFFMPEG_ROOT_DIR=C:\Users\steinbac\software\ffmpeg\2.8.1 -DCMAKE_BUILD_TYPE=Release ..
+> cmake.exe -G "Visual Studio 14 2015 Win64" -DCMAKE_INSTALL_PREFIX=C:\Users\steinbac\temp_sqy -DHDF5_ROOT=C:\Users\steinbac\software\hdf5\1.8.16 -DBOOST_ROOT=C:\Users\steinbac\software\boost\1_59_0_static -DLZ4_ROOT=C:\Users\steinbac\software\lz4\master -DTIFF_INCLUDE_DIR=C:\Users\steinbac\software\tiff\3.8.2-1\include -DTIFF_LIBRARY=C:\Users\steinbac\software\tiff\3.8.2-1\lib\libtiff.dll -DFFMPEG_ROOT_DIR=C:\Users\steinbac\software\ffmpeg\2.8.1 -DGOOGLEBENCHMARK_ROOT=C:\Users\steinbac\software\benchmark\1.1.0 -DCMAKE_BUILD_TYPE=Release ..
 > cmake.exe --build . --target ALL_BUILD --config Release
 > ctest.exe -C Release #(optional) the above builds in Release mode
 > cmake.exe --build . --target install --config Release
