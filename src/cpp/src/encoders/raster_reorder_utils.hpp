@@ -121,7 +121,7 @@ namespace sqeazy {
   schedule(static,chunk)									\
   firstprivate(shape,full_tiles)							\
   num_threads(_nthreads)
-		for(shape_value_t z = 0;z<shape[row_major::z];++z){
+		for(omp_size_type z = 0;z<shape[row_major::z];++z){
 		  std::size_t ztile = z / tile_size;
 		  std::size_t z_intile_row_offset = z % tile_size;
 
@@ -205,7 +205,7 @@ namespace sqeazy {
   firstprivate(shape,full_tiles)							\
   schedule(static,chunk)									\
   num_threads(_nthreads)
-		for(shape_value_t z = 0;z<shape[row_major::z];++z){
+		for(omp_size_type z = 0;z<shape[row_major::z];++z){
 		  std::size_t ztile = z / tile_size;
 		  std::size_t z_intile_row_offset = z % tile_size;
 
@@ -329,7 +329,7 @@ namespace sqeazy {
   schedule(static,chunk)									\
   firstprivate(shape,ptiles_per_dim, ptile_shapes)			\
   num_threads(_nthreads)
-		for(shape_value_t z = 0;z<shape[row_major::z];++z){
+		for(omp_size_type z = 0;z<shape[row_major::z];++z){
 
 		  std::size_t ztile = z / tile_size;
 		  std::size_t z_intile_row_offset = z % tile_size;
@@ -516,7 +516,7 @@ namespace sqeazy {
   shared( _begin, _out, write_count )									\
   firstprivate(pshape,ptile_shapes,  ptile_size_sums, pbuffer_row_per_thread) \
   num_threads(_nthreads)
-		for(std::size_t row_in_output = 0;row_in_output<n_rows_in_output;++row_in_output)
+		for(omp_size_type row_in_output = 0;row_in_output<n_rows_in_output;++row_in_output)
 		{
 
 		  int tid = omp_get_thread_num();
