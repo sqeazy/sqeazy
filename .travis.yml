@@ -22,10 +22,10 @@ before_install:
   #############################################################################
   - sudo apt-get -qq update
   - sudo apt-get install -y cmake wget bzip2 libbz2-dev make yasm nasm cpuid
-  - travis_retry wget --no-check-certificate https://github.com/Cyan4973/lz4/archive/r131.tar.gz
-  - tar xf r131.tar.gz
+  - travis_retry wget --no-check-certificate https://github.com/lz4/lz4/archive/v1.7.5.tar.gz
+  - tar xf v1.7.5.tar.gz
   - pwd
-  - cd lz4-r131
+  - cd lz4-1.7.5
   - if [[ ! -e /home/travis/sw/lib/liblz4.so ]]; then
       pwd &&
       sudo PREFIX=/home/travis/sw SHELL="/bin/bash -x" make install  &&
@@ -34,7 +34,7 @@ before_install:
     else
       echo "lz4 found in /home/travis/sw";
     fi
-  - cd ../.. && sudo rm -rf lz4-r131
+  - cd ../.. && sudo rm -rf lz4-1.7.5
   - nm /home/travis/sw/lib/liblz4.so
 
   #############################################################################
