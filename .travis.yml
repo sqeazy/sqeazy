@@ -53,7 +53,7 @@ before_install:
     fi
   - if [[ -e `which ffmpeg` ]]; then
         which ffmpeg;
-        find /home/travis/sw/lib /usr/lib* -name "*265*so"
+        find /home/travis/sw/lib /usr/lib* -name "*265*so";
         ldd `which ffmpeg`;
         `which ffmpeg` -version;
     fi
