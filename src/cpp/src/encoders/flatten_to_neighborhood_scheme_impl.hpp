@@ -116,11 +116,12 @@ namespace sqeazy {
       const int nthreads = this->n_threads();
       const omp_size_type offset_size = offsets.size();
       auto offsets_begin = offsets.begin();
-
+	  auto local_shape = _shape;
+	  const auto local_threshold = threshold;
 
 #pragma omp parallel for                  \
   shared(_output)                                                          \
-  firstprivate( _input, offsets_begin, offset_size, threshold, _shape , n_neighbors_below_threshold, cut_fraction) \
+  firstprivate( _input, offsets_begin, offset_size, local_threshold, local_shape , n_neighbors_below_threshold, cut_fraction) \
   num_threads(nthreads)
       for(omp_size_type offset=0; offset<offset_size; ++offset) {
 
@@ -129,14 +130,14 @@ namespace sqeazy {
           const size_type local_index = index + *(offsets_begin + offset);
 
           //skip pixels that are below threshold
-          if(*(_input + local_index)<threshold)
+          if(*(_input + local_index)<local_threshold)
             continue;
 
           n_neighbors_below_threshold = count_neighbors_if<Neighborhood>(_input + local_index,
-                                                                         _shape,
+                                                                         local_shape,
                                                                          // std::bind2nd(std::less<raw_type>(), threshold)
                                                                          [&](raw_type element){
-                                                                           return element < threshold;
+                                                                           return element < local_threshold;
                                                                          }
             );
 

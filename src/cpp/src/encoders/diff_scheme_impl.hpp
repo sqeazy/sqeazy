@@ -111,11 +111,12 @@ namespace sqeazy {
       auto offsets_begin = offsets.begin();
       const omp_size_type offset_size = offsets.size();
       const int nthreads = this->n_threads();
-      auto shape_begin = _shape.data();
+      //auto shape_begin = _shape.data();
+	  const auto pshape = _shape.data();
 
 #pragma omp parallel for                        \
   shared(signed_compressed)                            \
-  firstprivate( offset_size, halo_size_x, offsets_begin, _raw, _shape,n_traversed_pixels) \
+  firstprivate( offset_size, halo_size_x, offsets_begin, _raw, pshape,n_traversed_pixels) \
   num_threads(nthreads)
       for(omp_size_type offset = 0; offset < offset_size; ++offset) {
 
@@ -123,9 +124,9 @@ namespace sqeazy {
 
           auto     local_index = index + *(offsets_begin + offset);
           sum_type local_sum = naive_sum<Neighborhood>(_raw,local_index,
-                                                       *(shape_begin+row_major::w),
-                                                       *(shape_begin+row_major::h),
-                                                       *(shape_begin+row_major::d)
+                                                       pshape[row_major::w],
+                                                       pshape[row_major::h],
+                                                       pshape[row_major::d]
             );
 
           *(signed_compressed + local_index) = _raw[local_index] - local_sum/n_traversed_pixels;
