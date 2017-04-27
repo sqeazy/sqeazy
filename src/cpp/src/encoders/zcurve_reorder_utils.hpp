@@ -15,44 +15,54 @@ namespace sqeazy {
 	struct zcurve {
 
 	  std::size_t tile_size;
-	  std::function<std::uint64_t(std::uint32_t,std::uint32_t,std::uint32_t)> zcurve_encode;
-	  std::function<void(std::uint64_t,std::uint32_t&,std::uint32_t&,std::uint32_t&)>  zcurve_decode;
+
+	  typedef std::uint64_t (*encode_function_t)(std::uint32_t ,std::uint32_t ,std::uint32_t );
+
+	  typedef void (*decode_function_t)(std::uint64_t,std::uint32_t&,std::uint32_t&,std::uint32_t&);
+
+	  // std::function<std::uint64_t(std::uint32_t,std::uint32_t,std::uint32_t)> zcurve_encode;
+	  // std::function<void(std::uint64_t,std::uint32_t&,std::uint32_t&,std::uint32_t&)>  zcurve_decode;
+
+	  encode_function_t zcurve_encode;
+	  decode_function_t zcurve_decode;
 
 	  zcurve(std::size_t _tsize):
-		tile_size(_tsize)
+		tile_size(_tsize),
+		zcurve_encode(&detail::morton_at_ct<>::from),
+		zcurve_decode(&detail::morton_at_ct<>::to)
 		{
 		  switch(tile_size){
 		  case 2:
-			zcurve_encode = detail::morton_at_ct<>::from;
-			zcurve_decode = detail::morton_at_ct<>::to;
+			zcurve_encode = &detail::morton_at_ct<>::from;
+			zcurve_decode = &detail::morton_at_ct<>::to;
 			break;
 		  case 4:
-			zcurve_encode = detail::morton_at_ct<2>::from;
-			zcurve_decode = detail::morton_at_ct<2>::to;
+			zcurve_encode = &detail::morton_at_ct<2>::from;
+			zcurve_decode = &detail::morton_at_ct<2>::to;
 			break;
 		  case 8:
-			zcurve_encode = detail::morton_at_ct<3>::from;
-			zcurve_decode = detail::morton_at_ct<3>::to;
+			zcurve_encode = &detail::morton_at_ct<3>::from;
+			zcurve_decode = &detail::morton_at_ct<3>::to;
 			break;
 		  case 16:
-			zcurve_encode = detail::morton_at_ct<4>::from;
-			zcurve_decode = detail::morton_at_ct<4>::to;
+			zcurve_encode = &detail::morton_at_ct<4>::from;
+			zcurve_decode = &detail::morton_at_ct<4>::to;
 			break;
 		  case 32:
-			zcurve_encode = detail::morton_at_ct<5>::from;
-			zcurve_decode = detail::morton_at_ct<5>::to;
+			zcurve_encode = &detail::morton_at_ct<5>::from;
+			zcurve_decode = &detail::morton_at_ct<5>::to;
 			break;
 		  case 64:
-			zcurve_encode = detail::morton_at_ct<6>::from;
-			zcurve_decode = detail::morton_at_ct<6>::to;
+			zcurve_encode = &detail::morton_at_ct<6>::from;
+			zcurve_decode = &detail::morton_at_ct<6>::to;
 			break;
 		  case 128:
-			zcurve_encode = detail::morton_at_ct<7>::from;
-			zcurve_decode = detail::morton_at_ct<7>::to;
+			zcurve_encode = &detail::morton_at_ct<7>::from;
+			zcurve_decode = &detail::morton_at_ct<7>::to;
 			break;
 		  default:
-			zcurve_encode = detail::morton_at_ct<>::from;
-			zcurve_decode = detail::morton_at_ct<>::to;
+			zcurve_encode = &detail::morton_at_ct<>::from;
+			zcurve_decode = &detail::morton_at_ct<>::to;
 		  };
 
 		}
@@ -120,10 +130,16 @@ namespace sqeazy {
 		const shape_container_t rem = remainder(_shape);
 		const bool has_remainder = std::count_if(rem.begin(), rem.end(), [](shape_value_t el){ return el > 0;});
 
+		if(_nthreads <= 0)
+		  _nthreads = std::thread::hardware_concurrency();
+
+		if(_shape[row_major::z] < (shape_value_t)_nthreads)
+		  _nthreads = _shape[row_major::z];
+
 		if(has_remainder)
-		  return encode_with_remainder(_begin,_end,_out,_shape);
+		  return encode_with_remainder(_begin,_end,_out,_shape, _nthreads);
 		else{
-		  return encode_full(_begin,_end,_out,_shape);
+		  return encode_full(_begin,_end,_out,_shape, _nthreads);
 		}
 
 	  }
@@ -140,7 +156,7 @@ namespace sqeazy {
 		typedef typename std::remove_cv<shape_value_type>::type shape_value_t;
 
 		const std::size_t n_elements_per_tile = std::pow(tile_size,_shape.size());
-
+		const std::size_t n_elements = std::distance(_begin, _end);
 
 		shape_container_t shape_in_tiles = _shape;
 
@@ -149,30 +165,34 @@ namespace sqeazy {
 
 		std::size_t dst_offset  = 0;
 		in_iterator_t src = _begin;
-		out_iterator_t dst = _out;
+		auto pshape = _shape.data();
+		auto pshape_in_tiles = shape_in_tiles.data();
+		int chunk =  (pshape[row_major::z] + _nthreads - 1)/_nthreads;
 
-		std::uint32_t tile_offset_in_z = 0;
-		std::uint32_t tile_offset_in_y = 0;
-		std::uint32_t tile_offset_in_x = 0;
+		#pragma omp parallel for \
+		  shared (_out) \
+		  firstprivate ( _begin, pshape, pshape_in_tiles ) \
+		  schedule (static, chunk)
+		for(shape_value_t z = 0;z<pshape[row_major::z];++z){
+		  std::uint32_t tile_offset_in_z = z / tile_size;
 
-		std::uint32_t tile_index = 0;
+		  for(shape_value_t y = 0;y<pshape[row_major::y];++y){
+			std::uint32_t tile_offset_in_y = y / tile_size;
 
-		for(shape_value_t z = 0;z<_shape[row_major::z];z+=1){
-		  tile_offset_in_z = z / tile_size;
+			for(shape_value_t x = 0;x<pshape[row_major::x];++x){
 
-		  for(shape_value_t y = 0;y<_shape[row_major::y];y+=1){
-			tile_offset_in_y = y / tile_size;
+			  std::uint32_t tile_offset_in_x = x / tile_size;
+			  std::uint32_t tile_index = tile_offset_in_z*pshape_in_tiles[row_major::x]*pshape_in_tiles[row_major::y] + tile_offset_in_y*pshape_in_tiles[row_major::x] + tile_offset_in_x;
 
-			for(shape_value_t x = 0;x<_shape[row_major::x];x+=1){
-			  tile_offset_in_x = x / tile_size;
-			  tile_index = tile_offset_in_z*shape_in_tiles[row_major::x]*shape_in_tiles[row_major::y] + tile_offset_in_y*shape_in_tiles[row_major::x] + tile_offset_in_x;
-			  dst = _out + (tile_index*n_elements_per_tile);
+			  shape_value_t src_offset = z*pshape[row_major::y]*pshape[row_major::x] + y*pshape[row_major::x] + x;
+
+			  auto dst = _out + (tile_index*n_elements_per_tile);
 			  dst_offset = zcurve_encode(z % tile_size,
 										 y % tile_size,
 										 x % tile_size);
 
 			  auto dst_ptr = dst + dst_offset;
-			  *dst_ptr = *(src++);
+			  *dst_ptr = *(_begin + src_offset);
 
 			}
 
@@ -180,7 +200,7 @@ namespace sqeazy {
 
 		}
 
-		return _out + (src - _begin);
+		return _out + n_elements;
 
 	  }
 
