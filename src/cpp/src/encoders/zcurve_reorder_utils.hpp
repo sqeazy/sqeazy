@@ -172,7 +172,7 @@ namespace sqeazy {
 		  shared (_out) \
 		  firstprivate ( _begin, pshape, pshape_in_tiles ) \
 		  schedule (static, chunk)
-		for(shape_value_t z = 0;z<pshape[row_major::z];++z){
+		for(omp_size_type z = 0;z<pshape[row_major::z];++z){
 		  std::uint32_t tile_offset_in_z = z / tile_size;
 
 		  for(shape_value_t y = 0;y<pshape[row_major::y];++y){
@@ -297,7 +297,7 @@ namespace sqeazy {
 		  shared (_out) \
 		  firstprivate ( _begin, pshape, cptile_output_offsets, ptiles_per_dim )	\
 		  schedule (static)
-		for(shape_value_t z = 0;z<pshape[row_major::z];++z){
+		for(omp_size_type z = 0;z<pshape[row_major::z];++z){
 
 		  const std::size_t   ztile = z / tile_size;
 		  const std::uint32_t z_intile = z % tile_size;
@@ -425,7 +425,7 @@ namespace sqeazy {
 		  shared (_out) \
 		  firstprivate ( _begin, pshape, cptile_output_offsets,pshape_in_tiles )	\
 		  schedule (static)
-		for(shape_value_t z = 0;z<pshape[row_major::z];++z){
+		for(omp_size_type z = 0;z<pshape[row_major::z];++z){
 
 		  std::size_t ztile = z / tile_size;
 		  std::size_t z_intile = z % tile_size;
