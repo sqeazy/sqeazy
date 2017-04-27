@@ -143,7 +143,7 @@ namespace sqeazy {
   shared( _begin, ptiles)												\
   firstprivate(pshape, pn_full_tiles)													\
   num_threads(_nthreads)
-		for(shape_value_t z = 0;z<pshape[row_major::z];++z){
+		for(omp_size_type z = 0;z<pshape[row_major::z];++z){
 		  std::size_t ztile = z / tile_size;
 		  std::size_t z_intile = z % tile_size;
 
@@ -180,7 +180,7 @@ namespace sqeazy {
   shared( pmetric)														\
   firstprivate(ptiles)													\
   num_threads(_nthreads)
-		for(std::size_t i = 0;i<len_tiles;++i){
+		for(omp_size_type i = 0;i<len_tiles;++i){
 		  median_acc_t acc;
 
 		  for(std::size_t p = 0;p<n_elements_per_tile;++p){
@@ -204,7 +204,7 @@ namespace sqeazy {
   shared( pdecode_map, _out)					\
   firstprivate(ptiles,pmetric, psorted_metric)					\
   num_threads(_nthreads)
-		for(shape_value_t i =0;i<metric.size();++i){
+		for(omp_size_type i =0;i<metric.size();++i){
 		  auto original_index = std::find(pmetric, pmetric + len_tiles, psorted_metric[i]) - pmetric;
 
 		  pdecode_map[i] = original_index;
@@ -273,7 +273,7 @@ namespace sqeazy {
   shared( ptiles )														\
   firstprivate(pshape, _begin,pn_tiles)									\
   num_threads(_nthreads)
-		for(shape_value_t z = 0;z<pshape[row_major::z];++z){
+		for(omp_size_type z = 0;z<pshape[row_major::z];++z){
 		  std::size_t ztile = z / tile_size;
 		  std::size_t z_intile = z % tile_size;
 		  std::size_t ztile_shape = (ztile+1)*tile_size > pshape[row_major::z] ? (pshape[row_major::z]-(ztile*tile_size)) : tile_size;
@@ -318,7 +318,7 @@ namespace sqeazy {
   shared( pmetric)														\
   firstprivate(ptiles)													\
   num_threads(_nthreads)
-		for(std::size_t i = 0;i<len_tiles;++i){
+		for(omp_size_type i = 0;i<len_tiles;++i){
 		  median_acc_t acc;
 
 		  for(std::size_t p = 0;p<n_elements_per_tile;++p){
@@ -346,7 +346,7 @@ namespace sqeazy {
   shared( ptile_written,pdecode_map)										\
   firstprivate(pmetric, psorted_metric)												\
   num_threads(_nthreads)
-		for(shape_value_t i =0;i<metric.size();++i){
+		for(omp_size_type i =0;i<metric.size();++i){
 		  auto original_index = std::find(pmetric, pmetric+len_tiles, psorted_metric[i]) - pmetric;
 
 		  #pragma omp critical
@@ -376,7 +376,7 @@ namespace sqeazy {
 		  shared( _out)													\
 		  firstprivate(ptiles,pdecode_map,pprefix_sum)								\
 		  num_threads(_nthreads)
-		for(shape_value_t i =0;i<decode_map.size();++i){
+		for(omp_size_type i =0;i<decode_map.size();++i){
 
 		  std::copy(ptiles[pdecode_map[i]].begin(),
 					ptiles[pdecode_map[i]].end(),
