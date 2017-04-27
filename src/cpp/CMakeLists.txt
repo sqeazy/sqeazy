@@ -573,8 +573,13 @@ IF(Boost_FOUND AND HDF5_FOUND AND LZ4_FOUND AND FFMPEG_FOUND AND TIFF_FOUND)
   enable_testing()
   include("CTestLists.txt")
 
-  add_subdirectory(bench) #
-  
+  find_package(GoogleBenchmark REQUIRED)
+	if(${googlebenchmark_FOUND})
+		add_subdirectory(bench)
+	else()
+		message("google/benchmark not found, skipping benchmark suite")
+	endif()
+	
 ELSE()
   MESSAGE(FATAL_ERROR "++ required dependencies not found, sqeazy cannot be build")
 ENDIF()
