@@ -1,10 +1,11 @@
 sudo: required
 dist: trusty
 
-cache:
-  directories:
-  - /home/travis/sw
-  
+#cache:
+#  directories:
+#  - /home/travis/sw
+#
+
 language: java
 jdk:
   - oraclejdk8
@@ -52,9 +53,9 @@ before_install:
       echo "ffmpeg installed in /home/travis/sw" && cd .. && sudo rm -rf ffmpeg_repo;
     fi
   - if [[ -e `which ffmpeg` ]]; then
-        which ffmpeg;
-        find /home/travis/sw/lib /usr/lib* -name "*265*so";
-        ldd `which ffmpeg`;
+        which ffmpeg && 
+        find /home/travis/sw/lib /usr/lib* -name "*265*so" &&
+        ldd `which ffmpeg` &&
         `which ffmpeg` -version;
     fi
 
