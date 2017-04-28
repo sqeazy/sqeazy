@@ -11,7 +11,7 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/include)
 SET(Boost_USE_STATIC_LIBS OFF)
 FIND_PACKAGE (Boost 1.55 COMPONENTS regex unit_test_framework filesystem system serialization REQUIRED QUIET)
 if(Boost_FOUND)
-    MESSAGE("++ [tests] Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES} : ${Boost_LIBRARIES}")
+    MESSAGE("++ [tests] Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES} ")
     INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
     link_directories(${Boost_LIBRARY_DIRS})
     IF(MSVC)
@@ -35,7 +35,7 @@ if(DEFINED READY_4_BUNDLE)
 endif()
 
 
-message(STATUS "[tests] linking against ${SQY_LIB} ${Boost_LIBRARIES} ")
+message(STATUS "++ [tests] linking against ${SQY_LIB} ${Boost_LIBRARIES} ")
 
 add_executable(test_compass_impl test_compass_impl.cpp)
 target_link_libraries(test_compass_impl ${Boost_LIBRARIES})

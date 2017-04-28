@@ -500,37 +500,42 @@ ENDIF()
 
 #-------------------------------- TIFF       ---------------------------------
 
-if(TIFF_ROOT)
+if(TIFF_ROOT OR DEFINED TIFF_ROOT)
 	if(EXISTS ${TIFF_ROOT})
 		list(APPEND CMAKE_PREFIX_PATH ${TIFF_ROOT})
+		set(TIFF_INCLUDE_DIR ${TIFF_ROOT}/include)
 	else()
 		message(FATAL_ERROR "provided TIFF_ROOT ${TIFF_ROOT} does not exist")
 	endif()
 endif()
 
-if(DEFINED TIFF_ROOT)
-	if(EXISTS ${TIFF_ROOT})
-	  list(APPEND CMAKE_PREFIX_PATH ${TIFF_ROOT})
-	else()
-	  message(FATAL_ERROR "provided TIFF_ROOT ${TIFF_ROOT} does not exist")
-	endif()
-endif()
+# if(DEFINED TIFF_ROOT)
+	# if(EXISTS ${TIFF_ROOT})
+	  # list(APPEND CMAKE_PREFIX_PATH ${TIFF_ROOT})
+	# else()
+	  # message(FATAL_ERROR "provided TIFF_ROOT ${TIFF_ROOT} does not exist")
+	# endif()
+# endif()
 
-FIND_PACKAGE(TIFF REQUIRED QUIET)
+message("++ [tiff] ${CMAKE_PREFIX_PATH}")
+FIND_PACKAGE(TIFF REQUIRED)
 IF(TIFF_FOUND)
   include_directories(${TIFF_INCLUDE_DIR})
   get_filename_component(TIFF_LIB_PATH ${TIFF_LIBRARY} ABSOLUTE)
   get_filename_component(TIFF_LIB_ABSPATH ${TIFF_LIB_PATH} DIRECTORY)
   link_directories(${TIFF_LIB_ABSPATH})
   
-  SET(TIFF_DYN_LIB ${TIFF_LIBRARY})
+  SET(TIFF_DYN_LIB ${TIFF_LIBRARIES})
   SET(TIFF_STATIC_LIB "")
   
-  IF(WIN32)
-    message("++ [tests] using ${TIFF_INCLUDE_DIR} ${TIFF_LIBRARY}")
-	
-  ELSE(WIN32)
-
+  if(NOT EXISTS ${TIFF_DYN_LIB})
+	message(FATAL_ERROR "libtiff found by cmake does not exist! Aborting.")
+  else()
+	message("++ [tiff] using ${TIFF_INCLUDE_DIR} ${TIFF_DYN_LIB}")
+  endif()
+  
+  IF(NOT WIN32)
+    
     IF(APPLE)
       IF("${TIFF_LIBRARY}" MATCHES ".*.so$")
 	STRING(REPLACE .so .dylib TIFF_DYN_LIB ${TIFF_LIBRARY})
@@ -552,7 +557,7 @@ IF(TIFF_FOUND)
       ENDIF()
     # ENDIF()
     
-  ENDIF(WIN32)
+  ENDIF(NOT WIN32)
   
 ENDIF(TIFF_FOUND)
 
