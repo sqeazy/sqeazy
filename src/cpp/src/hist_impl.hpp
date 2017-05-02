@@ -248,8 +248,7 @@ namespace sqeazy {
         }
 
         T calc_mode() const {
-            T value = sqeazy::detail::max_element_distance(bins.begin(),bins.end());// std::distance(bins.begin(),
-            //               std::max_element(bins.begin(),bins.end());
+            T value = sqeazy::detail::max_element_distance(bins.begin(),bins.end(),this->n_threads());
             return value;
         }
 
