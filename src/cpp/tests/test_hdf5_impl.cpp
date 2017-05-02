@@ -339,8 +339,8 @@ BOOST_AUTO_TEST_CASE( roundtrip_multiple_datasets_in_groups ){
 
 BOOST_AUTO_TEST_CASE( write_dataset_with_filter ){
 
-  sqeazy::h5_file no_filter(no_filter_path.string(), H5F_ACC_TRUNC);
-  int rvalue = no_filter.write_nd_dataset(dname,
+  sqeazy::h5_file no_filter_as_reference(no_filter_path.string(), H5F_ACC_TRUNC);
+  int rvalue = no_filter_as_reference.write_nd_dataset(dname,
 					   retrieved,
 					   dims);
 

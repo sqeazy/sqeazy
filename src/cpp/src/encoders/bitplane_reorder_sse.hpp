@@ -290,7 +290,7 @@ namespace sqeazy {
       if(_length % n_elements_full_sweep){
         std::cerr << "[sse_bitplane_reorder_encode] " << _length << " ("<< n_bits_per_element
                   <<" bits per element) cannot be processed by "
-                  << n_elements_full_sweep << " without rest\n";
+                  << n_elements_full_sweep << " without remainder\n";
 
         return FAILURE;
       }
