@@ -209,7 +209,7 @@ namespace sqeazy {
          *  \return decltype(_start)
          */
         template <typename iter, typename value_type>
-        value_type sum(iter _begin, iter _end, value_type _start, int _nthreads = 0){
+        value_type sum(iter _begin, iter _end, value_type _start, int _nthreads = 1){
 
             if(_nthreads == 1)
                 return std::accumulate(_begin, _end, _start);
@@ -265,7 +265,7 @@ namespace sqeazy {
         value_type index_weighted_sum(iter _begin, iter _end,
                                       value_type _start_value,
                                       omp_size_type _start_index = 0,
-                                      int _nthreads = 0){
+                                      int _nthreads = 1){
 
             if(_nthreads <= 0)
                 _nthreads = std::thread::hardware_concurrency();
@@ -328,7 +328,7 @@ namespace sqeazy {
                                           value_type _start_value,
                                           value_type _mean,
                                           omp_size_type _start_index = 0,
-                                          int _nthreads = 0){
+                                          int _nthreads = 1){
 
             if(_nthreads <= 0)
                 _nthreads = std::thread::hardware_concurrency();
@@ -381,7 +381,7 @@ namespace sqeazy {
          *  \return std::size_t
          */
         template <typename iter>
-        std::size_t max_element_distance(iter _begin, iter _end, int _nthreads = 0)
+        std::size_t max_element_distance(iter _begin, iter _end, int _nthreads = 1)
         {
 
             typedef typename std::iterator_traits<iter>::value_type value_t;
@@ -440,7 +440,7 @@ namespace sqeazy {
          *  \return result_t
          */
         template <typename iter_t, typename result_t = float>
-        result_t reduce_to_entropy(iter_t _begin, iter_t _end, const result_t _inv_integral, int _nthreads = 0){
+        result_t reduce_to_entropy(iter_t _begin, iter_t _end, const result_t _inv_integral, int _nthreads = 1){
 
             if(_nthreads <= 0)
                 _nthreads = std::thread::hardware_concurrency();
@@ -495,7 +495,7 @@ namespace sqeazy {
         out_iter abs_diff_to(iter _begin, iter _end,
                                out_iter _obegin,
                                value_type _diff_to,
-                               int _nthreads = 0){
+                               int _nthreads = 1){
 
             using iter_value_t = typename std::iterator_traits<iter>::value_type;
             // using oiter_value_t = typename std::iterator_traits<out_iter>::value_type;
