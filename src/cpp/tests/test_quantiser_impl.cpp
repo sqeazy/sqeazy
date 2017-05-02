@@ -1319,5 +1319,44 @@ BOOST_AUTO_TEST_CASE( sqrt_ratio ){
 
 }
 
+BOOST_AUTO_TEST_CASE( power_capped_ramp_compare_weights ){
 
+  std::vector<uint16_t> input(1 << 12,0);
+  uint16_t value = 0;
+  for( uint16_t& _el : input )
+    _el = (value++) % 63;
+
+  std::vector<uint8_t> encoded(input.size(),0);
+  std::vector<uint16_t> reconstructed(input.size(),0);
+
+
+  sqeazy::quantiser<uint16_t,uint8_t> unweighted_shrinker(input.data(),input.data()+input.size());
+
+
+  sqeazy::weighters::power_of w(3,1);
+  sqeazy::quantiser<uint16_t,uint8_t> weighted_shrinker(input.data(),input.data()+input.size(),
+                                                        1,w);
+
+  auto len_weights = unweighted_shrinker.weights_.size();
+  for(std::size_t i = 0;i<len_weights;++i)
+  {
+    if(unweighted_shrinker.weights_[i]!=0){
+      try{
+        BOOST_REQUIRE_CLOSE(std::pow(unweighted_shrinker.weights_[i],3),weighted_shrinker.weights_[i], 1);
+      }
+      catch(...){
+
+        std::cerr << "[ " << boost::unit_test::framework::current_test_case().p_name << "]\t"
+                  << "unweighted weights: " << unweighted_shrinker.weights_[i]
+                  << ", weighted weights by x^3: " << weighted_shrinker.weights_[i];
+
+
+        throw;
+      }
+
+    }
+
+  }
+
+}
 BOOST_AUTO_TEST_SUITE_END()
