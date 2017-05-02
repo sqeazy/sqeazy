@@ -984,8 +984,8 @@ struct weighters_fixture {
   std::vector<T> ramp;
   std::vector<T> ramp_w_gaps;
 
-  constexpr static std::size_t ten_percent   = std::round(.1*std::numeric_limits<T>::max());
-  constexpr static std::size_t half_elements = std::round(.5*std::numeric_limits<T>::max());
+  constexpr static std::size_t ten_percent   = .1*std::numeric_limits<T>::max();
+  constexpr static std::size_t half_elements = .5*std::numeric_limits<T>::max();
 
 
   weighters_fixture():
