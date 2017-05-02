@@ -122,7 +122,8 @@ namespace sqeazy {
 
   //all is public for now
   template<typename raw_type,typename compressed_type >
-  struct quantiser{
+  struct quantiser
+  {
 
 
     static_assert(std::is_integral<raw_type>::value,"[quantiser] raw_type is not integral");
