@@ -290,15 +290,17 @@ struct incrementing_array
   std::vector<std::uint16_t> plane4_encoded_by_hand;
   std::vector<std::uint16_t> output;
 
+  static constexpr std::size_t len  = 16;
+
   incrementing_array():
-    input(16,0),
-    plane1_encoded_by_hand(16,0),
-    plane2_encoded_by_hand(16,0),
-    plane4_encoded_by_hand(16,0),
-    output(16,0)
+    input(len,0),
+    plane1_encoded_by_hand(len,0),
+    plane2_encoded_by_hand(len,0),
+    plane4_encoded_by_hand(len,0),
+    output(len,0)
   {
 
-    for (int i = 0; i < 16; ++i)
+    for (int i = 0; i < len; ++i)
       {
 	input[i] = i;
       }
