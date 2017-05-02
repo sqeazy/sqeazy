@@ -258,6 +258,19 @@ namespace sqeazy {
       return SUCCESS;
     }
 
+    template <const unsigned nbits_per_plane,
+              typename raw_type>
+    static const bool sse_valid_length(const std::size_t& _len)
+    {
+
+      static const std::size_t n_bits_per_element = sizeof(raw_type)*CHAR_BIT;
+      static const std::size_t n_elements_per_simd = 128/n_bits_per_element;
+      const std::size_t n_segments_per_element = n_bits_per_element/nbits_per_plane;
+      static const std::size_t n_elements_full_sweep = n_elements_per_simd*n_segments_per_element;
+
+      return (_len % n_elements_full_sweep == 0);
+    }
+
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //SSE implementation
@@ -281,13 +294,15 @@ namespace sqeazy {
     {
 
       static const std::size_t n_bits_per_element = sizeof(raw_type)*CHAR_BIT;
-      static const std::size_t n_elements_per_simd = 128/n_bits_per_element;
+
       static_assert((n_bits_per_element) % nbits_per_plane == 0,"\n\t[sse_bitplane_reorder_encode] number of bits per element not divisible byt number of bits per plane");
 
-      const std::size_t n_segments_per_element = n_bits_per_element/nbits_per_plane;
-      static const std::size_t n_elements_full_sweep = n_elements_per_simd*n_segments_per_element;
 
-      if(_length % n_elements_full_sweep){
+      if(!sse_valid_length<nbits_per_plane,raw_type>(_length)){
+        static const std::size_t n_elements_per_simd = 128/n_bits_per_element;
+        const std::size_t n_segments_per_element = n_bits_per_element/nbits_per_plane;
+        static const std::size_t n_elements_full_sweep = n_elements_per_simd*n_segments_per_element;
+
         std::cerr << "[sse_bitplane_reorder_encode] " << _length << " ("<< n_bits_per_element
                   <<" bits per element) cannot be processed by "
                   << n_elements_full_sweep << " without remainder\n";
