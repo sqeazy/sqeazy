@@ -81,7 +81,7 @@ namespace sqeazy {
     parsed_map_t  config_map;
 
     quantiser<raw_type, compressed_type> shrinker;
-    static const std::string description() { return std::string("scalar histogram-based quantisation for conversion uint16->uint8; <decode_lut_path> : the lut will be taken from there (for decoding) or written there (for encoding); <decode_lut_string> : decode LUT will be taken from the argument value (for decoding) or written there (for encoding); <weighting_function>=(none, power_of_enumerator_denominator : apply power-law pow(x,<enumerator>/<denominator>) to histogram weights, offset_power_of_enumerator_denominator : apply power-law pow(x,<enumerator>/<denominator>) to histogram weights starting at first non-zero bin) ");
+    static const std::string description() { return std::string("scalar histogram-based quantisation for conversion uint16->uint8; <decode_lut_path> : the lut will be taken from there (for decoding) or written there (for encoding); <decode_lut_string> : decode LUT will be taken from the argument value (for decoding) or written there (for encoding); <weighting_function>=(none, power_of_<enumerator>_<denominator> : apply power-law pow(x,<enumerator>/<denominator>) to histogram weights, offset_power_of_<enumerator>_<denominator> : apply power-law pow(x,<enumerator>/<denominator>) to histogram weights starting at first non-zero bin index) ");
     };
 
     quantiser_scheme(const std::string &_payload = ""):
@@ -201,7 +201,7 @@ namespace sqeazy {
       const raw_type* in_begin = _in;
       const raw_type* in_end = _in + _length;
 
-      //TODO: this atrocious, refactor this if-else-hell
+      //TODO: this is atrocious, refactor this if-else-hell
       if(weighting_string.find("none")!=std::string::npos)
         shrinker.setup_com(in_begin, in_end);
       else{
