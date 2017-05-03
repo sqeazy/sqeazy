@@ -25,9 +25,7 @@ namespace bfs = boost::filesystem;
 static void add_compare_options_to(po::options_description& _desc){
 
   _desc.add_options()
-    ("help,h", "produce help message")
-    ("verbose,v", "enable verbose output")
-    ("metrics,m", po::value<std::string>()->default_value("nrmse"), "comma-separated list of metrics (possible values: mse, nrmse, psnr, drange)")
+    ("metrics,m", po::value<std::string>()->default_value("nrmse"), "comma-separated list of metrics (possible values: mse, nrmse, psnr, drange, all)")
     ("as-csv,c", "output as csv including header")
     ("noheader", "skip output header")
     ;
