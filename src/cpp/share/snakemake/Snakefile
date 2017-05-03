@@ -1,0 +1,81 @@
+import os
+import glob
+
+JOBDIR=os.path.abspath(os.path.curdir)
+TGTDIR=os.path.abspath(os.path.curdir+"/../roundtrips/")
+
+ALLTIFFS=glob.glob(JOBDIR+"/*.tif")
+ALLSTEMS=[ os.path.splitext(os.path.basename(item))[0] for item in ALLTIFFS ]
+
+EXPECTED = [ "{dstfolder}/{stem}_lossless.sqy".format(dstfolder=TGTDIR,stem=item) for item in ALLSTEMS ]
+EXPECTED.extend([ "{dstfolder}/{stem}_lossless_rt.tif".format(dstfolder=TGTDIR,stem=item) for item in ALLSTEMS ])
+EXPECTED.extend([ "{dstfolder}/{stem}_frameshuffle_rt.tif".format(dstfolder=TGTDIR,stem=item) for item in ALLSTEMS ])
+#EXPECTED.extend([ "{dstfolder}/{stem}.csv".format(dstfolder=TGTDIR,stem=item) for item in ALLSTEMS ])
+
+
+if not config or not ("sqy-app" in config.keys()):
+    config["sqy-app"] = "/home/steinbac/development/sqeazy/src/cpp/build/src/sqy"
+
+if not config or not ("setup-cmd" in config.keys()):
+    config["setup-cmd"] = "module load ffmpeg/3.0.7-x264-hevc lz4/1.7.5 hdf5/1.8.17"
+
+
+rule all:
+    input:
+        EXPECTED
+    message:
+        " creating {input} "
+
+rule enc_lossless:
+    input:
+        "{stem}.tif"
+    output:
+        "{TGTDIR}/{stem}_lossless.sqy"
+    threads: 8
+    params:
+        pipeline="bitswap->lz4"
+    shell:
+        "{config[setup-cmd]} && /usr/bin/time --append -o {TGTDIR}/{wildcards.stem}.csv -f \"encode,{wildcards.stem},{params.pipeline},%e,%U,%S,{threads},$(date +%s)\" {config[sqy-app]} enc -p \"{params.pipeline}\" -n {threads} {input} {output}"
+
+
+rule enc_frameshuffle:
+    input:
+        "{stem}.tif"
+    output:
+        "{TGTDIR}/{stem}_frameshuffle.sqy"
+    threads: 8
+    params:
+        pipeline="frame_shuffle->bitswap->lz4"
+    shell:
+        "{config[setup-cmd]} && /usr/bin/time --append -o {TGTDIR}/{wildcards.stem}.csv -f \"encode,{wildcards.stem},{params.pipeline},%e,%U,%S,{threads},$(date +%s)\" {config[sqy-app]} enc -p \"{params.pipeline}\" -n {threads} {input} {output}"
+
+
+rule dec_lossless:
+    input:
+        "{TGTDIR}/{stem}_lossless.sqy"
+    output:
+        "{TGTDIR}/{stem}_lossless_rt.tif", "{TGTDIR}/{stem}.csv"
+    threads: 8
+    params:
+        pipeline="bitswap->lz4"
+    shell:
+        "{config[setup-cmd]} && /usr/bin/time --append -o {TGTDIR}/{wildcards.stem}.csv -f \"decode,{wildcards.stem},{params.pipeline},%e,%U,%S,{threads},$(date +%s)\" {config[sqy-app]} dec -n {threads} {input} {output}"
+
+rule dec_frameshuffle:
+    input:
+        "{TGTDIR}/{stem}_frameshuffle.sqy"
+    output:
+        "{TGTDIR}/{stem}_frameshuffle_rt.tif", "{TGTDIR}/{stem}.csv"
+    threads: 8
+    params:
+        pipeline="frame_shuffle->bitswap->lz4"
+    shell:
+        "{config[setup-cmd]} && /usr/bin/time --append -o {TGTDIR}/{wildcards.stem}.csv -f \"decode,{wildcards.stem},{params.pipeline},%e,%U,%S,{threads},$(date +%s)\" {config[sqy-app]} dec -n {threads} {input} {output}"
+
+
+
+rule clean:
+    input:
+        EXPECTED, glob.glob(TGTDIR+"/*csv")
+    shell:
+        "rm -vf {input}"
