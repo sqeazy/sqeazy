@@ -42,24 +42,7 @@ namespace sqeazy {
       value.first = res[0];
       value.second = res[1];
     }
-    // const std::regex expression("[0-9]+");
-    // std::smatch match;
-    // std::regex_search(_text,match,expression);
 
-    // if(!match.empty()){
-    //   std::string found(match[0].first,match[0].second);
-    //   value.first = std::stoi(found);
-    //   value.second = 1;
-
-    //   _text = match.suffix();
-    //   std::regex_search(_text,match,expression);
-
-    //   if(!match.empty()){
-    // 	found = std::string(match[0].first,match[0].second);
-    // 	value.second = std::stoi(found);
-    //   }
-
-    // }
 
     return value;
   }
@@ -67,8 +50,7 @@ namespace sqeazy {
 
   //all is public for now
   template<typename in_type,
-	   typename out_type = char// ,
-	   // typename weight_functor_t = noWeighter
+       typename out_type = char
 	   >
   struct quantiser_scheme : public sink<in_type,out_type> {
 
