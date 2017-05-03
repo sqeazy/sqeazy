@@ -27,24 +27,25 @@ namespace sqeazy {
 
       std::size_t first_nonzero_index = std::numeric_limits<std::size_t>::max();
 
-      int exp_enum = 1;
-      int exp_denom = 1;
+      int exp_enum;
+      int exp_denom;
+      const float exponent;
 
       offset_power_of(int _enum = 1, int _denom = 1):
         first_nonzero_index(std::numeric_limits<std::size_t>::max()),
         exp_enum(_enum),
-        exp_denom(_denom){}
+        exp_denom(_denom),
+        exponent(float(exp_enum)/exp_denom)
+        {}
 
-      std::string name (){
+      std::string name () const {
         std::ostringstream msg;
         msg << "offset_power_of_" << exp_enum << "_" << exp_denom;
         return msg.str();
       }
 
       template <typename bin_type, typename value_type>
-      float operator()(const bin_type& _bin_index, const value_type& _index_value)  {
-
-        const float exponent = float(exp_enum)/exp_denom;
+      float operator()(const bin_type& _bin_index, const value_type& _index_value) {
 
         if(first_nonzero_index == std::numeric_limits<std::size_t>::max() && _index_value != value_type(0))
           first_nonzero_index = _bin_index;
@@ -56,6 +57,28 @@ namespace sqeazy {
 
       }
 
+      template <typename histo_iter_type, typename weights_iter_type>
+      void transform(histo_iter_type _begin, histo_iter_type _end, weights_iter_type _out, int _nthreads = 1) const {
+
+        const omp_size_type len = std::distance(_begin, _end);
+        omp_size_type offset = 0;
+        for(;offset<len;++offset){
+          if(*(_begin + offset))
+            break;
+        }
+
+        #pragma omp parallel for                        \
+          shared(_out )                                 \
+          firstprivate( offset )                        \
+          num_threads(_nthreads)
+        for(omp_size_type i = offset;i<len;++i){
+          *(_out + i) = std::pow(i-offset,exponent);
+        }
+
+        return ;
+      }
+
+
     };
 
 
@@ -64,28 +87,45 @@ namespace sqeazy {
 
       int exp_enum = 1;
       int exp_denom = 1;
+      const float exponent;
 
       power_of(int _enum = 1, int _denom = 1):
         exp_enum(_enum),
-        exp_denom(_denom){}
-      std::string name (){
+        exp_denom(_denom),
+        exponent(float(exp_enum)/exp_denom){}
+
+      std::string name () const {
         std::ostringstream msg;
         msg << "power_of_" << exp_enum << "_" << exp_denom;
         return msg.str();
       }
 
       template <typename bin_type, typename value_type>
-      float operator()(const bin_type& _bin_index, const value_type& _bin_value)  {
-
-        const float exponent = float(exp_enum)/exp_denom;
+      float operator()(const bin_type& _bin_index, const value_type& _bin_value) const {
         return std::pow(_bin_index,exponent);
+      }
+
+      template <typename histo_iter_type, typename weights_iter_type>
+      void transform(histo_iter_type _begin, histo_iter_type _end, weights_iter_type _out, int _nthreads = 1) const {
+
+        const omp_size_type len = std::distance(_begin, _end);
+
+        #pragma omp parallel for                        \
+          shared(_out )                                 \
+          num_threads(_nthreads)
+        for(omp_size_type i = 0;i<len;++i){
+          *(_out + i) = std::pow(i,exponent);
+        }
+
+        return ;
       }
 
     };
 
 
 
-    struct none{
+    struct none
+    {
 
       std::string name (){
         std::ostringstream msg;
@@ -94,9 +134,17 @@ namespace sqeazy {
       }
 
       template <typename bin_type, typename value_type>
-      float operator()(const bin_type& _bin_index, const value_type& _bin_value)  {
+      float operator()(const bin_type& _bin_index, const value_type& _bin_value) const {
         return 1.f;
       }
+
+      template <typename histo_iter_type, typename weights_iter_type>
+      void transform(histo_iter_type _begin, histo_iter_type _end, weights_iter_type _out, int _nthreads = 1) const {
+
+
+        return ;
+      }
+
 
     };
 
@@ -222,10 +270,10 @@ namespace sqeazy {
     void computeHistogram(const raw_type* _begin, const raw_type* _end){
 
 
-      if(nthreads_ == 1)
+      if(n_threads() == 1)
         this->histo_ = detail::serial_fill_histogram(_begin, _end);
       else
-        this->histo_ = detail::parallel_fill_histogram(_begin, _end, nthreads_);
+        this->histo_ = detail::parallel_fill_histogram(_begin, _end, n_threads());
 
       //TODO: does it make sense to acc the histo_ with (n>1) threads if the histo fits into L2?
       sum_ = std::accumulate(histo_.begin(), histo_.end(),0);
@@ -384,8 +432,7 @@ namespace sqeazy {
     template <typename weight_functor_t = weighters::none>
     void computeWeights(weight_functor_t _weight_functor = weighters::none()){
 
-      for(std::size_t bin = 0;bin<histo_.size();++bin)
-        weights_[bin] = _weight_functor(bin,histo_[bin]);
+      _weight_functor.transform(histo_.begin(), histo_.end(), weights_.begin(), this->n_threads());
 
     }
 
@@ -524,7 +571,7 @@ namespace sqeazy {
 
       applyLUT<raw_type, compressed_type> lutApplyer(lut_encode_);
 
-      if(nthreads_==1)
+      if(n_threads()==1)
         std::transform(_input,_input+_in_nelems,_output,lutApplyer);
       else{
         const omp_size_type len = _in_nelems;
@@ -544,7 +591,7 @@ namespace sqeazy {
 
       applyLUT<compressed_type, raw_type> lutApplyer(lut_decode_);
 
-      if(nthreads_==1)
+      if(n_threads()==1)
         std::transform(_input,_input+_in_nelems,_output,lutApplyer);
       else{
         const omp_size_type len = _in_nelems;
@@ -633,7 +680,7 @@ namespace sqeazy {
 
       applyLUT<compressed_type, raw_type> lutApplyer(loaded_lut_decode_);
 
-      if(nthreads_==1)
+      if(n_threads()==1)
         std::transform(_input,_input+_in_nelems,_output,lutApplyer);
       else{
         const omp_size_type len = _in_nelems;
@@ -674,7 +721,7 @@ namespace sqeazy {
       }
 
       applyLUT<compressed_type, raw_type> lutApplyer(_lut_decode);
-      if(nthreads_==1)
+      if(n_threads()==1)
         std::transform(_input,_input+_in_nelems,_output,lutApplyer);
       else{
         const omp_size_type len = _in_nelems;
@@ -694,7 +741,7 @@ namespace sqeazy {
       nthreads_ = nt;
     }
 
-    const int get_n_threads() const {
+    const int n_threads() const {
       return nthreads_;
     }
 
