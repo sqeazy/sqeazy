@@ -161,4 +161,100 @@ BENCHMARK_DEFINE_F(dynamic_default_fixture, max_threads)(benchmark::State& state
 
 BENCHMARK_REGISTER_F(dynamic_default_fixture, max_threads)->UseRealTime()->Range(1 << 16,1 << 25);
 
+
+BENCHMARK_DEFINE_F(dynamic_default_fixture, single_thread_weighted)(benchmark::State& state) {
+
+
+  if (state.thread_index == 0) {
+    SetUp(state);
+  }
+
+  sqeazy::quantiser_scheme<std::uint16_t> local("weighting_function=power_of_4_1");
+  local.set_n_threads(1);
+
+
+  local.encode(sinus_.data(),
+               (char*)output_.data(),
+               shape_);
+
+  while (state.KeepRunning()) {
+    state.PauseTiming();
+    std::fill(output_.begin(), output_.end(),0);
+    state.ResumeTiming();
+
+    local.encode(sinus_.data(),
+               (char*)output_.data(),
+               shape_);
+  }
+
+  state.SetBytesProcessed(int64_t(state.iterations()) *
+                          int64_t(size_)*sizeof(sinus_.front()));
+}
+
+BENCHMARK_REGISTER_F(dynamic_default_fixture, single_thread_weighted)->Range(1 << 16,1 << 25);
+
+BENCHMARK_DEFINE_F(dynamic_default_fixture, two_threads_weighted)(benchmark::State& state) {
+
+
+  if (state.thread_index == 0) {
+    SetUp(state);
+  }
+
+  sqeazy::quantiser_scheme<std::uint16_t> local("weighting_function=power_of_4_1");
+  local.set_n_threads(2);
+
+
+  local.encode(sinus_.data(),
+               (char*)output_.data(),
+               shape_);
+
+  while (state.KeepRunning()) {
+    state.PauseTiming();
+    std::fill(output_.begin(), output_.end(),0);
+    state.ResumeTiming();
+
+    local.encode(sinus_.data(),
+               (char*)output_.data(),
+               shape_);
+  }
+
+  state.SetBytesProcessed(int64_t(state.iterations()) *
+                          int64_t(size_)*sizeof(sinus_.front()));
+}
+
+BENCHMARK_REGISTER_F(dynamic_default_fixture, two_threads_weighted)->UseRealTime()->Range(1 << 16,1 << 25);
+
+BENCHMARK_DEFINE_F(dynamic_default_fixture, max_threads_weighted)(benchmark::State& state) {
+
+
+  if (state.thread_index == 0) {
+    SetUp(state);
+  }
+
+  int nthreads = std::thread::hardware_concurrency();
+  sqeazy::quantiser_scheme<std::uint16_t> local("weighting_function=power_of_4_1");
+  local.set_n_threads(nthreads);
+
+
+  local.encode(sinus_.data(),
+               (char*)output_.data(),
+               shape_);
+
+  while (state.KeepRunning()) {
+    state.PauseTiming();
+    std::fill(output_.begin(), output_.end(),0);
+    state.ResumeTiming();
+
+    local.encode(sinus_.data(),
+               (char*)output_.data(),
+               shape_);
+  }
+
+  state.SetBytesProcessed(int64_t(state.iterations()) *
+                          int64_t(size_)*sizeof(sinus_.front()));
+}
+
+BENCHMARK_REGISTER_F(dynamic_default_fixture, max_threads_weighted)->UseRealTime()->Range(1 << 16,1 << 25);
+
+
 BENCHMARK_MAIN();
