@@ -222,10 +222,10 @@ int compress_files(const std::vector<std::string>& _files,
   pipe16 = sqy::dypeline<std::uint16_t>::from_string(pipeline_string);
   pipe8 = sqy::dypeline_from_uint8::from_string(pipeline_string);
 
-  if(_config.count("nthreads")){
-    pipe16.set_n_threads(_config["nthreads"].as<int>());
-    pipe8.set_n_threads(_config["nthreads"].as<int>());
-  }
+  int nthreads_to_use = sqy::clean_number_of_threads(_config["nthreads"].as<int>());
+  pipe16.set_n_threads(nthreads_to_use);
+  pipe8.set_n_threads(nthreads_to_use);
+
 
   size_t bytes_written = 0;
 
