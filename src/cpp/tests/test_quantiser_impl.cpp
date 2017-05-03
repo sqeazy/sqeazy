@@ -974,11 +974,6 @@ BOOST_AUTO_TEST_SUITE_END()
 template <typename T>
 struct weighters_fixture {
 
-  // std::array<T, std::numeric_limits<T>::max()> constv;
-  // std::array<T, std::numeric_limits<T>::max()> output;
-  // std::array<T, std::numeric_limits<T>::max()> ramp;
-  // std::array<T, std::numeric_limits<T>::max()> ramp_w_gaps;
-
   std::vector<T> constv;
   std::vector<T> output;
   std::vector<T> ramp;
@@ -1323,38 +1318,115 @@ BOOST_AUTO_TEST_CASE( power_capped_ramp_compare_weights ){
 
   std::vector<uint16_t> input(1 << 12,0);
   uint16_t value = 0;
+  const std::uint16_t max_value = 63;
+
   for( uint16_t& _el : input )
-    _el = (value++) % 63;
+    _el = (value++) % max_value;
 
   std::vector<uint8_t> encoded(input.size(),0);
   std::vector<uint16_t> reconstructed(input.size(),0);
-
-
-  sqeazy::quantiser<uint16_t,uint8_t> unweighted_shrinker(input.data(),input.data()+input.size());
-
 
   sqeazy::weighters::power_of w(3,1);
   sqeazy::quantiser<uint16_t,uint8_t> weighted_shrinker(input.data(),input.data()+input.size(),
                                                         1,w);
 
+  sqeazy::quantiser<uint16_t,uint8_t> unweighted_shrinker(input.data(),input.data()+input.size());
+
   auto len_weights = unweighted_shrinker.weights_.size();
-  for(std::size_t i = 0;i<len_weights;++i)
+  for(std::size_t i = 1;i<max_value;++i)
   {
-    if(unweighted_shrinker.weights_[i]!=0){
       try{
-        BOOST_REQUIRE_CLOSE(std::pow(unweighted_shrinker.weights_[i],3),weighted_shrinker.weights_[i], 1);
+        BOOST_REQUIRE_CLOSE(std::pow(i,3),weighted_shrinker.weights_[i], 1);
       }
       catch(...){
 
-        std::cerr << "[ " << boost::unit_test::framework::current_test_case().p_name << "]\t"
+        std::cerr << "[" << boost::unit_test::framework::current_test_case().p_name << "]\t"
                   << "unweighted weights: " << unweighted_shrinker.weights_[i]
-                  << ", weighted weights by x^3: " << weighted_shrinker.weights_[i];
+                  << ", weighted weights by x^3: " << weighted_shrinker.weights_[i]
+                  << " at " << i <<"\n";
 
 
         throw;
       }
 
+      if(i<2 || !unweighted_shrinker.histo_[i])
+        continue;
+      try{
+        BOOST_REQUIRE_NE(unweighted_shrinker.importance_[i],weighted_shrinker.importance_[i]);
+      }
+      catch(...){
+
+        std::cerr << "[" << boost::unit_test::framework::current_test_case().p_name << "]\tat " << i << "\n\t"
+                  << "unweighted : " << unweighted_shrinker.importance_[i]
+                  << " (w = " << unweighted_shrinker.weights_[i] << ", h = " << unweighted_shrinker.histo_[i] << ")\n\t"
+                  << "weighted   : " << weighted_shrinker.importance_[i]
+                  << " (w = " << weighted_shrinker.weights_[i] << ", h = " << weighted_shrinker.histo_[i] << ")\n";
+
+
+        throw;
+      }
+
+  }
+
+}
+
+BOOST_AUTO_TEST_CASE( offset_power_capped_ramp_compare_weights ){
+
+  std::vector<uint16_t> input(1 << 12,0);
+  uint16_t value = 0;
+  const std::uint16_t max_value = 63;
+  const std::uint16_t min_value = 10;
+  for( uint16_t& _el : input ){
+    if(value > min_value)
+      _el = (value) % max_value;
+    else{
+      _el = min_value;
     }
+    value++;
+  }
+
+  std::vector<uint8_t> encoded(input.size(),0);
+  std::vector<uint16_t> reconstructed(input.size(),0);
+
+  sqeazy::weighters::offset_power_of w(3,1);
+  sqeazy::quantiser<uint16_t,uint8_t> weighted_shrinker(input.data(),input.data()+input.size(),
+                                                        1,w);
+
+  sqeazy::quantiser<uint16_t,uint8_t> unweighted_shrinker(input.data(),input.data()+input.size());
+
+  auto len_weights = unweighted_shrinker.weights_.size();
+  for(std::size_t i = min_value-1;i<max_value;++i)
+  {
+      try{
+        BOOST_REQUIRE_CLOSE(std::pow(i,3),weighted_shrinker.weights_[i], 1);
+      }
+      catch(...){
+
+        std::cerr << "[" << boost::unit_test::framework::current_test_case().p_name << "]\t"
+                  << "unweighted weights: " << unweighted_shrinker.weights_[i]
+                  << ", weighted weights by x^3: " << weighted_shrinker.weights_[i]
+                  << " at " << i <<"\n";
+
+
+        throw;
+      }
+
+      if(!unweighted_shrinker.histo_[i])
+        continue;
+      try{
+        BOOST_REQUIRE_NE(unweighted_shrinker.importance_[i],weighted_shrinker.importance_[i]);
+      }
+      catch(...){
+
+        std::cerr << "[" << boost::unit_test::framework::current_test_case().p_name << "]\tat " << i << "\n\t"
+                  << "unweighted : " << unweighted_shrinker.importance_[i]
+                  << " (w = " << unweighted_shrinker.weights_[i] << ", h = " << unweighted_shrinker.histo_[i] << ")\n\t"
+                  << "weighted   : " << weighted_shrinker.importance_[i]
+                  << " (w = " << weighted_shrinker.weights_[i] << ", h = " << weighted_shrinker.histo_[i] << ")\n";
+
+
+        throw;
+      }
 
   }
 
