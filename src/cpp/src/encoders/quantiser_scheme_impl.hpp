@@ -51,7 +51,7 @@ namespace sqeazy {
   //all is public for now
   template<typename in_type,
        typename out_type = char
-	   >
+       >
   struct quantiser_scheme : public sink<in_type,out_type> {
 
     typedef sink<in_type,out_type> base_type;
@@ -111,9 +111,9 @@ namespace sqeazy {
 
       size_t count = 0;
       for (;begin!=end;++begin){
-	msg << begin->first << "=" << begin->second;
-	if((count++)<(config_map.size()-1))
-	  msg << ",";
+    msg << begin->first << "=" << begin->second;
+    if((count++)<(config_map.size()-1))
+      msg << ",";
       }
 
       return msg.str();
@@ -122,12 +122,12 @@ namespace sqeazy {
 
     /**
        \brief expected size of encoded buffer of size _size_bytes (the LUT etc are not included)
-       
-       \param[in] _size_bytes incoming buffer size in Bytes 
-       
-       \return 
-       \retval 
-       
+
+       \param[in] _size_bytes incoming buffer size in Bytes
+
+       \return
+       \retval
+
     */
     std::intmax_t max_encoded_size(std::intmax_t _size_bytes) const override final {
 
@@ -140,13 +140,13 @@ namespace sqeazy {
     std::string output_type() const final override {
 
       return typeid(compressed_type).name();
-    
+
     }
 
     bool is_compressor() const final override {
-    
+
       return base_type::is_compressor;
-    
+
     }
 
     /**
@@ -158,8 +158,8 @@ namespace sqeazy {
      * @return sqeazy::error_code
      */
     compressed_type* encode( const raw_type* _in,
-			     compressed_type* _out,
-			     const std::vector<std::size_t>& _shape) override final {
+                 compressed_type* _out,
+                 const std::vector<std::size_t>& _shape) override final {
 
       std::intmax_t length = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
 

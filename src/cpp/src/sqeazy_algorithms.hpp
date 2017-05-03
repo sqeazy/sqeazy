@@ -10,6 +10,16 @@
 
 namespace sqeazy {
 
+  static inline int clean_number_of_threads(int nthreads_to_use){
+
+    static int max_threads = std::thread::hardware_concurrency();
+
+    if(nthreads_to_use > max_threads || nthreads_to_use <= 0)
+      nthreads_to_use = max_threads;
+
+    return nthreads_to_use;
+  }
+
   template <typename element_t>
   int lowest_set_bit(element_t _data, element_t _data_end){
 
@@ -18,16 +28,16 @@ namespace sqeazy {
 
       int lowest = 0;
       for(;lowest<value;++lowest)
-    {
-      if((*_data >> lowest) & 1)
-        value = lowest;
-    }
+      {
+        if((*_data >> lowest) & 1)
+          value = lowest;
+      }
 
       if(lowest<value)
-    value = lowest;
+        value = lowest;
 
       if(value == 0)
-    break;
+        break;
     }
 
     return value;
@@ -47,7 +57,7 @@ namespace sqeazy {
 
   template <typename it_type, typename it2_type>
   static inline double l2norm(it_type _lbegin, it_type _lend,
-                  it2_type _rbegin){
+                              it2_type _rbegin){
 
     double dsum = 0;
     size_t size = _lend - _lbegin;
@@ -64,7 +74,7 @@ namespace sqeazy {
 
   template <typename it_type, typename it2_type>
   static inline double mse(it_type _lbegin, it_type _lend,
-               it2_type _rbegin){
+                           it2_type _rbegin){
 
       typedef decltype(*_lbegin) item_t;
       typedef decltype(*_rbegin) item2_t;
@@ -90,7 +100,7 @@ namespace sqeazy {
   //NRMSE = sqrt{1/N sum (I-I')^2}/[max(I) - min(I)]
   template <typename it_type, typename it2_type>
   static inline double nrmse(it_type _lbegin, it_type _lend,
-                 it2_type _rbegin){
+                             it2_type _rbegin){
 
       typedef decltype(*_lbegin) item_t;
       typedef decltype(*_rbegin) item2_t;
@@ -120,7 +130,7 @@ namespace sqeazy {
 
   template <typename it_type, typename it2_type>
   static inline double psnr(it_type _lbegin, it_type _lend,
-          it2_type _rbegin){
+                            it2_type _rbegin){
 
 
     typedef decltype(*_lbegin) item_t;
@@ -153,7 +163,7 @@ namespace sqeazy {
   }
 
   template <typename iter_t, typename out_iter_t>
-    out_iter_t prefix_sum(iter_t _begin, iter_t _end,
+  out_iter_t prefix_sum(iter_t _begin, iter_t _end,
                           out_iter_t _out,
                           int _nthreads = 1){
 

@@ -20,28 +20,28 @@ namespace sqeazy {
 
        \param[in] _block SSE block that contains X times of the type identified by T
        \param[out] _reordered bit planes to write reordered data into
-       \param[in] _left_shift_output move the result number of bits (given by _left_shift_output) left 
+       \param[in] _left_shift_output move the result number of bits (given by _left_shift_output) left
        before writing it to _reordered
 
-       Example: 
-       given an 128-bit input block of 
-       {1000000000000000, 1000000000000000, 1000000000000000, 1000000000000000, 
+       Example:
+       given an 128-bit input block of
+       {1000000000000000, 1000000000000000, 1000000000000000, 1000000000000000,
        1000000000000000, 1000000000000000, 1000000000000000, 1000000000000000}
        the expected output is
-       {1111111100000000, 0000000000000000, 0000000000000000, 0000000000000000, 
+       {1111111100000000, 0000000000000000, 0000000000000000, 0000000000000000,
        0000000000000000, 0000000000000000, 0000000000000000, 0000000000000000,
        0000000000000000, 0000000000000000, 0000000000000000, 0000000000000000,
        0000000000000000, 0000000000000000, 0000000000000000, 0000000000000000}
 
        IMPORTANT: It is assumed that the items stored in __m128i originally were encoded as type T
-       \return 
-       \retval 
+       \return
+       \retval
 
     */
     template <unsigned plane_size, typename T>
-    void reorder_bitplanes(const __m128i& _block, 
-			   std::vector<T*>& _reordered,
-			   const unsigned& _left_shift_output = 0
+    void reorder_bitplanes(const __m128i& _block,
+               std::vector<T*>& _reordered,
+               const unsigned& _left_shift_output = 0
                            ){
 
       static const unsigned type_width = sizeof(T)*CHAR_BIT;
@@ -51,9 +51,9 @@ namespace sqeazy {
       static const unsigned n_planes_per_T = type_width/plane_size;
 
       // static_assert(n_items_per_m128i*plane_size <= 32,
-      // 		"[reorder_bitplanes]\t SSE API forbids to extract more than 32bit\n");
+      //        "[reorder_bitplanes]\t SSE API forbids to extract more than 32bit\n");
       // static_assert((n_items_per_m128i*plane_size) % type_width == 0,
-      // 		"[reorder_bitplanes]\t writing odd-sized planes to result array not implemented yet\n");
+      //        "[reorder_bitplanes]\t writing odd-sized planes to result array not implemented yet\n");
       static_assert(plane_size <= type_width,
                     "[reorder_bitplanes]\t plane_size larger than input type. Doing nothing.\n");
 
@@ -61,10 +61,10 @@ namespace sqeazy {
 
       // unsigned reordered_byte = _reordered.size()*sizeof(T);
       // if(!(reordered_byte>=__m128i_in_bytes)){
-      //   std::cerr << "[reorder_bitplanes]\t buffer for output has insufficent size, " 
-      // 	      << "found " << reordered_byte << " B, min. required " << __m128i_in_bytes << "\n"
-      // 	      // << "Doing Nothing."
-      // 	      << "\n";
+      //   std::cerr << "[reorder_bitplanes]\t buffer for output has insufficent size, "
+      //          << "found " << reordered_byte << " B, min. required " << __m128i_in_bytes << "\n"
+      //          // << "Doing Nothing."
+      //          << "\n";
       //   return;
       // }
 
@@ -174,7 +174,7 @@ namespace sqeazy {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //SSE implementation
     /*
-      given an input array of type T: 
+      given an input array of type T:
       * we loop through the array with stride n
       * load n elements into an SSE register
       * xor with 0x7f for 8-bit data, 0x7fff for 16-bit data, 0x7fffffff for 32-bit data, etc. if the input is signed
@@ -182,13 +182,13 @@ namespace sqeazy {
       * perform the bitplane reordering
       * continue to next stride
       */
-    template <const unsigned nbits_per_plane, 
-	      typename raw_type , 
-	      typename size_type
-	      >
+    template <const unsigned nbits_per_plane,
+          typename raw_type ,
+          typename size_type
+          >
     static const error_code sse_bitplane_reorder_encode_deprecated(const raw_type* _input,
-							raw_type* _output,
-							const size_type& _length)
+                            raw_type* _output,
+                            const size_type& _length)
     {
       //unable to perform this task input array does fit into __m128
       if(_length*sizeof(raw_type)<16)
@@ -219,8 +219,8 @@ namespace sqeazy {
       }
 
       // if(raw_type_bitwidth==8){
-      // 	std::cerr << "8-bit SSE accelerated bitswap not implemented yet\n";
-      // 	return FAILURE;
+      //    std::cerr << "8-bit SSE accelerated bitswap not implemented yet\n";
+      //    return FAILURE;
       // }
 
       //setup data structures for looping
@@ -275,7 +275,7 @@ namespace sqeazy {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //SSE implementation
     /*
-      given an input array of type T: 
+      given an input array of type T:
       * we loop through the array with stride n
       * load n elements into an SSE register
       * xor with 0x7f for 8-bit data, 0x7fff for 16-bit data, 0x7fffffff for 32-bit data, etc. if the input is signed
@@ -283,10 +283,10 @@ namespace sqeazy {
       * perform the bitplane reordering
       * continue to next stride
       */
-    template <const unsigned nbits_per_plane, 
-	      typename raw_type , 
-	      typename size_type
-	      >
+    template <const unsigned nbits_per_plane,
+          typename raw_type ,
+          typename size_type
+          >
     static const error_code sse_bitplane_reorder_encode(const raw_type* _input,
                                                         raw_type* _output,
                                                         const size_type& _length,
