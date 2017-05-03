@@ -10,6 +10,16 @@
 
 namespace sqeazy {
 
+  static inline int clean_number_of_threads(int nthreads_to_use){
+
+    static int max_threads = std::thread::hardware_concurrency();
+
+    if(nthreads_to_use > max_threads || nthreads_to_use <= 0)
+      nthreads_to_use = max_threads;
+
+    return nthreads_to_use;
+  }
+
   template <typename element_t>
   int lowest_set_bit(element_t _data, element_t _data_end){
 
