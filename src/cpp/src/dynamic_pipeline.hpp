@@ -16,9 +16,11 @@
 #include "sqeazy_utils.hpp"
 #include "traits.hpp"
 #include "dynamic_stage.hpp"
+#include "dynamic_stage_chain.hpp"
 #include "dynamic_stage_factory.hpp"
 
 #include "sqeazy_header.hpp"
+#include "sqeazy_algorithms.hpp"
 
 namespace sqeazy
 {
@@ -65,7 +67,7 @@ namespace sqeazy
       >::type;
     using sink_factory_t = inbound_sink_factory_t;
 
-    //FIXME: check that incoming type of tail_filter_factory is equal to     
+    //FIXME: check that incoming type of tail_filter_factory is equal to
     // static_assert(std::is_same<tail_filter_factory_t>::value==true, "[dynamic_pipeline.hpp:57] received non-arithmetic type for output");
 
     head_chain_t head_filters_;
@@ -81,8 +83,8 @@ namespace sqeazy
        \param[in] f filter factory that is aware of all possible filters to choose from
        \param[in] s sink factory that is aware of all possible sinks to choose from
 
-       \return 
-       \retval 
+       \return
+       \retval
 
     */
     static dynamic_pipeline bootstrap(const std::string &_config)
@@ -101,8 +103,8 @@ namespace sqeazy
        \param[in] f filter factory that is aware of all possible filters to choose from
        \param[in] s sink factory that is aware of all possible sinks to choose from
 
-       \return 
-       \retval 
+       \return
+       \retval
 
     */
     template <
@@ -127,8 +129,8 @@ namespace sqeazy
        \param[in] head_f filter factory that yields possible filters that filter incoming_type to incoming_type arrays
        \param[in] s sink factory that yields possible sinks to go from incoming_type to outgoing_type
        \param[in] tail_f filter factory that yields possible filters that filter outgoing_type to outgoing_type arrays
-       \return 
-       \retval 
+       \return
+       \retval
 
     */
     template <typename iter_t>
@@ -229,8 +231,8 @@ namespace sqeazy
        \param[in] f filter factory that is aware of all possible filters to choose from
        \param[in] s sink factory that is aware of all possible sinks to choose from
 
-       \return 
-       \retval 
+       \return
+       \retval
 
     */
     static dynamic_pipeline from_string(const std::string& _config)
@@ -244,8 +246,8 @@ namespace sqeazy
     {
       std::swap(_lhs.head_filters_, _rhs.head_filters_);
       std::swap(_lhs.tail_filters_, _rhs.tail_filters_);
-
       std::swap(_lhs.sink_, _rhs.sink_);
+      //_lhs.set_n_threads(_rhs.n_threads());
     }
 
     /**
@@ -284,12 +286,12 @@ namespace sqeazy
 
       // for(const head_filter_ptr_t& step : _stages)
       // {
-      // 	head_filters_.push_back(step);
+      //    head_filters_.push_back(step);
       // }
     };
 
     /**
-       \brief copy-constructor 
+       \brief copy-constructor
 
        \param[in]
 
@@ -304,6 +306,7 @@ namespace sqeazy
       sink_        (_rhs.sink_        ),
       n_threads_   (_rhs.n_threads_   )
     {
+      set_n_threads(_rhs.n_threads_);
     }
 
     /**
@@ -320,7 +323,7 @@ namespace sqeazy
     {
 
       swap(*this, _rhs);
-
+      this->set_n_threads(_rhs.n_threads());
       return *this;
     }
 
@@ -350,11 +353,13 @@ namespace sqeazy
 
       if(std::is_base_of<typename head_chain_t::filter_base_t,pointee_t>::value){
         head_filters_.push_back(_new_filter);
+        set_n_threads(n_threads());
         return;
       }
 
       if(std::is_base_of<typename tail_chain_t::filter_base_t,pointee_t>::value){
         tail_filters_.push_back(_new_filter);
+        set_n_threads(n_threads());
         return;
       }
 
@@ -369,9 +374,12 @@ namespace sqeazy
     void add(const sink_ptr_t& _new_sink)
     {
       if(sink_)
-    	sink_.reset();
+        sink_.reset();
 
       sink_ = _new_sink;
+
+      set_n_threads(n_threads());
+
     }
 
 
@@ -398,7 +406,7 @@ namespace sqeazy
         if(sink_){
           auto sink_view = const_stage_view(sink_);
           value = value && front_view->input_type() == sink_view->output_type();
-      	}
+        }
 
         value = value && tail_filters_.valid();
       }
@@ -430,7 +438,7 @@ namespace sqeazy
             {
               return const_stage_view(tail_filters_.front())->output_type();
             }
-	
+
           if(sink_)
             {
               return const_stage_view(sink_)->output_type();
@@ -472,7 +480,7 @@ namespace sqeazy
         {
           if(head_filters_.size())
             value << "->";
-	
+
           value << const_stage_view(sink_)->name();
           std::string cfg = const_stage_view(sink_)->config();
 
@@ -518,8 +526,8 @@ namespace sqeazy
        \param[out] _out output buffer must be at least of size max_encoded_size
        \param[in] _in_len number of elements in _in
 
-       \return 
-       \retval 
+       \return
+       \retval
 
     */
     outgoing_t * encode(const incoming_t *_in, outgoing_t *_out, std::size_t _in_len) override final {
@@ -536,8 +544,8 @@ namespace sqeazy
        \param[out] _out output buffer must be at least of size max_encoded_size
        \param[in] _in_shape shape in input buffer in nDim
 
-       \return 
-       \retval 
+       \return
+       \retval
 
     */
 
@@ -613,10 +621,10 @@ namespace sqeazy
           std::cerr << "[dynamic_pipeline::detail_encode] unable to process data with head_filters\n";
           return nullptr;
         }
-	
+
       } else {
 
-	
+
         std::copy(_in,
                   _in + len,
                   temp.data());
@@ -628,23 +636,23 @@ namespace sqeazy
         encoded_end = sink_->encode(temp.data(),
                                     _out,
                                     _shape);
-	
+
 
         std::uintmax_t compressed_size = encoded_end-_out;
         if(tail_filters_.size()){
 
           outgoing_t* casted_temp = reinterpret_cast<outgoing_t*>(temp.data());
-	  
+
           std::copy(_out, _out+compressed_size,casted_temp);
 
           std::vector<std::size_t> casted_shape(_shape);
-	  
+
           if(compressed_size!=(len*sizeof(outgoing_t))){
             casted_shape.resize(_shape.size());
             std::fill(casted_shape.begin(), casted_shape.end(),1);
             casted_shape[row_major::x] = compressed_size;
           }
-	  
+
           encoded_end = tail_filters_.encode(casted_temp,
                                              _out,
                                              casted_shape);
@@ -657,7 +665,7 @@ namespace sqeazy
           temp_end = head_filters_end;
         else
           temp_end = temp.data() + temp.size();
-	
+
         std::copy(temp.data(), temp_end ,
                   out_as_incoming);
         encoded_end = reinterpret_cast<outgoing_t*>(out_as_incoming+(temp_end-temp.data()));
@@ -676,10 +684,10 @@ namespace sqeazy
     /**
        \brief decode one-dimensional array _in and write results to _out
 
-       \param[in] 
+       \param[in]
 
-       \return 
-       \retval 
+       \return
+       \retval
 
     */
 
@@ -710,7 +718,7 @@ namespace sqeazy
        0   .. filter error code before sink
        10  .. sink error code
        100 .. filter error code after sink
-       \retval 
+       \retval
 
     */
 
@@ -769,14 +777,14 @@ namespace sqeazy
 
         const sink_out_t* compressor_begin = reinterpret_cast<const sink_out_t*>(_in);
         std::vector<outgoing_t> sink_in;
-	  
+
         if(tail_filters_.size()){
           const outgoing_t* tail_in = reinterpret_cast<const outgoing_t*>(_in);
 
           //FIXME: filters may change the size of the buffer!
           sink_in.resize(output_len*sizeof(*_out)/*/sizeof(*_in)*/);
           std::fill(sink_in.begin(), sink_in.end(),0);
-	  
+
           outgoing_t* tail_out = reinterpret_cast<outgoing_t*>(sink_in.data());
 
           err_code = tail_filters_.decode(tail_in,
@@ -790,7 +798,7 @@ namespace sqeazy
           input_len    = sink_in.size();
           in_shape     = out_shape;
         }
-		
+
         //FIXME: provide shape vectors?
         err_code = sink_->decode(compressor_begin,
                                  temp.data(),
@@ -812,11 +820,11 @@ namespace sqeazy
         std::copy(temp.begin(),temp.begin()+output_len,_out);
       }
       else{
-	
+
         err_code = head_filters_.decode(reinterpret_cast<const incoming_t*>(temp.data()),
                                         _out,out_shape);
         value += err_code ? err_code+100 : 0 ;
-	
+
       }
       return value;
 
@@ -834,10 +842,10 @@ namespace sqeazy
        * the result would be: 2*100 + max(400,8) = 600 Bytes!
 
 
-       \param[in] 
+       \param[in]
 
-       \return 
-       \retval 
+       \return
+       \retval
 
     */
     std::intmax_t max_encoded_size(std::intmax_t _incoming_size_byte) const override final {
@@ -877,10 +885,10 @@ namespace sqeazy
     /**
        \brief obtain shape of decoded buffer that contains header from _begin to _end
 
-       \param[in] 
+       \param[in]
 
-       \return 
-       \retval 
+       \return
+       \retval
 
     */
     template <typename T>
@@ -900,7 +908,22 @@ namespace sqeazy
     }
 
     virtual void set_n_threads(const std::uint32_t& _number)  {
-      n_threads_ = _number;
+
+      n_threads_ = clean_number_of_threads(_number);
+
+      if(sink_)
+        sink_->set_n_threads(n_threads_);
+
+      auto head_begin = head_filters_.begin();
+      auto head_end = head_filters_.end();
+      for(;head_begin != head_end;++head_begin)
+        (*head_begin)->set_n_threads(n_threads_);
+
+      auto tail_begin = tail_filters_.begin();
+      auto tail_end = tail_filters_.end();
+      for(;tail_begin != tail_end;++tail_begin)
+        (*tail_begin)->set_n_threads(n_threads_);
+
     }
 
 
