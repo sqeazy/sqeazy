@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
   int retcode = 1;
   typedef std::function<int(const std::vector<std::string>&,const po::variables_map&) > func_t;
 
-  static po::options_description general_po;
+  po::options_description general_po;
   general_po.add_options()
     ("help,h", "produce help message")
     ("verbose,v", "enable verbose output")
@@ -192,13 +192,17 @@ int main(int argc, char *argv[])
     ;
 
   po::options_description sqy_options;
-  sqy_options.add(general_po).add_options()
+  sqy_options.add_options()
+    ("help,h", "produce help message")
     ("fullhelp", "produce exhaustive help message with all verbs documented")
+    ("version,v", "print the version of this sqy build")
     ;
 
   po::variables_map sqy_vm;
-  po::parsed_options sqy_parsed = po::command_line_parser(argc, argv
-                              ).options(sqy_options).allow_unregistered().run();
+  po::parsed_options sqy_parsed = po::command_line_parser(argc, argv)
+    .options(sqy_options)
+    .allow_unregistered()
+    .run();
   po::store(sqy_parsed, sqy_vm);
   po::notify(sqy_vm);
 
@@ -221,7 +225,7 @@ int main(int argc, char *argv[])
   verb_descriptions["compare"]  = std::string("compare two tiff stacks and see if they are equal");
 
   const static std::string default_compression = "bitswap1->lz4";
-  static std::unordered_map<std::string,po::options_description> descriptions(4);
+  static std::unordered_map<std::string,po::options_description> descriptions(verb_aliases.size()-1);
 
 
   descriptions["compress"].add(general_po).add_options()
@@ -254,16 +258,13 @@ int main(int argc, char *argv[])
     ("lut_suffix,l", po::value<std::string>()->default_value(".lut"), "suffix for the LUT, i.e. stack_16bit.tif will generate stack_16bit.y4m and stack_16bit.lut) ")
     ;
 
+  descriptions["compare"].add(general_po);
   add_compare_options_to(descriptions["compare"]);
 
-  static     std::unordered_map<std::string, func_t> verb_functors;
-  verb_functors["compress"]	= compress_files;
-  verb_functors["decompress"]	= decompress_files;
-  verb_functors["scan"]		= scan_files;
-  verb_functors["diff"]		= diff_files;
-  verb_functors["convert"]	= convert_files;
-  verb_functors["compare"]	= compare_files;
-
+  if(sqy_vm.count("fullhelp")) {
+    retcode = full_help(descriptions,verb_aliases);
+    return retcode;
+  }
 
   static     std::unordered_map<std::string, std::regex> verb_aliases_rex(verb_aliases.size());
   for ( auto& pair : verb_aliases ){
@@ -276,27 +277,19 @@ int main(int argc, char *argv[])
 
   if(argc<2) {
     retcode = brief_help(sqy_options,
-             verb_descriptions,
-             verb_aliases
-             );
+                         verb_descriptions,
+                         verb_aliases
+      );
     return retcode;
   }
 
-  if(sqy_vm.count("fullhelp")) {
-    retcode = full_help(descriptions,verb_aliases);
-    return retcode;
-  }
-
-
-  std::string joint_args;
-  for( int i = 0;i<argc;++i ){
-    joint_args.append(argv[i]);
-  }
+  // std::string joint_args;
+  // for( int i = 0;i<argc;++i ){
+  //   joint_args.append(argv[i]);
+  // }
 
 
 
-
-  po::options_description options_to_parse;
 
   func_t prog_flow;
 
@@ -305,13 +298,21 @@ int main(int argc, char *argv[])
 
   ///////////////////////////////////////////
   //REFACTOR THIS!
+  static     std::unordered_map<std::string, func_t> verb_functors;
+  verb_functors["compress"]	= compress_files;
+  verb_functors["decompress"]	= decompress_files;
+  verb_functors["scan"]		= scan_files;
+  verb_functors["diff"]		= diff_files;
+  verb_functors["convert"]	= convert_files;
+  verb_functors["compare"]	= compare_files;
+
   for( auto& pair: verb_aliases_rex){
     if(std::regex_match(target,pair.second))
-      {
-    prog_flow = verb_functors[pair.first];
-    verb = pair.first;
-    break;
-      }
+    {
+      prog_flow = verb_functors[pair.first];
+      verb = pair.first;
+      break;
+    }
   }
 
   if(verb.empty()){
@@ -332,10 +333,9 @@ int main(int argc, char *argv[])
     return retcode;
   }
 
-
-
+  po::options_description* options_to_parse;
   if(descriptions.find(verb)!=descriptions.end()){
-    options_to_parse.add(descriptions[verb]);
+    options_to_parse = &descriptions[verb];
   }
 
   po::variables_map vm;
@@ -343,16 +343,16 @@ int main(int argc, char *argv[])
   std::vector<char*> argv_without_verb(argv,argv+argc);
   argv_without_verb.erase(argv_without_verb.begin()+1);
 
-  po::parsed_options parsed = po::command_line_parser(argv_without_verb.size(), &argv_without_verb[0]// argc, argv
-                              ).options(options_to_parse).allow_unregistered().run();
+  po::parsed_options parsed = po::command_line_parser(argv_without_verb.size(), argv_without_verb.data()// argc, argv
+                              ).options(*options_to_parse).allow_unregistered().run();
   po::store(parsed, vm);
   po::notify(vm);
 
-
   if(vm.count("help")){
-    std::cout << descriptions[verb] << "\n";
-    if(vm.count("pipeline"))
+    std::cout << *options_to_parse << "\n";
+    if(vm.count("pipeline")){
       print_pipeline_descriptions();
+    }
     return retcode;
   }
 
