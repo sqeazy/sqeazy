@@ -9,6 +9,7 @@
 #include "array_fixtures.hpp"
 //#include "encoders/sqeazy_impl.hpp"
 #include "dynamic_stage.hpp"
+#include "dynamic_stage_chain.hpp"
 #include "test_dynamic_pipeline_impl.hpp"
 
 namespace sqy = sqeazy;
