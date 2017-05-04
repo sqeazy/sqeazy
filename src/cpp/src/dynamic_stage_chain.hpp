@@ -218,11 +218,15 @@ namespace sqeazy {
                            outgoing_t *_out,
                            const std::vector<std::size_t>& _shape) /*override final*/ {
             outgoing_t* value = nullptr;
-            std::size_t len = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
-            //      std::size_t max_len_byte = len*sizeof(incoming_t);
+            const std::size_t len = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
+            const std::size_t bytes = len*sizeof(incoming_t);
 
-            std::vector<incoming_t> temp_in(_in, _in+len);
-            std::vector<outgoing_t> temp_out(temp_in.size());
+            const std::intmax_t max_output_bytes = this->max_encoded_size(bytes);
+
+            std::vector<incoming_t> temp_in(std::ceil(float(max_output_bytes)/sizeof(incoming_t)));
+            std::copy(_in, _in+len,temp_in.data());
+
+            std::vector<outgoing_t> temp_out(std::ceil(float(max_output_bytes)/sizeof(outgoing_t)));
             std::size_t compressed_items = 0;
 
             for( std::size_t fidx = 0;fidx<chain_.size();++fidx )
