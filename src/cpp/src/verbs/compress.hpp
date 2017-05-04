@@ -33,6 +33,12 @@ size_t native_compress_write(const sqeazy::tiff_facet& _input,
 
   typedef typename pipe_t::incoming_t raw_t;
 
+  if(_pipeline.empty())
+    {
+      std::cerr << "[SQY]\tpipeline obtained from " << _pipeline.name() << " is invalid. doing nothing!\n";
+      return 0;
+    }
+
   std::vector<size_t>	input_shape;
   std::vector<char>	output;
   size_t		expected_size_byte = _pipeline.max_encoded_size(_input.size_in_byte());
