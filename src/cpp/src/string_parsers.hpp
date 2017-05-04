@@ -331,7 +331,8 @@ namespace sqeazy {
         std::string key(maj_key.begin(),
                         maj_key.begin()+dist);
 
-        std::string key_value(maj_key.begin()+dist+seperators_.back().size(),
+        auto kv_begin = (dist+seperators_.back().size()) < maj_key.size() ? (maj_key.begin()+dist+seperators_.back().size()) : maj_key.begin();
+        std::string key_value(kv_begin,
                               maj_key.end());
 
         value[ key ] = key_value;
