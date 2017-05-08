@@ -214,10 +214,12 @@ int main(int argc, char *argv[])
   verb_aliases["diff"]		= std::string("diff|delta");
   verb_aliases["convert"]   = std::string("convert|transform|trf");
   verb_aliases["compare"]   = std::string("compare|cmp");
+  verb_aliases["bench"]   = std::string("ben|bench");
 
   static     std::map<std::string, std::string> verb_descriptions;
   verb_descriptions["help"]     = std::string("print a help message");
   verb_descriptions["compress"]	= std::string("compress a tiff stack to native sqy format or hdf5");
+  verb_descriptions["bench"]	= std::string("benchmark the compression to native sqy format or hdf5");
   verb_descriptions["decompress"]= std::string("decompress a .sqy/.h5 file to tiff");
   verb_descriptions["scan"]	= std::string("print statistics about the stack in a tiff file");
   verb_descriptions["diff"]	= std::string("print statistics on the difference a tiff file with any other tiffs");
@@ -234,6 +236,17 @@ int main(int argc, char *argv[])
     ("output_name,o", po::value<std::string>(), "file location to write output to (if only 1 is given)")
     ("output_suffix,e", po::value<std::string>()->default_value(".sqy"), "file extension to be used (must include period)")
     ;
+
+  descriptions["bench"].add(general_po).add_options()
+    ("pipeline,p", po::value<std::string>()->default_value(default_compression), "compression pipeline to be used (see 'pipeline builder' documentation below)")
+    ("dataset_name,d", po::value<std::string>()->default_value("sqy_stack"), "name of the HDF5 dataset to appear inside any of .h5 encoded files (ignored for native .sqy compression)")
+    ("output_name,o", po::value<std::string>(), "file location to write output to (if only 1 is given)")
+    ("output_suffix,e", po::value<std::string>()->default_value(".sqy"), "file extension to be used (must include period)")
+    ("as-csv,c", "print results as comma-separated table")
+    ("noheader", "print results without header")
+    ("repetitions,r", po::value<int>()->default_value(10), "how many times to repeat the benchmark run")
+    ;
+
 
   descriptions["decompress"].add(general_po).add_options()
     ("dataset_name,d", po::value<std::string>()->default_value("sqy_stack"), "name of the HDF5 dataset to load from input h5 file(s) (ignored for native .sqy compression)")
@@ -305,6 +318,7 @@ int main(int argc, char *argv[])
   verb_functors["diff"]		= diff_files;
   verb_functors["convert"]	= convert_files;
   verb_functors["compare"]	= compare_files;
+  verb_functors["bench"]	= bench_files;
 
   for( auto& pair: verb_aliases_rex){
     if(std::regex_match(target,pair.second))
