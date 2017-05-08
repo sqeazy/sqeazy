@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <string>
 #include <chrono>
+#include <ctime>
 
 #include "boost/filesystem.hpp"
 #include "boost/program_options.hpp"
@@ -31,6 +32,13 @@ using timings_t = std::vector<std::chrono::duration<double, std::micro >>;
 namespace sqeazy {
 
   namespace benchmark_detail {
+
+    long int unix_style_timestamp()
+    {
+      time_t t = std::time(0);
+      long int now = static_cast<long int> (t);
+      return now;
+    }
 
     struct series {
 
@@ -82,6 +90,7 @@ namespace sqeazy {
                     << (!_as_csv ? std::setw(15               ) : std::setw(0)) << "n_elements"     << delim
                     << (!_as_csv ? std::setw(15               ) : std::setw(0)) << "time_mus"       << delim
                     << (!_as_csv ? std::setw(15               ) : std::setw(0)) << "final_bytes"    << delim
+                    << (!_as_csv ? std::setw(5                ) : std::setw(0)) << "id"             << delim
                     << (!_as_csv ? std::setw(_comment.size()+2) : std::setw(0)) << "comment"        << "\n";
 
         }
@@ -100,6 +109,7 @@ namespace sqeazy {
                     << (!_as_csv ? std::setw(15               ) : std::setw(0))  << len               << delim
                     << (!_as_csv ? std::setw(15               ) : std::setw(0))  << times_[i].count() << delim
                     << (!_as_csv ? std::setw(15               ) : std::setw(0))  << bytes_written_[i] << delim
+                    << (!_as_csv ? std::setw( 5               ) : std::setw(0))  << i                 << delim
                     << (!_as_csv ? std::setw(_comment.size()+2) : std::setw(0))  << "\"" << _comment << "\""
                     << "\n";
 
@@ -140,7 +150,6 @@ namespace sqeazy {
       std::vector<char>	output;
       size_t		expected_size_byte = _pipeline.max_encoded_size(_input.size_in_byte());
       size_t                output_file_size = bfs::exists(_output_file) ? bfs::file_size(_output_file) : 0;
-
 
       //create clean output buffer
       if(expected_size_byte!=output.size())
@@ -487,7 +496,9 @@ int bench_files(const std::vector<std::string>& _files,
   }
 
   std::stringstream cmt;
-  cmt << _config["pipeline"].as<std::string>() << "|" << nthreads_to_use << "threads";
+  cmt << _config["pipeline"].as<std::string>() << "|"
+      << nthreads_to_use << "threads" << "|"
+      << sqyb::unix_style_timestamp();
   sqyb::print_results(file_series,_config,cmt.str());
 
 
