@@ -499,7 +499,11 @@ int bench_files(const std::vector<std::string>& _files,
   cmt << _config["pipeline"].as<std::string>() << "|"
       << nthreads_to_use << "threads" << "|"
       << sqyb::unix_style_timestamp();
-  sqyb::print_results(file_series,_config,cmt.str());
+
+  std::string comment_string = cmt.str();
+  if(_config["comment"].as<std::string>().size())
+    comment_string = _config["comment"].as<std::string>();
+  sqyb::print_results(file_series,_config,comment_string);
 
 
   if(!file_series.empty())

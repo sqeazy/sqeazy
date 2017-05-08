@@ -245,6 +245,7 @@ int main(int argc, char *argv[])
     ("as-csv,c", "print results as comma-separated table")
     ("noheader", "print results without header")
     ("repetitions,r", po::value<int>()->default_value(10), "how many times to repeat the benchmark run")
+    ("comment", po::value<std::string>()->default_value(""), "comment value to fill in for every benchmark measurement (will replace the default one which is <pipeline>|<n_threads>threads|<timestamp>")
     ;
 
 
