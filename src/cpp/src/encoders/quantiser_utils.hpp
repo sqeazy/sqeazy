@@ -176,7 +176,7 @@ namespace sqeazy {
 
     static_assert(std::is_integral<raw_type>::value,"[quantiser] raw_type is not integral");
     static_assert(std::is_integral<compressed_type>::value,"[quantiser] compressed_type is not integral");
-    static_assert(sizeof(raw_type) > sizeof(compressed_type),"[quantiser] raw_type is not wider than compressed_type");
+//    static_assert(sizeof(raw_type) > sizeof(compressed_type),"[quantiser] raw_type is not wider than compressed_type");
     static_assert(sizeof(size_t) > sizeof(raw_type),"[quantiser] raw_type is not smaller than size_t");
 
     static const size_t max_raw_ = 1 << (sizeof(raw_type)*CHAR_BIT);

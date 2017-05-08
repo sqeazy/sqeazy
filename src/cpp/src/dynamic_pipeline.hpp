@@ -349,6 +349,9 @@ namespace sqeazy
     add(const std::shared_ptr<pointee_t>& _new_filter)
     {
 
+      if(_new_filter.get() == nullptr)
+        return;
+
       auto view = const_stage_view(_new_filter);
 
       if(std::is_base_of<typename head_chain_t::filter_base_t,pointee_t>::value){
@@ -373,6 +376,9 @@ namespace sqeazy
     // void add_sink(const sink_ptr_t& _new_sink)
     void add(const sink_ptr_t& _new_sink)
     {
+      if(_new_sink.get() == nullptr)
+        return;
+
       if(sink_)
         sink_.reset();
 
@@ -867,7 +873,10 @@ namespace sqeazy
       if(tail_filters_.size())
         max_enc_size.push_back(tail_filters_.max_encoded_size(_incoming_size_byte));
 
-      return value + *std::max_element(max_enc_size.begin(), max_enc_size.end());
+      if(!max_enc_size.empty())
+        return value + *std::max_element(max_enc_size.begin(), max_enc_size.end());
+      else
+        return value;
 
     }
 
@@ -916,13 +925,17 @@ namespace sqeazy
 
       auto head_begin = head_filters_.begin();
       auto head_end = head_filters_.end();
-      for(;head_begin != head_end;++head_begin)
-        (*head_begin)->set_n_threads(n_threads_);
+      for(;head_begin != head_end;++head_begin){
+        if((*head_begin)!=nullptr)
+          (*head_begin)->set_n_threads(n_threads_);
+      }
 
       auto tail_begin = tail_filters_.begin();
       auto tail_end = tail_filters_.end();
-      for(;tail_begin != tail_end;++tail_begin)
-        (*tail_begin)->set_n_threads(n_threads_);
+      for(;tail_begin != tail_end;++tail_begin){
+        if((*tail_begin)!=nullptr)
+          (*tail_begin)->set_n_threads(n_threads_);
+      }
 
     }
 
