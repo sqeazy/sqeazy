@@ -1,7 +1,6 @@
 import os
 import glob
 import time
-import copy
 
 JOBDIR=os.path.abspath(os.path.curdir)
 Y4MDIR=os.path.abspath(os.path.curdir+"/../y4m/")
@@ -32,9 +31,10 @@ pipelines = {
     "nvenc_hevc_ultrafast_nvprof" : "-c:v nvenc_hevc -preset llhp -2pass 0 -gpu 1"
 }
 
-pipeline_strings = copy.deepcopy(pipelines)
-for k,v in pipeline_strings.items():
-    v = "\""+v+"\""
+pipeline_strings = {}
+for k,v in pipelines.items():
+    pipeline_strings[k] = "\\\""+v+"\\\""
+print(pipeline_strings)
 
 EXPECTED = [ ]
 for key,value in pipelines.items():
