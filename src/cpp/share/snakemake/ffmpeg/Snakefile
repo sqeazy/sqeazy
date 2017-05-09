@@ -1,0 +1,66 @@
+import os
+import glob
+import time
+
+JOBDIR=os.path.abspath(os.path.curdir)
+Y4MDIR=os.path.abspath(os.path.curdir+"/../y4m/")
+RTDIR=os.path.abspath(os.path.curdir+"/../roundtrips/")
+
+ALLTIFFS=glob.glob(JOBDIR+"/*.tif")
+ALLSTEMS=[ os.path.splitext(os.path.basename(item))[0] for item in ALLTIFFS ]
+
+if not config or not ("sqy-app" in config.keys()):
+    config["sqy-app"] = "/home/steinbac/development/sqeazy/src/cpp/build/src/sqy"
+
+if not config or not ("setup-cmd" in config.keys()):
+    config["setup-cmd"] = "module load ffmpeg/3.0.7-x264-hevc-nvenc lz4/1.7.5 hdf5/1.8.17"
+
+GLOBALTIMESTAMP = int(time.time())
+
+rule all:
+    input:
+        [ "{dstfolder}/{stem}_unweighted.y4m".format(dstfolder=Y4MDIR,stem=item) for item in ALLSTEMS ], [ "{dstfolder}/{stem}_weighted_power_3_1.y4m".format(dstfolder=Y4MDIR,stem=item) for item in ALLSTEMS ]
+    message:
+        " creating {input} "
+
+rule unweighted_quantisation:
+    input:
+        "{stem}.tif"
+    output:
+        "{Y4MDIR}/{stem}_unweighted.y4m"
+    shell:
+        "{config[setup-cmd]} && {config[sqy-app]} convert {input} {output}"
+
+rule weighted_quantisation:
+    input:
+        "{stem}.tif"
+    output:
+        "{Y4MDIR}/{stem}_weighted_power_3_1.y4m"
+    shell:
+        "{config[setup-cmd]} && {config[sqy-app]} convert -q \"quantiser(weighting_function=power_3_1)\" {input} {output}"
+
+
+rule libx264_ultrafast:
+    input:
+        "{Y4MDIR}/{stem}.y4m"
+    output:
+        "{RTDIR}/{stem}_libx264_rt.y4m"
+    threads: 8
+    params:
+        tmpinput = "/dev/shm/{stem}-{GLOBALTIMESTAMP}.y4m", tmpoutput = "/dev/shm/{stem}-{GLOBALTIMESTAMP}.h264"
+    shell:
+        """
+        {config[setup-cmd]};
+        cp -uv {input} {params.tmpinput};
+        /usr/bin/time --append -o {RTDIR}/{wildcards.stem}-encode.csv -f \"encode,{wildcards.stem},libx264,ultrafast,%e,%U,%S,%x,{threads},{GLOBALTIMESTAMP}\" ffmpeg -i {params.tmpinput} -c:v libx264 -preset ultrafast -threads 8 -y {params.tmpoutput};
+        ffmpeg -i {params.output} -y {output};
+        rm -fv {params.tmpinput} {params.tmpoutput}
+        echo "{wildcards.stem},ultrafast,{GLOBALTIMESTAMP},$({config[sqy-app]} compare -m all --as-csv --noheader {input} {output})" >> {RTDIR}/{wildcards.stem}-quality.csv;
+        """
+
+
+rule clean:
+    input:
+        [ "{dstfolder}/{stem}_unweighted.y4m".format(dstfolder=Y4MDIR,stem=item) for item in ALLSTEMS ], [ "{dstfolder}/{stem}_weighted_power_3_1.y4m".format(dstfolder=Y4MDIR,stem=item) for item in ALLSTEMS ]
+    shell:
+        "rm -vf {input}"
