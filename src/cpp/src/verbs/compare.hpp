@@ -22,10 +22,25 @@
 namespace po = boost::program_options;
 namespace bfs = boost::filesystem;
 
+
+
+
 static void add_compare_options_to(po::options_description& _desc){
 
+  std::ostringstream metrics;
+  metrics << "comma-separated list of metrics (possible values: mse, rms, nrmse, mnmse, l1norm, l2norm, psnr, drange, all)\n"
+          << " mse   ... mean square error                  : 1/N * sum((I-I)**2)\n"
+          << " rms   ... root mean squared                  : sqrt(mse)\n"
+          << " nrmse ... normalized mean-square-error       : sqrt(mse)/(max(I) - min(I))\n"
+          << " mnmse ... mean normalized mean-square-error  : sqrt(mse)/(mean(I))\n"
+          << " l1norm... L1 norm                            : sum(abs(I-I))\n"
+          << " l2norm... L2 norm                            : sum((I-I)**2)\n"
+          << " psnr  ... Peak signal-to-noise ratio         : 20*log_10(max_intensity_of_pixel_type) - 10*log(mse)\n"
+          << " drange... print dynamic range of values of reference and of alternative\n"
+          << " all   ... perform all of the above\n";
+
   _desc.add_options()
-    ("metrics,m", po::value<std::string>()->default_value("nrmse"), "comma-separated list of metrics (possible values: mse, nrmse, psnr, drange, all)")
+    ("metrics,m", po::value<std::string>()->default_value("nrmse"), metrics.str().c_str())
     ("as-csv,c", "output as csv including header")
     ("noheader", "skip output header")
     ;
@@ -124,14 +139,18 @@ int compare_files(const std::vector<std::string>& _files,
 
   std::string metrics = _config["metrics"].as<std::string>();
   bool do_nrmse = metrics.find("nrmse") != std::string::npos ? true : false;
-  bool do_mse = (metrics.find("mse") != std::string::npos && !do_nrmse) ? true : false;
+  bool do_mnmse = metrics.find("mnmse") != std::string::npos ? true : false;
+  bool do_mse = (metrics.find("mse") != std::string::npos && !do_nrmse && !do_mnmse) ? true : false;
+  bool do_rms = (metrics.find("rms") != std::string::npos) ? true : false;
+  bool do_l2norm = (metrics.find("l2norm") != std::string::npos) ? true : false;
+  bool do_l1norm = (metrics.find("l1norm") != std::string::npos) ? true : false;
   bool do_psnr = metrics.find("psnr") != std::string::npos ? true : false;
   bool do_drange = metrics.find("drange") != std::string::npos ? true : false;
   bool do_bitwidth = metrics.find("bitwidth") != std::string::npos ? true : false;
 
   if(metrics.find("all") != std::string::npos)
   {
-    do_nrmse = do_mse = do_psnr = do_drange = do_bitwidth = true;
+    do_nrmse = do_mnmse = do_mse = do_rms = do_psnr = do_l2norm = do_l1norm = do_drange = do_bitwidth = true;
   }
 
   if(src_file_extension.generic_string().find("tif")!=std::string::npos &&
@@ -165,9 +184,26 @@ int compare_files(const std::vector<std::string>& _files,
         results["nrmse"] = sqeazy::nrmse(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements(),
                                          target_stack_cref.data());
 
+      if(do_mnmse)
+        results["mnmse"] = sqeazy::mnmse(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements(),
+                                         target_stack_cref.data());
+
+
       if(do_mse)
         results["mse"] = sqeazy::mse(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements(),
                                      target_stack_cref.data());
+
+      if(do_rms)
+        results["rms"] = sqeazy::rms(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements(),
+                                     target_stack_cref.data());
+
+      if(do_l1norm)
+        results["l1norm"] = sqeazy::l1norm(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements(),
+                                     target_stack_cref.data());
+
+      if(do_l2norm)
+        results["l2norm"] = sqeazy::l2norm(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements(),
+                                           target_stack_cref.data());
 
       if(do_psnr)
         results["psnr"] = sqeazy::psnr(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements(),
@@ -193,13 +229,32 @@ int compare_files(const std::vector<std::string>& _files,
         results["nrmse"] = sqeazy::nrmse(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements(),
                                          target_stack_cref.data());
 
+      if(do_mnmse)
+        results["mnmse"] = sqeazy::mnmse(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements(),
+                                         target_stack_cref.data());
+
+
       if(do_mse)
         results["mse"] = sqeazy::mse(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements(),
                                      target_stack_cref.data());
 
+      if(do_rms)
+        results["rms"] = sqeazy::rms(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements(),
+                                     target_stack_cref.data());
+
+      if(do_l1norm)
+        results["l1norm"] = sqeazy::l1norm(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements(),
+                                     target_stack_cref.data());
+
+      if(do_l2norm)
+        results["l2norm"] = sqeazy::l2norm(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements(),
+                                           target_stack_cref.data());
+
       if(do_psnr)
-        results["psnr"] = sqeazy::psnr(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements(),
+        results["psnr"] = sqeazy::psnr(src_stack_cref.data(),
+                                       src_stack_cref.data() + src_stack_cref.num_elements(),
                                        target_stack_cref.data());
+
       if(do_drange){
         results["left_drange"] = sqeazy::dyn_range(src_stack_cref.data(), src_stack_cref.data() + src_stack_cref.num_elements());
         results["right_drange"] = sqeazy::dyn_range(target_stack_cref.data(), target_stack_cref.data() + target_stack_cref.num_elements());
@@ -231,18 +286,35 @@ int compare_files(const std::vector<std::string>& _files,
       return value;
     }
 
-
     if(do_nrmse)
-      results["nrmse"] = sqeazy::nrmse(src_stack.data(), src_stack.data() + src_stack.size(),
-                                       tgt_stack.data());
+      results["nrmse"] = sqeazy::nrmse(src_stack.cbegin(), src_stack.cbegin() + src_stack.size(),
+                                       tgt_stack.cbegin());
+
+    if(do_mnmse)
+      results["mnmse"] = sqeazy::mnmse(src_stack.cbegin(), src_stack.cbegin() + src_stack.size(),
+                                       tgt_stack.cbegin());
+
 
     if(do_mse)
-      results["mse"] = sqeazy::mse(src_stack.data(), src_stack.data() + src_stack.size(),
-                                   tgt_stack.data());
+      results["mse"] = sqeazy::mse(src_stack.cbegin(), src_stack.cbegin() + src_stack.size(),
+                                   tgt_stack.cbegin());
+
+    if(do_rms)
+      results["rms"] = sqeazy::rms(src_stack.cbegin(), src_stack.cbegin() + src_stack.size(),
+                                   tgt_stack.cbegin());
+
+    if(do_l1norm)
+      results["l1norm"] = sqeazy::l1norm(src_stack.cbegin(), src_stack.cbegin() + src_stack.size(),
+                                         tgt_stack.cbegin());
+
+    if(do_l2norm)
+      results["l2norm"] = sqeazy::l2norm(src_stack.cbegin(), src_stack.cbegin() + src_stack.size(),
+                                         tgt_stack.cbegin());
 
     if(do_psnr)
-      results["psnr"] = sqeazy::psnr(src_stack.data(), src_stack.data() + src_stack.size(),
-                                     tgt_stack.data());
+      results["psnr"] = sqeazy::psnr(src_stack.cbegin(), src_stack.cbegin() + src_stack.size(),
+                                         tgt_stack.cbegin());
+
     if(do_drange){
       results["left_drange"] = sqeazy::dyn_range(src_stack.data(), src_stack.data() + src_stack.size());
       results["right_drange"] = sqeazy::dyn_range(tgt_stack.data(), tgt_stack.data() + tgt_stack.size());
