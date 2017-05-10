@@ -5,8 +5,9 @@ import time
 JOBDIR=os.path.abspath(os.path.curdir)
 TGTDIR=os.path.abspath(os.path.curdir+"/../roundtrips/")
 
+#excluding Svoboda (for reasons of dimension incompatible to video codecs) and flybrain (see issue #37)
 ALLTIFFS=glob.glob(JOBDIR+"/*.tif")
-ALLSTEMS=[ os.path.splitext(os.path.basename(item))[0] for item in ALLTIFFS ]
+ALLSTEMS=[ os.path.splitext(os.path.basename(item))[0] for item in ALLTIFFS if not( "flybrain" in item ) ]
 
 pipelines = {
     "lossless":"bitswap1->lz4",
@@ -19,17 +20,22 @@ pipelines = {
     "zcurvereorder16":"zcurve_reorder(tile_size=16)->bitswap1->lz4",
     "x264":"quantiser->h264",
     "x265":"quantiser->hevc",
-    "quant_lz4":"quantiser->lz4"
-
+    "quant_lz4":"quantiser->lz4",
+    "quant":"quantiser",
+    "quant_power_3_1":"quantiser(weighting_function=power_3_1)",
 }
 
+# pipeline_strings = {}
+# for k,v in pipelines.items():
+#     pipeline_strings[k] = "\\\""+v+"\\\""
+# print(pipeline_strings)
 
 EXPECTED = [ ]
 for key,value in pipelines.items():
     if "x26" in key:
         #excluding Svoboda (for reasons of dimension incompatible to video codecs) and flybrain (see issue #37)
-        EXPECTED.extend([ "{dstfolder}/{stem}_{key}_rt.tif".format(dstfolder=TGTDIR,stem=item, key=key) for item in ALLSTEMS if not( "Svoboda" in item or "flybrain" in item )])
-        EXPECTED.extend([ "{dstfolder}/{stem}_{key}.sqy".format(dstfolder=TGTDIR,stem=item, key=key) for item in ALLSTEMS if not( "Svoboda" in item or "flybrain" in item )])
+        EXPECTED.extend([ "{dstfolder}/{stem}_{key}_rt.tif".format(dstfolder=TGTDIR,stem=item, key=key) for item in ALLSTEMS if not( "Svoboda" in item) ])
+        EXPECTED.extend([ "{dstfolder}/{stem}_{key}.sqy".format(dstfolder=TGTDIR,stem=item, key=key) for item in ALLSTEMS if not( "Svoboda" in item)])
     else:
         EXPECTED.extend([ "{dstfolder}/{stem}_{key}_rt.tif".format(dstfolder=TGTDIR,stem=item, key=key) for item in ALLSTEMS ])
         EXPECTED.extend([ "{dstfolder}/{stem}_{key}.sqy".format(dstfolder=TGTDIR,stem=item, key=key) for item in ALLSTEMS ])
@@ -239,6 +245,39 @@ rule quant_lz4:
         echo "{wildcards.stem},{params.pipeline},{GLOBALTIMESTAMP},$({config[sqy-app]} compare -m all --as-csv --noheader {wildcards.stem}.tif {output.final})" >> {TGTDIR}/{wildcards.stem}-quality.csv;
         """
 
+rule quant:
+    input:
+        "{stem}.tif"
+    output:
+        intermediate = "{TGTDIR}/{stem}_quant.sqy", final = "{TGTDIR}/{stem}_quant_rt.tif"
+    threads: 8
+    params:
+        pipeline="quantiser", shorthand="quant"
+    shell:
+        """
+        {config[setup-cmd]};
+        dd if={input} of=/dev/null && hostname ;
+        {config[sqy-app]} bench -c --noheader -p \"{params.pipeline}\" -n {threads} -o {output.intermediate} {input} >> {TGTDIR}/{wildcards.stem}-encode.csv
+        /usr/bin/time --append -o {TGTDIR}/{wildcards.stem}-decode.csv -f \"decode,{wildcards.stem},{params.pipeline},%e,%U,%S,%x,{threads},{GLOBALTIMESTAMP}\" {config[sqy-app]} dec -n {threads} -o {output.final} {output.intermediate} ;
+        echo "{wildcards.stem},{params.pipeline},{GLOBALTIMESTAMP},$({config[sqy-app]} compare -m all --as-csv --noheader {wildcards.stem}.tif {output.final})" >> {TGTDIR}/{wildcards.stem}-quality.csv;
+        """
+
+rule quant_power_3_1:
+    input:
+        "{stem}.tif"
+    output:
+        intermediate = "{TGTDIR}/{stem}_quant_power_3_1.sqy", final = "{TGTDIR}/{stem}_quant_power_3_1_rt.tif"
+    threads: 8
+    params:
+        shorthand="quant_power_3_1", pipeline=pipelines["quant_power_3_1"]
+    shell:
+        """
+        {config[setup-cmd]};
+        dd if={input} of=/dev/null && hostname ;
+        {config[sqy-app]} bench -c --noheader -p \"{params.pipeline}\" -n {threads} -o {output.intermediate} {input} >> {TGTDIR}/{wildcards.stem}-encode.csv
+        /usr/bin/time --append -o {TGTDIR}/{wildcards.stem}-decode.csv -f \"decode,{wildcards.stem},{params.pipeline},%e,%U,%S,%x,{threads},{GLOBALTIMESTAMP}\" {config[sqy-app]} dec -n {threads} -o {output.final} {output.intermediate} ;
+        echo "{wildcards.stem},{params.pipeline},{GLOBALTIMESTAMP},$({config[sqy-app]} compare -m all --as-csv --noheader {wildcards.stem}.tif {output.final})" >> {TGTDIR}/{wildcards.stem}-quality.csv;
+        """
 
 rule test_x264_only:
     input:
