@@ -7,5 +7,6 @@
 #include "decompress.hpp"
 #include "scan.hpp"
 #include "diff.hpp"
+#include "bench.hpp"
 
 #endif /* _SQY_VERBS_H_ */

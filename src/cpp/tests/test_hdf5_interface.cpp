@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE( sizeof_dataset ){
   int rvalue = SQY_h5_query_sizeof(tfile.c_str(), dname.c_str(), &size_in_byte);
 
   BOOST_CHECK_EQUAL(rvalue, 0);
-  BOOST_CHECK_EQUAL(size_in_byte,4);
+  BOOST_CHECK_EQUAL(size_in_byte,4u);
 
 }
 
@@ -61,15 +61,15 @@ BOOST_AUTO_TEST_CASE( sizeof_dataset_wrong_input ){
 
   rvalue = SQY_h5_query_sizeof(wrong_tfile.c_str(), dname.c_str(), &size_in_byte);
   BOOST_CHECK_EQUAL(rvalue, 1);
-  BOOST_CHECK_EQUAL(size_in_byte,0);
+  BOOST_CHECK_EQUAL(size_in_byte,0u);
 
   rvalue = SQY_h5_query_sizeof(tfile.c_str(), wrong_dname.c_str(), &size_in_byte);
   BOOST_CHECK_EQUAL(rvalue, 1);
-  BOOST_CHECK_EQUAL(size_in_byte,0);
+  BOOST_CHECK_EQUAL(size_in_byte,0u);
 
   rvalue = SQY_h5_query_sizeof(wrong_tfile.c_str(), wrong_dname.c_str(), &size_in_byte);
   BOOST_CHECK_EQUAL(rvalue, 1);
-  BOOST_CHECK_EQUAL(size_in_byte,0);
+  BOOST_CHECK_EQUAL(size_in_byte,0u);
 
 }
 
@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_CASE( dtype_dataset ){
   int rvalue = SQY_h5_query_dtype(tfile.c_str(), dname.c_str(), &dtype);
 
   BOOST_CHECK_EQUAL(rvalue, 0);
-  BOOST_CHECK_EQUAL(dtype,2);
+  BOOST_CHECK_EQUAL(dtype,2u);
 
 }
 
@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE( dtype_dataset_wrong_input ){
 
   rvalue = SQY_h5_query_sizeof(wrong_tfile.c_str(), dname.c_str(), &dtype);
   BOOST_CHECK_EQUAL(rvalue, 1);
-  BOOST_CHECK_EQUAL(dtype,0);
+  BOOST_CHECK_EQUAL(dtype,0u);
 
 
 }
@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_CASE( rank_dataset ){
   int rvalue = SQY_h5_query_ndims(tfile.c_str(), dname.c_str(), &ndims);
 
   BOOST_CHECK_EQUAL(rvalue, 0);
-  BOOST_CHECK_EQUAL(ndims,2);
+  BOOST_CHECK_EQUAL(ndims,2u);
 
 }
 
@@ -120,17 +120,17 @@ BOOST_AUTO_TEST_CASE( rank_dataset_wrong_input ){
   rvalue = SQY_h5_query_ndims(wrong_tfile.c_str(), dname.c_str(), &ndims);
 
   BOOST_CHECK_EQUAL(rvalue,1);
-  BOOST_CHECK_EQUAL(ndims,0);
+  BOOST_CHECK_EQUAL(ndims,0u);
 
   rvalue = SQY_h5_query_ndims(tfile.c_str(), wrong_dname.c_str(), &ndims);
 
   BOOST_CHECK_EQUAL(rvalue,1);
-  BOOST_CHECK_EQUAL(ndims,0);
+  BOOST_CHECK_EQUAL(ndims,0u);
 
   rvalue = SQY_h5_query_ndims(wrong_tfile.c_str(), wrong_dname.c_str(), &ndims);
 
   BOOST_CHECK_EQUAL(rvalue,1);
-  BOOST_CHECK_EQUAL(ndims,0);
+  BOOST_CHECK_EQUAL(ndims,0u);
 
 }
 
@@ -144,8 +144,8 @@ BOOST_AUTO_TEST_CASE( shape_dataset ){
   rvalue = SQY_h5_query_shape(tfile.c_str(), dname.c_str(), &dims[0]);
 
   BOOST_CHECK_EQUAL(rvalue,0);
-  BOOST_CHECK_EQUAL(dims[0],5);
-  BOOST_CHECK_EQUAL(dims[1],6);
+  BOOST_CHECK_EQUAL(dims[0],5u);
+  BOOST_CHECK_EQUAL(dims[1],6u);
 
 }
 
@@ -156,23 +156,23 @@ BOOST_AUTO_TEST_CASE( shape_dataset_wrong_input ){
 
   unsigned ndims = 0;
   int rvalue = SQY_h5_query_ndims(tfile.c_str(), dname.c_str(), &ndims);
-  std::vector<unsigned> dims(ndims,0);
+  std::vector<unsigned> dims(ndims,0u);
 
 
   rvalue = SQY_h5_query_shape(wrong_tfile.c_str(), dname.c_str(), &dims[0]);
 
   BOOST_CHECK_EQUAL(rvalue,1);
-  BOOST_CHECK_EQUAL(dims[0],0);
+  BOOST_CHECK_EQUAL(dims[0],0u);
 
   rvalue = SQY_h5_query_shape(tfile.c_str(), wrong_dname.c_str(), &dims[0]);
 
   BOOST_CHECK_EQUAL(rvalue,1);
-  BOOST_CHECK_EQUAL(dims[0],0);
+  BOOST_CHECK_EQUAL(dims[0],0u);
 
   rvalue = SQY_h5_query_shape(wrong_tfile.c_str(), wrong_dname.c_str(), &dims[0]);
 
   BOOST_CHECK_EQUAL(rvalue,1);
-  BOOST_CHECK_EQUAL(dims[0],0);
+  BOOST_CHECK_EQUAL(dims[0],0u);
 
 }
 BOOST_AUTO_TEST_SUITE_END()
@@ -192,11 +192,12 @@ BOOST_AUTO_TEST_CASE( write_no_filter ){
 						  &data.constant_cube[0],
 						  data.dims.size(),
 						  &data.dims[0],
-						  ""));
+                          "")
+    );
 
   BOOST_REQUIRE_EQUAL(rvalue,0);
   BOOST_REQUIRE(bfs::exists(test_output_path));
-  BOOST_REQUIRE_GT(bfs::file_size(test_output_path),0);
+  BOOST_REQUIRE_GT(bfs::file_size(test_output_path),0u);
   BOOST_REQUIRE_GT(float(bfs::file_size(test_output_path)),float(data.size_in_byte));
 
 
@@ -246,7 +247,7 @@ BOOST_AUTO_TEST_CASE( write_filter ){
 
   BOOST_REQUIRE_EQUAL(rvalue,0);
   BOOST_REQUIRE(bfs::exists(no_filter_path));
-  BOOST_REQUIRE_GT(bfs::file_size(no_filter_path),0);
+  BOOST_REQUIRE_GT(bfs::file_size(no_filter_path),0u);
 
   rvalue = SQY_h5_write_UI16(test_output_name.c_str(),
 			     dname.c_str(),
@@ -257,7 +258,7 @@ BOOST_AUTO_TEST_CASE( write_filter ){
 
   BOOST_REQUIRE_EQUAL(rvalue,0);
   BOOST_REQUIRE(bfs::exists(test_output_path));
-  BOOST_REQUIRE_GT(bfs::file_size(test_output_path),0);
+  BOOST_REQUIRE_GT(bfs::file_size(test_output_path),0u);
   BOOST_REQUIRE_LT(bfs::file_size(test_output_path),bfs::file_size(no_filter_path));
 
 }
@@ -276,7 +277,7 @@ BOOST_AUTO_TEST_CASE( roundtrip_filter ){
 
   BOOST_REQUIRE_EQUAL(rvalue,0);
   BOOST_REQUIRE(bfs::exists(test_output_path));
-  BOOST_REQUIRE_GT(bfs::file_size(test_output_path),0);
+  BOOST_REQUIRE_GT(bfs::file_size(test_output_path),0u);
 
   data.to_play_with.clear();
   data.to_play_with.resize(data.constant_cube.size());
@@ -308,7 +309,7 @@ BOOST_AUTO_TEST_CASE( write_compressed_data ){
 
   BOOST_REQUIRE_EQUAL(rvalue,0);
   BOOST_REQUIRE(bfs::exists(no_filter_path));
-  BOOST_REQUIRE_GT(bfs::file_size(no_filter_path),0);
+  BOOST_REQUIRE_GT(bfs::file_size(no_filter_path),0u);
 
   long size = data.size_in_byte;
   SQY_LZ4_Max_Compressed_Length(&size);
@@ -331,7 +332,7 @@ BOOST_AUTO_TEST_CASE( write_compressed_data ){
 
 
   BOOST_REQUIRE_EQUAL(rvalue,0);
-  BOOST_REQUIRE_GT(bfs::file_size(test_output_path),0);
+  BOOST_REQUIRE_GT(bfs::file_size(test_output_path),0u);
   BOOST_REQUIRE_CLOSE_FRACTION(float(bfs::file_size(test_output_path)),float(bfs::file_size(no_filter_path)),.4);
 
   rvalue = SQY_h5_read_UI16(test_output_name.c_str(),
@@ -376,7 +377,7 @@ BOOST_AUTO_TEST_CASE( fixture_correct ){
   BOOST_REQUIRE(!bfs::exists(index_file_path));
   for(unsigned i = 0;i<dataset_paths.size();++i){
     BOOST_REQUIRE(bfs::exists(dataset_paths[i]));
-    BOOST_REQUIRE(bfs::file_size(dataset_paths[i])>1000);
+    BOOST_REQUIRE(bfs::file_size(dataset_paths[i])>1000u);
   }
 
 

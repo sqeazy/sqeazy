@@ -6,7 +6,7 @@
 #include <algorithm> // for copy
 #include <iterator> // for ostream_iterator
 
-#include "encoders/sqeazy_impl.hpp"
+#include "encoders/bitswap_scheme_impl.hpp"
 #include "sse_test_utils.hpp"
 
 

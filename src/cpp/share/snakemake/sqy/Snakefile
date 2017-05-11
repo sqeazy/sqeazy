@@ -1,0 +1,304 @@
+import os
+import glob
+import time
+
+JOBDIR=os.path.abspath(os.path.curdir)
+TGTDIR=os.path.abspath(os.path.curdir+"/../roundtrips/")
+
+#excluding Svoboda (for reasons of dimension incompatible to video codecs) and flybrain (see issue #37)
+ALLTIFFS=glob.glob(JOBDIR+"/*.tif")
+ALLSTEMS=[ os.path.splitext(os.path.basename(item))[0] for item in ALLTIFFS if not( "flybrain" in item ) ]
+
+pipelines = {
+    "lossless":"bitswap1->lz4",
+    "frameshuffle":"frame_shuffle->bitswap1->lz4",
+    "purelz4":"lz4",
+    "rmestbkrd":"rmestbkrd->bitswap1->lz4",
+    "rasterreorder4":"raster_reorder(tile_size=4)->bitswap1->lz4",
+    "zcurvereorder4":"zcurve_reorder(tile_size=4)->bitswap1->lz4",
+    "rasterreorder16":"raster_reorder(tile_size=16)->bitswap1->lz4",
+    "zcurvereorder16":"zcurve_reorder(tile_size=16)->bitswap1->lz4",
+    "x264":"quantiser->h264",
+    "x265":"quantiser->hevc",
+    "quant_lz4":"quantiser->lz4",
+    "quant":"quantiser",
+    "quant_power_3_1":"quantiser(weighting_function=power_3_1)",
+}
+
+# pipeline_strings = {}
+# for k,v in pipelines.items():
+#     pipeline_strings[k] = "\\\""+v+"\\\""
+# print(pipeline_strings)
+
+EXPECTED = [ ]
+for key,value in pipelines.items():
+    if "x26" in key:
+        #excluding Svoboda (for reasons of dimension incompatible to video codecs) and flybrain (see issue #37)
+        EXPECTED.extend([ "{dstfolder}/{stem}_{key}_rt.tif".format(dstfolder=TGTDIR,stem=item, key=key) for item in ALLSTEMS if not( "Svoboda" in item) ])
+        EXPECTED.extend([ "{dstfolder}/{stem}_{key}.sqy".format(dstfolder=TGTDIR,stem=item, key=key) for item in ALLSTEMS if not( "Svoboda" in item)])
+    else:
+        EXPECTED.extend([ "{dstfolder}/{stem}_{key}_rt.tif".format(dstfolder=TGTDIR,stem=item, key=key) for item in ALLSTEMS ])
+        EXPECTED.extend([ "{dstfolder}/{stem}_{key}.sqy".format(dstfolder=TGTDIR,stem=item, key=key) for item in ALLSTEMS ])
+
+
+
+
+GLOBALTIMESTAMP = int(time.time())
+
+if not config or not ("sqy-app" in config.keys()):
+    config["sqy-app"] = "/home/steinbac/development/sqeazy/src/cpp/exp_build/src/sqy"
+
+if not config or not ("setup-cmd" in config.keys()):
+    config["setup-cmd"] = "module load ffmpeg/3.0.7-x264-hevc lz4/1.7.5 hdf5/1.8.17"
+
+
+rule all:
+    input:
+        EXPECTED
+    message:
+        " creating {input} "
+
+rule lossless:
+    input:
+        "{stem}.tif"
+    output:
+        intermediate = "{TGTDIR}/{stem}_lossless.sqy", final = "{TGTDIR}/{stem}_lossless_rt.tif"
+    threads: 8
+    params:
+        pipeline="bitswap1->lz4", shorthand="lossless"
+    shell:
+        """
+        {config[setup-cmd]};
+        dd if={input} of=/dev/null && hostname ;
+        {config[sqy-app]} bench -c --noheader -p \"{params.pipeline}\" -n {threads} -o {output.intermediate} {input} >> {TGTDIR}/{wildcards.stem}-encode.csv
+        /usr/bin/time --append -o {TGTDIR}/{wildcards.stem}-decode.csv -f \"decode,{wildcards.stem},{params.pipeline},%e,%U,%S,%x,{threads},{GLOBALTIMESTAMP}\" {config[sqy-app]} dec -n {threads} -o {output.final} {output.intermediate} ;
+        echo "{wildcards.stem},{params.pipeline},{GLOBALTIMESTAMP},$({config[sqy-app]} compare -m all --as-csv --noheader {wildcards.stem}.tif {output.final})" >> {TGTDIR}/{wildcards.stem}-quality.csv;
+        """
+
+rule frameshuffle:
+    input:
+        "{stem}.tif"
+    output:
+        intermediate = "{TGTDIR}/{stem}_frameshuffle.sqy", final = "{TGTDIR}/{stem}_frameshuffle_rt.tif"
+    threads: 8
+    params:
+        pipeline="frame_shuffle->bitswap1->lz4", shorthand="frameshuffle"
+    shell:
+        """
+        {config[setup-cmd]};
+        dd if={input} of=/dev/null && hostname ;
+        {config[sqy-app]} bench -c --noheader -p \"{params.pipeline}\" -n {threads} -o {output.intermediate} {input} >> {TGTDIR}/{wildcards.stem}-encode.csv
+        /usr/bin/time --append -o {TGTDIR}/{wildcards.stem}-decode.csv -f \"decode,{wildcards.stem},{params.pipeline},%e,%U,%S,%x,{threads},{GLOBALTIMESTAMP}\" {config[sqy-app]} dec -n {threads} -o {output.final} {output.intermediate} ;
+        echo "{wildcards.stem},{params.pipeline},{GLOBALTIMESTAMP},$({config[sqy-app]} compare -m all --as-csv --noheader {wildcards.stem}.tif {output.final})" >> {TGTDIR}/{wildcards.stem}-quality.csv;
+        """
+
+rule purelz4:
+    input:
+        "{stem}.tif"
+    output:
+        intermediate = "{TGTDIR}/{stem}_purelz4.sqy", final = "{TGTDIR}/{stem}_purelz4_rt.tif"
+    threads: 8
+    params:
+        pipeline="lz4", shorthand="purelz4"
+    shell:
+       """
+       {config[setup-cmd]};
+       dd if={input} of=/dev/null && hostname ;
+       {config[sqy-app]} bench -c --noheader -p \"{params.pipeline}\" -n {threads} -o {output.intermediate} {input} >> {TGTDIR}/{wildcards.stem}-encode.csv
+       /usr/bin/time --append -o {TGTDIR}/{wildcards.stem}-decode.csv -f \"decode,{wildcards.stem},{params.pipeline},%e,%U,%S,%x,{threads},{GLOBALTIMESTAMP}\" {config[sqy-app]} dec -n {threads} -o {output.final} {output.intermediate} ;
+       echo "{wildcards.stem},{params.pipeline},{GLOBALTIMESTAMP},$({config[sqy-app]} compare -m all --as-csv --noheader {wildcards.stem}.tif {output.final})" >> {TGTDIR}/{wildcards.stem}-quality.csv;
+       """
+
+rule rmestbkrd:
+    input:
+        "{stem}.tif"
+    output:
+        intermediate = "{TGTDIR}/{stem}_rmestbkrd.sqy", final = "{TGTDIR}/{stem}_rmestbkrd_rt.tif"
+    threads: 8
+    params:
+        pipeline="rmestbkrd->bitswap1->lz4", shorthand="rmestbkrd"
+    shell:
+       """
+       {config[setup-cmd]};
+       dd if={input} of=/dev/null && hostname ;
+       {config[sqy-app]} bench -c --noheader -p \"{params.pipeline}\" -n {threads} -o {output.intermediate} {input} >> {TGTDIR}/{wildcards.stem}-encode.csv
+       /usr/bin/time --append -o {TGTDIR}/{wildcards.stem}-decode.csv -f \"decode,{wildcards.stem},{params.pipeline},%e,%U,%S,%x,{threads},{GLOBALTIMESTAMP}\" {config[sqy-app]} dec -n {threads} -o {output.final} {output.intermediate} ;
+       echo "{wildcards.stem},{params.pipeline},{GLOBALTIMESTAMP},$({config[sqy-app]} compare -m all --as-csv --noheader {wildcards.stem}.tif {output.final})" >> {TGTDIR}/{wildcards.stem}-quality.csv;
+       """
+
+rule rasterreorder4:
+    input:
+        "{stem}.tif"
+    output:
+        intermediate = "{TGTDIR}/{stem}_rasterreorder4.sqy", final = "{TGTDIR}/{stem}_rasterreorder4_rt.tif"
+    threads: 8
+    params:
+        pipeline="raster_reorder(tile_size=4)->bitswap1->lz4", shorthand="rasterreorder4"
+    shell:
+       """
+       {config[setup-cmd]};
+       dd if={input} of=/dev/null && hostname ;
+       {config[sqy-app]} bench -c --noheader -p \"{params.pipeline}\" -n {threads} -o {output.intermediate} {input} >> {TGTDIR}/{wildcards.stem}-encode.csv
+       /usr/bin/time --append -o {TGTDIR}/{wildcards.stem}-decode.csv -f \"decode,{wildcards.stem},{params.pipeline},%e,%U,%S,%x,{threads},{GLOBALTIMESTAMP}\" {config[sqy-app]} dec -n {threads} -o {output.final} {output.intermediate} ;
+       echo "{wildcards.stem},{params.pipeline},{GLOBALTIMESTAMP},$({config[sqy-app]} compare -m all --as-csv --noheader {wildcards.stem}.tif {output.final})" >> {TGTDIR}/{wildcards.stem}-quality.csv;
+       """
+
+rule zcurvereorder4:
+    input:
+        "{stem}.tif"
+    output:
+        intermediate = "{TGTDIR}/{stem}_zcurvereorder4.sqy", final = "{TGTDIR}/{stem}_zcurvereorder4_rt.tif"
+    threads: 8
+    params:
+        pipeline="zcurve_reorder(tile_size=4)->bitswap1->lz4", shorthand="zcurvereorder4"
+    shell:
+       """
+       {config[setup-cmd]};
+       dd if={input} of=/dev/null && hostname ;
+       {config[sqy-app]} bench -c --noheader -p \"{params.pipeline}\" -n {threads} -o {output.intermediate} {input} >> {TGTDIR}/{wildcards.stem}-encode.csv
+       /usr/bin/time --append -o {TGTDIR}/{wildcards.stem}-decode.csv -f \"decode,{wildcards.stem},{params.pipeline},%e,%U,%S,%x,{threads},{GLOBALTIMESTAMP}\" {config[sqy-app]} dec -n {threads} -o {output.final} {output.intermediate} ;
+       echo "{wildcards.stem},{params.pipeline},{GLOBALTIMESTAMP},$({config[sqy-app]} compare -m all --as-csv --noheader {wildcards.stem}.tif {output.final})" >> {TGTDIR}/{wildcards.stem}-quality.csv;
+       """
+
+rule rasterreorder16:
+    input:
+        "{stem}.tif"
+    output:
+        intermediate = "{TGTDIR}/{stem}_rasterreorder16.sqy", final = "{TGTDIR}/{stem}_rasterreorder16_rt.tif"
+    threads: 8
+    params:
+        pipeline="raster_reorder(tile_size=4)->bitswap1->lz4", shorthand="rasterreorder16"
+    shell:
+       """
+       {config[setup-cmd]};
+       dd if={input} of=/dev/null && hostname ;
+       {config[sqy-app]} bench -c --noheader -p \"{params.pipeline}\" -n {threads} -o {output.intermediate} {input} >> {TGTDIR}/{wildcards.stem}-encode.csv
+       /usr/bin/time --append -o {TGTDIR}/{wildcards.stem}-decode.csv -f \"decode,{wildcards.stem},{params.pipeline},%e,%U,%S,%x,{threads},{GLOBALTIMESTAMP}\" {config[sqy-app]} dec -n {threads} -o {output.final} {output.intermediate} ;
+       echo "{wildcards.stem},{params.pipeline},{GLOBALTIMESTAMP},$({config[sqy-app]} compare -m all --as-csv --noheader {wildcards.stem}.tif {output.final})" >> {TGTDIR}/{wildcards.stem}-quality.csv;
+       """
+
+rule zcurvereorder16:
+    input:
+        "{stem}.tif"
+    output:
+        intermediate = "{TGTDIR}/{stem}_zcurvereorder16.sqy", final = "{TGTDIR}/{stem}_zcurvereorder16_rt.tif"
+    threads: 8
+    params:
+        pipeline="zcurve_reorder(tile_size=4)->bitswap1->lz4", shorthand="zcurvereorder16"
+    shell:
+       """
+       {config[setup-cmd]};
+       dd if={input} of=/dev/null && hostname ;
+       {config[sqy-app]} bench -c --noheader -p \"{params.pipeline}\" -n {threads} -o {output.intermediate} {input} >> {TGTDIR}/{wildcards.stem}-encode.csv
+       /usr/bin/time --append -o {TGTDIR}/{wildcards.stem}-decode.csv -f \"decode,{wildcards.stem},{params.pipeline},%e,%U,%S,%x,{threads},{GLOBALTIMESTAMP}\" {config[sqy-app]} dec -n {threads} -o {output.final} {output.intermediate} ;
+       echo "{wildcards.stem},{params.pipeline},{GLOBALTIMESTAMP},$({config[sqy-app]} compare -m all --as-csv --noheader {wildcards.stem}.tif {output.final})" >> {TGTDIR}/{wildcards.stem}-quality.csv;
+       """
+
+rule x264:
+    input:
+        "{stem}.tif"
+    output:
+        intermediate = "{TGTDIR}/{stem}_x264.sqy", final = "{TGTDIR}/{stem}_x264_rt.tif"
+    threads: 8
+    params:
+        pipeline="quantiser->h264", shorthand="x264"
+    shell:
+       """
+       {config[setup-cmd]};
+       dd if={input} of=/dev/null && hostname ;
+       {config[sqy-app]} bench -c --noheader -p \"{params.pipeline}\" -n {threads} -o {output.intermediate} {input} >> {TGTDIR}/{wildcards.stem}-encode.csv
+       /usr/bin/time --append -o {TGTDIR}/{wildcards.stem}-decode.csv -f \"decode,{wildcards.stem},{params.pipeline},%e,%U,%S,%x,{threads},{GLOBALTIMESTAMP}\" {config[sqy-app]} dec -n {threads} -o {output.final} {output.intermediate} ;
+       echo "{wildcards.stem},{params.pipeline},{GLOBALTIMESTAMP},$({config[sqy-app]} compare -m all --as-csv --noheader {wildcards.stem}.tif {output.final})" >> {TGTDIR}/{wildcards.stem}-quality.csv;
+       """
+
+rule x265:
+    input:
+        "{stem}.tif"
+    output:
+        intermediate = "{TGTDIR}/{stem}_x265.sqy", final = "{TGTDIR}/{stem}_x265_rt.tif"
+    threads: 8
+    params:
+        pipeline="quantiser->hevc", shorthand="x265"
+    shell:
+        """
+        {config[setup-cmd]};
+        dd if={input} of=/dev/null && hostname ;
+        {config[sqy-app]} bench -c --noheader -p \"{params.pipeline}\" -n {threads} -o {output.intermediate} {input} >> {TGTDIR}/{wildcards.stem}-encode.csv
+        /usr/bin/time --append -o {TGTDIR}/{wildcards.stem}-decode.csv -f \"decode,{wildcards.stem},{params.pipeline},%e,%U,%S,%x,{threads},{GLOBALTIMESTAMP}\" {config[sqy-app]} dec -n {threads} -o {output.final} {output.intermediate} ;
+        echo "{wildcards.stem},{params.pipeline},{GLOBALTIMESTAMP},$({config[sqy-app]} compare -m all --as-csv --noheader {wildcards.stem}.tif {output.final})" >> {TGTDIR}/{wildcards.stem}-quality.csv;
+        """
+
+rule quant_lz4:
+    input:
+        "{stem}.tif"
+    output:
+        intermediate = "{TGTDIR}/{stem}_quant_lz4.sqy", final = "{TGTDIR}/{stem}_quant_lz4_rt.tif"
+    threads: 8
+    params:
+        pipeline="quantiser->lz4", shorthand="quant_lz4"
+    shell:
+        """
+        {config[setup-cmd]};
+        dd if={input} of=/dev/null && hostname ;
+        {config[sqy-app]} bench -c --noheader -p \"{params.pipeline}\" -n {threads} -o {output.intermediate} {input} >> {TGTDIR}/{wildcards.stem}-encode.csv
+        /usr/bin/time --append -o {TGTDIR}/{wildcards.stem}-decode.csv -f \"decode,{wildcards.stem},{params.pipeline},%e,%U,%S,%x,{threads},{GLOBALTIMESTAMP}\" {config[sqy-app]} dec -n {threads} -o {output.final} {output.intermediate} ;
+        echo "{wildcards.stem},{params.pipeline},{GLOBALTIMESTAMP},$({config[sqy-app]} compare -m all --as-csv --noheader {wildcards.stem}.tif {output.final})" >> {TGTDIR}/{wildcards.stem}-quality.csv;
+        """
+
+rule quant:
+    input:
+        "{stem}.tif"
+    output:
+        intermediate = "{TGTDIR}/{stem}_quant.sqy", final = "{TGTDIR}/{stem}_quant_rt.tif"
+    threads: 8
+    params:
+        pipeline="quantiser", shorthand="quant"
+    shell:
+        """
+        {config[setup-cmd]};
+        dd if={input} of=/dev/null && hostname ;
+        {config[sqy-app]} bench -c --noheader -p \"{params.pipeline}\" -n {threads} -o {output.intermediate} {input} >> {TGTDIR}/{wildcards.stem}-encode.csv
+        /usr/bin/time --append -o {TGTDIR}/{wildcards.stem}-decode.csv -f \"decode,{wildcards.stem},{params.pipeline},%e,%U,%S,%x,{threads},{GLOBALTIMESTAMP}\" {config[sqy-app]} dec -n {threads} -o {output.final} {output.intermediate} ;
+        echo "{wildcards.stem},{params.pipeline},{GLOBALTIMESTAMP},$({config[sqy-app]} compare -m all --as-csv --noheader {wildcards.stem}.tif {output.final})" >> {TGTDIR}/{wildcards.stem}-quality.csv;
+        """
+
+rule quant_power_3_1:
+    input:
+        "{stem}.tif"
+    output:
+        intermediate = "{TGTDIR}/{stem}_quant_power_3_1.sqy", final = "{TGTDIR}/{stem}_quant_power_3_1_rt.tif"
+    threads: 8
+    params:
+        shorthand="quant_power_3_1", pipeline=pipelines["quant_power_3_1"]
+    shell:
+        """
+        {config[setup-cmd]};
+        dd if={input} of=/dev/null && hostname ;
+        {config[sqy-app]} bench -c --noheader -p \"{params.pipeline}\" -n {threads} -o {output.intermediate} {input} >> {TGTDIR}/{wildcards.stem}-encode.csv
+        /usr/bin/time --append -o {TGTDIR}/{wildcards.stem}-decode.csv -f \"decode,{wildcards.stem},{params.pipeline},%e,%U,%S,%x,{threads},{GLOBALTIMESTAMP}\" {config[sqy-app]} dec -n {threads} -o {output.final} {output.intermediate} ;
+        echo "{wildcards.stem},{params.pipeline},{GLOBALTIMESTAMP},$({config[sqy-app]} compare -m all --as-csv --noheader {wildcards.stem}.tif {output.final})" >> {TGTDIR}/{wildcards.stem}-quality.csv;
+        """
+
+rule test_x264_only:
+    input:
+        [ "{dstfolder}/{stem}_{key}_rt.tif".format(dstfolder=TGTDIR,stem=item, key="x264") for item in ALLSTEMS ]
+    message:
+        " creating {input} "
+
+rule test_x265_only:
+    input:
+        [ "{dstfolder}/{stem}_{key}_rt.tif".format(dstfolder=TGTDIR,stem=item, key="x265") for item in ALLSTEMS ]
+    message:
+        " creating {input} "
+
+rule test_quant_lz4_only:
+     input:
+         [ "{dstfolder}/{stem}_{key}_rt.tif".format(dstfolder=TGTDIR,stem=item, key="quant_lz4") for item in ALLSTEMS ]
+     message:
+         " creating {input} "
+
+rule clean:
+    input:
+        EXPECTED, glob.glob(TGTDIR+"/*csv"), glob.glob(TGTDIR+"/*log") #, glob.glob(TGTDIR+"/*tif"), glob.glob(TGTDIR+"/*sqy")
+    shell:
+        "rm -vf {input}"

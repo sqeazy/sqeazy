@@ -46,7 +46,8 @@ int decompress_files(const std::vector<std::string>& _files,
 
 	sqy::dypeline<std::uint16_t>	pipe16;
 	sqy::dypeline_from_uint8	pipe8;
-	// sqeazy::pipeline_select<> dynamic;
+
+	int nthreads_to_use = sqy::clean_number_of_threads(_config["nthreads"].as<int>());
 
 	std::istringstream buf;
 	size_t found_num_bits;
@@ -114,6 +115,7 @@ int decompress_files(const std::vector<std::string>& _files,
 				}
 
 				pipe16 = sqy::dypeline<std::uint16_t>::from_string(sqy_header.pipeline());
+				pipe16.set_n_threads(nthreads_to_use);
 
 				dec_ret = pipe16.decode(file_ptr,
 					reinterpret_cast<std::uint16_t*>(intermediate_buffer.data()),
@@ -128,7 +130,7 @@ int decompress_files(const std::vector<std::string>& _files,
 				}
 
 				pipe8 = sqy::dypeline_from_uint8::from_string(sqy_header.pipeline());
-
+				pipe8.set_n_threads(nthreads_to_use);
 				dec_ret = pipe8.decode(file_ptr,
 					reinterpret_cast<std::uint8_t*>(intermediate_buffer.data()),
 					file_shape,
@@ -221,7 +223,7 @@ int decompress_files(const std::vector<std::string>& _files,
 
 		////////////////////////OUTPUT I/O///////////////////////////////
 		tiff.write(output_file.generic_string(),
-			found_num_bits);
+				   found_num_bits);
 
 
 	}

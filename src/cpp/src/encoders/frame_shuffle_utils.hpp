@@ -6,6 +6,8 @@
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
 #include "traits.hpp"
+#include "sqeazy_common.hpp"
+
 
 namespace sqeazy {
 
@@ -38,7 +40,8 @@ namespace sqeazy {
       out_iterator_t encode(in_iterator_t _begin,
 							in_iterator_t _end,
 							out_iterator_t _out,
-							const shape_container_t& _shape)  {
+							const shape_container_t& _shape,
+							int nthreads = 1)  {
 
 		typedef typename std::iterator_traits<in_iterator_t>::value_type in_value_type;
 		typedef typename std::remove_cv<in_value_type>::type in_value_t;
@@ -69,9 +72,9 @@ namespace sqeazy {
 		const bool has_remainder = std::accumulate(rem.begin(), rem.end(),0) > 0;
 
 		if(has_remainder)
-		  return encode_with_remainder(_begin,_end,_out,_shape);
+		  return encode_with_remainder(_begin,_end,_out,_shape,nthreads);
 		else{
-		  return encode_full(_begin,_end,_out,_shape);
+		  return encode_full(_begin,_end,_out,_shape,nthreads);
 		}
 
       }
@@ -89,7 +92,8 @@ namespace sqeazy {
       out_iterator_t encode_full(in_iterator_t _begin,
 								 in_iterator_t _end,
 								 out_iterator_t _out,
-								 const shape_container_t& _shape) {
+								 const shape_container_t& _shape,
+								 int nthreads=  1) {
 
 		typedef typename std::iterator_traits<in_iterator_t>::value_type in_value_type;
 		typedef typename std::remove_cv<in_value_type>::type in_value_t;
@@ -110,41 +114,66 @@ namespace sqeazy {
 		std::fill(n_full_frames.begin(), n_full_frames.end(),1);
 		n_full_frames[row_major::z] = _shape[row_major::z] / frame_chunk_size;
 
-		const shape_value_t n_chunks = std::accumulate(n_full_frames.begin(), n_full_frames.end(),1,std::multiplies<shape_value_t>());
+		const omp_size_type n_chunks = std::accumulate(n_full_frames.begin(), n_full_frames.end(),1,std::multiplies<shape_value_t>());
 
 		// COLLECT STATISTICS /////////////////////////////////////////////////////////////////////////////////////////////////////
 		// median plus stddev around median or take 75% quanframe directly
 
-		std::vector<in_value_t> metric(n_chunks,0.);
-		auto voxel_itr = _begin;
-		for(std::size_t i = 0;i<n_chunks;++i){
+		std::vector<float> metric(n_chunks,0.f);
+		auto metric_itr = metric.data();
+
+#pragma omp parallel for    \
+  shared(metric_itr)		\
+  firstprivate(_begin)		\
+  num_threads(nthreads)
+		for(omp_size_type i = 0;i<n_chunks;++i){
+
 		  median_acc_t acc;
+		  auto voxel_itr = _begin + i*n_elements_per_frame_chunk;
 
 		  for(std::size_t p = 0;p<n_elements_per_frame_chunk;++p){
 			acc(*voxel_itr++);
 		  }
 
-		  metric[i] = std::round(bacc::median(acc));
+		  *(metric_itr + i) = bacc::median(acc);
 		}
 
 		// PERFORM SHUFFLE /////////////////////////////////////////////////////////////////////////////////////////////////////
 		decode_map.resize(n_chunks);
 
 		auto sorted_metric = metric;
+
+		//TODO: we need a parallel sort here!
+		//TODO: what if there are frame_chunks with the same value? (highly unlikely with float32_t)
 		std::sort(sorted_metric.begin(), sorted_metric.end());
 
-		auto dst = _out;
-		for(shape_value_t i =0;i<metric.size();++i){
-		  auto original_index = std::find(metric.begin(), metric.end(), sorted_metric[i]) - metric.begin();
-		  decode_map[i] = original_index;
+		auto decode_map_itr = decode_map.data();
+		auto metric_begin = metric.data();
+		auto metric_end = metric_begin + metric.size();
+		auto sorted_metric_begin = sorted_metric.data();
+		const omp_size_type loop_count = metric.size();
+
+#pragma omp parallel for								\
+  shared(_out)							\
+  firstprivate(decode_map_itr,metric_begin,metric_end,sorted_metric_begin,_begin) \
+  num_threads(nthreads)
+		for(omp_size_type i =0;i<loop_count;++i){
+		  auto dst = _out + i*n_elements_per_frame_chunk;
+
+		  auto item = *(sorted_metric_begin + i);
+		  auto unsorted_itr = std::find(metric_begin, metric_end,
+										item);
+		  std::size_t original_index = std::distance(metric_begin,unsorted_itr);
+		  *(decode_map_itr + i) = original_index;
 		  auto src_start = _begin + original_index*n_elements_per_frame_chunk;
-		  dst = std::copy(src_start,
-						  src_start+n_elements_per_frame_chunk,
-						  dst);
+
+		  std::copy(src_start,
+					src_start+n_elements_per_frame_chunk,
+					dst);
 		}
 
 
-		return dst;
+		return _out + metric.size()*n_elements_per_frame_chunk;
 
       }
 
@@ -162,7 +191,8 @@ namespace sqeazy {
 	  out_iterator_t encode_with_remainder(in_iterator_t _begin,
 										   in_iterator_t _end,
 										   out_iterator_t _out,
-										   const shape_container_t& _shape) {
+										   const shape_container_t& _shape,
+										   int nthreads = 1) {
 
 		typedef typename std::iterator_traits<in_iterator_t>::value_type in_value_type;
 		typedef typename std::remove_cv<in_value_type>::type in_value_t;
@@ -189,37 +219,62 @@ namespace sqeazy {
 		// COLLECT STATISTICS /////////////////////////////////////////////////////////////////////////////////////////////////////
 		// median plus stddev around median or take 75% quanframe directly
 
-		std::vector<in_value_t> metric(n_chunks-1,0.);
-		auto voxel_itr = _begin;
-		for(std::size_t i = 0;i<metric.size();++i){
+		std::vector<float> metric(n_chunks-1,0.);
+		auto metric_itr = metric.data();
+		const omp_size_type loop_count = metric.size();
+
+#pragma omp parallel for    \
+  shared(metric_itr)		\
+  firstprivate(_begin)		\
+  num_threads(nthreads)
+		for(omp_size_type i = 0;i<loop_count;++i){
 		  median_acc_t acc;
+		  auto voxel_itr = _begin + i*n_elements_per_frame_chunk;
 
 		  for(std::size_t p = 0;p<n_elements_per_frame_chunk;++p){
 			acc(*voxel_itr++);
 		  }
 
-		  metric[i] = std::round(bacc::median(acc));
+		  *(metric_itr + i) = bacc::median(acc);
 		}
 
 		// PERFORM SHUFFLE /////////////////////////////////////////////////////////////////////////////////////////////////////
 		decode_map.resize(metric.size());
 
 		auto sorted_metric = metric;
+
+//TODO: we need a parallel sort here!
+		//TODO: what if there are frame_chunks with the same value? (highly unlikely with float32_t)
 		std::sort(sorted_metric.begin(), sorted_metric.end());
 
-		auto dst = _out;
-		for(shape_value_t i =0;i<metric.size();++i){
-		  auto original_index = std::find(metric.begin(), metric.end(), sorted_metric[i]) - metric.begin();
-		  decode_map[i] = original_index;
+		auto decode_map_itr = decode_map.data();
+		auto metric_begin = metric.data();
+		auto metric_end = metric_begin + metric.size();
+		auto sorted_metric_begin = sorted_metric.data();
+
+
+		#pragma omp parallel for															\
+		  shared(_out)																		\
+		  firstprivate(decode_map_itr,metric_begin,metric_end,sorted_metric_begin,_begin)	\
+		  num_threads(nthreads)
+		for(omp_size_type i =0;i<loop_count;++i){
+
+		  auto item = *(sorted_metric_begin + i);
+		  auto unsorted_itr = std::find(metric_begin, metric_end,
+										item);
+		  std::size_t original_index = std::distance(metric_begin,unsorted_itr);
+		  *(decode_map_itr + i) = original_index;
 		  auto src_start = _begin + original_index*n_elements_per_frame_chunk;
-		  dst = std::copy(src_start,
-						  src_start+n_elements_per_frame_chunk,
-						  dst);
+
+		  auto dst = _out + i*n_elements_per_frame_chunk;
+		  std::copy(src_start,
+					src_start+n_elements_per_frame_chunk,
+					dst);
 		}
 
-		dst = std::copy(_begin+metric.size()*n_elements_per_frame_chunk,
-						_end,
-						dst);
+		auto dst = std::copy(_begin+metric.size()*n_elements_per_frame_chunk,
+							 _end,
+							 _out + metric.size()*n_elements_per_frame_chunk);
 		return dst;
 
 	  }
@@ -228,7 +283,8 @@ namespace sqeazy {
       out_iterator_t decode(in_iterator_t _begin,
 							in_iterator_t _end,
 							out_iterator_t _out,
-							const shape_container_t& _shape) const {
+							const shape_container_t& _shape,
+							int nthreads = 1) const {
 
 		typedef typename std::iterator_traits<in_iterator_t>::value_type in_value_type;
 		typedef typename std::remove_cv<in_value_type>::type in_value_t;
@@ -263,7 +319,8 @@ namespace sqeazy {
       out_iterator_t decode_with_remainder(in_iterator_t _begin,
 										   in_iterator_t _end,
 										   out_iterator_t _out,
-										   const shape_container_t& _shape) const {
+										   const shape_container_t& _shape,
+										   int nthreads = 1) const {
 
 
 		// typedef typename std::iterator_traits<in_iterator_t>::value_type in_value_type;
@@ -276,7 +333,7 @@ namespace sqeazy {
 		const bool has_remainder = std::accumulate(rem.begin(), rem.end(),0) > 0;
 
 		const std::size_t n_elements_per_frame = _shape[row_major::y]*_shape[row_major::x];
-		const std::size_t n_elements = std::distance(_begin,_end);
+		// const std::size_t n_elements = std::distance(_begin,_end);
 
 		const std::size_t n_elements_per_frame_chunk = n_elements_per_frame*frame_chunk_size;
 
@@ -287,29 +344,34 @@ namespace sqeazy {
 		const shape_value_t n_chunks = (_shape[row_major::z] + frame_chunk_size - 1)/frame_chunk_size;
 		// const auto len = std::distance(_begin,_end);
 
-		auto dst = _out;
-		auto src = _begin;
+		const omp_size_type loop_count = decode_map.size();
+		auto decode_map_itr = decode_map.data();
 
-		for(shape_value_t i =0;i<decode_map.size();++i){
-
-		  dst = _out + (decode_map[i])*n_elements_per_frame_chunk;
-		  dst = std::copy(src,
-						  src+n_elements_per_frame_chunk,
-						  dst);
-
-		  src += n_elements_per_frame_chunk;
+#pragma omp parallel for												\
+		  shared(_out)																		\
+  firstprivate(decode_map_itr,_begin) \
+		  num_threads(nthreads)
+		for(omp_size_type i =0;i<loop_count;++i){
+		  auto src = _begin + i*n_elements_per_frame_chunk;
+		  auto offset = *(decode_map_itr+i);
+		  auto dst = _out + (offset*n_elements_per_frame_chunk);
+		  std::copy(src,
+					src+n_elements_per_frame_chunk,
+					dst);
 		}
+
+		auto dst = _out;
 
 		if(has_remainder){
-		  dst = std::copy(src,_end,
+		  dst = std::copy(_begin+decode_map.size()*n_elements_per_frame_chunk,
+						  _end,
 						  _out+decode_map.size()*n_elements_per_frame_chunk);
-		  src = _end;
+		}
+		else{
+		  dst += decode_map.size()*n_elements_per_frame_chunk;
 		}
 
-		if(src == _end)
-		  return _out+n_elements;
-		else
-		  return dst;
+		return dst;
 	  };
 	};
 

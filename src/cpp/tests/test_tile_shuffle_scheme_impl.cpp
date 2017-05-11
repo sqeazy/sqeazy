@@ -27,16 +27,16 @@ namespace sqyd = sqy::detail;
    [ 2 2 3 3 ]
    here each tile is 2x2 and contains only one value, namely the tile id in row-major order
 
-   \param[in] 
+   \param[in]
 
-   \return 
-   \retval 
+   \return
+   \retval
 
 */
 template <typename iterator_t, typename shape_t>
 void label_stack_by_tile(iterator_t _begin,
-			 const shape_t& _shape,
-			 std::uint32_t tile_size){
+             const shape_t& _shape,
+             std::uint32_t tile_size){
 
   typedef typename std::iterator_traits<decltype(_shape.begin())>::value_type shape_value_type;
   typedef typename std::remove_cv<shape_value_type>::type shape_value_t;
@@ -50,27 +50,27 @@ void label_stack_by_tile(iterator_t _begin,
   shape_value_t ztile = 0;
   shape_value_t ytile = 0;
   shape_value_t xtile = 0;
-       
+
   shape_value_t tile_id = 0;
   for(shape_value_t z = 0;z<_shape[sqeazy::row_major::z];++z){
     ztile = z / tile_size;
-         
+
     for(shape_value_t y = 0;y<_shape[sqeazy::row_major::y];++y){
       ytile = y / tile_size;
-	    
-      for(shape_value_t x = 0;x<_shape[sqeazy::row_major::x];++x){
-	xtile = x/ tile_size;
-	
-	tile_id = ztile*n_tiles_per_dim[sqeazy::row_major::y]*n_tiles_per_dim[sqeazy::row_major::x]
-	  + ytile*n_tiles_per_dim[sqeazy::row_major::x]
-	  + xtile;
 
-	*(_begin++) = tile_id;
-	
+      for(shape_value_t x = 0;x<_shape[sqeazy::row_major::x];++x){
+    xtile = x/ tile_size;
+
+    tile_id = ztile*n_tiles_per_dim[sqeazy::row_major::y]*n_tiles_per_dim[sqeazy::row_major::x]
+      + ytile*n_tiles_per_dim[sqeazy::row_major::x]
+      + xtile;
+
+    *(_begin++) = tile_id;
+
       }
     }
   }
-	
+
 }
 
 /**
@@ -82,16 +82,16 @@ void label_stack_by_tile(iterator_t _begin,
    [ 1 1 0 0 ]
    here each tile is 2x2 and contains only one value, namely the tile id in row-major order in reverse order
 
-   \param[in] 
+   \param[in]
 
-   \return 
-   \retval 
+   \return
+   \retval
 
 */
 template <typename iterator_t, typename shape_t>
 void label_stack_by_tile_reverse(iterator_t _begin,
-				 const shape_t& _shape,
-				 std::uint32_t tile_size){
+                 const shape_t& _shape,
+                 std::uint32_t tile_size){
 
   typedef typename std::iterator_traits<decltype(_shape.begin())>::value_type shape_value_type;
   typedef typename std::remove_cv<shape_value_type>::type shape_value_t;
@@ -110,32 +110,32 @@ void label_stack_by_tile_reverse(iterator_t _begin,
     std::cerr << "]\n";
     return;
   }
-  
-  
+
+
   shape_value_t ztile = 0;
   shape_value_t ytile = 0;
   shape_value_t xtile = 0;
-       
+
   shape_value_t tile_id = 0;
   for(shape_value_t z = 0;z<_shape[sqeazy::row_major::z];++z){
     ztile = z / tile_size;
-         
+
     for(shape_value_t y = 0;y<_shape[sqeazy::row_major::y];++y){
       ytile = y / tile_size;
-	    
-      for(shape_value_t x = 0;x<_shape[sqeazy::row_major::x];++x){
-	xtile = x/ tile_size;
-	
-	tile_id = ztile*n_tiles_per_dim[sqeazy::row_major::y]*n_tiles_per_dim[sqeazy::row_major::x]
-	  + ytile*n_tiles_per_dim[sqeazy::row_major::x]
-	  + xtile;
 
-	*(_begin++) = n_tiles - tile_id - 1;
-	
+      for(shape_value_t x = 0;x<_shape[sqeazy::row_major::x];++x){
+    xtile = x/ tile_size;
+
+    tile_id = ztile*n_tiles_per_dim[sqeazy::row_major::y]*n_tiles_per_dim[sqeazy::row_major::x]
+      + ytile*n_tiles_per_dim[sqeazy::row_major::x]
+      + xtile;
+
+    *(_begin++) = n_tiles - tile_id - 1;
+
       }
     }
   }
-	
+
 }
 
 BOOST_FIXTURE_TEST_SUITE( reverse_stack_labels , uint16_cube_of_8 )
@@ -194,10 +194,10 @@ BOOST_AUTO_TEST_CASE( has_0_remainder )
   auto rem = in_tiles_of.remainder(dims);
   auto expected = dims;
   std::fill(expected.begin(), expected.end(),0);
-  
+
   BOOST_CHECK(!rem.empty());
   BOOST_CHECK_EQUAL_COLLECTIONS(rem.begin(), rem.end(),
-				expected.begin(), expected.end());
+                expected.begin(), expected.end());
 
 
 }
@@ -209,10 +209,10 @@ BOOST_AUTO_TEST_CASE( has_non0_remainder )
   auto rem = in_tiles_of.remainder(dims);
   auto expected = dims;
   std::fill(expected.begin(), expected.end(),2);
-  
+
   BOOST_CHECK(!rem.empty());
   BOOST_CHECK_EQUAL_COLLECTIONS(rem.begin(), rem.end(),
-				expected.begin(), expected.end());
+                expected.begin(), expected.end());
 
 
 }
@@ -222,11 +222,11 @@ BOOST_AUTO_TEST_CASE( on_const_value_buffer )
 
   sqyd::tile_shuffle in_tiles_of(4);
   auto rem = in_tiles_of.encode(constant_cube.cbegin(), constant_cube.cend(),
-			       to_play_with.begin(),
-			       dims);
+                   to_play_with.begin(),
+                   dims);
   BOOST_REQUIRE(rem == to_play_with.end());
   BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(), constant_cube.end(),
-				to_play_with.begin(), to_play_with.end()); 
+                to_play_with.begin(), to_play_with.end());
 
 
 }
@@ -241,24 +241,24 @@ BOOST_AUTO_TEST_CASE( reverse )
   auto exp_itr = expected.data();
   std::size_t n_elements_per_tile = std::pow(4,3);
   for(std::uint16_t i = 0;i<8;++i,exp_itr+=n_elements_per_tile){
-    
+
       std::fill(exp_itr,exp_itr+n_elements_per_tile,i);
   }
-  
+
   label_stack_by_tile_reverse(incrementing_cube.begin(),dims,4);
   sqyd::tile_shuffle in_tiles_of(4);
   BOOST_CHECK(in_tiles_of.tile_size == 4);
 
   auto rem = in_tiles_of.encode(incrementing_cube.cbegin(), incrementing_cube.cend(),
-				to_play_with.begin(),
-				dims);
+                to_play_with.begin(),
+                dims);
   BOOST_REQUIRE(rem == to_play_with.end());
   BOOST_REQUIRE_NE(to_play_with[0], to_play_with[n_elements_per_tile]);
- 
+
   BOOST_REQUIRE_EQUAL_COLLECTIONS(to_play_with.begin(), to_play_with.begin()+4,
-				  expected.begin(), expected.begin()+4);
+                  expected.begin(), expected.begin()+4);
   BOOST_CHECK_EQUAL_COLLECTIONS(to_play_with.begin(), to_play_with.begin()+expected.size(),
-				expected.begin(), expected.end());
+                expected.begin(), expected.end());
 
 }
 
@@ -268,23 +268,23 @@ BOOST_AUTO_TEST_CASE( reverse_2 )
   auto exp_itr = expected.data();
   std::size_t n_elements_per_tile = std::pow(2,3);
   for(std::uint16_t i = 0;i<64;++i,exp_itr+=n_elements_per_tile){
-    
+
       std::fill(exp_itr,exp_itr+n_elements_per_tile,i);
   }
-  
+
   label_stack_by_tile_reverse(incrementing_cube.begin(),dims,2);
   sqyd::tile_shuffle in_tiles_of(2);
 
   auto rem = in_tiles_of.encode(incrementing_cube.cbegin(), incrementing_cube.cend(),
-				to_play_with.begin(),
-				dims);
+                to_play_with.begin(),
+                dims);
   BOOST_REQUIRE(rem == to_play_with.end());
   BOOST_REQUIRE_NE(to_play_with[0], to_play_with[n_elements_per_tile]);
-  
+
   BOOST_REQUIRE_EQUAL_COLLECTIONS(to_play_with.begin(), to_play_with.begin()+4,
-				  expected.begin(), expected.begin()+4);
+                  expected.begin(), expected.begin()+4);
   BOOST_CHECK_EQUAL_COLLECTIONS(to_play_with.begin(), to_play_with.begin()+expected.size(),
-				expected.begin(), expected.end());
+                expected.begin(), expected.end());
 
 }
 
@@ -294,28 +294,28 @@ BOOST_AUTO_TEST_CASE( reverse_3 )
   // std::size_t n_elements_per_tile = std::pow(3,3);
 
 
-  
+
   label_stack_by_tile_reverse(incrementing_cube.begin(),dims,4);
   sqyd::tile_shuffle in_tiles_of(3);
 
   auto rem = in_tiles_of.encode(incrementing_cube.cbegin(), incrementing_cube.cend(),
-				to_play_with.begin(),
-				dims);
+                to_play_with.begin(),
+                dims);
   BOOST_REQUIRE(rem == to_play_with.end());
 
   //check only the first tile
   std::vector<std::uint16_t> expected_last_tile(9,7);
   BOOST_REQUIRE_EQUAL_COLLECTIONS(to_play_with.begin()+to_play_with.size()-4,
-				  to_play_with.end(),
-				  expected_last_tile.begin(), expected_last_tile.begin()+4);
+                  to_play_with.end(),
+                  expected_last_tile.begin(), expected_last_tile.begin()+4);
 
   BOOST_CHECK_EQUAL_COLLECTIONS(to_play_with.begin()+to_play_with.size()-expected_last_tile.size(),
-				to_play_with.end(),
-  				expected_last_tile.begin(), expected_last_tile.end());
+                to_play_with.end(),
+                expected_last_tile.begin(), expected_last_tile.end());
 
   //check that zeros are at the beginning
   BOOST_CHECK_GT(std::count(to_play_with.begin(),
-			    to_play_with.end(),0),0);
+                to_play_with.end(),0),0);
 
   //check that encoded data yields low values at the start and high ones in the back
   auto checksum_start = std::accumulate(to_play_with.begin(),to_play_with.begin()+8,0);
@@ -335,25 +335,25 @@ BOOST_AUTO_TEST_CASE( reverse )
 
   label_stack_by_tile_reverse(incrementing_cube.begin(),dims,4);
   auto expected = incrementing_cube;
-  
+
   sqyd::tile_shuffle in_tiles_of(4);
   BOOST_CHECK(in_tiles_of.tile_size == 4);
 
   auto rem = in_tiles_of.encode(incrementing_cube.cbegin(), incrementing_cube.cend(),
-				to_play_with.begin(),
-				dims);
+                to_play_with.begin(),
+                dims);
   BOOST_REQUIRE(rem == to_play_with.end());
 
   auto dec_rem = in_tiles_of.decode(to_play_with.begin(), to_play_with.end(),
-				    incrementing_cube.begin(),
-				    dims);
+                    incrementing_cube.begin(),
+                    dims);
 
   BOOST_REQUIRE(dec_rem == incrementing_cube.end());
 
   BOOST_REQUIRE_EQUAL_COLLECTIONS(expected.begin(), expected.begin()+16,
-				  incrementing_cube.begin(), incrementing_cube.begin()+16);
+                  incrementing_cube.begin(), incrementing_cube.begin()+16);
   BOOST_CHECK_EQUAL_COLLECTIONS(expected.begin(), expected.end(),
-				  incrementing_cube.begin(), incrementing_cube.end()); 
+                  incrementing_cube.begin(), incrementing_cube.end());
 
 }
 
@@ -362,25 +362,25 @@ BOOST_AUTO_TEST_CASE( reverse_2 )
 
   label_stack_by_tile_reverse(incrementing_cube.begin(),dims,2);
   auto expected = incrementing_cube;
-  
+
   sqyd::tile_shuffle in_tiles_of(2);
 
 
   auto rem = in_tiles_of.encode(incrementing_cube.cbegin(), incrementing_cube.cend(),
-				to_play_with.begin(),
-				dims);
+                to_play_with.begin(),
+                dims);
   BOOST_REQUIRE(rem == to_play_with.end());
 
   auto dec_rem = in_tiles_of.decode(to_play_with.begin(), to_play_with.end(),
-				    incrementing_cube.begin(),
-				    dims);
+                    incrementing_cube.begin(),
+                    dims);
 
   BOOST_REQUIRE(dec_rem == incrementing_cube.end());
 
   BOOST_REQUIRE_EQUAL_COLLECTIONS(expected.begin(), expected.begin()+16,
-				  incrementing_cube.begin(), incrementing_cube.begin()+16);
+                  incrementing_cube.begin(), incrementing_cube.begin()+16);
   BOOST_CHECK_EQUAL_COLLECTIONS(expected.begin(), expected.end(),
-				  incrementing_cube.begin(), incrementing_cube.end()); 
+                  incrementing_cube.begin(), incrementing_cube.end());
 
 }
 
@@ -389,30 +389,125 @@ BOOST_AUTO_TEST_CASE( reverse_3 )
 
   label_stack_by_tile_reverse(incrementing_cube.begin(),dims,4);
   auto expected = incrementing_cube;
-  
+
   sqyd::tile_shuffle in_tiles_of(3);
 
 
   auto rem = in_tiles_of.encode(incrementing_cube.cbegin(), incrementing_cube.cend(),
-				to_play_with.begin(),
-				dims);
+                to_play_with.begin(),
+                dims);
   BOOST_REQUIRE(rem == to_play_with.end());
 
   auto dec_rem = in_tiles_of.decode(to_play_with.begin(), to_play_with.end(),
-				    incrementing_cube.begin(),
-				    dims);
+                    incrementing_cube.begin(),
+                    dims);
 
   BOOST_REQUIRE(dec_rem == incrementing_cube.end());
 
   BOOST_REQUIRE_EQUAL_COLLECTIONS(expected.begin(), expected.begin()+16,
-				  incrementing_cube.begin(), incrementing_cube.begin()+16);
+                  incrementing_cube.begin(), incrementing_cube.begin()+16);
   BOOST_CHECK_EQUAL_COLLECTIONS(expected.begin(), expected.end(),
-				  incrementing_cube.begin(), incrementing_cube.end()); 
+                  incrementing_cube.begin(), incrementing_cube.end());
 
 }
 
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE( parallel_roundtrips , uint16_cube_of_8 )
+
+BOOST_AUTO_TEST_CASE( reverse )
+{
+
+  label_stack_by_tile_reverse(incrementing_cube.begin(),dims,4);
+  auto expected = incrementing_cube;
+
+  sqyd::tile_shuffle in_tiles_of(4);
+
+  BOOST_CHECK(in_tiles_of.tile_size == 4);
+
+  auto rem = in_tiles_of.encode(incrementing_cube.cbegin(), incrementing_cube.cend(),
+                                to_play_with.begin(),
+                                dims,
+                                std::thread::hardware_concurrency());
+
+  BOOST_REQUIRE(rem == to_play_with.end());
+
+  auto dec_rem = in_tiles_of.decode(to_play_with.begin(), to_play_with.end(),
+                                    incrementing_cube.begin(),
+                                    dims,
+                                    std::thread::hardware_concurrency());
+
+  BOOST_REQUIRE(dec_rem == incrementing_cube.end());
+
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(expected.begin(), expected.begin()+16,
+                  incrementing_cube.begin(), incrementing_cube.begin()+16);
+  BOOST_CHECK_EQUAL_COLLECTIONS(expected.begin(), expected.end(),
+                  incrementing_cube.begin(), incrementing_cube.end());
+
+}
+
+BOOST_AUTO_TEST_CASE( reverse_2 )
+{
+
+  label_stack_by_tile_reverse(incrementing_cube.begin(),dims,2);
+  auto expected = incrementing_cube;
+
+  sqyd::tile_shuffle in_tiles_of(2);
+
+
+  auto rem = in_tiles_of.encode(incrementing_cube.cbegin(), incrementing_cube.cend(),
+                                to_play_with.begin(),
+                                dims,
+                                std::thread::hardware_concurrency());
+  BOOST_REQUIRE(rem == to_play_with.end());
+
+  auto dec_rem = in_tiles_of.decode(to_play_with.begin(), to_play_with.end(),
+                                    incrementing_cube.begin(),
+                                    dims,
+                                    std::thread::hardware_concurrency());
+
+  BOOST_REQUIRE(dec_rem == incrementing_cube.end());
+
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(expected.begin(), expected.begin()+16,
+                  incrementing_cube.begin(), incrementing_cube.begin()+16);
+  BOOST_CHECK_EQUAL_COLLECTIONS(expected.begin(), expected.end(),
+                  incrementing_cube.begin(), incrementing_cube.end());
+
+}
+
+BOOST_AUTO_TEST_CASE( reverse_3 )
+{
+
+  label_stack_by_tile_reverse(incrementing_cube.begin(),dims,4);
+  auto expected = incrementing_cube;
+
+  sqyd::tile_shuffle in_tiles_of(3);
+
+
+  auto rem = in_tiles_of.encode(incrementing_cube.cbegin(), incrementing_cube.cend(),
+                                to_play_with.begin(),
+                                dims,
+                                std::thread::hardware_concurrency());
+  BOOST_REQUIRE(rem == to_play_with.end());
+
+  auto dec_rem = in_tiles_of.decode(to_play_with.begin(), to_play_with.end(),
+                                    incrementing_cube.begin(),
+                                    dims,
+                                    std::thread::hardware_concurrency());
+
+  BOOST_REQUIRE(dec_rem == incrementing_cube.end());
+
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(expected.begin(), expected.begin()+16,
+                  incrementing_cube.begin(), incrementing_cube.begin()+16);
+  BOOST_CHECK_EQUAL_COLLECTIONS(expected.begin(), expected.end(),
+                  incrementing_cube.begin(), incrementing_cube.end());
+
+}
+
+
+BOOST_AUTO_TEST_SUITE_END()
+
 
 
 BOOST_FIXTURE_TEST_SUITE( scheme_serialization , uint16_cube_of_8 )
@@ -427,8 +522,8 @@ BOOST_AUTO_TEST_CASE( simple )
 
   std::vector<std::size_t> shape(dims.begin(), dims.end());
   auto rem = scheme.encode(incrementing_cube.data(),
-			   to_play_with.data(),
-			   shape);
+               to_play_with.data(),
+               shape);
 
   BOOST_REQUIRE(rem == (to_play_with.data()+to_play_with.size()));
   BOOST_CHECK_NE(scheme.serialized_reorder_map.empty(), true);
@@ -439,13 +534,13 @@ BOOST_AUTO_TEST_CASE( simple )
 // {
 //   std::vector<std::size_t> input(512,0);
 //   std::string msg;
-  
+
 //   std::size_t counter = 0;
 //   for( std::size_t & el : input )
 //     el = counter++;
 
 //   sqy::tile_shuffle_scheme<std::uint16_t>::serialize_range(input.begin(), input.end(),msg);
-  
+
 //   BOOST_REQUIRE_NE(msg.empty(),true);
 //   BOOST_REQUIRE_EQUAL(msg.size(),input.size()*sizeof(std::size_t));
 
@@ -465,22 +560,22 @@ BOOST_AUTO_TEST_CASE( simple )
 //   std::vector<std::size_t> input(512,0);
 //   std::vector<std::size_t> output = input;
 //   std::string msg;
-  
+
 //   std::size_t counter = 0;
 //   for( std::size_t & el : input )
 //     el = counter++;
 
 //   sqy::tile_shuffle_scheme<std::uint16_t>::serialize_range(input.begin(), input.end(),msg);
-  
+
 //   BOOST_REQUIRE_NE(msg.empty(),true);
 //   BOOST_REQUIRE_EQUAL(msg.size(),input.size()*sizeof(std::size_t));
 
 //   sqy::tile_shuffle_scheme<std::uint16_t>::deserialize_range(msg,output.begin(),output.end());
 
 //   BOOST_REQUIRE_EQUAL_COLLECTIONS(output.begin(), output.begin()+4,
-// 				  input.begin(), input.begin()+4);
+//                input.begin(), input.begin()+4);
 //   BOOST_CHECK_EQUAL_COLLECTIONS(output.begin(), output.begin()+input.size(),
-// 				input.begin(), input.end());
+//              input.begin(), input.end());
 
 // }
 
@@ -489,22 +584,22 @@ BOOST_AUTO_TEST_CASE( simple )
 //   std::vector<std::size_t> input(512,0);
 //   std::vector<std::size_t> output = input;
 //   std::string msg;
-  
+
 //   std::size_t counter = 0;
 //   for( std::size_t & el : input )
 //     el = counter++;
 
 //   sqy::tile_shuffle_scheme<std::uint16_t>::serialize_container(input,msg);
-  
+
 //   BOOST_REQUIRE_NE(msg.empty(),true);
 //   BOOST_REQUIRE_EQUAL(msg.size(),input.size()*sizeof(std::size_t));
 
 //   sqy::tile_shuffle_scheme<std::uint16_t>::deserialize_container(msg,output);
 
 //   BOOST_REQUIRE_EQUAL_COLLECTIONS(output.begin(), output.begin()+4,
-// 				  input.begin(), input.begin()+4);
+//                input.begin(), input.begin()+4);
 //   BOOST_CHECK_EQUAL_COLLECTIONS(output.begin(), output.begin()+input.size(),
-// 				input.begin(), input.end());
+//              input.begin(), input.end());
 
 // }
 
@@ -513,25 +608,25 @@ BOOST_AUTO_TEST_CASE( scheme_rt )
 
   label_stack_by_tile_reverse(incrementing_cube.begin(),dims,4);
   auto expected = incrementing_cube;
-  
+
   sqy::tile_shuffle_scheme<std::uint16_t> scheme("tile_size=4");
 
   std::vector<std::size_t> shape(dims.begin(), dims.end());
   auto rem = scheme.encode(incrementing_cube.data(),
-			   to_play_with.data(),
-			   shape);
+               to_play_with.data(),
+               shape);
   BOOST_REQUIRE(rem == (to_play_with.data()+to_play_with.size()));
 
-  auto dec_rem = scheme.decode(to_play_with.data(), 
-			       incrementing_cube.data(),
-			       shape);
+  auto dec_rem = scheme.decode(to_play_with.data(),
+                   incrementing_cube.data(),
+                   shape);
 
   BOOST_REQUIRE_EQUAL(dec_rem, sqy::SUCCESS);
 
   BOOST_REQUIRE_EQUAL_COLLECTIONS(expected.begin(), expected.begin()+16,
-  				  incrementing_cube.begin(), incrementing_cube.begin()+16);
+                  incrementing_cube.begin(), incrementing_cube.begin()+16);
   BOOST_CHECK_EQUAL_COLLECTIONS(expected.begin(), expected.end(),
-  				  incrementing_cube.begin(), incrementing_cube.end()); 
+                  incrementing_cube.begin(), incrementing_cube.end());
 
 }
 
@@ -540,28 +635,28 @@ BOOST_AUTO_TEST_CASE( scheme_rt_with_alien_config )
 
   label_stack_by_tile_reverse(incrementing_cube.begin(),dims,4);
   auto expected = incrementing_cube;
-  
+
   sqy::tile_shuffle_scheme<std::uint16_t> scheme("tile_size=4");
 
   std::vector<std::size_t> shape(dims.begin(), dims.end());
   auto rem = scheme.encode(incrementing_cube.data(),
-			   to_play_with.data(),
-			   shape);
+               to_play_with.data(),
+               shape);
   BOOST_REQUIRE(rem == (to_play_with.data()+to_play_with.size()));
 
   std::string config = scheme.config();
   sqy::tile_shuffle_scheme<std::uint16_t> another(config);
-  
-  auto dec_rem = another.decode(to_play_with.data(), 
-			       incrementing_cube.data(),
-			       shape);
+
+  auto dec_rem = another.decode(to_play_with.data(),
+                   incrementing_cube.data(),
+                   shape);
 
   BOOST_REQUIRE_EQUAL(dec_rem, sqy::SUCCESS);
 
   BOOST_REQUIRE_EQUAL_COLLECTIONS(expected.begin(), expected.begin()+16,
-  				  incrementing_cube.begin(), incrementing_cube.begin()+16);
+                  incrementing_cube.begin(), incrementing_cube.begin()+16);
   BOOST_CHECK_EQUAL_COLLECTIONS(expected.begin(), expected.end(),
-  				  incrementing_cube.begin(), incrementing_cube.end()); 
+                  incrementing_cube.begin(), incrementing_cube.end());
 
 }
 

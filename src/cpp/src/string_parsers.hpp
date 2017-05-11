@@ -180,46 +180,46 @@ namespace sqeazy {
       const std::size_t len = std::distance(_begin,_end);
 
       if(!len)
-	return value;
+        return value;
 
       if(seperators_.empty())
-	return value;
+        return value;
 
 
       boost::string_ref msg(&*_begin,len);
 
       vec_of_string_refs_t major_keys = split_string_ref_to_ref(msg,
-								seperators_.front());
+                                                                seperators_.front());
 
       for(const boost::string_ref& maj_key : major_keys ){
 
-	auto dist = maj_key.find("(");
-	if(dist == std::string::npos)
-      dist = maj_key.size();
+        auto dist = maj_key.find("(");
+        if(dist == std::string::npos)
+          dist = maj_key.size();
 
-	std::string key(maj_key.begin(),
-            maj_key.begin()+dist);
+        std::string key(maj_key.begin(),
+                        maj_key.begin()+dist);
 
-    parsed_map_t pmap;
+        parsed_map_t pmap;
 
-	if( key.size() < maj_key.size() ){
+        if( key.size() < maj_key.size() ){
 
-	  boost::string_ref in_brackets(maj_key.begin()+dist+1,
-					maj_key.size()-1-(dist+1));
+          boost::string_ref in_brackets(maj_key.begin()+dist+1,
+                                        maj_key.size()-1-(dist+1));
 
-	  vec_of_string_refs_t options = split_string_ref_to_ref(in_brackets,
-								 seperators_[1]);
-	  for( const boost::string_ref& opt : options ){
-	    vec_of_strings_t key_value = split_string_ref_by(opt,
-							     seperators_.back());
+          vec_of_string_refs_t options = split_string_ref_to_ref(in_brackets,
+                                                                 seperators_[1]);
+          for( const boost::string_ref& opt : options ){
+            vec_of_strings_t key_value = split_string_ref_by(opt,
+                                                             seperators_.back());
 
-	    pmap[key_value.front()] = key_value.back();
+            pmap[key_value.front()] = key_value.back();
 
-	  }
+          }
 
-    }
+        }
 
-	value[key] = pmap;
+        value[key] = pmap;
       }
 
       return value;
@@ -232,37 +232,37 @@ namespace sqeazy {
       const std::size_t len = std::distance(_begin,_end);
 
       if(!len)
-	return value;
+        return value;
 
       if(seperators_.empty())
-	return value;
+        return value;
 
 
       boost::string_ref msg(&*_begin,len);
 
       vec_of_string_refs_t major_keys = split_string_ref_to_ref(msg,
-								seperators_.front());
+                                                                seperators_.front());
 
       value.reserve(major_keys.size());
 
       for(const boost::string_ref& maj_key : major_keys ){
 
-	auto dist = maj_key.find("(");
-	if(dist == std::string::npos)
-      dist = maj_key.size();
+        auto dist = maj_key.find("(");
+        if(dist == std::string::npos)
+          dist = maj_key.size();
 
-	std::string key(maj_key.begin(),
-            maj_key.begin()+dist);
+        std::string key(maj_key.begin(),
+                        maj_key.begin()+dist);
 
-	std::string in_brackets = "";
-	if( key.size() < maj_key.size() ){
+        std::string in_brackets = "";
+        if( key.size() < maj_key.size() ){
 
-	  in_brackets = std::string(maj_key.begin()+dist+1,
-				    maj_key.end()-1);
+          in_brackets = std::string(maj_key.begin()+dist+1,
+                                    maj_key.end()-1);
 
-    }
+        }
 
-	value.push_back( std::make_pair(key,in_brackets) );
+        value.push_back( std::make_pair(key,in_brackets) );
       }
 
       return value;
@@ -275,29 +275,29 @@ namespace sqeazy {
       const std::size_t len = std::distance(_begin,_end);
 
       if(!len)
-	return value;
+        return value;
 
       if(seperators_.empty())
-	return value;
+        return value;
 
 
       boost::string_ref msg(&*_begin,len);
 
       vec_of_string_refs_t major_keys = split_string_ref_to_ref(msg,
-								seperators_.front());
+                                                                seperators_.front());
 
       value.reserve(major_keys.size());
 
       for(const boost::string_ref& maj_key : major_keys ){
 
-	auto dist = maj_key.find("(");
-	if(dist == std::string::npos)
-      dist = maj_key.size();
+        auto dist = maj_key.find("(");
+        if(dist == std::string::npos)
+          dist = maj_key.size();
 
-	std::string key(maj_key.begin(),
-			maj_key.begin()+dist);
+        std::string key(maj_key.begin(),
+                        maj_key.begin()+dist);
 
-	value.push_back( key );
+        value.push_back( key );
       }
 
       return value;
@@ -311,30 +311,31 @@ namespace sqeazy {
       const std::size_t len = std::distance(_begin,_end);
 
       if(!len)
-	return value;
+        return value;
 
       if(seperators_.empty())
-	return value;
+        return value;
 
 
       boost::string_ref msg(&*_begin,len);
 
       vec_of_string_refs_t major_keys = split_string_ref_to_ref(msg,
-								seperators_[1]);
+                                                                seperators_[1]);
 
       for(const boost::string_ref& maj_key : major_keys ){
 
-	auto dist = maj_key.find(seperators_.back());
-	if(dist == std::string::npos)
-      dist = maj_key.size();
+        auto dist = maj_key.find(seperators_.back());
+        if(dist == std::string::npos)
+          dist = maj_key.size();
 
-	std::string key(maj_key.begin(),
-			maj_key.begin()+dist);
+        std::string key(maj_key.begin(),
+                        maj_key.begin()+dist);
 
-	std::string key_value(maj_key.begin()+dist+seperators_.back().size(),
-			  maj_key.end());
+        auto kv_begin = (dist+seperators_.back().size()) < maj_key.size() ? (maj_key.begin()+dist+seperators_.back().size()) : maj_key.begin();
+        std::string key_value(kv_begin,
+                              maj_key.end());
 
-	value[ key ] = key_value;
+        value[ key ] = key_value;
       }
 
       return value;

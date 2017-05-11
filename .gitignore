@@ -11,3 +11,8 @@ libsqeazy.dylib
 *.log
 *.sqy
 *.h5
+*pp~
+/src/cpp/G
+/src/cpp/GPATH
+*~
+.tramp_history

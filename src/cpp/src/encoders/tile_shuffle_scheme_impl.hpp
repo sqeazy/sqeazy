@@ -82,7 +82,8 @@ namespace sqeazy {
 
       auto value = tiles_of.encode(_input, _input+length,
                                    _output,
-                                   _shape);
+                                   _shape,
+                                   this->n_threads());
 
 
       serialized_reorder_map = parsing::range_to_verbatim(tiles_of.decode_map.begin(), tiles_of.decode_map.end());
@@ -108,7 +109,8 @@ namespace sqeazy {
 
       auto value = tiles_of.decode(_input, _input+length,
                                    _output,
-                                   _ishape);
+                                   _ishape,
+                                   this->n_threads());
 
       if(value==(_output+length))
       	return SUCCESS;

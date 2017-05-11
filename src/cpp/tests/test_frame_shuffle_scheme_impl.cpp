@@ -172,11 +172,15 @@ BOOST_AUTO_TEST_CASE( on_const_value_buffer )
 
   sqyd::frame_shuffle in_frames_of;
   auto rem = in_frames_of.encode(constant_cube.cbegin(), constant_cube.cend(),
-                   to_play_with.begin(),
-                   dims);
+                                 to_play_with.begin(),
+                                 dims);
   BOOST_REQUIRE(rem == to_play_with.end());
+
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(constant_cube.begin(), constant_cube.begin()+0.1*constant_cube.size(),
+                                  to_play_with.begin(), to_play_with.begin()+0.1*to_play_with.size());
+
   BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(), constant_cube.end(),
-                to_play_with.begin(), to_play_with.end());
+                                to_play_with.begin(), to_play_with.end());
 
 
 }

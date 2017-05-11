@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE (with_pipeline_apply) {
 
     std::string pipe_name = current_pipe::static_name();
 
-    BOOST_CHECK_NE(pipe_name.size(),0);
+    BOOST_CHECK_NE(pipe_name.size(),0u);
     BOOST_CHECK_NE(pipe_name.find("square"),std::string::npos);
     BOOST_CHECK_NE(pipe_name.find("add_one"),std::string::npos);
 
@@ -145,7 +145,7 @@ BOOST_AUTO_TEST_CASE( encode_bitswap1 )
 
     
 
-    BOOST_CHECK_NE(pipe_name.size(),0);
+    BOOST_CHECK_NE(pipe_name.size(),0u);
     BOOST_CHECK_NE(pipe_name.find("lz4"),std::string::npos);
     BOOST_CHECK_NE(pipe_name.find("bswap1"),std::string::npos);
 
@@ -275,7 +275,7 @@ BOOST_AUTO_TEST_CASE( encode_decode_bitswap_shorts )
     unsigned written_bytes = 0;
     int enc_ret = current_pipe::compress(&constant_cube[0], &output[0], local_size, written_bytes);
 
-    BOOST_CHECK_GT(written_bytes,0);
+    BOOST_CHECK_GT(written_bytes,0u);
 
     std::vector<char> temp(output.begin(),output.begin() + written_bytes);
     unsigned temp_size = temp.size();
