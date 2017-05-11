@@ -17,8 +17,19 @@ if not config or not ("sqy-app" in config.keys()):
 if not config or not ("ffmpeg-app" in config.keys()):
     config["ffmpeg-app"] = "~/software/ffmpeg/3.0.7-x264-hevc-nvenc/bin/ffmpeg"
 
+
+
 if not config or not ("setup-cmd" in config.keys()):
     config["setup-cmd"] = "module load ffmpeg/3.0.7-x264-hevc-nvenc lz4/1.7.5 hdf5/1.8.17"
+
+if not config or not ("nvenc-app" in config.keys()):
+    config["nvenc-app"] = "~/software/nvidia_video_codec_sdk/7.1.9/bin/nvll"
+
+config["nvenc-path"] = os.path.split(config["nvenc-app"])[0]
+
+if not config or not ("nvenc-setup" in config.keys()):
+    config["nvenc-setup"] = "module load nvenc-sdk/7.1.9"
+
 
 GLOBALTIMESTAMP = str(int(time.time()))
 
@@ -28,7 +39,9 @@ pipelines = {
     "nvenc_h264_ultrafast":"-c:v nvenc_h264 -preset llhp -2pass 0 -gpu 0",
     "nvenc_hevc_ultrafast":"-c:v nvenc_hevc -preset llhp -2pass 0 -gpu 1",
     "nvenc_h264_ultrafast_nvprof" : "-c:v nvenc_h264 -preset llhp -2pass 0 -gpu 0",
-    "nvenc_hevc_ultrafast_nvprof" : "-c:v nvenc_hevc -preset llhp -2pass 0 -gpu 1"
+    "nvenc_hevc_ultrafast_nvprof" : "-c:v nvenc_hevc -preset llhp -2pass 0 -gpu 1",
+    "nvenc_h264_ultrafast_sdk" : "-codec 0 -preset lowLatencyHP -rcmode 0 -deviceID 0",
+    "nvenc_hevc_ultrafast_sdk" : "-codec 1 -preset lowLatencyHP -rcmode 0 -deviceID 1"
 }
 
 pipeline_strings = {}
@@ -38,6 +51,7 @@ print(pipeline_strings)
 
 EXPECTED = [ ]
 for key,value in pipelines.items():
+    EXPECTED.extend([ "{dstfolder}/{stem}_{key}_rt.y4m".format(dstfolder=RTDIR,stem=item, key=key) for item in ALLSTEMS])
     EXPECTED.extend([ "{dstfolder}/{stem}_unweighted_{key}_rt.y4m".format(dstfolder=RTDIR,stem=item, key=key) for item in ALLSTEMS])
     EXPECTED.extend([ "{dstfolder}/{stem}_weighted_power_3_1_{key}_rt.y4m".format(dstfolder=RTDIR,stem=item, key=key) for item in ALLSTEMS])
 
@@ -47,17 +61,26 @@ for key,value in no_gpu_pipelines.items():
     NOGPU.extend([ "{dstfolder}/{stem}_unweighted_{key}_rt.y4m".format(dstfolder=RTDIR,stem=item, key=key) for item in ALLSTEMS])
     NOGPU.extend([ "{dstfolder}/{stem}_weighted_power_3_1_{key}_rt.y4m".format(dstfolder=RTDIR,stem=item, key=key) for item in ALLSTEMS])
 
-
+SDKONLY = []
+sdk_pipelines = {k : v for k, v in pipelines.items() if k.count("sdk") == 1}
+for key,value in sdk_pipelines.items():
+    SDKONLY.extend([ "{dstfolder}/{stem}_unweighted_{key}_rt.y4m".format(dstfolder=RTDIR,stem=item, key=key) for item in ALLSTEMS])
 
 rule all:
     input:
         EXPECTED
     message:
-        " creating {input} "
+        " creating {input} from "+str(ALLSTEMS)
 
 rule cpu_only:
     input:
         NOGPU
+    message:
+        " creating {input} "
+
+rule sdk_only:
+    input:
+        SDKONLY
     message:
         " creating {input} "
 
@@ -68,6 +91,7 @@ rule unweighted_quantisation:
         Y4MDIR+"/{stem}_unweighted.y4m"
     shell:
         "{config[setup-cmd]} && {config[sqy-app]} convert {input} {output}"
+
 
 rule weighted_quantisation:
     input:
@@ -126,7 +150,7 @@ rule nvenc_h264_ultrafast:
     output:
         RTDIR+"/{enc_stem}_nvenc_h264_ultrafast_rt.y4m"
     params:
-        tmpinput = "/dev/shm/{enc_stem}-"+GLOBALTIMESTAMP+".y4m", 
+        tmpinput = "/dev/shm/{enc_stem}-"+GLOBALTIMESTAMP+".y4m",
         shorthand = "nvenc_h264_ultrafast", cmd = pipelines["nvenc_h264_ultrafast"], cmdstr = pipeline_strings["nvenc_h264_ultrafast"], tmpoutput = "/dev/shm/{enc_stem}-{params.shorthand}-"+GLOBALTIMESTAMP+".h264"
     shell:
         """
@@ -134,7 +158,7 @@ rule nvenc_h264_ultrafast:
         {config[setup-cmd]};
         cp -uv {input} {params.tmpinput}; hostname ;
         ls -lh /dev/shm; ldd {config[ffmpeg-app]};
-        /usr/bin/time --append -o {RTDIR}/{wildcards.enc_stem}-encode.csv -f \"encode,{wildcards.enc_stem},{params.shorthand},{params.cmdstr},%e,%U,%S,%x,{threads},{GLOBALTIMESTAMP}\" {config[ffmpeg-app]} -i {params.tmpinput} {params.cmd} -y {params.tmpoutput};
+        /usr/bin/time --append -o {RTDIR}/{wildcards.enc_stem}-encode.csv -f \"encode,{wildcards.enc_stem},{params.shorthand},{params.cmdstr},%e,%U,%S,%x,{threads},{GLOBALTIMESTAMP}\" numactl -m0 -N0 {config[ffmpeg-app]} -i {params.tmpinput} {params.cmd} -y {params.tmpoutput};
         {config[ffmpeg-app]} -i {params.tmpoutput} -y {output};
         echo "{wildcards.enc_stem},{params.shorthand},{params.cmdstr},{GLOBALTIMESTAMP},$(stat -c "%s" {input}),$(stat -c "%s" {params.tmpoutput}),$({config[sqy-app]} compare -m all --as-csv --noheader {input} {output})" >> {RTDIR}/{wildcards.enc_stem}-quality.csv;
         rm -fv {params.tmpinput} {params.tmpoutput};
@@ -146,18 +170,46 @@ rule nvenc_h264_ultrafast_nvprof:
     output:
         RTDIR+"/{enc_stem}_nvenc_h264_ultrafast_nvprof_rt.y4m"
     params:
-        tmpinput = "/dev/shm/{enc_stem}-"+GLOBALTIMESTAMP+".y4m", 
-        traceoutput = "/tmp/removethisatwill-"+GLOBALTIMESTAMP+"{enc_stem}-nvenc_h264_ultrafast.log",
-        shorthand = "nvenc_h264_ultrafast_nvprof", cmd = pipelines["nvenc_h264_ultrafast"], cmdstr = pipeline_strings["nvenc_h264_ultrafast"], tmpoutput = "/dev/shm/{enc_stem}-{params.shorthand}-"+GLOBALTIMESTAMP+".h264"
+        tmpinput = "/dev/shm/{enc_stem}-"+GLOBALTIMESTAMP+".y4m",
+        traceoutput = "/tmp/removethisatwill-"+GLOBALTIMESTAMP+"{enc_stem}-nvenc_h264_ultrafast_nvprof.log",
+        shorthand = "nvenc_h264_ultrafast_nvprof", cmd = pipelines["nvenc_h264_ultrafast_nvprof"], cmdstr = pipeline_strings["nvenc_h264_ultrafast_nvprof"], tmpoutput = "/dev/shm/{enc_stem}-{params.shorthand}-"+GLOBALTIMESTAMP+".h264"
     shell:
         """
         set -x;
         {config[setup-cmd]};
         cp -uv {input} {params.tmpinput}; hostname ;
         ls -lh /dev/shm; ldd {config[ffmpeg-app]};
-        nvprof --print-api-trace {config[ffmpeg-app]} -i {params.tmpinput} {params.cmd} -y {params.tmpoutput} > {params.traceoutput} 2>&1;
+        nvprof --print-api-trace numactl -m0 -N0 {config[ffmpeg-app]} -i {params.tmpinput} {params.cmd} -y {params.tmpoutput} > {params.traceoutput} 2>&1;
         EXITEDWITH=$?;
         echo \"encode,{wildcards.enc_stem},{params.shorthand},{params.cmdstr},$(awk '/cuCtxDestroy/{{print $1}}' {params.traceoutput} |tr -d 's'),0,0,$EXITEDWITH,1,{GLOBALTIMESTAMP}\" >> {RTDIR}/{wildcards.enc_stem}-encode-nvprof.csv;
+        {config[ffmpeg-app]} -i {params.tmpoutput} -y {output};
+        echo "{wildcards.enc_stem},{params.shorthand},{params.cmdstr},{GLOBALTIMESTAMP},$(stat -c "%s" {input}),$(stat -c "%s" {params.tmpoutput}),$({config[sqy-app]} compare -m all --as-csv --noheader {input} {output})" >> {RTDIR}/{wildcards.enc_stem}-quality.csv;
+        rm -fv {params.tmpinput} {params.tmpoutput};
+        """
+
+rule nvenc_h264_ultrafast_sdk:
+    input:
+        Y4MDIR+"/{enc_stem}.y4m"
+    output:
+        RTDIR+"/{enc_stem}_nvenc_h264_ultrafast_sdk_rt.y4m"
+    params:
+        tmpinput = "/dev/shm/{enc_stem}-"+GLOBALTIMESTAMP+".yuv",
+        traceoutput = "/tmp/removethisatwill-"+GLOBALTIMESTAMP+"{enc_stem}-nvenc_h264_ultrafast_sdk.log",
+        shorthand = "nvenc_h264_ultrafast_sdk", cmd = pipelines["nvenc_h264_ultrafast_sdk"],cmdstr = pipeline_strings["nvenc_h264_ultrafast_sdk"], tmpoutput = "/dev/shm/{enc_stem}-nvenc_h264_ultrafast_sdk-"+GLOBALTIMESTAMP+".h264"
+    shell:
+        """
+        set -x;
+        {config[setup-cmd]};
+        {config[nvenc-setup]};
+
+        {config[ffmpeg-app]} -i {input} {params.tmpinput};
+        Y4MSHAPE=$(head -n1 {input}|egrep -o "W[0-9]+ H[0-9]+" |tr -d "[H,W]");
+        ls -lh /dev/shm; ldd {config[ffmpeg-app]}; echo {input} $Y4MSHAPE;
+        OLDPWD=$PWD;cd {config[nvenc-path]};
+        numactl -m1 -N1 {config[nvenc-app]} -i {params.tmpinput} {params.cmd} -size $Y4MSHAPE -o {params.tmpoutput} > {params.traceoutput} 2>&1;
+        cd $OLDPWD;
+        EXITEDWITH=$?;
+        echo \"encode,{wildcards.enc_stem},{params.shorthand},{params.cmdstr},$(egrep '^Encode' {params.traceoutput}|egrep -o "[0-9]+\.[0-9]+ms"  |tr -d 'ms'),0,0,$EXITEDWITH,1,{GLOBALTIMESTAMP}\" >> {RTDIR}/{wildcards.enc_stem}-encode-sdk.csv;
         {config[ffmpeg-app]} -i {params.tmpoutput} -y {output};
         echo "{wildcards.enc_stem},{params.shorthand},{params.cmdstr},{GLOBALTIMESTAMP},$(stat -c "%s" {input}),$(stat -c "%s" {params.tmpoutput}),$({config[sqy-app]} compare -m all --as-csv --noheader {input} {output})" >> {RTDIR}/{wildcards.enc_stem}-quality.csv;
         rm -fv {params.tmpinput} {params.tmpoutput};
@@ -177,7 +229,7 @@ rule nvenc_hevc_ultrafast:
         {config[setup-cmd]};
         cp -uv {input} {params.tmpinput}; hostname ;
         ls -lh /dev/shm; ldd {config[ffmpeg-app]};
-        /usr/bin/time --append -o {RTDIR}/{wildcards.enc_stem}-encode.csv -f \"encode,{wildcards.enc_stem},{params.shorthand},{params.cmdstr},%e,%U,%S,%x,{threads},{GLOBALTIMESTAMP}\" {config[ffmpeg-app]} -i {params.tmpinput} {params.cmd} -y {params.tmpoutput};
+        /usr/bin/time --append -o {RTDIR}/{wildcards.enc_stem}-encode.csv -f \"encode,{wildcards.enc_stem},{params.shorthand},{params.cmdstr},%e,%U,%S,%x,{threads},{GLOBALTIMESTAMP}\" numactl -m1 -N1 {config[ffmpeg-app]} -i {params.tmpinput} {params.cmd} -y {params.tmpoutput};
         {config[ffmpeg-app]} -i {params.tmpoutput} -y {output};
         echo "{wildcards.enc_stem},{params.shorthand},{params.cmdstr},{GLOBALTIMESTAMP},$(stat -c "%s" {input}),$(stat -c "%s" {params.tmpoutput}),$({config[sqy-app]} compare -m all --as-csv --noheader {input} {output})" >> {RTDIR}/{wildcards.enc_stem}-quality.csv;
         rm -fv {params.tmpinput} {params.tmpoutput};
@@ -190,21 +242,51 @@ rule nvenc_hevc_ultrafast_nvprof:
         RTDIR+"/{enc_stem}_nvenc_hevc_ultrafast_nvprof_rt.y4m"
     params:
         tmpinput = "/dev/shm/{enc_stem}-"+GLOBALTIMESTAMP+".y4m", 
-        traceoutput = "/tmp/removethisatwill-"+GLOBALTIMESTAMP+"{enc_stem}-nvenc_hevc_ultrafast.log",
-        shorthand = "nvenc_hevc_ultrafast_nvprof", cmd = pipelines["nvenc_hevc_ultrafast"],cmdstr = pipeline_strings["nvenc_hevc_ultrafast"], tmpoutput = "/dev/shm/{enc_stem}-{params.shorthand}-"+GLOBALTIMESTAMP+".hevc"
+        traceoutput = "/tmp/removethisatwill-"+GLOBALTIMESTAMP+"{enc_stem}-nvenc_hevc_ultrafast_nvprof.log",
+        shorthand = "nvenc_hevc_ultrafast_nvprof", cmd = pipelines["nvenc_hevc_ultrafast_nvprof"],cmdstr = pipeline_strings["nvenc_hevc_ultrafast_nvprof"], tmpoutput = "/dev/shm/{enc_stem}-{params.shorthand}-"+GLOBALTIMESTAMP+".hevc"
     shell:
         """
         set -x;
         {config[setup-cmd]};
         cp -uv {input} {params.tmpinput}; hostname ;
         ls -lh /dev/shm; ldd {config[ffmpeg-app]};
-        nvprof --print-api-trace {config[ffmpeg-app]} -i {params.tmpinput} {params.cmd} -y {params.tmpoutput} > {params.traceoutput} 2>&1;
+        nvprof --print-api-trace numactl -m1 -N1 {config[ffmpeg-app]} -i {params.tmpinput} {params.cmd} -y {params.tmpoutput} > {params.traceoutput} 2>&1;
         EXITEDWITH=$?;
         echo \"encode,{wildcards.enc_stem},{params.shorthand},{params.cmdstr},$(awk '/cuCtxDestroy/{{print $1}}' {params.traceoutput} |tr -d 's'),0,0,$EXITEDWITH,1,{GLOBALTIMESTAMP}\" >> {RTDIR}/{wildcards.enc_stem}-encode-nvprof.csv;
         {config[ffmpeg-app]} -i {params.tmpoutput} -y {output};
         echo "{wildcards.enc_stem},{params.shorthand},{params.cmdstr},{GLOBALTIMESTAMP},$(stat -c "%s" {input}),$(stat -c "%s" {params.tmpoutput}),$({config[sqy-app]} compare -m all --as-csv --noheader {input} {output})" >> {RTDIR}/{wildcards.enc_stem}-quality.csv;
         rm -fv {params.tmpinput} {params.tmpoutput};
         """
+
+rule nvenc_hevc_ultrafast_sdk:
+    input:
+        Y4MDIR+"/{enc_stem}.y4m"
+    output:
+        RTDIR+"/{enc_stem}_nvenc_hevc_ultrafast_sdk_rt.y4m"
+    params:
+        tmpinput = "/dev/shm/{enc_stem}-"+GLOBALTIMESTAMP+".yuv",
+        traceoutput = "/tmp/removethisatwill-"+GLOBALTIMESTAMP+"{enc_stem}-nvenc_hevc_ultrafast_sdk.log",
+        shorthand = "nvenc_hevc_ultrafast_sdk", cmd = pipelines["nvenc_hevc_ultrafast_sdk"],cmdstr = pipeline_strings["nvenc_hevc_ultrafast_sdk"], tmpoutput = "/dev/shm/{enc_stem}-nvenc_hevc_ultrafast_sdk-"+GLOBALTIMESTAMP+".hevc"
+    shell:
+        """
+        set -x;
+        {config[setup-cmd]};
+        {config[nvenc-setup]};
+
+        {config[ffmpeg-app]} -i {input} {params.tmpinput};
+        date;
+        Y4MSHAPE=$(head -n1 {input}|egrep -o "W[0-9]+ H[0-9]+" |tr -d "[H,W]");
+        ls -lh /dev/shm; ldd {config[ffmpeg-app]}; echo {input} $Y4MSHAPE;
+        OLDPWD=$PWD;cd {config[nvenc-path]};
+        numactl -m1 -N1 {config[nvenc-app]} -i {params.tmpinput} {params.cmd} -size $Y4MSHAPE -o {params.tmpoutput} > {params.traceoutput} 2>&1;
+        cd $OLDPWD;
+        EXITEDWITH=$?;
+        echo \"encode,{wildcards.enc_stem},{params.shorthand},{params.cmdstr},$(egrep '^Encode' {params.traceoutput}|egrep -o "[0-9]+\.[0-9]+ms"  |tr -d 'ms'),0,0,$EXITEDWITH,1,{GLOBALTIMESTAMP}\" >> {RTDIR}/{wildcards.enc_stem}-encode-sdk.csv;
+        {config[ffmpeg-app]} -i {params.tmpoutput} -y {output};
+        echo "{wildcards.enc_stem},{params.shorthand},{params.cmdstr},{GLOBALTIMESTAMP},$(stat -c "%s" {input}),$(stat -c "%s" {params.tmpoutput}),$({config[sqy-app]} compare -m all --as-csv --noheader {input} {output})" >> {RTDIR}/{wildcards.enc_stem}-quality.csv;
+        rm -fv {params.tmpinput} {params.tmpoutput};
+        """
+
 
 
 rule clean:
