@@ -520,7 +520,7 @@ namespace sqeazy {
     template <typename weight_functor_t = weighters::none>
     void computeWeights(weight_functor_t _weight_functor = weighters::none()){
 
-      _weight_functor.transform(histo_.begin(), histo_.end(), weights_.begin(), this->n_threads());
+      _weight_functor.transform(weights_.begin(),weights_.end(), histo_.begin(), this->n_threads());
 
     }
 
