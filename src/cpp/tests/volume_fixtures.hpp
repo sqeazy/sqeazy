@@ -14,12 +14,12 @@
 
 namespace sqeazy {
 
-  template<typename T, uint32_t largest_axis = 210, int perc_of_max = 80>
+  template<typename T, uint32_t largest_axis = 120, int perc_of_max = 80>
   struct volume_fixture {
 
 
     // constexpr static const
-    const std::array<uint32_t,3> shape_ = {{largest_axis, (largest_axis/3) + 4, (largest_axis/3) + 2 }};//z,y,x according to c_storage_order
+    const std::array<uint32_t,3> shape_ = {{largest_axis, (largest_axis/3) + 4, (largest_axis/3) + 8 }};//z,y,x according to c_storage_order
     const std::array<uint32_t,3> half_shape_ = {{shape_[row_major::z]/2u, shape_[row_major::y]/2u , shape_[row_major::x]/2u}};
     using image_stack = boost::multi_array<T, 3, boost::alignment::aligned_allocator<T, 32>
 					   >;
