@@ -190,12 +190,13 @@ BOOST_AUTO_TEST_CASE( noisy_embryo_roundtrip ){
           encoded.size(),
           &reconstructed[0]);
 
-  double l2norm = sqeazy::l2norm(reconstructed.begin(), reconstructed.end(),noisy_embryo_.data());
+  double rms = sqeazy::rms(reconstructed.begin(), reconstructed.end(),noisy_embryo_.data());
 
-  BOOST_REQUIRE_GT(l2norm,0);
+
+  BOOST_REQUIRE_GT(rms,0);
 
   try{
-    BOOST_REQUIRE_LT(l2norm,10);
+    BOOST_REQUIRE_LT(rms,20e3);
   }
   catch(...){
 
@@ -224,11 +225,23 @@ BOOST_AUTO_TEST_CASE( noisy_embryo_roundtrip_2threads ){
                   encoded.size(),
                   &reconstructed[0]);
 
-  double l2norm = sqeazy::l2norm(reconstructed.begin(), reconstructed.end(),noisy_embryo_.data());
+  double rms = sqeazy::rms(reconstructed.begin(), reconstructed.end(),noisy_embryo_.data());
 
-  BOOST_REQUIRE_GT(l2norm,0);
-  BOOST_CHECK_LT(l2norm,10);
 
+  BOOST_REQUIRE_GT(rms,0);
+
+  try{
+    BOOST_REQUIRE_LT(rms,20e3);
+  }
+  catch(...){
+
+    std::stringstream log_file;
+    log_file << "failing_checkon_16bit_"
+             << boost::unit_test::framework::current_test_case().p_name
+             << ".log";
+
+    shrinker.dump(log_file.str());
+  }
 }
 
 BOOST_AUTO_TEST_CASE( noisy_embryo_roundtrip_scheme_api ){
@@ -243,11 +256,23 @@ BOOST_AUTO_TEST_CASE( noisy_embryo_roundtrip_scheme_api ){
           &reconstructed[0],
           encoded.size());
 
-  double l2norm = sqeazy::l2norm(reconstructed.begin(), reconstructed.end(),noisy_embryo_.data());
+  double rms = sqeazy::rms(reconstructed.begin(), reconstructed.end(),noisy_embryo_.data());
 
-  BOOST_REQUIRE_GT(l2norm,0);
-  BOOST_CHECK_LT(l2norm,10);
-  BOOST_TEST_MESSAGE(boost::unit_test::framework::current_test_case().p_name << ", l2norm = " << l2norm);
+
+  BOOST_REQUIRE_GT(rms,0);
+
+  try{
+    BOOST_REQUIRE_LT(rms,20e3);
+  }
+  catch(...){
+
+    std::stringstream log_file;
+    log_file << "failing_checkon_16bit_"
+             << boost::unit_test::framework::current_test_case().p_name
+             << ".log";
+
+    shrinker.dump(log_file.str());
+  }
 
 }
 
@@ -888,15 +913,15 @@ BOOST_AUTO_TEST_CASE( ramp_roundtrip ){
   shrinker.decode(&encoded[0],input.size(),&reconstructed[0]);
 
   try{
-    BOOST_REQUIRE_EQUAL(reconstructed[0],input[0]);
-    BOOST_REQUIRE_EQUAL(reconstructed[1],input[0]);
-    BOOST_REQUIRE_EQUAL(reconstructed[15],input[0]);
-    BOOST_REQUIRE_NE(reconstructed[16],input[0]);
-    BOOST_REQUIRE_EQUAL(reconstructed[reconstructed.size()-1],input[reconstructed.size()-1-15]);
+    BOOST_REQUIRE_EQUAL(reconstructed[0] ,8);
+    BOOST_REQUIRE_EQUAL(reconstructed[1] ,8);
+    BOOST_REQUIRE_EQUAL(reconstructed[15],8);
+    BOOST_REQUIRE_NE   (reconstructed[16],8);
+    BOOST_REQUIRE_EQUAL(reconstructed[reconstructed.size()-1],(1<<12) - 8);
   }
   catch(...){
     std::stringstream log_file;
-    log_file << "checkon_16bit_"
+    log_file << "failing_checkon_16bit_"
          << boost::unit_test::framework::current_test_case().p_name
          << ".log";
 
