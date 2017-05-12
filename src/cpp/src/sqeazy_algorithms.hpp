@@ -77,7 +77,6 @@ namespace sqeazy {
                               it2_type _rbegin){
 
     double dsum = 0;
-    const auto size = std::distance(_lbegin,_lend);
 
     for(;_lbegin!=_lend;++_lbegin,++_rbegin){
       double diff = *_lbegin - *_rbegin;
@@ -119,7 +118,6 @@ namespace sqeazy {
   static inline double mse(it_type _lbegin, it_type _lend,
                            double _scalar){
 
-    typedef decltype(*_lbegin) item_t;
 
     const auto len = std::distance(_lbegin,_lend);
 
@@ -188,7 +186,7 @@ namespace sqeazy {
   template <typename it_type>
   static inline double mean(it_type _begin, it_type _end){
 
-    typedef decltype(*_begin) item_t;
+
 
     const auto len = std::distance(_begin,_end);
 
@@ -199,8 +197,6 @@ namespace sqeazy {
 
   template <typename it_type>
   static inline double variance(it_type _begin, it_type _end){
-
-    typedef decltype(*_begin) item_t;
 
     const auto len = std::distance(_begin,_end);
 
