@@ -44,40 +44,57 @@ namespace sqeazy {
         return msg.str();
       }
 
-      template <typename bin_type, typename value_type>
-      float operator()(const bin_type& _bin_index, const value_type& _index_value) {
+      template <typename weights_iter_type>
+      void transform(weights_iter_type _out,
+                     weights_iter_type _out_end ,
+                     omp_size_type _offset = 0,
+                     int _nthreads = 1
+                     ) const {
 
-        if(first_nonzero_index == std::numeric_limits<std::size_t>::max() && _index_value != value_type(0))
-          first_nonzero_index = _bin_index;
+        const omp_size_type len = std::distance(_out, _out_end);
 
-        if(_index_value != 0)
-          return std::pow(float(_bin_index-first_nonzero_index),exponent);
-        else
-          return 1.f;
-
-      }
-
-      template <typename histo_iter_type, typename weights_iter_type>
-      void transform(histo_iter_type _begin, histo_iter_type _end, weights_iter_type _out, int _nthreads = 1) const {
-
-        const omp_size_type len = std::distance(_begin, _end);
-        omp_size_type offset = 0;
-        for(;offset<len;++offset){
-          if(*(_begin + offset))
-            break;
-        }
 
         #pragma omp parallel for                        \
           shared(_out )                                 \
-          firstprivate( offset )                        \
+          firstprivate( _offset )                        \
           num_threads(_nthreads)
-        for(omp_size_type i = offset;i<len;++i){
-          *(_out + i) = std::pow(i-offset,exponent);
+        for(omp_size_type i = _offset;i<len;++i){
+          *(_out + i) = std::pow(i-_offset,exponent);
         }
 
         return ;
       }
 
+      template <typename weights_iter_type, typename ref_iter_type>
+      void transform(weights_iter_type _out,
+                     weights_iter_type _out_end ,
+                     ref_iter_type _ref,
+                     int _nthreads = 1
+                     ) const {
+
+        const omp_size_type len = std::distance(_out, _out_end);
+        omp_size_type offset = 0;
+
+        for(;offset<len;++offset){
+          if(*(_ref + offset))
+              break;
+        }
+
+        this->transform(_out,_out_end,offset,_nthreads);
+
+        return ;
+      }
+
+      template <typename weights_iter_type>
+      void transform(weights_iter_type _out,
+                     weights_iter_type _out_end ,
+                     int _nthreads = 1
+                     ) const {
+
+        this->transform(_out,_out_end,0,_nthreads);
+
+        return ;
+      }
 
     };
 
@@ -100,15 +117,15 @@ namespace sqeazy {
         return msg.str();
       }
 
-      template <typename bin_type, typename value_type>
-      float operator()(const bin_type& _bin_index, const value_type& _bin_value) const {
-        return std::pow(_bin_index,exponent);
-      }
 
-      template <typename histo_iter_type, typename weights_iter_type>
-      void transform(histo_iter_type _begin, histo_iter_type _end, weights_iter_type _out, int _nthreads = 1) const {
 
-        const omp_size_type len = std::distance(_begin, _end);
+      template <typename weights_iter_type>
+      void transform(weights_iter_type _out,
+                     weights_iter_type _out_end ,
+                     int _nthreads = 1
+                     ) const {
+
+        const omp_size_type len = std::distance(_out, _out_end);
 
         #pragma omp parallel for                        \
           shared(_out )                                 \
@@ -120,33 +137,95 @@ namespace sqeazy {
         return ;
       }
 
+      template <typename weights_iter_type, typename ref_iter_type>
+      void transform(weights_iter_type _out,
+                     weights_iter_type _out_end ,
+                     ref_iter_type _ref,
+                     int _nthreads = 1
+                     ) const {
+
+        this->transform(_out,_out_end,_nthreads);
+        return ;
+      }
     };
 
 
+
+    struct set_to_one
+    {
+
+      std::string name (){
+        std::ostringstream msg;
+        msg << "set_to_one_weight";
+        return msg.str();
+      }
+
+      template <typename weights_iter_type,
+                typename ref_iter_type>
+      void transform(weights_iter_type _out,
+                     weights_iter_type _out_end ,
+                     ref_iter_type _ref,
+                     int _nthreads = 1
+                     ) const {
+
+        this->transform(_out,_out_end,_nthreads);
+
+        return ;
+      }
+
+      template <typename weights_iter_type>
+      void transform(weights_iter_type _out,
+                     weights_iter_type _out_end ,
+                     int _nthreads = 1
+                     ) const {
+
+        const omp_size_type len = std::distance(_out, _out_end);
+
+        #pragma omp parallel for                        \
+          shared(_out )                                 \
+          num_threads(_nthreads)
+        for(omp_size_type i = 0;i<len;++i){
+          *(_out + i) = 1;
+        }
+
+        return ;
+      }
+    };
 
     struct none
     {
 
       std::string name (){
         std::ostringstream msg;
-        msg << "no_weight";
+        msg << "none_weight";
         return msg.str();
       }
 
-      template <typename bin_type, typename value_type>
-      float operator()(const bin_type& _bin_index, const value_type& _bin_value) const {
-        return 1.f;
+      template <typename weights_iter_type,
+                typename ref_iter_type>
+      void transform(weights_iter_type _out,
+                     weights_iter_type _out_end ,
+                     ref_iter_type _ref,
+                     int _nthreads = 1
+                     ) const {
+        this->transform(_out,_out_end,_nthreads);
+        return ;
       }
 
-      template <typename histo_iter_type, typename weights_iter_type>
-      void transform(histo_iter_type _begin, histo_iter_type _end, weights_iter_type _out, int _nthreads = 1) const {
-
+      template <typename weights_iter_type>
+      void transform(weights_iter_type _out,
+                     weights_iter_type _out_end ,
+                     int _nthreads = 1
+        ) const
+        {
 
         return ;
       }
 
 
     };
+
+
 
   };//weighters
 
@@ -429,6 +508,15 @@ namespace sqeazy {
 
     }
 
+    /**
+     *  \brief computeWeights
+     *
+     *  compute the weights which are later used to compute importance_[:] = histo_[:]*weights_[:];
+     *  NB. the histogram is handed into the transform function only in case it is needed
+     *
+     *  \param param
+     *  \return return type
+     */
     template <typename weight_functor_t = weighters::none>
     void computeWeights(weight_functor_t _weight_functor = weighters::none()){
 
@@ -545,18 +633,10 @@ namespace sqeazy {
     */
     template <typename weight_functor_t = weighters::none>
     void setup(const raw_type* _input,
-               const size_t& _in_nelems,
+               const size_t _in_nelems,
                weight_functor_t _weight_functor = weighters::none()){
 
-      //safe-guard
-      if(!_input || !_in_nelems)
-        return;
-
-      computeHistogram(_input, _input+ _in_nelems);
-      computeWeights(_weight_functor);
-      computeImportance();
-      computeLUT();
-
+      setup(_input,_input+_in_nelems,_weight_functor);
 
     }
 
@@ -567,7 +647,7 @@ namespace sqeazy {
       if(!_input || !_in_nelems)
         return;
 
-      setup(_input,_in_nelems);
+      setup_com(_input,_input + _in_nelems);
 
       applyLUT<raw_type, compressed_type> lutApplyer(lut_encode_);
 
