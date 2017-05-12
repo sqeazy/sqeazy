@@ -88,7 +88,7 @@ namespace sqeazy {
     return value;
   }
 
-  //MSE = 1/N sum (I-I')^2
+  //MSE = 1/N sum[(I-I')^2]
   template <typename it_type, typename it2_type>
   static inline double mse(it_type _lbegin, it_type _lend,
                            it2_type _rbegin){
@@ -135,6 +135,7 @@ namespace sqeazy {
     return mse;
   }
 
+  //RMS = sqrt(1/N sum[(I-I')^2])
   template <typename it_type, typename it2_type>
   static inline double rms(it_type _lbegin, it_type _lend,
                            it2_type _rbegin){
