@@ -20,8 +20,14 @@ namespace sqeazy {
     typedef in_type raw_type;
     typedef in_type compressed_type;
 
-    static const std::string description() { return std::string("reorder the memory layout of the incoming buffer"); };
+
     static const std::size_t default_tile_size = 16/sizeof(in_type);
+    static const std::string description() {
+      std::ostringstream msg;
+      msg << "reorder the memory layout of the incoming buffer by linearizing virtual tiles, ";
+      msg << "control the tile size by tile_size=<integer|default: " << default_tile_size << ">";
+      return msg.str();
+    };
 
     std::size_t tile_size;
 

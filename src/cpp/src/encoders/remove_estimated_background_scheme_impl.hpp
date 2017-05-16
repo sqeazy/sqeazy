@@ -25,7 +25,9 @@ namespace sqeazy {
     typedef in_type compressed_type;
 
     remove_estimated_background_scheme(const std::string& _payload=""){}
-    static const std::string description() { return std::string("estimate noise from darkest planes, remove median of that plane from all items"); };
+    static const std::string description() {
+      return std::string("estimate noise from darkest planes, remove median of that plane from all pixels/voxels");
+    };
 
     std::string name() const override final {
 

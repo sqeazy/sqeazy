@@ -21,7 +21,7 @@ namespace sqeazy {
     typedef in_type raw_type;
     typedef in_type compressed_type;
 
-    static const std::string description() { return std::string("reorder the tiles in the incoming stack based on some defined metric"); };
+    static const std::string description() { return std::string("reorder the tiles in the incoming stack based on some defined metric; use tile_size=<integer|default: 32> to configure the shape of the tile to extract"); };
     static const std::size_t default_tile_size = 32;
 
     std::size_t tile_size;
