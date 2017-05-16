@@ -167,7 +167,7 @@ rule rasterreorder16:
         intermediate = "{TGTDIR}/{stem}_rasterreorder16.sqy", final = "{TGTDIR}/{stem}_rasterreorder16_rt.tif"
     threads: 8
     params:
-        pipeline="raster_reorder(tile_size=4)->bitswap1->lz4", shorthand="rasterreorder16"
+        pipeline="raster_reorder(tile_size=16)->bitswap1->lz4", shorthand="rasterreorder16"
     shell:
        """
        {config[setup-cmd]};
@@ -184,7 +184,7 @@ rule zcurvereorder16:
         intermediate = "{TGTDIR}/{stem}_zcurvereorder16.sqy", final = "{TGTDIR}/{stem}_zcurvereorder16_rt.tif"
     threads: 8
     params:
-        pipeline="zcurve_reorder(tile_size=4)->bitswap1->lz4", shorthand="zcurvereorder16"
+        pipeline="zcurve_reorder(tile_size=16)->bitswap1->lz4", shorthand="zcurvereorder16"
     shell:
        """
        {config[setup-cmd]};
