@@ -116,10 +116,6 @@ namespace sqeazy {
 
       const compressed_type* input = reinterpret_cast<const compressed_type*>(_in);
 
-      // size_type num_written_bytes = LZ4_compress_limitedOutput(input,
-      //                                   _out,
-      //                                   total_length_in_byte,
-      //                                   max_payload_length_in_byte);
       size_type num_written_bytes = LZ4_compress_fast(input,
                               _out,
                               total_length_in_byte,
@@ -220,11 +216,17 @@ namespace sqeazy {
 
         const compressed_type* input = reinterpret_cast<const compressed_type*>(_input);
 
+#if LZ4_VERSION_NUMBER > 10701
+        size_type num_written_bytes = LZ4_compress_default(input,
+                                                           _output,
+                                                           total_length_in_byte,
+                                                           max_payload_length_in_byte);
+#else
         size_type num_written_bytes = LZ4_compress_limitedOutput(input,
                                  _output,
                                  total_length_in_byte,
                                  max_payload_length_in_byte);
-
+#endif
         if(num_written_bytes > 0) {
             _bytes_written = num_written_bytes;
             last_num_encoded_bytes = _bytes_written;
