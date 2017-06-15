@@ -49,9 +49,9 @@ namespace sqeazy {
   num_threads(num_threads)
       for(loop_size_type index = 0; index < len; ++index) {
 
-
-        value = xor_if_signed(_input[index]);
-        value = rotate_left<1>(value);
+        value = _input[index];
+        // value = xor_if_signed(_input[index]);
+        // value = rotate_left<1>(value);
 
         size_type output_bit_offset = (type_width - num_bits_per_plane) - ((index % num_planes)*num_bits_per_plane);
 
@@ -111,11 +111,11 @@ namespace sqeazy {
         }
       }
 
-#pragma omp parallel for shared(_input, _output)    \
-  num_threads(num_threads)
-      for(loop_size_type index = 0; index < len; ++index) {
-        _output[index] = xor_if_signed(rotate_right<1>(_output[index]));
-      }
+// #pragma omp parallel for shared(_input, _output)    \
+//   num_threads(num_threads)
+//       for(loop_size_type index = 0; index < len; ++index) {
+//         _output[index] = xor_if_signed(rotate_right<1>(_output[index]));
+//       }
 
       return SUCCESS;
     }

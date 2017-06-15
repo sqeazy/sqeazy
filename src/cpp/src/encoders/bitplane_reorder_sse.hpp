@@ -59,15 +59,6 @@ namespace sqeazy {
 
       float output_items_per_plane = n_items_per_m128i*plane_size/float(type_width);
 
-      // unsigned reordered_byte = _reordered.size()*sizeof(T);
-      // if(!(reordered_byte>=__m128i_in_bytes)){
-      //   std::cerr << "[reorder_bitplanes]\t buffer for output has insufficent size, "
-      //          << "found " << reordered_byte << " B, min. required " << __m128i_in_bytes << "\n"
-      //          // << "Doing Nothing."
-      //          << "\n";
-      //   return;
-      // }
-
       const unsigned planes_per_output_segment = n_planes_per_T/_reordered.size();
       const unsigned bits_per_plane_on_output_item = type_width/planes_per_output_segment;
       static const unsigned char left_shift_to_msb = sizeof(int) - sizeof(T);
@@ -224,8 +215,8 @@ namespace sqeazy {
       // }
 
       //setup data structures for looping
-      vec_xor<raw_type> xoring;
-      vec_rotate_left<raw_type> rotate;
+      // vec_xor<raw_type> xoring;
+      // vec_rotate_left<raw_type> rotate;
       __m128i input;
       std::size_t count = 0;
 
@@ -234,10 +225,10 @@ namespace sqeazy {
         input = _mm_load_si128(reinterpret_cast<const __m128i*>(&_input[index]));
 
         // no need to xor, but we implement it anyway for the sake of completeness
-        if(std::numeric_limits<raw_type>::is_signed)
-          xoring(&input);
+        // if(std::numeric_limits<raw_type>::is_signed)
+        //   xoring(&input);
 
-        input = rotate(&input);
+        // input = rotate(&input);
 
         //bitplane reordering starts here
         std::size_t shift_left_by = (count % advance_output_every == 0) ? raw_type_bitwidth/advance_output_every : 0;

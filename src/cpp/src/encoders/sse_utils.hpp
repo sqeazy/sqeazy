@@ -1204,7 +1204,12 @@ namespace sqeazy {
           return _block;
         };
 
-        simd_collect_single_bitplane(_begin, _end, output, functor, seg);
+        simd_collect_single_bitplane(_begin, _end,
+                                     output,
+                                     [=](__m128i& _block){
+                                       return _block;
+                                     }
+                                     , seg);
 
       } // s segments
 
