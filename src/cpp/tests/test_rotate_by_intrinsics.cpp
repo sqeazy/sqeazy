@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE( rotate_left_by_two_and_cycle ){
 
   _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]), v_in);
   BOOST_REQUIRE(output[0]!=input[0]);
-    
+
   try{
     BOOST_REQUIRE(output[0]==sqeazy::detail::rotate_left<2>(input[0]));
     BOOST_REQUIRE(std::accumulate(output.begin(), output.end(),(unsigned short)0)==sqeazy::detail::rotate_left<2>(input[0])*output.size());
