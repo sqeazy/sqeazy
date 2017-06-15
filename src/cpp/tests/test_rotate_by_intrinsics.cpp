@@ -14,12 +14,12 @@
 
 
 
-typedef const_anyvalue_fixture<128, 0> null_fixture; 
-typedef const_anyvalue_fixture<8, 2> default_128bit_fixture; 
+typedef const_anyvalue_fixture<128, 0> null_fixture;
+typedef const_anyvalue_fixture<8, 2> default_128bit_fixture;
 typedef const_anyvalue_fixture<16, 2, unsigned char> default_128bit_ofuchar_fixture;
 typedef const_anyvalue_fixture<16, 2, char> default_128bit_ofchar_fixture;
 typedef const_anyvalue_fixture<4, 2, unsigned> default_128bit_ofunsigned_fixture;
-typedef const_anyvalue_fixture<(1 << 8), 2> default_cv_fixture; 
+typedef const_anyvalue_fixture<(1 << 8), 2> default_cv_fixture;
 
 BOOST_FIXTURE_TEST_SUITE( const_8_bit_array, default_128bit_ofuchar_fixture )
 BOOST_AUTO_TEST_CASE( rotate_left_by_one ){
@@ -30,9 +30,9 @@ BOOST_AUTO_TEST_CASE( rotate_left_by_one ){
   v_in = rotate(&v_in);
 
   _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]), v_in);
-   
+
   BOOST_REQUIRE(output[0]!=input[0]);
-    
+
   try{
     BOOST_REQUIRE(output[0]==sqeazy::detail::rotate_left<1>(input[0]));
 
@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_CASE( rotate_left_by_two_and_cycle ){
 
   _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]), v_in);
   BOOST_REQUIRE(output[0]!=input[0]);
-    
+
   try{
     BOOST_REQUIRE(output[0]==sqeazy::detail::rotate_left<2>(input[0]));
     BOOST_REQUIRE(std::accumulate(output.begin(), output.end(),(unsigned char)0)==sqeazy::detail::rotate_left<2>(input[0])*output.size());
@@ -71,12 +71,12 @@ BOOST_AUTO_TEST_CASE( rotate_left_by_two_and_flip ){
     {
       input[i] = 0x80;
     }
-    
+
   __m128i v_in = _mm_load_si128(reinterpret_cast<const __m128i*>(&input[0]));
   sqeazy::detail::vec_rotate_left<unsigned char> rotate(1);
   v_in = rotate(&v_in);
   _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]), v_in);
-    
+
   BOOST_REQUIRE(output[0] == 1);
 }
 
@@ -92,9 +92,9 @@ BOOST_AUTO_TEST_CASE( rotate_left_by_one ){
   v_in = rotate(&v_in);
 
   _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]), v_in);
-   
+
   BOOST_REQUIRE(output[0]!=input[0]);
-    
+
   try{
     BOOST_REQUIRE(output[0]==sqeazy::detail::rotate_left<1>(input[0]));
 
@@ -132,12 +132,12 @@ BOOST_AUTO_TEST_CASE( rotate_left_and_flip ){
     {
       input[i] = 0x8000;
     }
-    
+
   __m128i v_in = _mm_load_si128(reinterpret_cast<const __m128i*>(&input[0]));
   sqeazy::detail::vec_rotate_left<unsigned short> rotate(1);
   v_in = rotate(&v_in);
   _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]), v_in);
-    
+
   BOOST_REQUIRE(output[0] == 1);
 }
 
@@ -160,13 +160,13 @@ BOOST_AUTO_TEST_CASE( rotate_left_by_one ){
     v_in = rotate(&v_in);
     _mm_store_si128(reinterpret_cast<__m128i*>(&output[i]), v_in);
   }
-    
-    
+
+
     BOOST_REQUIRE(output[0]!=input[0]);
     for(unsigned i = 0;i < input.size();++i){
       BOOST_REQUIRE(output[i] == reference[i]);
     }
-    
+
   }
 
 BOOST_AUTO_TEST_CASE( rotate_left_by_two ){
@@ -183,13 +183,13 @@ BOOST_AUTO_TEST_CASE( rotate_left_by_two ){
     v_in = rotate(&v_in);
     _mm_store_si128(reinterpret_cast<__m128i*>(&output[i]), v_in);
   }
-    
-    
+
+
   BOOST_REQUIRE(output[0]!=input[0]);
   for(unsigned i = 0;i < input.size();++i){
     BOOST_REQUIRE(output[i] == reference[i]);
   }
-    
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -209,10 +209,10 @@ BOOST_FIXTURE_TEST_SUITE( understand_setbits_of_integertype, default_128bit_fixt
 BOOST_AUTO_TEST_CASE( use_scalar_version ){
 
     unsigned short result = sqeazy::detail::setbits_of_integertype(fixed_value_fixture::dest,
-							   fixed_value_fixture::src,
-							   fixed_value_fixture::at,
-							   2);
-  
+                               fixed_value_fixture::src,
+                               fixed_value_fixture::at,
+                               2);
+
     BOOST_REQUIRE(result != fixed_value_fixture::dest);
     BOOST_REQUIRE(result == fixed_value_fixture::exp);
 }
@@ -223,12 +223,12 @@ BOOST_AUTO_TEST_CASE( use_vectorized_version ){
   std::fill(reference.begin(), reference.end(), fixed_value_fixture::dest);
 
   for(unsigned i = 0;i < reference.size();++i){
-    reference[i] = sqeazy::detail::setbits_of_integertype(reference[i], 
-						  fixed_value_fixture::src, 
-						  fixed_value_fixture::at, 
-						  fixed_value_fixture::size);
+    reference[i] = sqeazy::detail::setbits_of_integertype(reference[i],
+                          fixed_value_fixture::src,
+                          fixed_value_fixture::at,
+                          fixed_value_fixture::size);
   }
-  
+
 
   std::fill(output.begin(), output.end(), fixed_value_fixture::dest);
 
@@ -240,7 +240,7 @@ BOOST_AUTO_TEST_CASE( use_vectorized_version ){
   _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]), v_in);
 
   BOOST_REQUIRE(output[0]==reference[0]);
-  
+
 }
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -267,7 +267,7 @@ BOOST_AUTO_TEST_CASE( understand_movemask_for_8bit_input ){
     __m128i test = _mm_set1_epi8(value);
     int result = _mm_movemask_epi8(test);
     BOOST_REQUIRE(result == std::numeric_limits<unsigned short>::max());
-    
+
 }
 
 BOOST_AUTO_TEST_CASE( understand_movemask_for_16bit_input ){
@@ -283,12 +283,12 @@ BOOST_AUTO_TEST_CASE( _bit_extraction_for_16bit_input ){
 
   unsigned short value = 1 << 15;
   __m128i testi = _mm_set1_epi16(value);
-    
-  __m128i v_low_items =  _mm_slli_si128(_mm_cvtepu16_epi32(testi),2); 
-  __m128 low_part = *reinterpret_cast<__m128*>(&v_low_items);
-  int result = _mm_movemask_ps (low_part); 
 
-#ifdef WIN32 
+  __m128i v_low_items =  _mm_slli_si128(_mm_cvtepu16_epi32(testi),2);
+  __m128 low_part = *reinterpret_cast<__m128*>(&v_low_items);
+  int result = _mm_movemask_ps (low_part);
+
+#ifdef WIN32
   __m128 test = _mm_castsi128_ps(testi);
   __m128i swapped_hi_lo = _mm_castps_si128(_mm_movehl_ps(test, test));
 #else
@@ -297,7 +297,7 @@ BOOST_AUTO_TEST_CASE( _bit_extraction_for_16bit_input ){
 #endif
 
 
-  
+
   __m128i v_high_items = _mm_slli_si128(_mm_cvtepu16_epi32(swapped_hi_lo),2);
 
 #ifdef WIN32
@@ -306,29 +306,29 @@ BOOST_AUTO_TEST_CASE( _bit_extraction_for_16bit_input ){
   __m128 v_high_items_m128 = reinterpret_cast<__m128>(v_high_items);
 #endif
 
-  result += _mm_movemask_ps (v_high_items_m128) << 4; 
+  result += _mm_movemask_ps (v_high_items_m128) << 4;
 
   BOOST_REQUIRE(result != 0);
   BOOST_REQUIRE(result == 0xff);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-  
+
 
 BOOST_AUTO_TEST_CASE( _bit_extraction_for_16bit_input_of_all_bits ){
 
 
   unsigned short value = 1 << 15;
   __m128i testi = _mm_set1_epi16(value);
-    
+
   std::vector<unsigned short> bitplanes(16,0);
 
   std::vector<unsigned short*> bitplanes_ptr(16);
   for(unsigned i = 0;i<bitplanes.size();++i)
     bitplanes_ptr[i] = &bitplanes[i];
-    
+
   sqeazy::detail::reorder_bitplanes<1>(testi, bitplanes_ptr,8);
-    
+
   BOOST_REQUIRE(bitplanes[0] == 255 << 8);
   for(unsigned i = 1;i<bitplanes.size();++i)
     BOOST_REQUIRE(bitplanes[i] == 0);
@@ -342,11 +342,11 @@ BOOST_AUTO_TEST_CASE( first_2_0_with_leading_1 ){
 
     input[2] = 0x80000000;
     input[3] = 0x80000000;
-    
+
     __m128i v_const = _mm_load_si128(reinterpret_cast<__m128i*>(&input[0]));
 
 #ifdef WIN32
-	__m128 c_input= _mm_castsi128_ps(v_const);
+    __m128 c_input= _mm_castsi128_ps(v_const);
 #else
     __m128 c_input = reinterpret_cast<__m128>(v_const);
 #endif
@@ -360,21 +360,20 @@ BOOST_AUTO_TEST_CASE( first_2_0_with_leading_1_with_shuffle ){
 
     input[2] = 0x80000000;
     input[3] = 0x80000000;
-    
+
     __m128i v_const = _mm_load_si128(reinterpret_cast<__m128i*>(&input[0]));
 
 #ifdef WIN32
-	__m128 c_input = _mm_castsi128_ps(_mm_shuffle_epi32(v_const, _MM_SHUFFLE(0, 1, 2, 3)));
+    __m128 c_input = _mm_castsi128_ps(_mm_shuffle_epi32(v_const, _MM_SHUFFLE(0, 1, 2, 3)));
 #else
-	__m128 c_input = reinterpret_cast<__m128>(_mm_shuffle_epi32(v_const, _MM_SHUFFLE(0, 1, 2, 3)));
+    __m128 c_input = reinterpret_cast<__m128>(_mm_shuffle_epi32(v_const, _MM_SHUFFLE(0, 1, 2, 3)));
 #endif
 
     int result = _mm_movemask_ps(c_input);
 
     BOOST_REQUIRE(result == 3);
-  
+
 
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-
