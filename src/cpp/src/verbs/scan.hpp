@@ -18,6 +18,7 @@
 #include "image_stack.hpp"
 #include "encoders/quantiser_scheme_impl.hpp"
 #include "sqeazy_algorithms.hpp"
+#include "hist_impl.hpp"
 
 namespace po = boost::program_options;
 namespace bfs = boost::filesystem;
@@ -26,38 +27,82 @@ struct info
 {
 
 
-  static void header(const int& _space_left = 30) {
+  static void csv_header(const std::string& _del, bool _bit_details = false) {
 
-    std::cout << std::setw(_space_left) << "filename"
-             << std::setw(8) << "min"
-             << std::setw(8) << "max"
-             << std::setw(8) << "drange"
-             << std::setw(8) << "lsb"
-             << "\n";
+    std::cout << "filename"
+              << _del << "bits_per_pixel"
+              << _del << "shape"
+              << _del << "min"
+              << _del << "max"
+              << _del << "mean"
+              << _del << "stddev"
+              << _del << ".05*quant"
+              << _del << ".25*quant"
+              << _del << "median"
+              << _del << ".75*quant"
+              << _del << ".95*quant"
+      ;
+
+    if(_bit_details){
+      std::cout << _del << "drange"
+                << _del << "lsb";
+    }
+
+    std::cout << "\n";
 
   };
 
-  template <typename T>
-  static void print(const std::vector<T>& _payload,
-                   const po::variables_map& _config) {
+  template <typename T, typename S>
+  static void csv_print(const std::vector<T>& _payload,
+                        const std::vector<S>& _shape,
+                        const std::string& _del, bool _bit_details = false) {
 
 
-    T min = *std::min_element(_payload.begin(), _payload.end());
-    T max = *std::max_element(_payload.begin(), _payload.end());
+    float min = (*std::min_element(_payload.begin(), _payload.end()));
+    float max = (*std::max_element(_payload.begin(), _payload.end()));
 
-    static const double base2 = 1/std::log(2);
-    
-    double drange = 0;
-    if(min!=max)
-      drange = std::ceil(std::log(max - min + 1)*base2);
+    std::ostringstream shape_str;
+    int cnt = 0;
+    for( const S& el : _shape ){
+      cnt++;
+      shape_str << el;
+      if(cnt!=_shape.size())
+        shape_str << "x";
+    }
 
-    int low_bit = sqeazy::lowest_set_bit(_payload.begin(), _payload.end());
-    
-    std::cout << std::setw(8) << min
-             << std::setw(8) << max
-             << std::setw(8) << drange
-             << std::setw(8) << low_bit
-             << "\n";
+    std::cout << _del << sizeof(T)*CHAR_BIT
+              << _del << shape_str.str()
+              << _del << min
+              << _del << max;
+
+    sqeazy::histogram<T> hist(_payload.cbegin(), _payload.cend());
+    std::cout.precision(4);
+
+    std::cout << _del << hist.mean()
+              << _del << hist.mean_variation()
+              << _del << hist.calc_support(.05)
+              << _del << hist.calc_support(.25)
+              << _del << hist.median()
+              << _del << hist.calc_support(.75)
+              << _del << hist.calc_support(.95);
+
+    std::cout.precision(6);
+
+    if(_bit_details){
+
+      static const double base2 = 1/std::log(2);
+
+      double drange = 0;
+      if(min!=max)
+        drange = std::ceil(std::log(max - min + 1)*base2);
+
+      int low_bit = sqeazy::lowest_set_bit(_payload.begin(), _payload.end());
+
+      std::cout << _del << drange
+                << _del << low_bit;
+    }
+
+    std::cout << "\n";
 
   };
 
@@ -65,7 +110,7 @@ struct info
 
 
 int scan_files(const std::vector<std::string>& _files,
-	       const po::variables_map& _config) {
+           const po::variables_map& _config) {
 
 
   int value = 1;
@@ -74,7 +119,7 @@ int scan_files(const std::vector<std::string>& _files,
 
   std::vector<unsigned>		input_dims;
   sqeazy::tiff_facet	input;
-  
+
   int bits_per_sample = 0;
 
 
@@ -88,17 +133,17 @@ int scan_files(const std::vector<std::string>& _files,
   }
 
   max_file_name_size *= 1.1;
-  
-  info::header(max_file_name_size);
-    
-  
+
+  info::csv_header(_config["delimiter"].as<std::string>(),_config.count("bit_details") );
+
+
   for(const std::string& _file : _files) {
 
-    
+
     current_file = _file;
 
-    std::cout << std::setw(max_file_name_size) << current_file.filename().c_str();//basename only
-    
+    std::cout << current_file.filename().c_str();//basename only
+
     if(!bfs::exists(current_file)){
       std::cerr << " cannot be opened as it does not exist\n";
       continue;
@@ -107,14 +152,15 @@ int scan_files(const std::vector<std::string>& _files,
 
     //load tiff & extract the dimensions
     input.load(_file);
-       
+
     //compute the maximum size of the output buffer
     input.dimensions(input_dims);
 
     bits_per_sample = input.bits_per_sample();
 
     if(bits_per_sample == 8){
-      info::print(input.buffer_,  _config);
+      info::csv_print(input.buffer_, input_dims,
+                  _config["delimiter"].as<std::string>(),_config.count("bit_details"));
     }
     else if(bits_per_sample == 16){
       std::vector<uint16_t> buffer(input.size_in_byte()/sizeof(uint16_t));
@@ -122,13 +168,14 @@ int scan_files(const std::vector<std::string>& _files,
       const uint16_t* begin = (const uint16_t*)&input.buffer_[0];
       const uint16_t* end = begin + buffer.size();
       std::copy(begin,end,buffer.begin());
-      info::print(buffer, _config);
+      info::csv_print(buffer, input_dims,
+                      _config["delimiter"].as<std::string>(),_config.count("bit_details"));
     }
     else {
       std::cerr << " yields unknown sampling, skipping ...\n";
       continue;
     }
-      
+
   }
 
   value = 0;//FIXME

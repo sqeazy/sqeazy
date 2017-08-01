@@ -12,12 +12,14 @@ add_test(NAME background_scheme_impl COMMAND test_background_scheme_impl)
 add_test(NAME string_parsers_impl COMMAND test_string_parsers_impl)
 
 add_test(NAME bitswap_schemes COMMAND test_bitswap_schemes)
+add_test(NAME bitswap_scheme_impl COMMAND test_bitswap_scheme_impl)
+add_test(NAME bitplane_reorder_impl COMMAND test_bitplane_reorder_impl)
+add_test(NAME bitplane_reorder_on_ramp_impl COMMAND test_bitplane_reorder_on_ramp_impl)
 
-
-#TODO: until sse_bitswap is fixed
-message(">> WARNING: tests for 16-/8-bit SSE enabled bitswapping have been removed temporarily")
-add_test(NAME bitplane_reorder_impl COMMAND test_bitplane_reorder_impl CONFIGURATION --run_test=*16bit/*)
-add_test(NAME bitswap_scheme_impl COMMAND test_bitswap_scheme_impl CONFIGURATION --run_test=*bit/*)
+add_test(NAME raster_reorder_scheme_impl COMMAND test_raster_reorder_scheme_impl)
+add_test(NAME tile_shuffle_scheme_impl COMMAND test_tile_shuffle_scheme_impl)
+add_test(NAME frame_shuffle_scheme_impl COMMAND test_frame_shuffle_scheme_impl)
+add_test(NAME zcurve_reorder_scheme_impl COMMAND test_zcurve_reorder_scheme_impl)
 
 add_test(NAME shift_by_intrinsics COMMAND test_shift_by_intrinsics)
 add_test(NAME rotate_by_intrinsics COMMAND test_rotate_by_intrinsics)
@@ -25,13 +27,15 @@ add_test(NAME rotate_by_intrinsics COMMAND test_rotate_by_intrinsics)
 add_test(NAME hist_impl COMMAND test_hist_impl)
 add_test(NAME lz4_encoding COMMAND test_lz4_encoding)
 add_test(NAME sqeazy_header_impl COMMAND test_sqeazy_header_impl)
+add_test(NAME header_tag_impl COMMAND test_header_tag_impl)
+
 add_test(NAME pipeline_interface COMMAND test_pipeline_interface)
 add_test(NAME dynamic_pipeline_impl COMMAND test_dynamic_pipeline_impl)
 add_test(NAME dynamic_stage_impl COMMAND test_dynamic_stage_impl)
 add_test(NAME dynamic_stage_factory_impl COMMAND test_dynamic_stage_factory_impl)
 add_test(NAME sqeazy_pipelines_impl COMMAND test_sqeazy_pipelines_impl)
 add_test(NAME hdf5_impl COMMAND test_hdf5_impl)
-add_test(NAME bench_utils_impl COMMAND test_bench_utils_impl)
+#add_test(NAME bench_utils_impl COMMAND test_bench_utils_impl)
 add_test(NAME volume_fixtures COMMAND test_volume_fixtures)
 add_test(NAME yuv_utils COMMAND test_yuv_utils WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
 add_test(NAME quantiser_impl COMMAND test_quantiser_impl)
@@ -44,7 +48,7 @@ add_test(NAME compass_impl COMMAND test_compass_impl)
 endif()
 
 add_test(NAME hdf5_interface COMMAND test_hdf5_interface)
-
+add_test(NAME algorithms_impl COMMAND test_algorithms_impl)
 set_tests_properties(hdf5_interface PROPERTIES ENVIRONMENT "HDF5_PLUGIN_PATH=${PROJECT_BINARY_DIR}/src")
 
 #TODO: not used by sqeazy yet and constantly gave problems on OSX

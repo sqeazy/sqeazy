@@ -4,6 +4,10 @@
 //import native filters/sinks
 #include "encoders/sqeazy_impl.hpp"
 #include "encoders/quantiser_scheme_impl.hpp"
+#include "encoders/raster_reorder_scheme_impl.hpp"
+#include "encoders/zcurve_reorder_scheme_impl.hpp"
+#include "encoders/tile_shuffle_scheme_impl.hpp"
+#include "encoders/frame_shuffle_scheme_impl.hpp"
 
 //import external filters/sinks
 #include "encoders/lz4.hpp"
@@ -23,13 +27,19 @@ namespace sqeazy {
     bitswap_scheme<T>,
     remove_background_scheme<T>,
     flatten_to_neighborhood_scheme<T>,
-    remove_estimated_background_scheme<T>
+    remove_estimated_background_scheme<T>,
+    raster_reorder_scheme<T>,
+    tile_shuffle_scheme<T>,
+    frame_shuffle_scheme<T>,
+    zcurve_reorder_scheme<T>
     >;
 
   template <typename T>
   using encoders_factory = stage_factory<
     pass_through<T>,
     quantiser_scheme<T>,
+    hevc_scheme<T>,
+    h264_scheme<T>,
     lz4_scheme<T>
     >;
 
@@ -39,13 +49,17 @@ namespace sqeazy {
     bitswap_scheme<T>,
     h264_scheme<T>,
     hevc_scheme<T>,
-    lz4_scheme<T>
+    lz4_scheme<T>,
+    raster_reorder_scheme<T>,
+    tile_shuffle_scheme<T>,
+    frame_shuffle_scheme<T>,
+    zcurve_reorder_scheme<T>
     >;
-  
+
   template <typename T>
   using dypeline = dynamic_pipeline<T, filters_factory, encoders_factory<T>, tail_filters_factory<char> >;
 
-  
+
   //FIXME: required as quantiser will emit compilation error if incoming_type == outcoming_type
   using dypeline_from_uint8 = dynamic_pipeline<std::uint8_t,
 					      filters_factory,

@@ -94,7 +94,7 @@ namespace sqeazy {
     static void write_stack(const stack_t& _stack, stream_t& _stream) {
 
       typedef typename stack_t::element value_type;
-      static_assert(sizeof(value_type)<2,"[sqeazy::yuv420formatter] unable to write non-8-bit data");
+      static_assert(sizeof(value_type)<3,"[sqeazy::yuv420formatter] unable to write non-8/non-16-bit data");
 
       const std::string frame_title("FRAME\n");
       const uint32_t frame_size = _stack.shape()[row_major::h]*_stack.shape()[row_major::w];

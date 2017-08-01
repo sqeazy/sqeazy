@@ -1,7 +1,8 @@
 #ifndef _REGEX_HELPERS_H_
 #define _REGEX_HELPERS_H_
 
-  
+#include <vector>
+
 #define GCC_VERSION (__GNUC__ * 10000		      \
                                + __GNUC_MINOR__ * 100 \
                                + __GNUC_PATCHLEVEL__)
@@ -26,6 +27,22 @@ namespace sqeazy {
       std::string match = re_match[0];
       value = std::stoi(match.substr(_offset));
     }
+    
+    return value;
+  }
+
+  template <typename string_t>
+  std::vector<int> extract_ints(string_t _data, const std::string& _regex = "[0-9]+"){
+
+    std::vector<int> value;
+    const boost::regex regex_present(_regex,boost::regex::egrep);
+ 
+    boost::smatch re_match;
+    while(boost::regex_search(_data, re_match, regex_present)){
+      value.push_back(std::stoi(re_match.str()));
+      _data = re_match.suffix();
+    }
+
     
     return value;
   }
@@ -80,6 +97,24 @@ namespace sqeazy {
     return value;
   }
 
+  template <typename string_t>
+  std::vector<int> extract_ints(string_t _data, const std::string& _regex = "[0-9]+"){
+
+    std::vector<int> value;
+
+    const std::regex regex_present(_regex,std::regex::egrep);
+ 
+    std::smatch re_match;
+    while(std::regex_search(_data, re_match, regex_present)){
+      value.push_back(std::stoi(re_match.str()));
+      _data = re_match.suffix();
+    }
+
+    
+    return value;
+  }
+
+  
   template <typename string_t>
   string_t string_extract(const string_t& _data, const std::string& _regex = "C([0-9]+)", int _offset = 0){
     

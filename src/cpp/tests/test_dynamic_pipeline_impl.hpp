@@ -1,6 +1,9 @@
 #ifndef _TEST_DYNAMIC_PIPELINE_IMPL_HPP_
 #define _TEST_DYNAMIC_PIPELINE_IMPL_HPP_
 
+#include <cmath>
+#include <iostream>
+
 //#include "dynamic_pipeline.hpp"
 #include "dynamic_stage.hpp"
 #include "dynamic_stage_factory.hpp"
@@ -13,10 +16,10 @@ struct set_to :  public sqy::filter<T> {
 
   typedef T raw_type;
   typedef T compressed_type;
-  
+
   raw_type value;
   raw_type first_value;
-  
+
   static_assert(std::is_arithmetic<raw_type>::value==true,"[set_to] input type is non-arithmetic");
 
   static const std::string description() { return std::string("sets all items to <value>, e.g. set_to(value=42)"); };
@@ -27,38 +30,39 @@ struct set_to :  public sqy::filter<T> {
     value(_rhs.value),
     first_value(_rhs.first_value)
   { }
-  
+
   set_to(const std::string& _payload=""):
     value(),
     first_value()
   {
 
-    sqy::parsed_map_t parsed_map = sqy::unordered_parse_by(_payload.begin(), _payload.end());
+    sqy::pipeline_parser p;
+    sqy::parsed_map_t parsed_map = p.minors(_payload.begin(), _payload.end());
     if(parsed_map.size()){
 
       if(parsed_map.find("value")!=parsed_map.end()){
-	
-	try{
-	  value = std::stoi(parsed_map.find("value")->second);
-	}
-	catch(...){
-	  std::cerr << "[set_to::constructor]\t unable to convert ." << parsed_map.find("value")->second << ". to number\n";
-	}
+
+    try{
+      value = std::stoi(parsed_map.find("value")->second);
+    }
+    catch(...){
+      std::cerr << "[set_to::constructor]\t unable to convert ." << parsed_map.find("value")->second << ". to number\n";
+    }
       }
 
       if(parsed_map.find("first_value")!=parsed_map.end()){
-	try{
-	  first_value = std::stoi(parsed_map.find("first_value")->second);
-	}
-	catch(...){
-	  std::cerr << "[set_to::constructor]\t unable to convert ." << parsed_map.find("first_value")->second << ". to number\n";
-	}
-      }
-      
+    try{
+      first_value = std::stoi(parsed_map.find("first_value")->second);
     }
-    
+    catch(...){
+      std::cerr << "[set_to::constructor]\t unable to convert ." << parsed_map.find("first_value")->second << ". to number\n";
+    }
+      }
 
-    
+    }
+
+
+
   }
 
   std::string name() const {
@@ -69,10 +73,10 @@ struct set_to :  public sqy::filter<T> {
 
   /**
      \brief serialize the parameters of this filter
-     
-     \return 
+
+     \return
      \retval string .. that encodes the configuration paramters
-     
+
   */
   std::string config() const {
 
@@ -82,7 +86,7 @@ struct set_to :  public sqy::filter<T> {
     return cfg.str();
 
   }
-  
+
   T operator()( const T& _in) {
     return value;
   }
@@ -90,49 +94,49 @@ struct set_to :  public sqy::filter<T> {
   compressed_type* encode( const raw_type* _in, compressed_type* _out, const std::vector<std::size_t>& _shape) override final {
 
     std::size_t size = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
-    
+
     const raw_type* begin = _in;
     const raw_type* end = begin + size;
-   
+
     if(size)
       first_value = *begin;
-    
+
     std::transform(begin, end, _out, [&](raw_type _in){return this->value;});
-    
+
     return _out+size;
   }
 
   int decode( const raw_type* _in, compressed_type* _out,
-	      const std::vector<std::size_t>& _shape,
-	      std::vector<std::size_t>) const override final {
+          const std::vector<std::size_t>& _shape,
+          std::vector<std::size_t>) const override final {
 
     std::size_t size = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
-    
+
     const compressed_type* begin = _in;
     const compressed_type* end = begin + size;
-   
+
     std::transform(begin, end, _out, [=](compressed_type _in){return first_value;});
 
     return 0;
   }
-  
+
    std::intmax_t max_encoded_size(std::intmax_t _size_bytes) const override final {
     return _size_bytes;
   }
 
   ~set_to(){};
-  
+
 
   std::string output_type() const final override {
 
     return typeid(compressed_type).name();
-    
+
   }
 
   bool is_compressor() const final override {
-    
+
     return sqy::filter<T>::is_compressor;
-    
+
   }
 
 };
@@ -142,7 +146,7 @@ struct add_one :  public sqy::filter<T> {
 
   typedef T raw_type;
   typedef T compressed_type;
-  
+
 
   static const std::string description() { return std::string("adds 1 to all items"); };
 
@@ -156,8 +160,8 @@ struct add_one :  public sqy::filter<T> {
 
     return std::string("");
 
-  }  
-  
+  }
+
   add_one(const std::string& _payload="")
   { }
 
@@ -165,7 +169,7 @@ struct add_one :  public sqy::filter<T> {
   add_one(const add_one<U>& _rhs):
     sqy::filter<T>::filter()
   { }
-  
+
   T operator()( const T& _in) {
     return _in + 1;
   }
@@ -173,25 +177,25 @@ struct add_one :  public sqy::filter<T> {
   compressed_type* encode( const raw_type* _in, compressed_type* _out, const std::vector<std::size_t>& _shape) override final {
 
     std::size_t size = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
-    
+
     const raw_type* begin = _in;
     const raw_type* end = begin + size;
-   
-    
+
+
     std::transform(begin, end, _out, [](raw_type _in){return _in+1;});
 
     return _out+size;
   }
 
   int decode( const raw_type* _in, compressed_type* _out,
-	      const std::vector<std::size_t>& _shape,
-	      std::vector<std::size_t>) const override final {
+          const std::vector<std::size_t>& _shape,
+          std::vector<std::size_t>) const override final {
 
     std::size_t size = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
-    
+
     const compressed_type* begin = _in;
     const compressed_type* end = begin + size;
-   
+
     std::transform(begin, end, _out, [](compressed_type _in){return _in-1;});
 
     return 0;
@@ -202,24 +206,24 @@ struct add_one :  public sqy::filter<T> {
   }
 
   ~add_one(){};
-  
+
 
   std::string input_type() const {
 
     return typeid(raw_type).name();
-    
+
   }
 
   std::string output_type() const {
 
     return typeid(compressed_type).name();
-    
+
   }
 
   bool is_compressor() const final override {
-    
+
     return sqy::filter<T>::is_compressor;
-    
+
   }
 
 };
@@ -233,13 +237,13 @@ struct square :  public sqy::filter<T> {
 
   static const std::string description() { return std::string("squares all items"); };
 
-  
+
   bool is_compressor() const final override {
-    
+
     return sqy::filter<T>::is_compressor;
-    
+
   }
-  
+
   square(const std::string& _payload="")
   { }
 
@@ -255,13 +259,13 @@ struct square :  public sqy::filter<T> {
 
   }
 
-  
+
   std::string config() const {
 
     return std::string("");
 
-  }  
-  
+  }
+
   T operator()( const T& _in) {
     return _in * _in;
   }
@@ -272,27 +276,27 @@ struct square :  public sqy::filter<T> {
 
   ~square(){};
 
-  
+
 
   std::string input_type() const {
 
     return typeid(raw_type).name();
-    
+
   }
 
   std::string output_type() const {
 
     return typeid(compressed_type).name();
-    
+
   }
 
    compressed_type*  encode( const raw_type* _in, compressed_type* _out, const std::vector<std::size_t>& _shape) override final {
 
     std::size_t size = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
-    
+
     const raw_type* begin = _in;
     const raw_type* end = _in + size;
-   
+
     square<raw_type> operation;
     std::transform(begin, end, _out, operation);
 
@@ -300,20 +304,20 @@ struct square :  public sqy::filter<T> {
   }
 
   int decode( const raw_type* _in, compressed_type* _out,
-	      const std::vector<std::size_t>& _shape,
-	      std::vector<std::size_t>) const override final {
+          const std::vector<std::size_t>& _shape,
+          std::vector<std::size_t>) const override final {
 
     std::size_t size = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
-    
+
     const compressed_type* begin = _in;
     const compressed_type* end = begin + size;
-   
+
     std::transform(begin, end, _out, [](compressed_type _in){return std::sqrt(_in);});
 
     return 0;
   }
 
-  
+
 };
 
 template <typename T >
@@ -328,20 +332,20 @@ struct sum_up :  public sqy::sink<T> {
   std::intmax_t max_encoded_size(std::intmax_t _incoming_size_byte) const override final {
     return sizeof(result_type);
   }
-  
+
   std::string name() const {
 
     return std::string("sum_up");
 
   }
 
-  
+
   std::string config() const {
 
     return std::string("");
 
-  }  
-  
+  }
+
   sum_up(const std::string& _payload="")
   { }
 
@@ -350,26 +354,26 @@ struct sum_up :  public sqy::sink<T> {
     sqy::filter<T>::filter()
   { }
 
-  
+
   ~sum_up(){};
-  
+
 
   std::string input_type() const {
 
     return typeid(raw_type).name();
-    
+
   }
 
   std::string output_type() const {
 
     return typeid(compressed_type).name();
-    
+
   }
 
   compressed_type* encode( const raw_type* _in, compressed_type* _out, const std::vector<std::size_t>& _shape) override final {
 
     std::size_t size = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
-    
+
     const raw_type* begin = _in;
     const raw_type* end = begin + size;
 
@@ -377,37 +381,37 @@ struct sum_up :  public sqy::sink<T> {
 
     *reinterpret_cast<result_type*>(_out) = value;
     // std::copy(reinterpret_cast<compressed_type*>(&value),
-    // 	      reinterpret_cast<compressed_type*>(&value)+sizeof(result_type),
-    // 	      _out);
-    
+    //        reinterpret_cast<compressed_type*>(&value)+sizeof(result_type),
+    //        _out);
+
     return _out+(sizeof(result_type)/sizeof(compressed_type));
   }
 
   int decode( const compressed_type* _in,
-	      raw_type* _out,
-	      const std::vector<std::size_t>& _inshape,
-	      std::vector<std::size_t> _outshape = std::vector<std::size_t>()
-	      ) const override final {
+          raw_type* _out,
+          const std::vector<std::size_t>& _inshape,
+          std::vector<std::size_t> _outshape = std::vector<std::size_t>()
+          ) const override final {
 
     if(_outshape.empty())
       _outshape = _inshape;
-    
+
     std::size_t size = std::accumulate(_outshape.begin(), _outshape.end(),1,std::multiplies<std::size_t>());
-    
+
     raw_type* begin = _out;
     raw_type* end = begin + size;
-    
+
     raw_type value = (*reinterpret_cast<const result_type*>(_in))/double(size);
-    
+
     std::fill(begin, end, value);
 
     return 0;
   }
 
   bool is_compressor() const final override {
-    
+
       return sqy::sink<T>::is_compressor;
-    
+
   }
 
 };
@@ -421,25 +425,25 @@ struct high_bits :  public sqy::sink<T> {
   typedef std::uint64_t result_type;
 
   static const std::string description() { return std::string("extracts highest 4 bits from input and stores them in char buffer"); };
-  
+
   std::intmax_t max_encoded_size(std::intmax_t _incoming_size_byte) const override final {
 
     auto scale = sizeof(compressed_type)/float(sizeof(raw_type));
     return scale*_incoming_size_byte;
   }
-  
+
   std::string name() const {
 
     return std::string("high_bits");
 
   }
 
-  
+
   std::string config() const {
 
     return std::string("");
 
-  }  
+  }
 
   //TODO: could add parameter to select which of high bits
   high_bits(const std::string& _payload="")
@@ -451,27 +455,27 @@ struct high_bits :  public sqy::sink<T> {
   {
 
   }
-  
+
   ~high_bits(){};
-  
+
 
   std::string input_type() const {
 
     return typeid(raw_type).name();
-    
+
   }
 
   std::string output_type() const {
 
     return typeid(compressed_type).name();
-    
+
   }
 
   compressed_type* encode( const raw_type* _in, compressed_type* _out, const std::vector<std::size_t>& _shape) override final {
 
     std::size_t size = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
     const int shift_right_by = (sizeof(raw_type)*CHAR_BIT) - 4;
-  
+
     for(std::size_t i = 0;i < size;++i){
       _out[i] = (_in[i] >> shift_right_by) & 0xf;
     }
@@ -479,23 +483,23 @@ struct high_bits :  public sqy::sink<T> {
   }
 
   int decode( const compressed_type* _in, raw_type* _out,
-	      const std::vector<std::size_t>& _inshape,
-	      std::vector<std::size_t> _outshape = std::vector<std::size_t>()
-	      ) const override final {
+          const std::vector<std::size_t>& _inshape,
+          std::vector<std::size_t> _outshape = std::vector<std::size_t>()
+          ) const override final {
 
     if(_outshape.empty())
-	_outshape = _inshape;
-    
+    _outshape = _inshape;
+
     std::size_t insize = std::accumulate(_inshape.begin(), _inshape.end(),1,std::multiplies<std::size_t>());
     std::size_t outsize = std::accumulate(_outshape.begin(), _outshape.end(),1,std::multiplies<std::size_t>());
 
     // if(insize*sizeof(*_in)!=outsize*sizeof(*_out))
     //   return 1;
-    
+
     const int shift_left_by = (sizeof(raw_type)*CHAR_BIT) - 4;
 
     const std::size_t len = std::min(insize,outsize);
-    
+
     for(std::size_t i = 0;i < len;++i){
       _out[i] = _in[i] << shift_left_by;
     }
@@ -503,9 +507,9 @@ struct high_bits :  public sqy::sink<T> {
   }
 
   bool is_compressor() const final override {
-    
+
       return sqy::sink<T>::is_compressor;
-    
+
   }
 
 };
@@ -518,7 +522,7 @@ using int_sink = sqy::sink<int>;
 
 using int_factory_with_one_entry = sqy::stage_factory<add_one_to_ints> ;
 using int_factory = sqy::stage_factory<add_one_to_ints, square<int> > ;
-  
+
 template <typename T>
 using filter_factory = sqy::stage_factory<add_one<T>, square<T>, set_to<T> >;
 

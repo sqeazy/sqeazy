@@ -5,6 +5,7 @@
 #include <cmath>
 #include <map>
 #include <string>
+#include <functional>
 
 extern "C" {
 
@@ -94,6 +95,9 @@ namespace sqeazy {
       size_t count = 0;
       for( const auto & kv : _config )
 	{
+	  #ifdef SQY_TRACE
+	  std::cout << "[ffmpeg_encode_stack]\t h265 av_opt_set " << kv.first << " :: " << kv.second << "\n";
+	  #endif
 	  if(kv.first == "preset" || kv.first == "profile"){
 	    av_opt_set(ctx.get()->priv_data, kv.first.c_str(), kv.second.c_str(), 0);
 	  }
@@ -144,9 +148,10 @@ namespace sqeazy {
 					    const std::string& _debug_filename = ""){
 
     static_assert(sizeof(buffer_type)==1,"ffmpeg only works on byte-size types");
-    
+    static_assert(sizeof(raw_type)<3,"video encoding for 16-bit or 8-bit supported currently");
     uint32_t bytes_written = 0;
-
+    
+        
     
     try{
       _ctx.open();
@@ -162,11 +167,25 @@ namespace sqeazy {
     sqeazy::sws_context_t scale_ctx(gray_frame, frame);
     
     AVPacket pkt;
-
+    
         
     const uint32_t frame_size = _stack.shape()[row_major::w]*_stack.shape()[row_major::h];
     const uint32_t num_frames = _stack.shape()[row_major::d];
     uint32_t idx = 0;
+    std::function<std::size_t(decltype(_stack.data()),decltype(_stack.data()),sqeazy::av_frame_t&)> encode_frame;
+    if(sizeof(raw_type)==1)
+      encode_frame = range_to_y<decltype(_stack.data())>;
+    if(sizeof(raw_type)==2){
+
+      if(_stack.shape()[row_major::w] % 4 == 0)
+	encode_frame = range_to_yuv420<decltype(_stack.data())>;
+      else{
+	std::cerr << "[video encode] however possible this video yields a width = "
+		  << _stack.shape()[row_major::w] <<" which is not divisable by 4\nUnable to decode this!\n";
+	return bytes_written;
+      }
+      
+    }
 
     uint32_t frames_encoded = 0;
     _buffer.clear();
@@ -176,7 +195,12 @@ namespace sqeazy {
       idx = z*frame_size;
 
       auto frame_begin = _stack.data() + idx;
-      vector_to_y(frame_begin,frame_begin+frame_size,frame);
+      // vector_to_y(frame_begin,
+      // 		  frame_begin+frame_size,
+      // 		  frame);
+      encode_frame(frame_begin,
+		   frame_begin+frame_size,
+		   frame);
       
       frame.get()->pts = z;
 
@@ -233,8 +257,10 @@ namespace sqeazy {
      \brief function that uses 
 
      \param[in] _buffer stack that contains the encoded stack   
+     \param[out] _buffer_len decoded stack shape as in [x,y,z] dimensions
+
      \param[out] _volume stack that is to be decoded
-     \param[out] _shape decoded stack shape as in [x,y,z] dimensions
+     \param[out] _volume_len linear number of elements in _volume
 
    
      \return 
@@ -242,15 +268,16 @@ namespace sqeazy {
    
   */
 template <typename raw_type>
-static uint32_t decode_stack(const char* _buffer,
-			     const uint32_t& _buffer_len,
-			     raw_type* _volume,
-			     const uint32_t& _volume_len// ,
-			     // std::vector<uint32_t>& _shape
-			     ){
+static std::size_t decode_stack(const char* _buffer,
+				const std::size_t& _buffer_len,
+				raw_type* _volume,
+				const std::size_t& _volume_len
+				){
 
-  
-  uint32_t rcode = 0;
+  static_assert(sizeof(raw_type)<3,"video encoding for 16-bit or 8-bit supported currently");
+    
+
+  std::size_t rcode = 0;
     
     
   sqeazy::avio_buffer_data read_this;
@@ -315,7 +342,21 @@ static uint32_t decode_stack(const char* _buffer,
   
   sqeazy::av_frame_t frame;
   
-  
+  std::function<std::size_t(const sqeazy::av_frame_t&,raw_type*,raw_type*)> decode_frame;
+  if(sizeof(raw_type)==1)
+    decode_frame = y_to_range<raw_type*>;
+  if(sizeof(raw_type)==2){
+
+    if(found_width % 4 == 0)
+      decode_frame = yuv420_to_range<raw_type*>;
+    else{
+      std::cerr << "[video decode] however possible this video yields a width = "
+		<< found_width <<" which is not divisable by 4\nUnable to decode this!\n";
+      return rcode;
+    }
+
+  }
+
   int frameFinished = 0;
   int decoded_bytes = 0;
   
@@ -372,7 +413,8 @@ static uint32_t decode_stack(const char* _buffer,
       if (frameFinished)
 	{
 	      
-	  auto bytes_copied = y_to_vector(frame,_volume,_volume + frame_size);
+	  // auto bytes_copied = y_to_vector(frame,_volume,_volume + frame_size);
+	  auto bytes_copied = decode_frame(frame,_volume,_volume + frame_size);
 	  _volume += frame_size;
 
 	  if(bytes_copied == sizeof(raw_type)*shape[row_major::w]*shape[row_major::h])
@@ -405,14 +447,15 @@ static uint32_t decode_stack(const char* _buffer,
     if (frameFinished)
       {
 	if(frame.w() != found_width || frame.h() != found_height ||
-	     frame.pixel_format() != found_pix_fmt){
-	    std::cerr << __FILE__ << ":" << __LINE__ << "\touch ... width/height/pixel_format have changed during decoding of stream\n"
-		      << "old: " << found_width << " / " << found_height << " / " << found_pix_fmt << "\n"
-	      	      << "new: " << frame.w() << " / " << frame.h() << " / " << frame.pixel_format() << "\n";
-	    break;
-	  }
+	   frame.pixel_format() != found_pix_fmt){
+	  std::cerr << __FILE__ << ":" << __LINE__ << "\touch ... width/height/pixel_format have changed during decoding of stream\n"
+		    << "old: " << found_width << " / " << found_height << " / " << found_pix_fmt << "\n"
+		    << "new: " << frame.w() << " / " << frame.h() << " / " << frame.pixel_format() << "\n";
+	  break;
+	}
 
-	auto bytes_copied = y_to_vector(frame,_volume,_volume + frame_size);
+	// auto bytes_copied = y_to_vector(frame,_volume,_volume + frame_size);
+	auto bytes_copied = decode_frame(frame,_volume,_volume + frame_size);
 	_volume += frame_size;
 	  
 	if(bytes_copied == sizeof(raw_type)*shape[row_major::w]*shape[row_major::h])
@@ -425,14 +468,12 @@ static uint32_t decode_stack(const char* _buffer,
       }
 
     
-
-    
   }
 
 
   sqeazy::av_free_packet(&packet);
-  
-  return shape[row_major::d]*frame_size*sizeof(raw_type);
+  rcode = shape[row_major::d]*frame_size*sizeof(raw_type);
+  return rcode;
 
 }
 

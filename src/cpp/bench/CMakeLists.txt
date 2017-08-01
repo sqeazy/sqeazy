@@ -1,101 +1,119 @@
+#include project relevant directories
 INCLUDE_DIRECTORIES(.)
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/tests)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/include)
 
-IF(WIN32)
-  SET(Boost_USE_STATIC_LIBS ON)
-  add_library(ext_lz4 STATIC IMPORTED)
-  set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_STATIC_LIB}") 
-ELSE(WIN32)
-  add_library(ext_lz4 SHARED IMPORTED)
-  set_target_properties(ext_lz4 PROPERTIES IMPORTED_LOCATION "${LZ4_SHARED_LIB}") 
-ENDIF(WIN32)
+
+#ATTENTION:
+#boost unit test framework has some defects if we wanna bind against shared and/or static libs
+##that's why we bind against the dynamic loaded libraries primarily
+SET(Boost_USE_STATIC_LIBS OFF)
+FIND_PACKAGE (Boost 1.55 COMPONENTS regex unit_test_framework filesystem system serialization REQUIRED QUIET)
+if(Boost_FOUND)
+    MESSAGE("++ [tests] Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES} : ${Boost_LIBRARIES}")
+    INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+    link_directories(${Boost_LIBRARY_DIRS})
+    IF(MSVC)
+    add_definitions(/DBOOST_TEST_DYN_LINK)
+
+    ELSE(MSVC)
+    add_definitions(-DBOOST_TEST_DYN_LINK)
+    ENDIF(MSVC)
+else(Boost_FOUND)
+    MESSAGE(FATAL_ERROR "++ Boost not found!")
+endif(Boost_FOUND)
+
+set(SQY_LIB ${PROJECT_NAME})
+
+if(DEFINED READY_4_BUNDLE)
+  set(SQY_LIB ${SQY_LIB} ${FFMPEG_LIBRARIES} )
+endif()
+
+if(EXISTS $ENV{GOOGLEBENCHMARK_ROOT})
+  set(GOOGLEBENCHMARK_ROOT "$ENV{GOOGLEBENCHMARK_ROOT}")
+endif()
+
+find_package(GoogleBenchmark REQUIRED)
+if(NOT ${googlebenchmark_FOUND})
+
+  if(IS_DIRECTORY ${GOOGLEBENCHMARK_ROOT})
+    message(FATAL_ERROR "GoogleBenchmark not found in ${GOOGLEBENCHMARK_ROOT}")
+  else(IS_DIRECTORY ${GOOGLEBENCHMARK_ROOT})
+    message(FATAL_ERROR "GoogleBenchmark not found, maybe you want to provide any custom installation path by -DGOOGLEBENCHMARK_ROOT=/path/to/library")
+  endif(IS_DIRECTORY ${GOOGLEBENCHMARK_ROOT})
+
+else()
+  include_directories(${googlebenchmark_INCLUDE_DIR})
+  message(">> GoogleBenchmark found, ${googlebenchmark_INCLUDE_DIR} ${googlebenchmark_LIBRARY}")
+  set(googlebenchmark_LIBRARY_DIR "")
+  if(EXISTS ${googlebenchmark_LIBRARY})
+    get_filename_component(googlebenchmark_LIBRARY_DIR "${googlebenchmark_LIBRARY}" DIRECTORY)
+  endif()
+
+  if(IS_DIRECTORY "${googlebenchmark_LIBRARY_DIR}")
+    link_directories(${googlebenchmark_LIBRARY_DIR})
+  endif()
+endif()
+
+add_executable(test_benchmark_fixture_impl test_benchmark_fixture_impl.cpp)
+target_link_libraries(test_benchmark_fixture_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY}
+)
+
+add_executable(benchmark_bitswap_scheme_impl benchmark_bitswap_scheme_impl.cpp)
+target_link_libraries(benchmark_bitswap_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+
+add_executable(benchmark_frame_shuffle_scheme_impl benchmark_frame_shuffle_scheme_impl.cpp)
+target_link_libraries(benchmark_frame_shuffle_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+
+add_executable(benchmark_diff_scheme_impl benchmark_diff_scheme_impl.cpp)
+target_link_libraries(benchmark_diff_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+
+add_executable(benchmark_flatten_to_neighborhood_scheme_impl benchmark_flatten_to_neighborhood_scheme_impl.cpp)
+target_link_libraries(benchmark_flatten_to_neighborhood_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+
+add_executable(benchmark_remove_background_scheme_impl benchmark_remove_background_scheme_impl.cpp)
+target_link_libraries(benchmark_remove_background_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+
+add_executable(benchmark_remove_estimated_background_scheme_impl benchmark_remove_estimated_background_scheme_impl.cpp)
+target_link_libraries(benchmark_remove_estimated_background_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+
+add_executable(benchmark_quantiser_scheme_impl benchmark_quantiser_scheme_impl.cpp)
+target_link_libraries(benchmark_quantiser_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+
+add_executable(benchmark_histogram_utils benchmark_histogram_utils.cpp)
+target_link_libraries(benchmark_histogram_utils ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+
+add_executable(benchmark_pipeline_construction benchmark_pipeline_construction.cpp)
+target_link_libraries(benchmark_pipeline_construction ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+
+add_executable(benchmark_raster_reorder_scheme_impl benchmark_raster_reorder_scheme_impl.cpp)
+target_link_libraries(benchmark_raster_reorder_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+
+add_executable(benchmark_zcurve_reorder_scheme_impl benchmark_zcurve_reorder_scheme_impl.cpp)
+target_link_libraries(benchmark_zcurve_reorder_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+
+add_executable(benchmark_tile_shuffle_scheme_impl benchmark_tile_shuffle_scheme_impl.cpp)
+target_link_libraries(benchmark_tile_shuffle_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
 
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-find_package(FFMPEG REQUIRED)
 IF(FFMPEG_FOUND)
-  INCLUDE_DIRECTORIES(${FFMPEG_INCLUDE_DIRS})
-  LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
+  if(WIN32)
+    LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}\\lib)
+    else()
+    LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
+    endif()
 
-  add_library(ext_avcodec SHARED IMPORTED)
-  set_target_properties(ext_avcodec PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVCODEC_LIBRARIES}")
-  
+  SET(SQY_FFMPEG_Libraries ${FFMPEG_LIBRARIES})
 
-  add_library(ext_avutil SHARED IMPORTED)
-  set_target_properties(ext_avutil PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVUTIL_LIBRARIES}")
+  if(DEFINED FFMPEG_EXTRA_LINK_FLAGS AND DEFINED FFMPEG_USE_STATIC_LIBS)
+    set(SQY_FFMPEG_Libraries ${SQY_FFMPEG_Libraries} ${FFMPEG_EXTRA_LINK_FLAGS})
+  endif()
 
-  add_library(ext_avformat SHARED IMPORTED)
-  set_target_properties(ext_avformat PROPERTIES IMPORTED_LOCATION "${FFMPEG_AVFORMAT_LIBRARIES}")
+  add_executable(benchmark_h264_scheme_impl benchmark_h264_scheme_impl.cpp)
+  target_link_libraries(benchmark_h264_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY} ${SQY_FFMPEG_Libraries})
 
-  add_library(ext_swscale SHARED IMPORTED)
-  set_target_properties(ext_swscale PROPERTIES IMPORTED_LOCATION "${FFMPEG_SWSCALE_LIBRARIES}")
+  add_executable(benchmark_hevc_scheme_impl benchmark_hevc_scheme_impl.cpp)
+  target_link_libraries(benchmark_hevc_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY} ${SQY_FFMPEG_Libraries})
 
-  SET(SQY_FFMPEG_Libraries ext_avcodec ext_avutil ext_avformat ext_swscale m)
-ENDIF()
-
-
-FIND_PACKAGE (Boost 1.55 QUIET COMPONENTS regex system filesystem program_options REQUIRED)
-IF(Boost_FOUND)
-  INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-  LINK_DIRECTORIES(${Boost_LIBRARY_DIRS}) 
-ENDIF()
-
-FIND_PACKAGE(TIFF REQUIRED)
-
-IF(TIFF_FOUND)
-  INCLUDE_DIRECTORIES(${TIFF_INCLUDE_DIR})
-  IF(WIN32)
-    add_library(ext_static_tiff STATIC IMPORTED)
-    IF("${TIFF_LIBRARIES}" MATCHES ".*.dll$")
-      STRING(REPLACE .dll .lib TIFF_STATIC_LIB ${TIFF_LIBRARIES})
-    ELSE()
-      SET(TIFF_STATIC_LIB ${TIFF_LIBRARIES})
-    ENDIF()
-    set_target_properties(ext_static_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_STATIC_LIB}") 
-
-    add_library(ext_dyn_tiff SHARED IMPORTED)
-    IF("${TIFF_LIBRARIES}" MATCHES ".*.dll$")
-      STRING(REPLACE .dll _i.lib TIFF_IMP_LIB ${TIFF_LIBRARIES})
-      set_target_properties(ext_dyn_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIBRARIES}") 
-      set_target_properties(ext_dyn_tiff PROPERTIES IMPORTED_IMPLIB "${TIFF_IMP_LIB}") 
-    ENDIF()
-
-  ELSE(WIN32)
-    add_library(ext_dyn_tiff SHARED IMPORTED)
-    set_target_properties(ext_dyn_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIBRARIES}") 
-
-  ENDIF(WIN32)
-
-  INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src)
-  INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/tests)
-  #TODO:
-  add_executable(bench bench.cpp)
-  IF(EXISTS ${TIFF_STATIC_LIB})
-    target_link_libraries(bench ext_static_tiff ext_lz4 ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries})
-  ELSE()
-    target_link_libraries(bench ext_dyn_tiff ext_lz4 ${Boost_LIBRARIES} ${SQY_FFMPEG_Libraries})
-  ENDIF()
-
-  # IF(NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
-  #   SET(ADDITIONAL_COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src")
-  #   list(APPEND ADDITIONAL_COMPILE_FLAGS " -I${PROJECT_SOURCE_DIR}/tests")
-  # ELSE()
-  #   SET(ADDITIONAL_COMPILE_FLAGS "/I${PROJECT_SOURCE_DIR}/src")
-  #   list(APPEND ADDITIONAL_COMPILE_FLAGS " /I${PROJECT_SOURCE_DIR}/tests")
-  # ENDIF()
-
-  if(SQY_VERBOSE)
-    list(APPEND ADDITIONAL_COMPILE_FLAGS " -D_SQY_VERBOSE_=1")
-  endif(SQY_VERBOSE)
-
-  # STRING(REPLACE ";" " " ADDITIONAL_COMPILE_FLAGS ${ADDITIONAL_COMPILE_FLAGS})
-  # set_target_properties(bench PROPERTIES COMPILE_FLAGS "${ADDITIONAL_COMPILE_FLAGS}")
-
-
-ELSE(TIFF_FOUND)
-  WARNING("Skipping benchmark utils, libtiff not found (but required for build)\!")
-ENDIF(TIFF_FOUND)
-
-FILE(COPY ${PROJECT_SOURCE_DIR}/bench/hevc_roundtrip.py DESTINATION ${PROJECT_BINARY_DIR}/bench/)
+endif()

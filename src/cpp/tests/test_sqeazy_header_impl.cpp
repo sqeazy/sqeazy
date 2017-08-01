@@ -8,11 +8,6 @@
 #include <sstream>
 #include <bitset>
 
-#include <boost/property_tree/ptree.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/property_tree/json_parser.hpp>
-
-
 #include "array_fixtures.hpp"
 #include "sqeazy_header.hpp"
 
@@ -22,53 +17,56 @@ typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 
 
 BOOST_FIXTURE_TEST_SUITE( header_suite, uint16_cube_of_8 )
- 
+
 using namespace sqeazy;
 
 BOOST_AUTO_TEST_CASE( simple_pack )
 {
-  
-  
+
+
   std::string header = sqeazy::image_header::pack<value_type>(dims);
-    
-  BOOST_CHECK_NE(header.size(),0);
-  BOOST_CHECK_EQUAL(header[header.size()-1],sqeazy::image_header::header_end_delimeter());
-    
+
+  BOOST_CHECK_NE(header.size(),0u);
+
+  auto hdr_delim = sqeazy::image_header::header_end_delimeter();
+  BOOST_CHECK_NE(header.rfind(hdr_delim),0u);
+  BOOST_CHECK_NE(header.rfind(hdr_delim),std::string::npos);
+
 }
 
 BOOST_AUTO_TEST_CASE( header_contructs_and_assigns )
 {
   sqeazy::image_header lhs(uint16_t(),
-			   dims,
-			   boost::unit_test::framework::current_test_case().p_name,
-			   42);
-  
-  BOOST_CHECK_GT(lhs.size(),0);
-  
+               dims,
+               boost::unit_test::framework::current_test_case().p_name,
+               42);
+
+  BOOST_CHECK_GT(lhs.size(),0u);
+
   sqeazy::image_header rhs(uint16_t(),
-			   dims,
-			   boost::unit_test::framework::current_test_case().p_name,
-			   42);
-  
-  BOOST_CHECK_GT(rhs.size(),0);
-  
+               dims,
+               boost::unit_test::framework::current_test_case().p_name,
+               42);
+
+  BOOST_CHECK_GT(rhs.size(),0u);
+
   sqeazy::image_header foo(uint8_t(),
-			   dims,
-			   "",
-			   12);
-  
-  BOOST_CHECK_GT(foo.size(),0);
+               dims,
+               "",
+               12);
+
+  BOOST_CHECK_GT(foo.size(),0u);
   BOOST_CHECK(lhs == rhs);
   BOOST_CHECK(lhs!=foo);
-    
+
 }
 
 BOOST_AUTO_TEST_CASE( header_copies_and_assigns )
 {
   sqeazy::image_header lhs(uint16_t(),
-			   dims,
-			   boost::unit_test::framework::current_test_case().p_name,
-			   42);
+               dims,
+               boost::unit_test::framework::current_test_case().p_name,
+               42);
 
   sqeazy::image_header copied(lhs);
   sqeazy::image_header assinged = lhs;
@@ -77,40 +75,63 @@ BOOST_AUTO_TEST_CASE( header_copies_and_assigns )
   BOOST_CHECK(lhs==assinged);
 }
 
+
 BOOST_AUTO_TEST_CASE( encode_header_correct_typeid )
 {
 
   std::string hdr = sqeazy::image_header::pack<value_type>(dims);
-  std::stringstream header_stream(hdr.substr(0,hdr.size()-1));
-  
-  bpt::ptree tree;
+  int offset = sqeazy::image_header::header_end_delimeter().size();
 
-  BOOST_CHECK_NO_THROW(bpt::read_json(header_stream, tree));
+  auto temp = hdr.substr(0,hdr.size()-offset);
+  BOOST_CHECK_GT(temp.size(),0u);
+  BOOST_CHECK_LT(temp.size(),hdr.size());
 
-  std::string received = tree.get<std::string>("raw.type");
-#ifdef _WIN32
+  sqeazy::header::tag tree = sqeazy::header::from_string(temp);
+  std::string received = tree.raw_type_id_;
+  #ifdef _WIN32
   if (received.find("_") != std::string::npos)
-	  received.replace(received.find("_"),1," ");
+    received.replace(received.find("_"),1," ");
 #endif
   BOOST_CHECK_EQUAL(received,typeid(value_type).name());
-  
 }
+
+
+// BOOST_AUTO_TEST_CASE( encode_header_correct_typeid )
+// {
+
+//   std::string hdr = sqeazy::image_header::pack<value_type>(dims);
+
+//   int offset = sqeazy::image_header::header_end_delimeter().size();
+//   std::stringstream header_stream(hdr.substr(0,hdr.size()-offset));
+
+//   bpt::ptree tree;
+
+//   BOOST_CHECK_NO_THROW(bpt::read_json(header_stream, tree));
+
+//   std::string received = tree.get<std::string>("raw.type");
+// #ifdef _WIN32
+//   if (received.find("_") != std::string::npos)
+//       received.replace(received.find("_"),1," ");
+// #endif
+//   BOOST_CHECK_EQUAL(received,typeid(value_type).name());
+
+// }
 
 BOOST_AUTO_TEST_CASE( header_size_aligned_to_type )
 {
 
   sqeazy::image_header int_uneven(int(),
-				  dims,
-				  "no_pipelin",//wrong name to make header string no multiple of 4
-				  1024);
+                  dims,
+                  "no_pipelin",//wrong name to make header string no multiple of 4
+                  1024);
   BOOST_CHECK(int_uneven.size() % sizeof(int) == 0);
   sqeazy::image_header int_uneven_reread(int_uneven.str());
   BOOST_CHECK(int_uneven_reread == int_uneven);
-				  
+
   sqeazy::image_header short_uneven(short(),
-				    dims,
-				    "no_pipelin",//wrong name to make header string no multiple of 2
-				    1024);
+                    dims,
+                    "no_pipelin",//wrong name to make header string no multiple of 2
+                    1024);
   BOOST_CHECK(short_uneven.size() % sizeof(short) == 0);
   sqeazy::image_header short_uneven_reread(short_uneven.str());
   BOOST_CHECK(short_uneven_reread == short_uneven);
@@ -122,22 +143,24 @@ BOOST_AUTO_TEST_CASE( header_size_aligned_to_type )
 
 }
 
- BOOST_AUTO_TEST_CASE( encode_header_correct_num_dims )
+BOOST_AUTO_TEST_CASE( encode_header_correct_num_dims )
 {
   std::string hdr = sqeazy::image_header::pack<value_type>(dims);
-  std::stringstream header_stream(hdr.substr(0,hdr.size()-1));
-  
-  bpt::ptree tree;
 
-  BOOST_CHECK_NO_THROW(bpt::read_json(header_stream, tree));
-  
-  BOOST_CHECK_EQUAL(tree.get<unsigned>("raw.rank"),3);
-    
+  int offset  = sqeazy::image_header::header_end_delimeter().size();
+  std::stringstream header_stream(hdr.substr(0,hdr.size()-offset));
+
+  header::tag tree;
+
+  BOOST_CHECK_NO_THROW(tree = header::from_string(header_stream.str()));
+
+  BOOST_CHECK_EQUAL(tree.raw_shape_.size(),3u);
+
 }
 
  BOOST_AUTO_TEST_CASE( encode_header_correct_type_id )
 {
-  
+
   std::string header = sqeazy::image_header::pack<value_type>(dims);
   std::string type_id = sqeazy::image_header::unpack_type(header.c_str(),header.size());
   std::string expected = typeid(value_type).name();
@@ -161,13 +184,13 @@ BOOST_AUTO_TEST_CASE( encode_header_correct_values_of_dims )
 
 BOOST_AUTO_TEST_CASE( encode_header_correct_values_of_dims_corner_cases )
 {
-  
+
   sqeazy::image_header hdr(value_type(),dims);
 
   std::string hstr = hdr.str();
   std::vector<std::size_t> extracted_dims_2(sqeazy::image_header::unpack_shape(hstr.c_str(), hstr.size()));
   BOOST_CHECK_EQUAL_COLLECTIONS(dims.begin(), dims.end(), extracted_dims_2.begin(), extracted_dims_2.end());
-  
+
   std::string header_plus_separator = hdr.str();
   header_plus_separator += "|";
   std::vector<std::size_t> extracted_dims_3 = sqeazy::image_header::unpack_shape(header_plus_separator.c_str(), header_plus_separator.size());
@@ -184,15 +207,15 @@ BOOST_AUTO_TEST_CASE( pack_and_reload )
 {
   sqeazy::image_header expected(value_type(),dims,"no_pipeline",1024);
   std::string given = sqeazy::image_header::pack<value_type>(dims,"no_pipeline",1024);
-  
+
   BOOST_CHECK(expected.str() == given);
   BOOST_CHECK_EQUAL_COLLECTIONS(given.begin(), given.end(), expected.begin(), expected.end());
-  
+
   sqeazy::image_header reloaded(given.begin(), given.end());
 
   BOOST_CHECK(expected == reloaded);
   BOOST_CHECK_EQUAL(expected.str(), reloaded.str());
-    
+
 }
 
 BOOST_AUTO_TEST_CASE( type_name )
@@ -201,9 +224,167 @@ BOOST_AUTO_TEST_CASE( type_name )
   std::string hdr = expected.str();
   std::string rec = sqeazy::image_header::unpack_type(&hdr[0],hdr.size());
   std::string exp = typeid(value_type).name();
-  
+
   BOOST_CHECK(!rec.empty());
-  
+
   BOOST_CHECK_EQUAL(rec,exp);
 }
+
+
+BOOST_AUTO_TEST_CASE( do_not_touch_whitespaces_in_verbatim )
+{
+
+  std::string msg = "these whitespaces should stay";
+  std::string pipeline = "step1(junk=<verbatim>these whitespaces should stay</verbatim>)";
+
+
+  std::string hdr_str = sqeazy::image_header::pack<value_type>(dims,pipeline,1024);
+  BOOST_CHECK(sqeazy::ends_with(hdr_str.begin(),hdr_str.end(),sqeazy::image_header::header_end_delimeter()));
+
+  sqeazy::image_header rec_hdr = sqeazy::image_header::unpack(hdr_str);
+  std::string rec = rec_hdr.str();
+
+  auto fpos = rec.find("these whitespaces should stay");
+  BOOST_CHECK(fpos!=std::string::npos);
+  // std::cout << "rec = " << rec << "\n";
+
+}
+
+
+BOOST_AUTO_TEST_CASE( property_tree_conserves_whitespaces )
+{
+
+  bpt::ptree tree;
+  std::string msg = "these whitespaces should stay";
+
+  tree.put("test_str", msg);
+
+  std::string received = tree.get<std::string>("test_str");
+
+  BOOST_CHECK_EQUAL(received,msg);
+
+}
+
+BOOST_AUTO_TEST_CASE( property_tree_conserves_whitespaces_in_json )
+{
+
+  bpt::ptree tree;
+  std::string msg = "these whitespaces should stay";
+
+  tree.put("test_str", msg);
+
+  std::stringstream json("");
+  bpt::write_json(json, tree);
+
+  std::string json_str = json.str();
+
+  std::stringstream rec_json("");
+  rec_json << json_str;
+
+  bpt::ptree rec_tree;
+  bpt::read_json(rec_json,rec_tree);
+
+  std::string received = rec_tree.get<std::string>("test_str");
+
+  BOOST_CHECK_EQUAL(received,msg);
+
+}
+
+// BOOST_AUTO_TEST_CASE( remove_whitespaces )
+// {
+
+//   std::string plain_pipeline = "step1(  junk=123  )  ";
+//   std::string plain_stripped = sqeazy::remove_whitespace(plain_pipeline);
+//   BOOST_CHECK_LT(plain_stripped.size(),plain_pipeline.size());
+//   BOOST_CHECK_EQUAL(plain_stripped.size(),plain_pipeline.size()-6);
+
+// }
+
+// BOOST_AUTO_TEST_CASE( remove_whitespaces_ignoring_verbatim )
+// {
+
+
+//   std::string pipeline = "step1(  junk=<verbatim>these whitespaces should stay</verbatim>  )  ";
+//   std::string stripped = sqeazy::remove_whitespace(pipeline);
+//   BOOST_CHECK_LT(stripped.size(),pipeline.size());
+//   BOOST_CHECK_EQUAL(stripped.size(),pipeline.size()-6);
+
+// }
+
+BOOST_AUTO_TEST_CASE( ends_with )
+{
+  std::string empty = "";
+  std::string at_start = "123 Hello World";
+  std::string at_end = "123 Hello World 123";
+
+  std::string match = "123";
+
+  BOOST_CHECK(!sqeazy::ends_with(empty.begin(),empty.end(),match));
+  BOOST_CHECK(!sqeazy::ends_with(at_start.begin(),at_start.end(),match));
+  BOOST_CHECK(sqeazy::ends_with(at_end.begin(),at_end.end(),match));
+}
+
+
+BOOST_AUTO_TEST_SUITE_END()
+
+
+BOOST_FIXTURE_TEST_SUITE( valid_headers, uint16_cube_of_8 )
+
+
+BOOST_AUTO_TEST_CASE( is_valid )
+{
+  std::string header = sqeazy::image_header::pack<value_type>(dims);
+  BOOST_CHECK(sqeazy::image_header::valid_header(header));
+
+  header = sqeazy::image_header::pack<value_type>(dims,boost::unit_test::framework::current_test_case().p_name);
+  BOOST_CHECK(sqeazy::image_header::valid_header(header));
+
+  header = sqeazy::image_header::pack<value_type>(dims,boost::unit_test::framework::current_test_case().p_name,1024);
+  BOOST_CHECK(sqeazy::image_header::valid_header(header));
+
+}
+
+BOOST_AUTO_TEST_CASE( removed_end )
+{
+  std::string header = sqeazy::image_header::pack<value_type>(dims,
+                                                              boost::unit_test::framework::current_test_case().p_name,
+                                                              1024);
+  BOOST_CHECK(sqeazy::image_header::valid_header(header));
+  BOOST_CHECK(!sqeazy::image_header::valid_header(header.begin(),header.end()-10));
+  BOOST_CHECK(!sqeazy::image_header::valid_header(header.begin(),header.end()-1));
+  BOOST_CHECK(!sqeazy::image_header::valid_header(header.begin(),header.end()-2));
+  BOOST_CHECK(!sqeazy::image_header::valid_header(header.begin(),header.end()-4));
+}
+
+BOOST_AUTO_TEST_CASE( removed_start )
+{
+  std::string header = sqeazy::image_header::pack<value_type>(dims,
+                                                              boost::unit_test::framework::current_test_case().p_name,
+                                                              1024);
+  BOOST_CHECK(sqeazy::image_header::valid_header(header));
+  BOOST_CHECK(!sqeazy::image_header::valid_header(header.begin()+10,header.end()));
+  BOOST_CHECK(!sqeazy::image_header::valid_header(header.begin()+1,header.end()));
+  BOOST_CHECK(!sqeazy::image_header::valid_header(header.begin()+2,header.end()));
+  BOOST_CHECK(!sqeazy::image_header::valid_header(header.begin()+4,header.end()));
+}
+
+
+
+BOOST_AUTO_TEST_CASE( header_roundtrip )
+{
+
+  sqeazy::image_header hdr(value_type(),
+                           dims,
+                           boost::unit_test::framework::current_test_case().p_name,
+                           1024);
+
+  auto serialized_hdr = hdr.str();
+  BOOST_CHECK(sqeazy::image_header::valid_header(hdr.str()));
+
+  sqeazy::image_header rt_hdr(serialized_hdr);
+  BOOST_CHECK(sqeazy::image_header::valid_header(rt_hdr.str()));
+
+  BOOST_CHECK(rt_hdr == hdr);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

@@ -68,13 +68,15 @@ To obtain the dependencies on your system, we recommend the following installati
 * hdf5 (>1.8, use the project [binaries for Windows](https://www.hdfgroup.org/HDF5/release/obtain5.html))
 * ffmpeg (>= 2.5.8) with libx256 (>= 1.7) (take the relevant ffmpeg installation of binary and libraries from [ffmpeg.zeranoe.com](https://ffmpeg.zeranoe.com/blog/))
 * cmake (>=3.1 from https://cmake.org/download/)
+* (optional) google/benchmark (>= 1.1.0) from https://github.com/google/benchmark
 
-Here is how to build sqeazy on Windows from the command line (GUI based cmake invocation needs to be adapted along this): 
+Here is how to build sqeazy on Windows from the command line (GUI based cmake invocation needs to be adapted along this). I made very good experiences in using the "VS2015 x86 x64 Cross Tools Command Prompt" in Administrator mode and running `vcvarsall amd64` before following the steps outline below:
+
 ```
 > cd X:\path\to\sqy\repo
 > mkdir build
 > cd build
-> cmake.exe -G "Visual Studio 14 2015 Win64" -DCMAKE_INSTALL_PREFIX=C:\Users\steinbac\temp_sqy -DHDF5_ROOT=C:\Users\steinbac\software\hdf5\1.8.16 -DBOOST_ROOT=C:\Users\steinbac\software\boost\1_59_0_static -DLZ4_ROOT=C:\Users\steinbac\software\lz4\master -DTIFF_INCLUDE_DIR=C:\Users\steinbac\software\tiff\3.8.2-1\include -DTIFF_LIBRARY=C:\Users\steinbac\software\tiff\3.8.2-1\lib\libtiff.dll -DFFMPEG_ROOT_DIR=C:\Users\steinbac\software\ffmpeg\2.8.1 -DCMAKE_BUILD_TYPE=Release ..
+> cmake.exe -G "Visual Studio 14 2015 Win64" -DCMAKE_INSTALL_PREFIX=C:\Users\steinbac\temp_sqy -DHDF5_ROOT=C:\Users\steinbac\software\hdf5\1.8.16 -DBOOST_ROOT=C:/Users/steinbac/software/boost/1_64_0 -DLZ4_ROOT=C:\Users\steinbac\software\lz4\master -DTIFF_ROOT=C:\Users\steinbac\software\tiff\4.0.6 -DFFMPEG_ROOT_DIR=C:\Users\steinbac\software\ffmpeg\3.0.2 -DGOOGLEBENCHMARK_ROOT=C:\Users\steinbac\software\benchmark\1.1.0 -DCMAKE_BUILD_TYPE=Release ..
 > cmake.exe --build . --target ALL_BUILD --config Release
 > ctest.exe -C Release #(optional) the above builds in Release mode
 > cmake.exe --build . --target install --config Release

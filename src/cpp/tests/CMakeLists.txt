@@ -9,19 +9,19 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/include)
 #boost unit test framework has some defects if we wanna bind against shared and/or static libs
 ##that's why we bind against the dynamic loaded libraries primarily
 SET(Boost_USE_STATIC_LIBS OFF)
-FIND_PACKAGE (Boost 1.55 COMPONENTS regex unit_test_framework filesystem system REQUIRED QUIET)
+FIND_PACKAGE (Boost 1.55 COMPONENTS regex unit_test_framework filesystem system serialization REQUIRED QUIET)
 if(Boost_FOUND)
-	MESSAGE("++ [tests] Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES} : ${Boost_LIBRARIES}")
-	INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-	link_directories(${Boost_LIBRARY_DIRS})
-	IF(MSVC)
-	add_definitions(/DBOOST_TEST_DYN_LINK)
+    MESSAGE("++ [tests] Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES} ")
+    INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+    link_directories(${Boost_LIBRARY_DIRS})
+    IF(MSVC)
+    add_definitions(/DBOOST_TEST_DYN_LINK)
 
-	ELSE(MSVC)
-	add_definitions(-DBOOST_TEST_DYN_LINK)
-	ENDIF(MSVC)	
+    ELSE(MSVC)
+    add_definitions(-DBOOST_TEST_DYN_LINK)
+    ENDIF(MSVC)
 else(Boost_FOUND)
-	MESSAGE(FATAL_ERROR "++ Boost not found!")
+    MESSAGE(FATAL_ERROR "++ Boost not found!")
 endif(Boost_FOUND)
 
 
@@ -35,10 +35,13 @@ if(DEFINED READY_4_BUNDLE)
 endif()
 
 
-message(STATUS "[tests] linking against ${SQY_LIB} ${Boost_LIBRARIES} ")
+message(STATUS "++ [tests] linking against ${SQY_LIB} ${Boost_LIBRARIES} ")
 
 add_executable(test_compass_impl test_compass_impl.cpp)
 target_link_libraries(test_compass_impl ${Boost_LIBRARIES})
+
+add_executable(test_algorithms_impl test_algorithms_impl.cpp)
+target_link_libraries(test_algorithms_impl ${Boost_LIBRARIES})
 
 add_executable(test_string_parsers_impl test_string_parsers_impl.cpp)
 target_link_libraries(test_string_parsers_impl ${Boost_LIBRARIES})
@@ -57,6 +60,18 @@ target_link_libraries(test_bitswap_scheme_impl ${Boost_LIBRARIES})
 add_executable(test_bitplane_reorder_impl test_bitplane_reorder_impl.cpp)
 target_link_libraries(test_bitplane_reorder_impl ${Boost_LIBRARIES})
 
+add_executable(test_bitplane_reorder_on_ramp_impl test_bitplane_reorder_on_ramp_impl.cpp)
+target_link_libraries(test_bitplane_reorder_on_ramp_impl ${Boost_LIBRARIES})
+
+add_executable(bench_bitplane_reorder_impl bench_bitplane_reorder_impl.cpp)
+target_link_libraries(bench_bitplane_reorder_impl ${Boost_LIBRARIES})
+
+add_executable(test_sse_utils_impl test_sse_utils_impl.cpp)
+target_link_libraries(test_sse_utils_impl ${Boost_LIBRARIES})
+
+# add_executable(test_sse_bitshuffle_impl test_sse_bitshuffle_impl.cpp)
+# target_link_libraries(test_sse_bitshuffle_impl ${Boost_LIBRARIES})
+
 add_executable(test_shift_by_intrinsics test_shift_by_intrinsics.cpp)
 target_link_libraries(test_shift_by_intrinsics ${Boost_LIBRARIES})
 
@@ -69,14 +84,28 @@ target_link_libraries(test_sqeazy_utils_impl ${Boost_LIBRARIES} )
 add_executable(test_sqeazy_header_impl test_sqeazy_header_impl.cpp)
 target_link_libraries(test_sqeazy_header_impl ${Boost_LIBRARIES})
 
-add_executable(test_background_scheme_impl test_background_scheme_impl.cpp)
-target_link_libraries(test_background_scheme_impl # ${SQY_LIB}
-  ${Boost_LIBRARIES})
+add_executable(test_header_tag_impl test_header_tag_impl.cpp)
+target_link_libraries(test_header_tag_impl ${Boost_LIBRARIES})
 
+add_executable(test_background_scheme_impl test_background_scheme_impl.cpp)
+target_link_libraries(test_background_scheme_impl  ${Boost_LIBRARIES})
+
+add_executable(test_raster_reorder_scheme_impl test_raster_reorder_scheme_impl.cpp)
+target_link_libraries(test_raster_reorder_scheme_impl  ${Boost_LIBRARIES})
+
+add_executable(test_tile_shuffle_scheme_impl test_tile_shuffle_scheme_impl.cpp)
+target_link_libraries(test_tile_shuffle_scheme_impl  ${Boost_LIBRARIES})
+
+add_executable(test_frame_shuffle_scheme_impl test_frame_shuffle_scheme_impl.cpp)
+target_link_libraries(test_frame_shuffle_scheme_impl  ${Boost_LIBRARIES})
+
+add_executable(test_zcurve_reorder_scheme_impl test_zcurve_reorder_scheme_impl.cpp)
+target_link_libraries(test_zcurve_reorder_scheme_impl  ${Boost_LIBRARIES})
 
 add_executable(test_hist_impl test_hist_impl.cpp)
 target_link_libraries(test_hist_impl ${Boost_LIBRARIES})
-add_executable(test_bench_utils_impl test_bench_utils_impl.cpp)
+
+#add_executable(test_bench_utils_impl test_bench_utils_impl.cpp)
 
 
 add_executable(test_lz4_encoding test_lz4_encoding.cpp)
@@ -119,6 +148,8 @@ target_link_libraries(test_dynamic_stage_factory_impl ${Boost_LIBRARIES})
 add_executable(test_quantiser_impl test_quantiser_impl.cpp)
 target_link_libraries(test_quantiser_impl ${Boost_LIBRARIES})
 
+add_executable(test_histogram_fill test_histogram_fill.cpp)
+target_link_libraries(test_histogram_fill ${Boost_LIBRARIES})
 
 add_executable(test_yuv_utils test_yuv_utils.cpp)
 target_link_libraries(test_yuv_utils ${Boost_LIBRARIES})
@@ -152,31 +183,31 @@ target_link_libraries(test_volume_fixtures ${Boost_LIBRARIES} ${TIFF_LIBRARY})
 
 IF(FFMPEG_FOUND)
   if(WIN32)
-	LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}\\lib)
-	else()
-	LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
+    LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}\\lib)
+    else()
+    LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
     endif()
-	
+
   SET(SQY_FFMPEG_Libraries ${FFMPEG_LIBRARIES})
-  
+
   #if(NOT EXTRA_LIBM_NOT_NEEDED)
-	#set(SQY_FFMPEG_Libraries ${SQY_FFMPEG_Libraries} m)
+    #set(SQY_FFMPEG_Libraries ${SQY_FFMPEG_Libraries} m)
   #endif()
 
   if(DEFINED FFMPEG_EXTRA_LINK_FLAGS AND DEFINED FFMPEG_USE_STATIC_LIBS)
-	set(SQY_FFMPEG_Libraries ${SQY_FFMPEG_Libraries} ${FFMPEG_EXTRA_LINK_FLAGS})
+    set(SQY_FFMPEG_Libraries ${SQY_FFMPEG_Libraries} ${FFMPEG_EXTRA_LINK_FLAGS})
   endif()
 
-  
+
   add_executable(test_avcodec_sandbox test_avcodec_sandbox.cpp)
   target_link_libraries(test_avcodec_sandbox ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries})
 
   add_executable(deprecated_pipeline_select_impl deprecated_pipeline_select_impl.cpp)
-  target_link_libraries(deprecated_pipeline_select_impl ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} ${TIFF_LIBRARY} ${LZ4_LIBRARY} ${SQY_FFMPEG_Libraries})
+  target_link_libraries(deprecated_pipeline_select_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${LZ4_LIBRARY} ${SQY_FFMPEG_Libraries})
 
 
   add_executable(deprecated_pipeline_impl deprecated_pipeline_impl.cpp)
-  target_link_libraries(deprecated_pipeline_impl ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} ${LZ4_LIBRARY} ${SQY_FFMPEG_Libraries})
+  target_link_libraries(deprecated_pipeline_impl ${Boost_LIBRARIES} ${LZ4_LIBRARY} ${SQY_FFMPEG_Libraries})
 
   add_executable(test_hevc_scheme_impl test_hevc_scheme_impl.cpp)
   target_link_libraries(test_hevc_scheme_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries})
@@ -204,7 +235,7 @@ ELSE(FFMPEG_FOUND)
 ENDIF(FFMPEG_FOUND)
 
 
-target_link_libraries(test_bench_utils_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY})
+#target_link_libraries(test_bench_utils_impl ${Boost_LIBRARIES} ${TIFF_LIBRARY})
 
 ENDIF(TIFF_FOUND)
 

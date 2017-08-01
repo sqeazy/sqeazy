@@ -57,6 +57,7 @@ struct helpers_fixture {
     tfile = tpath.string();
 	
     dims[0] -= 2;
+    dims[1] *= 16; // to make SSE implementation happy
     dims[2] += 1;
 
     unsigned size = std::accumulate(dims.begin(), dims.end(),1,std::multiplies<unsigned>());
