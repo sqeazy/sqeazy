@@ -12,7 +12,7 @@ jdk:
 
 before_install:
   
-  - if [[ ! -d /home/travis/sw ]];then mkdir /home/travis/sw ;fi
+  - if [[ ! -d /home/travis/sw ]];then mkdir -p /home/travis/sw ;fi
   - ls -lrth /home/travis/sw
   - export PATH=/home/travis/sw/bin:${PATH}
   - export LD_LIBRARY_PATH=/home/travis/sw/lib:${LD_LIBRARY_PATH}
@@ -63,7 +63,7 @@ before_install:
   #############################################################################
   # HDF5                                                                       #
   #############################################################################
-  - travis_retry wget --no-check-certificate https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.16/src/hdf5-1.8.16.tar.bz2
+  - travis_retry wget --no-check-certificate https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.16/src/hdf5-1.8.16.tar.bz2
   - tar xf hdf5-1.8.16.tar.bz2
   - cd hdf5-1.8.16/
   - if [[ ! -e /home/travis/sw/lib/libhdf5_hl.so || ! -e /home/travis/sw/lib/libhdf5_hl_cpp.so ]]; then
