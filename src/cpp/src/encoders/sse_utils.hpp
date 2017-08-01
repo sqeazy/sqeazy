@@ -827,100 +827,8 @@ namespace sqeazy {
     template <>  struct is_8bit<char> : std::true_type {};
     template <>  struct is_8bit<unsigned char> : std::true_type {};
 
-    /**
-    \brief function to perform a bitplane extraction using SIMD registers (fixed to SSE4 and lower for now)
-       the idea is to extract a bitplane from elements in [_begin, _end) and put the bits into _dst
-       example:
-       input array (16-bit): 0xffff, 0xffff, 0xffff, 0xffff, 0, 0 , 0, 0,...
-       msb per item        : 1       1       1       1       0, 0 , 0, 0,...
-       output array (16bit): 11110000, ...
 
-       \param[in] _begin iterator/pointer to beginning of input array
-       \param[in] _out   iterator/pointer to 1+ end of input array
-       \param[inout] _dst   iterator/pointer to beginning of output array
-       \param[in] _precondition   functor to take reference of type __m128i and apply arbitrary operations on it before bits are extracted
-       \param[in] _bitplane_offset_from_msb  shift block left by this much before extracting the MSB
 
-       \return
-       \retval iterator to 1+ the end element of the output array
-    */
-    template <typename in_iterator_t, typename out_iterator_t >
-    auto simd_collect_single_bitplane(in_iterator_t _begin,
-                                      in_iterator_t _end,
-                                      out_iterator_t _dst,
-                                      int _bitplane_offset_from_msb = 0
-      ) -> typename std::enable_if< !(is_8bit<decltype(*_begin)>::value) , out_iterator_t>::type
-    {
-
-      typedef typename std::iterator_traits<in_iterator_t>::value_type in_value_t;
-      typedef typename std::iterator_traits<out_iterator_t>::value_type out_value_t;
-
-      static_assert(std::is_same<in_value_t,out_value_t>::value, "[simd_collect_bitplane] iterators for input and output differ!");
-      static_assert(std::is_integral<in_value_t>::value, "[simd_collect_bitplane] received value is not integral");
-
-      auto functor = [=](__m128i& _block){ return ;};
-      // old precondition START
-      // sqeazy::detail::vec_xor<in_value_t> xoring;
-      // sqeazy::detail::vec_rotate_left<in_value_t> rotate_left;
-      // if(std::numeric_limits<in_value_t>::is_signed)
-      //   xoring(&input_block);
-
-      // input_block = rotate_left(&input_block); //
-      // old precondition END
-
-      if(sizeof(*_begin)>1)
-        return simd_collect_single_bitplane_impl(_begin, _end, _dst, functor, _bitplane_offset_from_msb);
-      else
-        return simd_collect_single_bitplane_impl_8bit(_begin, _end, _dst, functor, _bitplane_offset_from_msb);
-    }
-
-/**
-    \brief function to perform a bitplane extraction using SIMD registers (fixed to SSE4 and lower for now)
-       the idea is to extract a bitplane from elements in [_begin, _end) and put the bits into _dst
-       example:
-       input array (16-bit): 0xffff, 0xffff, 0xffff, 0xffff, 0, 0 , 0, 0,...
-       msb per item        : 1       1       1       1       0, 0 , 0, 0,...
-       output array (16bit): 11110000, ...
-
-       \param[in] _begin iterator/pointer to beginning of input array
-       \param[in] _out   iterator/pointer to 1+ end of input array
-       \param[inout] _dst   iterator/pointer to beginning of output array
-       \param[in] _precondition   functor to take reference of type __m128i and apply arbitrary operations on it before bits are extracted
-       \param[in] _bitplane_offset_from_msb  shift block left by this much before extracting the MSB
-
-       \return
-       \retval iterator to 1+ the end element of the output array
-    */
-    template <typename in_iterator_t, typename out_iterator_t, typename functor_t>
-    auto simd_collect_single_bitplane(in_iterator_t _begin,
-                                      in_iterator_t _end,
-                                      out_iterator_t _dst,
-                                      functor_t precondition,
-                                      int _bitplane_offset_from_msb = 0
-      ) -> typename std::enable_if< !(is_8bit<decltype(*_begin)>::value) , out_iterator_t>::type
-    {
-
-      typedef typename std::iterator_traits<in_iterator_t>::value_type in_value_t;
-      typedef typename std::iterator_traits<out_iterator_t>::value_type out_value_t;
-
-      static_assert(std::is_same<in_value_t,out_value_t>::value, "[simd_collect_bitplane] iterators for input and output differ!");
-      static_assert(std::is_integral<in_value_t>::value, "[simd_collect_bitplane] received value is not integral");
-
-      if(!is_aligned::for_sse(&*_begin)){
-        std::cerr << "[sqeazy::detail::simd_collect_single_bitplane_impl] unable to use input for SSE operations due to misalignment\n";
-        return _dst;
-      }
-
-      if(!is_aligned::for_sse(&*_dst)){
-        std::cerr << "[sqeazy::detail::simd_collect_single_bitplane_impl] unable to use output for SSE operations due to misalignment\n";
-        return _dst;
-      }
-
-      if(sizeof(*_begin)>1)
-        return simd_collect_single_bitplane_impl(_begin, _end, _dst, precondition, _bitplane_offset_from_msb);
-      else
-        return simd_collect_single_bitplane_impl_8bit(_begin, _end, _dst, precondition, _bitplane_offset_from_msb);
-    }
 
 
     /**
@@ -936,18 +844,16 @@ namespace sqeazy {
        \param[in] _begin iterator/pointer to beginning of input array
        \param[in] _out   iterator/pointer to 1+ end of input array
        \param[inout] _dst   iterator/pointer to beginning of output array
-       \param[in] _precondition   functor to take reference of type __m128i and apply arbitrary operations on it before bits are extracted
        \param[in] _bitplane_offset_from_msb  shift block left by this much before extracting the MSB
 
        \return
        \retval iterator to 1+ the end element of the output array
 
     */
-    template <typename in_iterator_t, typename out_iterator_t, typename functor_t >
+    template <typename in_iterator_t, typename out_iterator_t >
     auto simd_collect_single_bitplane_impl(in_iterator_t _begin,
                                       in_iterator_t _end,
                                       out_iterator_t _dst,
-                                      functor_t precondition,
                                       int _bitplane_offset_from_msb = 0
       ) -> typename std::enable_if< !(is_8bit<decltype(*_begin)>::value) , out_iterator_t>::type
 
@@ -991,8 +897,6 @@ namespace sqeazy {
 
           __m128i input_block = _mm_load_si128(reinterpret_cast<const __m128i*>(&*input));
 
-          precondition(input_block);
-
           input_block = shift_left(input_block,_bitplane_offset_from_msb);
           in_value_t temp = collect(input_block) << (n_bits_in_value_t - 16);
 
@@ -1033,18 +937,16 @@ namespace sqeazy {
        \param[in] _begin iterator/pointer to beginning of input array
        \param[in] _out   iterator/pointer to 1+ end of input array
        \param[inout] _dst   iterator/pointer to beginning of output array
-       \param[in] _precondition   functor to take reference of type __m128i and apply arbitrary operations on it before bits are extracted
        \param[in] _bitplane_offset_from_msb  shift block left by this much before extracting the MSB
 
        \return
        \retval iterator to 1+ the end element of the output array
 
     */
-    template <typename in_iterator_t, typename out_iterator_t, typename functor_t >
+    template <typename in_iterator_t, typename out_iterator_t >
     out_iterator_t simd_collect_single_bitplane_impl_8bit(in_iterator_t _begin,
                                       in_iterator_t _end,
                                       out_iterator_t _dst,
-                                      functor_t precondition,
                                       int _bitplane_offset_from_msb = 0
       )
 
@@ -1075,8 +977,6 @@ namespace sqeazy {
 
         __m128i input_block = _mm_load_si128(reinterpret_cast<const __m128i*>(&*(_begin + i)));
 
-        precondition(input_block);
-
         input_block = shift_left(input_block,_bitplane_offset_from_msb);
         std::uint16_t temp = collect(input_block);
 
@@ -1095,6 +995,41 @@ namespace sqeazy {
       return output;
     }
 
+ /**
+    \brief function to perform a bitplane extraction using SIMD registers (fixed to SSE4 and lower for now)
+       the idea is to extract a bitplane from elements in [_begin, _end) and put the bits into _dst
+       example:
+       input array (16-bit): 0xffff, 0xffff, 0xffff, 0xffff, 0, 0 , 0, 0,...
+       msb per item        : 1       1       1       1       0, 0 , 0, 0,...
+       output array (16bit): 11110000, ...
+
+       \param[in] _begin iterator/pointer to beginning of input array
+       \param[in] _out   iterator/pointer to 1+ end of input array
+       \param[inout] _dst   iterator/pointer to beginning of output array
+       \param[in] _bitplane_offset_from_msb  shift block left by this much before extracting the MSB
+
+       \return
+       \retval iterator to 1+ the end element of the output array
+    */
+    template <typename in_iterator_t, typename out_iterator_t >
+    auto simd_collect_single_bitplane(in_iterator_t _begin,
+                                      in_iterator_t _end,
+                                      out_iterator_t _dst,
+                                      int _bitplane_offset_from_msb = 0
+      ) -> typename std::enable_if< !(is_8bit<decltype(*_begin)>::value) , out_iterator_t>::type
+    {
+
+      typedef typename std::iterator_traits<in_iterator_t>::value_type in_value_t;
+      typedef typename std::iterator_traits<out_iterator_t>::value_type out_value_t;
+
+      static_assert(std::is_same<in_value_t,out_value_t>::value, "[simd_collect_bitplane] iterators for input and output differ!");
+      static_assert(std::is_integral<in_value_t>::value, "[simd_collect_bitplane] received value is not integral");
+
+      if(sizeof(*_begin)>1)
+        return simd_collect_single_bitplane_impl(_begin, _end, _dst, _bitplane_offset_from_msb);
+      else
+        return simd_collect_single_bitplane_impl_8bit(_begin, _end, _dst, _bitplane_offset_from_msb);
+    }
 
     /**
        \brief function to perform a full bitplane reshuffle on the input where each bitplane is 1bit wide
@@ -1154,9 +1089,14 @@ namespace sqeazy {
       //TODO: the segments are the bitplane chunks that are to be extracted from each value_type
       //      we here assume n_bits_per_plane = 1
       const std::size_t n_segments		= n_bits_in_value_t;
+      if(_nthreads > n_segments){
+        //TODO: this guard is required so that every thread gets one bitplane,
+        //      more threads can be supported, but then one would have to partition
+        //      the input/output data accordingly; let's keep it simple for now
+        _nthreads = n_segments;
+      }
+
       const omp_size_type n_segments_signed		= n_segments;
-      const omp_size_type chunk_size = n_segments_signed/_nthreads;
-      assert(chunk_size % _nthreads == 0);
 
       const std::size_t len		= std::distance(_begin,_end);
       const std::size_t segment_offset	= len/n_segments;
@@ -1182,34 +1122,16 @@ namespace sqeazy {
       static_assert(std::is_integral<in_value_t>::value, "[simd_collect_bitplane] received value is not integral");
 
 
-
-#pragma omp parallel for                        \
-  shared(_begin, _end,_dst)                     \
-  num_threads(_nthreads)                        \
-  schedule(static,chunk_size)
+#pragma omp parallel for                                        \
+  shared(_begin, _end,_dst)                                     \
+  num_threads(_nthreads)
       for(omp_size_type seg = 0;seg<n_segments_signed;++seg){
 
         out_iterator_t output = _dst + seg*segment_offset;
 
-        auto functor = [=](__m128i& _block){
-
-          sqeazy::detail::vec_xor<in_value_t> xoring;
-          sqeazy::detail::vec_rotate_left<in_value_t> rotate_left;
-
-          if(std::numeric_limits<in_value_t>::is_signed)
-            xoring(&_block);
-
-          _block = rotate_left(&_block); //
-
-          return _block;
-        };
-
         simd_collect_single_bitplane(_begin, _end,
                                      output,
-                                     [=](__m128i& _block){
-                                       return _block;
-                                     }
-                                     , seg);
+                                     seg);
 
       } // s segments
 
