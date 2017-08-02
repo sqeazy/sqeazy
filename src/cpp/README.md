@@ -42,7 +42,7 @@ $ cmake <flags> ..
 $ make 
 ```
 
-The are some cmake build flags that are supported/required:
+There are some cmake build flags that are supported/required:
 * (required if not in environment) `LZ4_LIB_PATH` the location of the lz4 static and dynamic libraries
 * (required if not found in `LZ4_LIB_PATH`) `LZ4_INC_PATH` the location of lz4 header files (`lz4.h` etc)
 * (required if not in environment) `BOOST_ROOT` the location of the boost libraries
