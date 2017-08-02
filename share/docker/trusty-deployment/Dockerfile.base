@@ -1,0 +1,61 @@
+# Use an official Python runtime as a parent image
+FROM ubuntu:trusty
+
+# Set the working directory to /app
+WORKDIR /build
+
+# Install any needed packages
+RUN apt-get -qq update && apt-get install -y --no-install-recommends \
+        git \
+        mercurial \
+        wget \
+        bzip2 \
+        libbz2-dev \
+        make \
+#        yasm \
+        curl \
+        cpuid \
+        pkg-config \
+        software-properties-common \
+        binutils \
+        build-essential \
+        cpp \
+        cpp-4.8 \
+        g++ \
+        g++-4.8 \
+        gcc \
+        gcc-4.8 \
+        libasan0 \
+        libatomic1 \
+        libcloog-isl4 \
+        libgcc-4.8-dev \
+        libgmp10 \
+        libgomp1 \
+        libisl10 \
+        libitm1 \
+        libmpc3 \
+        libmpfr4 \
+        libquadmath0 \
+        libstdc++-4.8-dev \
+        libtimedate-perl \
+        libtsan0 \
+        patch;
+
+RUN wget --no-check-certificate http://www.nasm.us/pub/nasm/releasebuilds/2.13.01/nasm-2.13.01.tar.bz2 && \
+    tar xf nasm-2.13.01.tar.bz2 && \
+    cd nasm-2.13.01 && \
+    ./configure && make -j8 && make install;
+
+RUN wget --no-check-certificate https://cmake.org/files/v3.9/cmake-3.9.0.tar.gz && \
+    tar xf cmake-3.9.0.tar.gz && \
+    cd cmake-3.9.0 && \
+    ./configure && make -j8 && make install;
+
+RUN git clone https://github.com/yasm/yasm.git && cd yasm && \
+    mkdir build && cd build && cmake .. && make -j8 && make install;
+
+# Define environment variable
+# ENV NAME World
+
+# Run app.py when the container launches
+CMD ["bash"]
