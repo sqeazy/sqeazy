@@ -24,4 +24,4 @@ run-encoders-static: build-encoders-static
 	docker run -it --rm sqy/trusty/encoders-static:latest bash
 
 run-static: build-static
-	docker run -e BINTRAY_USER=psteinb -e BINTRAY_KEY=$(MY_BINTRAY_KEY) -it --rm sqy/trusty/static:latest
+docker run -e ORG_GRADLE_PROJECT_bintray_user=psteinb -e ORG_GRADLE_PROJECT_bintray_key=$(MY_BINTRAY_KEY) -it --rm sqy/trusty/static:latest

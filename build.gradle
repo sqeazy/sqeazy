@@ -22,22 +22,6 @@ def native_static_lib = ""
 def native_shared_lib = ""
 def supported_platforms = ['linux_x64', 'win64', 'darwin_universal']
 
-if(!hasProperty("bintray_user")){
-    def env_bintray_user = System.getenv('BINTRAY_USER')
-    if(env_bintray_user != null){
-        if(!env_bintray_user.isEmpty()){
-            setProperty("bintray_user", env_bintray_user)
-        }
-    }
-}
-
-if(!hasProperty("bintray_key")){
-    def env_bintray_key = System.getenv('BINTRAY_KEY')
-    if(env_bintray_key != null && !env_bintray_key.isEmpty()){
-        setProperty("bintray_key", env_bintray_key)
-    }
-}
-
 def jnaerator_platform = {
 
   def is_64 = (System.getProperty("os.arch").indexOf("64") != -1)
