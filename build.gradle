@@ -357,8 +357,8 @@ task upload_bundle(type:Exec) {
   def fname = file(zip_bundle.outputs.files[0]).getName()
   def url = 'https://api.bintray.com/content/psteinb/sqeazy/'+arch+'/'+project.version+'/'+arch+'/'+project.version+'/'+fname+'?publish=1'
 
-  if(hasProperty('bintray_user') && hasProperty('bintray_key') ){
-    args '-T'+fname,'-u'+bintray_user+':'+bintray_key, url
+  if(project.hasProperty('bintray_user') && project.hasProperty('bintray_key') ){
+    args '-T'+fname,'-u'+project.bintray_user+':'+project.bintray_key, url
   }
   else {
     println 'bintray_user and bintray_key not found, unable to create URL in upload_bundle'
@@ -655,6 +655,28 @@ task sqeazy_available << {
 
 }
 
+task print_props {
+
+    doLast {
+        if(project.hasProperty("bintray_user"))
+        {
+            println ">> " + project.bintray_user
+        }
+
+        if(project.hasProperty("bintray.user"))
+        {
+            println ">> " + project.bintray.user
+        }
+
+
+        if(project.hasProperty("bintray_key"))
+        {
+            println ">> " + project.bintray_key
+        }
+
+    }
+
+}
 // Task dependencies:
 
 //native tasks
@@ -809,13 +831,13 @@ publishing {
   }
 }
 
-if(hasProperty('bintray_user') && hasProperty('bintray_key') )
+if(project.hasProperty('bintray_user') && project.hasProperty('bintray_key') )
 {
   bintray {
 
     // property must be set in ~/.gradle/gradle.properties
-    user = bintray_user
-    key =  bintray_key
+    user = project.bintray_user
+    key =  project.bintray_key
 
     publications = ['SqeazyPie'] //When uploading configuration files
 
