@@ -22,11 +22,27 @@ def native_static_lib = ""
 def native_shared_lib = ""
 def supported_platforms = ['linux_x64', 'win64', 'darwin_universal']
 
+if(!hasProperty("bintray_user")){
+    def env_bintray_user = System.getenv('BINTRAY_USER')
+    if(env_bintray_user != null){
+        if(!env_bintray_user.isEmpty()){
+            setProperty("bintray_user", env_bintray_user)
+        }
+    }
+}
+
+if(!hasProperty("bintray_api_key")){
+    def env_bintray_api_key = System.getenv('BINTRAY_KEY')
+    if(env_bintray_api_key != null && !env_bintray_api_key.isEmpty()){
+        setProperty("bintray_api_key", env_bintray_api_key)
+    }
+}
+
 def jnaerator_platform = {
 
   def is_64 = (System.getProperty("os.arch").indexOf("64") != -1)
   def plat_path = ""
-  
+
   if (Os.isFamily(Os.FAMILY_WINDOWS)) {
     if(is_64){
       plat_path = "win64"
@@ -55,28 +71,28 @@ def build_cmake_args = {
 
 
 
-  
+
   def native_build_type = project.hasProperty("sqy_build_type") ? sqy_build_type : "Release"
   def sqy_x = project.hasProperty("sqy_experimental") ? sqy_experimental : "0"
   def path_to_lz4 = project.hasProperty("lz4_path") ? lz4_path : ""
   def path_to_ffmpeg = project.hasProperty("ffmpeg_path") ? ffmpeg_path : ""
   def path_to_hdf5 = project.hasProperty("hdf5_path") ? hdf5_path : ""
-  def path_to_tiff = project.hasProperty("tiff_path") ? tiff_path : ""	
+  def path_to_tiff = project.hasProperty("tiff_path") ? tiff_path : ""
   def path_to_boost = project.hasProperty("boost_path") ? boost_path : ""
 
-  
+
   def local_args = []
-  
+
   local_args << "-DCMAKE_BUILD_TYPE="+native_build_type
-  
+
   if(sqy_x != "0"){
     local_args << "-DSQY_EXPERIMENTAL=ON"
   }
 
 
-    
+
   if(path_to_lz4){
-    
+
     local_args << "-DLZ4_ROOT=" + path_to_lz4
   }
 
@@ -86,7 +102,7 @@ def build_cmake_args = {
     local_args << "-DFFMPEG_ROOT=" + path_to_ffmpeg
   }
 
-  
+
   if(path_to_hdf5){
     //TODO: see if path exists
     local_args << "-DHDF5_ROOT=" + path_to_hdf5
@@ -94,7 +110,7 @@ def build_cmake_args = {
 
   if(path_to_tiff){
     //TODO: see if path exists
-    local_args << "-DTIFF_ROOT=" + path_to_tiff 
+    local_args << "-DTIFF_ROOT=" + path_to_tiff
     /* if (Os.isFamily(Os.FAMILY_WINDOWS)){
        def tiff_path = file(path_to_tiff).absolutePath
        def tiff_include = tiff_path + "\\include"
@@ -108,10 +124,10 @@ def build_cmake_args = {
   }
 
 
-  
+
   if(path_to_boost){
     //TODO: see if path exists
-    local_args << "-DBOOST_ROOT=" + path_to_boost 
+    local_args << "-DBOOST_ROOT=" + path_to_boost
   }
 
 
@@ -122,7 +138,7 @@ task create_build_dir << {
 
   description 'create custom build directory '+native_build_dir
   group native_group
-  
+
   new File(native_build_dir).mkdirs()
 }
 
@@ -132,11 +148,11 @@ task cmake(type:Exec) {
 
   description 'invoke cmake to build native libs in '+native_build_dir
   group native_group
-  
+
   workingDir native_build_dir
-  
+
   inputs.dir file(native_source_dir).absolutePath
-  
+
   if (Os.isFamily(Os.FAMILY_WINDOWS)){
     outputs.files file(native_build_dir).absolutePath + '\\ALL_BUILD.vcxproj', file(native_build_dir).absolutePath + '\\CMakeCache.txt'
   } else {
@@ -144,40 +160,40 @@ task cmake(type:Exec) {
   }
 
   def path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake"
-  
+
   //DEFINE DEFAULTS
   if (Os.isFamily(Os.FAMILY_WINDOWS)){
-    
+
     path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake.exe"
     executable path_to_cmake_app
-	
+
     if(System.getProperty("os.arch").indexOf("64") != -1){
       args "-Ax64"
     } //args "-G \"Visual Studio 14 2015 Win64\""
-	
-	
-	
+
+
+
     //args "-DCMAKE_BINARY_DIR="+file(native_build_dir).absolutePath
-  } 
+  }
   else if (Os.isFamily(Os.FAMILY_MAC))
   {
     executable path_to_cmake_app
-    
-  } 
+
+  }
   else if (Os.isFamily(Os.FAMILY_UNIX))
   {
     executable path_to_cmake_app
-    
+
   }
 
 
   def some_args = build_cmake_args()
-  
-  
+
+
   args some_args
   args file(native_source_dir).absolutePath
-	
- 
+
+
 }
 
 // TODO: check if we can use multiple threads and forward that to make/cmake
@@ -185,20 +201,20 @@ task cmake(type:Exec) {
 task make(type:Exec) {
 
   description 'compile native code'
-  
+
   inputs.dir file(native_build_dir).absolutePath
   def path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake"
   workingDir native_build_dir
-  
+
   if (Os.isFamily(Os.FAMILY_WINDOWS))
       {
-	   path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake.exe"
-	//executable project_root+'\\run_cmake_build.bat'
-	
-	commandLine 'cmd', '/c', path_to_cmake_app,'--build','.','--target','ALL_BUILD','--config','Release'
-	
-	outputs.file '.\\build\\cpp\\src\\libsqeazy.dll'
-      } 
+       path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake.exe"
+    //executable project_root+'\\run_cmake_build.bat'
+
+    commandLine 'cmd', '/c', path_to_cmake_app,'--build','.','--target','ALL_BUILD','--config','Release'
+
+    outputs.file '.\\build\\cpp\\src\\libsqeazy.dll'
+      }
       else if (Os.isFamily(Os.FAMILY_MAC))
   {
     outputs.file './build/cpp/src/libsqeazy.dylib'
@@ -206,7 +222,7 @@ task make(type:Exec) {
     // if (org.gradle.workers.max > 1)
     //   build_command = 'make -j'+org.gradle.workers.max
     executable build_command
-  } 
+  }
   else if (Os.isFamily(Os.FAMILY_UNIX))
   {
     outputs.file './build/cpp/src/libsqeazy.so'
@@ -220,11 +236,11 @@ task cmake_4_bundle(type:Exec) {
 
   description 'invoke cmake to build sqeazy bundle in '+native_build_dir
   group bundle_group
-  
+
   workingDir native_build_dir
-  
+
   inputs.dir file(native_source_dir).absolutePath
-  
+
   if (Os.isFamily(Os.FAMILY_WINDOWS)){
     outputs.files file(native_build_dir).absolutePath + '\\ALL_BUILD.vcxproj', file(native_build_dir).absolutePath + '\\CMakeCache.txt'
   } else {
@@ -232,40 +248,40 @@ task cmake_4_bundle(type:Exec) {
   }
 
   def path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake"
-  
+
   //DEFINE DEFAULTS
   if (Os.isFamily(Os.FAMILY_WINDOWS)){
-    
+
     path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake.exe"
     executable path_to_cmake_app
-	
+
     if(System.getProperty("os.arch").indexOf("64") != -1){
       args "-Ax64"
     } //args "-G \"Visual Studio 14 2015 Win64\""
-	
-	
-	
+
+
+
     //args "-DCMAKE_BINARY_DIR="+file(native_build_dir).absolutePath
-  } 
+  }
   else if (Os.isFamily(Os.FAMILY_MAC))
   {
     executable path_to_cmake_app
-    
-  } 
+
+  }
   else if (Os.isFamily(Os.FAMILY_UNIX))
   {
     executable path_to_cmake_app
-    
+
   }
 
 
   args build_cmake_args()
 
   args "-DBUNDLE_SQEAZY=ON"
-  
+
   args file(native_source_dir).absolutePath
-	
- 
+
+
 }
 
 // TODO: check if we can use multiple threads and forward that to make/cmake
@@ -274,33 +290,33 @@ task make_bundle(type:Exec) {
 
   description 'use cmake to bundle libsqeazy.* and all first order dependencies'
   group bundle_group
-  
+
   inputs.dir file(native_build_dir).absolutePath
 
   def path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake"
   workingDir native_build_dir
-  
+
   if (Os.isFamily(Os.FAMILY_WINDOWS))
       {
-	  path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake.exe"
-		outputs.file '.\\build\\cpp\\bundle\\libsqeazy.dll'
-		
-		commandLine 'cmd', '/c', path_to_cmake_app,'--build','.','--target',bundle_group,'--config','Release'
-				
-      } 
-      
-	if (Os.isFamily(Os.FAMILY_MAC))
+      path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake.exe"
+        outputs.file '.\\build\\cpp\\bundle\\libsqeazy.dll'
+
+        commandLine 'cmd', '/c', path_to_cmake_app,'--build','.','--target',bundle_group,'--config','Release'
+
+      }
+
+    if (Os.isFamily(Os.FAMILY_MAC))
   {
   workingDir native_build_dir
     outputs.file './build/cpp/bundle/libsqeazy.dylib'
     executable 'make'
     args bundle_group
 
-  } 
-  
+  }
+
   if (Os.isFamily(Os.FAMILY_UNIX))
   {
-  
+
     outputs.file './build/cpp/bundle/libsqeazy.so'
     executable 'make'
     args bundle_group
@@ -312,18 +328,18 @@ task zip_bundle(type:Zip) {
 
   description 'zip the libsqeazy.* bundle'
   group bundle_group
-  
+
   def zinpath = file(native_build_dir).absolutePath+'/bundle'
 
   from (zinpath)
   into jnaerator_platform()
-  
+
   include 'lib*'
   include '*lib'
   include '*dll'
   include '*h'
   include '*hpp'
-  
+
   destinationDir file(native_build_dir+'/bundle') // directory that you want your archive to be placed in
   archiveName 'sqeazy_bundle.zip'
 
@@ -335,7 +351,7 @@ task upload_bundle(type:Exec) {
 
   description 'upload the libsqeazy* bundle to bintray for the current platform'
   group bundle_group
-  
+
   inputs.files zip_bundle.outputs.files
   def outputs_exp = file(native_build_dir+'/bundle/').absolutePath
   workingDir outputs_exp
@@ -343,8 +359,8 @@ task upload_bundle(type:Exec) {
 
   if (Os.isFamily(Os.FAMILY_WINDOWS)) {
     executable 'curl.exe'
-  } 
-       
+  }
+
   if (Os.isFamily(Os.FAMILY_MAC)) {
     executable 'curl'
   }
@@ -363,7 +379,7 @@ task upload_bundle(type:Exec) {
   else {
     println 'bintray_user and bintray_key not found, unable to create URL in upload_bundle'
   }
-  
+
 }
 
 
@@ -371,73 +387,73 @@ task fetch_version {
 
   description 'download all known libsqeazy* bundles from bintray'
   group bundle_group
-  
+
   def version_to_fetch = project.hasProperty("version_to_fetch") ? version_to_fetch : project.version
 
   def bdir = file(build_dir)
-  
+
   if(!bdir.exists())
     bdir.mkdir()
 
     def download_dir = file(build_dir+'/distribution/')
-  
+
     if(!download_dir.exists())
       download_dir.mkdir()
 
-  
+
       def filename = 'sqeazy_bundle.zip'
-  
+
       def expected_zips = []
       supported_platforms.each{ String plat ->
-	expected_zips.add(download_dir.absolutePath+'/sqeazy_bundle_'+plat+'.zip')
+    expected_zips.add(download_dir.absolutePath+'/sqeazy_bundle_'+plat+'.zip')
       }
       outputs.files expected_zips
-  
+
       def app_string = ""
-  
+
       if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-	app_string = 'curl.exe'
-      } 
-       
+    app_string = 'curl.exe'
+      }
+
       if (Os.isFamily(Os.FAMILY_MAC)) {
-	app_string = 'curl'
+    app_string = 'curl'
       }
 
       if (Os.isFamily(Os.FAMILY_UNIX)) {
-	app_string = 'curl'
+    app_string = 'curl'
       }
 
       supported_platforms.each { String plat ->
-	def tgt_file = file(download_dir.absolutePath+'/sqeazy_bundle_'+plat+'.zip')
-	def cmdstring = [app_string,
-			 '-L',
-			 'https://dl.bintray.com/psteinb/sqeazy/'+plat+'/'+project.version+'/sqeazy_bundle.zip',
-			 '-o',
-			 tgt_file.absolutePath
-			].join(" ")
+    def tgt_file = file(download_dir.absolutePath+'/sqeazy_bundle_'+plat+'.zip')
+    def cmdstring = [app_string,
+             '-L',
+             'https://dl.bintray.com/psteinb/sqeazy/'+plat+'/'+project.version+'/sqeazy_bundle.zip',
+             '-o',
+             tgt_file.absolutePath
+            ].join(" ")
 
-	def curl_ret = cmdstring.execute()
+    def curl_ret = cmdstring.execute()
 
       }
 
-  
+
 }
 
 task unpack_for_bake(type: Copy){
 
   description 'unpack libsqeazy* bundles from bintray to '+dist_dir
   group bundle_group
-  
+
   def ftree = fileTree(dist_dir).include('*.zip')
   ftree.getFiles().each { File bundle ->
     from zipTree(bundle)
     include "**/*"
-    
+
   }
-  
+
   into dist_dir+"/lib"
 
-  
+
   def bundled_headers = []
   supported_platforms.each{ String plat ->
     bundled_headers.add(dist_dir+"/lib/"+plat+"/sqeazy.h")
@@ -445,12 +461,12 @@ task unpack_for_bake(type: Copy){
   outputs.files bundled_headers
 }
 
-// Build java bindings base on all 
+// Build java bindings base on all
 task bake_bindings(type:JavaExec) {
 
   description 'use libsqeazy* bundles in '+dist_dir+' to build a fat jnaerator jar'
   group bundle_group
-  
+
   classpath = files('tools/jnaerator-0.13-SNAPSHOT-shaded.jar')
   //http://stackoverflow.com/questions/29530261/how-to-use-jnaerator-with-multiple-dynamic-libraries-under-one-header/29549769#29549769
 
@@ -462,7 +478,7 @@ task bake_bindings(type:JavaExec) {
   }
 
   inputs.files sqeazy_header, bundled_headers
-  
+
 
   workingDir '.'
   def arch = jnaerator_platform()
@@ -471,18 +487,18 @@ task bake_bindings(type:JavaExec) {
 
   //start with head of jnaerator args
   def arch_flags = ['-library','sqeazy',
-		    '-f',
-		    '-o',dist_dir,
-		    '-rootPackage','src',
-		    '-package','sqeazy.bindings'// ,
-		    // '-dependencies','avcodec,avformat,avutil,hdf5,hdf5_cpp,hdf5_hl,boost_filesystem,boost_system,lz4,swscale'
-		   ]
+            '-f',
+            '-o',dist_dir,
+            '-rootPackage','src',
+            '-package','sqeazy.bindings'// ,
+            // '-dependencies','avcodec,avformat,avutil,hdf5,hdf5_cpp,hdf5_hl,boost_filesystem,boost_system,lz4,swscale'
+           ]
 
   //adding platform identifiers
   supported_platforms.each{ String plat ->
 
     def tree_clone = fileTree(dist_dir+"/lib/${plat}").include('*sqeazy.*').exclude('sqeazy.h').exclude('*.lib')
-        
+
     def results = tree_clone.getFiles()
 
     if(results.size()>0){
@@ -492,7 +508,7 @@ task bake_bindings(type:JavaExec) {
     }
 
   }
-  
+
   //add the tail
   [
     '-runtime','BridJ',
@@ -502,7 +518,7 @@ task bake_bindings(type:JavaExec) {
     sqeazy_header.absolutePath
   ].each{ String tail -> arch_flags << tail }
 
-  	
+
   args arch_flags
 
   outputs.file "build/sqeazy.jar"
@@ -512,17 +528,17 @@ task advertise_pie(type: Copy) {
 
   description 'unpack build/sqeazy.jar to distribution '+dist_dir+' directory'
   group bundle_group
-  
+
   from zipTree("build/sqeazy.jar")
   into dist_dir
-  
+
 }
 
 task finish_pie(type: Jar) {
-  
+
   description 'collect contents of '+dist_dir+' (most likely native libs from all supported platforms) and put them in a common .jar file'
   group bundle_group
-  
+
   from dist_dir
   include "**"
   exclude "*.zip"
@@ -537,15 +553,15 @@ task java_bindings(type:JavaExec) {
 
   description 'call jnaerator and build the java interface to sqeazy'
   group native_group
-  
-  
+
+
   if (Os.isFamily(Os.FAMILY_WINDOWS)) {
     inputs.files './src/cpp/inc/sqeazy.h', './build/cpp/src/libsqeazy.dll'
-  } 
-  else if (Os.isFamily(Os.FAMILY_MAC)) 
+  }
+  else if (Os.isFamily(Os.FAMILY_MAC))
   {
     inputs.files './src/cpp/inc/sqeazy.h', './build/cpp/src/libsqeazy.dylib'}
-  else if (Os.isFamily(Os.FAMILY_UNIX)) 
+  else if (Os.isFamily(Os.FAMILY_UNIX))
   {
     inputs.files './src/cpp/inc/sqeazy.h', './build/cpp/src/libsqeazy.so'
   }
@@ -564,15 +580,15 @@ task java_bindings(type:JavaExec) {
     libsqeazy_file = file( native_build_dir + "/src/libsqeazy.dll" )
     sqeazy_header = file( native_source_dir + "/inc/sqeazy.h" )
 
-  } 
-  else if (Os.isFamily(Os.FAMILY_MAC)) 
+  }
+  else if (Os.isFamily(Os.FAMILY_MAC))
   {
 
     libsqeazy_file = file( native_build_dir + "/src/libsqeazy.dylib" )
     sqeazy_header = file( native_source_dir + "/inc/sqeazy.h" )
 
-  } 
-  else if (Os.isFamily(Os.FAMILY_UNIX)) 
+  }
+  else if (Os.isFamily(Os.FAMILY_UNIX))
   {
 
     libsqeazy_file = file( native_build_dir + "/src/libsqeazy.so" )
@@ -580,7 +596,7 @@ task java_bindings(type:JavaExec) {
 
   }
 
-  //see  https://github.com/mike-plummer/NativeGroovy/blob/master/build.gradle 
+  //see  https://github.com/mike-plummer/NativeGroovy/blob/master/build.gradle
   description 'Execute JNAerator to auto-generate BridJ bindings'
   main = 'com.ochafik.lang.jnaerator.JNAerator'
   args '-library','sqeazy',
@@ -594,10 +610,10 @@ task java_bindings(type:JavaExec) {
   '-mode','Directory',
   //'-jar','src/java/sqeazy.jar',
   sqeazy_header.absolutePath
-  	
-  
+
+
   classpath = files('tools/jnaerator-0.13-SNAPSHOT-shaded.jar')
-	
+
 }
 
 // make task:
@@ -606,49 +622,49 @@ task ctest(type:Exec) {
   description 'run the native tests with ctest'
   group native_group
 
-  
+
   inputs.dir file(native_build_dir).absolutePath
   workingDir native_build_dir
-  
+
   if (Os.isFamily(Os.FAMILY_WINDOWS))
       {
-	executable 'ctest.exe -C Release'
-      } 
+    executable 'ctest.exe -C Release'
+      }
       else if (Os.isFamily(Os.FAMILY_MAC))
   {
     executable 'ctest'
-  } 
+  }
   else if (Os.isFamily(Os.FAMILY_UNIX))
   {
     executable 'ctest'
   }
 
   args '--output-on-failure'
-  
+
 }
 
 task build_native <<  {
 
   description 'empty task to collect all native build steps under'
   group native_group
-  
+
 }
 
 task sqeazy_available << {
 
   //todo: download files if they don't exist!
-  
+
   println 'checking if native libraries are present ...'
-  
+
   if (Os.isFamily(Os.FAMILY_WINDOWS))
       {
-	assert file("./build/cpp/src/libsqeazy.dll").exists()
-      } 
-      else if (Os.isFamily(Os.FAMILY_MAC)) 
+    assert file("./build/cpp/src/libsqeazy.dll").exists()
+      }
+      else if (Os.isFamily(Os.FAMILY_MAC))
   {
     assert file("./build/cpp/src/libsqeazy.dylib").exists()
   }
-  else if (Os.isFamily(Os.FAMILY_UNIX)) 
+  else if (Os.isFamily(Os.FAMILY_UNIX))
   {
     assert file("./build/cpp/src/libsqeazy.so").exists()
   }
@@ -745,7 +761,7 @@ repositories
   mavenCentral()
   maven
   { url "http://oss.sonatype.org/content/groups/public" }
-	
+
 }
 
 
@@ -783,7 +799,7 @@ artifacts {
 }
 
 publishing {
-  
+
   publications {
     SqeazyArtifacts(MavenPublication) {
       from components.java
@@ -793,9 +809,9 @@ publishing {
     }
 
     SqeazyPie(MavenPublication) {
-      
+
       groupId group
-      artifact finish_pie 
+      artifact finish_pie
       version project.version
       pom.withXml {
         asNode().appendNode('description', 'sqeazy jar that contains sqy for win64, darwin_universal and linux_x64')
@@ -817,7 +833,7 @@ if(hasProperty('bintray_user') && hasProperty('bintray_key') )
 
     dryRun = false //Whether to run this as dry-run, without deploying
     publish = true //If version should be auto published after an upload
-    
+
     pkg {
       repo = 'maven'
       userOrg = user //An optional organization name when the repo belongs to one of the user's orgs
@@ -828,30 +844,19 @@ if(hasProperty('bintray_user') && hasProperty('bintray_key') )
       vcsUrl = 'https://github.com/sqeazy/sqeazy.git'
       licenses = ['LGPL-3.0']
       labels = [
-	'compression',
-	'hardware',
-	'encoding',
-	'microscopy',
-	'3D',
-	'images'
+    'compression',
+    'hardware',
+    'encoding',
+    'microscopy',
+    '3D',
+    'images'
       ]
       publicDownloadNumbers = true
-      
+
       version {
-	name = project.version 
+    name = project.version
       }
     }
     /**/
   }
 }
-
-
-
-
-
-
-
-
-
-
-
