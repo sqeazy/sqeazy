@@ -766,13 +766,17 @@ repositories
 
 
 task sourcesJar(type: Jar, dependsOn:classes) {
-  classifier = 'sources'
-  from sourceSets.main.allSource
+
+    classifier = 'sources'
+    from sourceSets.main.allSource
+
 }
 
 task javadocJar(type: Jar, dependsOn:javadoc) {
-  classifier = 'javadoc'
-  from javadoc.destinationDir
+
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+
 }
 
 if (JavaVersion.current().isJava8Compatible()) {
