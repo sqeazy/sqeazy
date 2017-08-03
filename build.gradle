@@ -31,10 +31,10 @@ if(!hasProperty("bintray_user")){
     }
 }
 
-if(!hasProperty("bintray_api_key")){
-    def env_bintray_api_key = System.getenv('BINTRAY_KEY')
-    if(env_bintray_api_key != null && !env_bintray_api_key.isEmpty()){
-        setProperty("bintray_api_key", env_bintray_api_key)
+if(!hasProperty("bintray_key")){
+    def env_bintray_key = System.getenv('BINTRAY_KEY')
+    if(env_bintray_key != null && !env_bintray_key.isEmpty()){
+        setProperty("bintray_key", env_bintray_key)
     }
 }
 
