@@ -39,7 +39,9 @@ RUN apt-get -qq update && apt-get install -y --no-install-recommends \
         libtimedate-perl \
         libtsan0 \
         patch \
-        libtiff-dev;
+        libtiff-dev \
+        zlib1g-dev \
+        libc6-dev ;
 
 RUN wget --no-check-certificate http://www.nasm.us/pub/nasm/releasebuilds/2.13.01/nasm-2.13.01.tar.bz2 && \
     tar xf nasm-2.13.01.tar.bz2 && \
