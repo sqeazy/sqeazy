@@ -18,5 +18,6 @@ RUN wget --no-check-certificate -O boost.tar.bz2 http://sourceforge.net/projects
     ./b2 -j8 link=static --build-type=minimal variant=release toolset=gcc runtime-link=static threading=multi cflags=-fPIC cxxflags=-fPIC && \
     ./b2 link=static --build-type=minimal variant=release toolset=gcc runtime-link=static threading=multi cflags=-fPIC cxxflags=-fPIC  install;
 
+RUN rm -rf /build/*
 # Run app.py when the container launches
 CMD ["bash"]

@@ -5,10 +5,10 @@ FROM sqy/trusty/base:latest
 WORKDIR /build
 
 # Install lz4
-RUN wget --no-check-certificate https://github.com/lz4/lz4/archive/v1.7.5.tar.gz && \
-    tar xf v1.7.5.tar.gz && \
-    cd lz4-1.7.5 && \
-    PREFIX=/usr/local SHELL="/bin/bash -x" make -j2 install;
+RUN git clone https://github.com/lz4/lz4.git && \
+    cd lz4 && \
+#    git checkout v1.8.0 && \
+    CFLAGS="-O3 -DNDEBUG -fPIC" PREFIX=/usr/local SHELL="/bin/bash -x" make -j8 install;
 
 # Install x264
 RUN git clone http://git.videolan.org/git/x264.git && \
@@ -34,9 +34,6 @@ RUN git clone git://source.ffmpeg.org/ffmpeg.git && \
     make -j8 && \
     make install;
 
-
-# Define environment variable
-# ENV NAME World
-
+RUN rm -rf /build/*
 # Run app.py when the container launches
 CMD ["bash"]
