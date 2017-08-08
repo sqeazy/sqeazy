@@ -1,10 +1,12 @@
+FROM sqy/trusty/base:latest as base
+FROM sqy/trusty/encoders-static:latest as encoders
+FROM sqy/trusty/utils-static:latest as utils
 
-FROM sqy/trusty/encoders-static:latest
-FROM sqy/trusty/utils-static:latest
+COPY --from=base /usr/local /usr/local
+COPY --from=encoders /usr/local /usr/local
+COPY --from=utils /usr/local /usr/local
 
-FROM gradle:4.0.1-jdk8
-
-WORKDIR /home/gradle/
+WORKDIR /build
 
 # build sqeazy
 RUN git clone https://github.com/sqeazy/sqeazy.git

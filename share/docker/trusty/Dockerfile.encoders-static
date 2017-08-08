@@ -8,12 +8,12 @@ WORKDIR /build
 RUN wget --no-check-certificate https://github.com/lz4/lz4/archive/v1.7.5.tar.gz && \
     tar xf v1.7.5.tar.gz && \
     cd lz4-1.7.5 && \
-    SHELL="/bin/bash -x" make -j2 install;
+    PREFIX=/usr/local SHELL="/bin/bash -x" make -j2 install;
 
 # Install x264
 RUN git clone http://git.videolan.org/git/x264.git && \
     cd x264 && \
-    ./configure --disable-opencl --enable-pic --enable-static --disable-cli && \
+    ./configure --prefix=/usr/local/ --disable-opencl --enable-pic --enable-static --disable-cli && \
     make -j8 && \
     make install;
 
@@ -22,7 +22,7 @@ RUN hg clone https://bitbucket.org/multicoreware/x265 && \
     cd x265 && \
     hg up 2.5 && \
     cd ./build/linux && \
-    cmake -G "Unix Makefiles" -DENABLE_SHARED=OFF -DENABLE_PIC=ON -DENABLE_CLI=OFF -DSTATIC_LINK_CRT=ON ../../source && \
+    cmake -G "Unix Makefiles" -DENABLE_SHARED=OFF -DENABLE_PIC=ON -DENABLE_CLI=OFF -DSTATIC_LINK_CRT=ON -DCMAKE_INSTALL_PREFIX=/usr/local ../../source && \
     make -j8 && \
     make install;
 
@@ -30,7 +30,7 @@ RUN hg clone https://bitbucket.org/multicoreware/x265 && \
 RUN git clone git://source.ffmpeg.org/ffmpeg.git && \
     cd ffmpeg && \
     git checkout n3.0.2 && \
-    ./configure  --disable-shared --enable-pic --enable-static --enable-libx264 --enable-libx265 --enable-gpl --extra-ldflags="/usr/local/lib/libx264.a /usr/local/lib/libx265.a" --disable-sdl --disable-libxcb --disable-zlib --disable-bzlib --disable-xlib --disable-lzma --disable-indevs --disable-outdevs --pkg-config-flags="--static" && \
+    ./configure  --disable-shared --enable-pic --enable-static --enable-libx264 --enable-libx265 --enable-gpl --extra-ldflags="/usr/local/lib/libx264.a /usr/local/lib/libx265.a" --disable-sdl --disable-libxcb --disable-zlib --disable-bzlib --disable-xlib --disable-lzma --disable-indevs --disable-outdevs --pkg-config-flags="--static" --prefix=/usr/local && \
     make -j8 && \
     make install;
 

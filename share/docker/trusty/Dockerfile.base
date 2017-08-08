@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM ubuntu:trusty
+FROM nimmis/java:14.04-openjdk-8-jdk
 
 # Set the working directory to /app
 WORKDIR /build
@@ -12,13 +12,12 @@ RUN apt-get -qq update && apt-get install -y --no-install-recommends \
         bzip2 \
         libbz2-dev \
         make \
-#        yasm \
         curl \
         cpuid \
         pkg-config \
         software-properties-common \
         binutils \
-        build-essential \
+#        build-essential \
         cpp \
         cpp-4.8 \
         g++ \
@@ -39,20 +38,26 @@ RUN apt-get -qq update && apt-get install -y --no-install-recommends \
         libstdc++-4.8-dev \
         libtimedate-perl \
         libtsan0 \
-        patch;
+        patch \
+        libtiff-dev;
 
 RUN wget --no-check-certificate http://www.nasm.us/pub/nasm/releasebuilds/2.13.01/nasm-2.13.01.tar.bz2 && \
     tar xf nasm-2.13.01.tar.bz2 && \
     cd nasm-2.13.01 && \
-    ./configure && make -j8 && make install;
+    ./configure --prefix=/usr/local && make -j8 && make install;
 
 RUN wget --no-check-certificate https://cmake.org/files/v3.9/cmake-3.9.0.tar.gz && \
     tar xf cmake-3.9.0.tar.gz && \
     cd cmake-3.9.0 && \
-    ./configure && make -j8 && make install;
+    ./configure --prefix=/usr/local && make -j8 && make install;
 
 RUN git clone https://github.com/yasm/yasm.git && cd yasm && \
-    mkdir build && cd build && cmake .. && make -j8 && make install;
+    mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=/usr/local .. && make -j8 && make install;
+
+RUN wget --no-check-certificate https://services.gradle.org/distributions/gradle-4.0.2-bin.zip && \
+    unzip gradle-4.0.2-bin.zip && \
+    cd gradle-4.0.2 && \
+    cp -r bin /usr/local && cp -r lib /usr/local ;
 
 # Define environment variable
 # ENV NAME World
