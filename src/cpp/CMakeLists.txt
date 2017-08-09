@@ -86,6 +86,7 @@ check_cxx_compiler_flag("-Xclang -march=native" HAS_XCLANG_COMPILERFLAG)
 check_cxx_compiler_flag(-fvectorize HAS_CLANG_VECTORIZE_COMPILERFLAG)
 check_cxx_compiler_flag(-ffast-math HAS_FAST_MATH_COMPILERFLAG)
 check_cxx_compiler_flag(-Wall HAS_WALL_COMPILERFLAG)
+check_cxx_compiler_flag(-Wfatal-errors HAS_WFATAL_ERRORS_COMPILERFLAG)
 check_cxx_compiler_flag(-ggdb HAS_GGDB_COMPILERFLAG)
 check_cxx_compiler_flag(-ggdb3 HAS_GGDB3_COMPILERFLAG)
 check_cxx_compiler_flag(-O3 HAS_O3_COMPILERFLAG)
@@ -134,6 +135,11 @@ ENDIF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
 if(HAS_WALL_COMPILERFLAG)
   add_definitions(-Wall)
 endif()
+
+if(HAS_WFATAL_ERRORS_COMPILERFLAG)
+  add_definitions(-Wfatal-errors)
+endif()
+
 
 if(HAS_WNOOVERFLOW_COMPILERFLAG)
   add_definitions(-Wno-overflow)
@@ -278,7 +284,7 @@ if(${BUNDLE_SQEAZY})
   set(Boost_USE_STATIC_LIBS ON)
   #TODO: unclear if that might also hold for UNIX derivates
   if(MSVC)
-	set(Boost_USE_STATIC_RUNTIME ON)
+    set(Boost_USE_STATIC_RUNTIME ON)
   endif()
   set(LZ4_USE_STATIC_LIBS ON)
   set(HDF5_USE_STATIC_LIBRARIES ON)
@@ -313,7 +319,7 @@ IF(WIN32)
   SET(Boost_USE_STATIC_LIBS ON)
   SET(Boost_USE_MULTITHREADED ON)
   if(NOT DEFINED BUNDLE_SQEAZY OR NOT ${BUNDLE_SQEAZY})
-	set(Boost_USE_STATIC_RUNTIME    OFF)
+    set(Boost_USE_STATIC_RUNTIME    OFF)
   endif()
 ENDIF()
 
@@ -340,7 +346,7 @@ ENDIF()
 
 IF(EXISTS $ENV{HDF5_ROOT})
   set(HDF5_ROOT $ENV{HDF5_ROOT})
-endif()	
+endif()
 
 set(HDF5_NEW_FINDMODULE False)
 
@@ -356,20 +362,20 @@ IF(EXISTS ${HDF5_ROOT})
     list(APPEND CMAKE_PREFIX_PATH "${HDF5_ROOT}/share/cmake")
     set(HDF5_NEW_FINDMODULE True)
   endif()
-    
+
   if(EXISTS ${HDF5_ROOT}/cmake/FindHDF5.cmake)
     list(APPEND CMAKE_MODULE_PATH "${HDF5_ROOT}/cmake")
     list(APPEND CMAKE_PREFIX_PATH "${HDF5_ROOT}/cmake")
     set(HDF5_NEW_FINDMODULE True)
   endif()
-  
+
   if(IS_DIRECTORY ${HDF5_ROOT}\\cmake)
-	list(APPEND CMAKE_MODULE_PATH "${HDF5_ROOT}\\cmake")
-	list(APPEND CMAKE_PREFIX_PATH "${HDF5_ROOT}\\cmake")
+    list(APPEND CMAKE_MODULE_PATH "${HDF5_ROOT}\\cmake")
+    list(APPEND CMAKE_PREFIX_PATH "${HDF5_ROOT}\\cmake")
     set(HDF5_NEW_FINDMODULE True)
   endif()
 
-if(IS_DIRECTORY ${HDF5_ROOT})  
+if(IS_DIRECTORY ${HDF5_ROOT})
 message(STATUS "calling FindHDF5 with ${HDF5_ROOT} (HDF5_NEW_FINDMODULE: ${HDF5_NEW_FINDMODULE})\n-- CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}\n-- CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
 else()
 message(FATAL_ERROR "calling FindHDF5 with non-existing ${HDF5_ROOT}")
@@ -381,7 +387,7 @@ if(${HDF5_USE_STATIC_LIBRARIES})
   set(FIND_HDF5_MODE static)
 else()
   set(FIND_HDF5_MODE shared)
-endif()	
+endif()
 
 FIND_PACKAGE(HDF5 1.8 QUIET REQUIRED COMPONENTS CXX HL )
 if(NOT "${HDF5_NEW_FINDMODULE}" MATCHES "False")
@@ -395,67 +401,68 @@ endif()
 
 IF(HDF5_FOUND)
 
-if(NOT HDF5_INCLUDE_DIRS OR NOT IS_DIRECTORY ${HDF5_INCLUDE_DIRS})
-  
-	find_file 	(HDF5_H5PUBLIC_H "H5public.h"
-		HINTS ${HDF5_ROOT}
-		PATHS ${HDF5_ROOT}
-		PATH_SUFFIXES
-			include
-				)
-if(EXISTS ${HDF5_H5PUBLIC_H})
-get_filename_component(HDF5_INCLUDE_DIRS "${HDF5_H5PUBLIC_H}" DIRECTORY)
-endif()
-endif()
+  if(NOT DEFINED HDF5_INCLUDE_DIRS # OR NOT IS_DIRECTORY ${HDF5_INCLUDE_DIRS}
+      )
+
+    find_file   (HDF5_H5PUBLIC_H "H5public.h"
+      HINTS ${HDF5_ROOT}
+      PATHS ${HDF5_ROOT}
+      PATH_SUFFIXES
+      include
+      )
+    if(EXISTS ${HDF5_H5PUBLIC_H})
+      get_filename_component(HDF5_INCLUDE_DIRS "${HDF5_H5PUBLIC_H}" DIRECTORY)
+    endif()
+  endif()
 
 
   INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIRS})
-  
+
   #only required for hdf5 1.8.16 and newer
-  #https://lists.hdfgroup.org/pipermail/hdf-forum_lists.hdfgroup.org/2016-March/009294.html  
-  
+  #https://lists.hdfgroup.org/pipermail/hdf-forum_lists.hdfgroup.org/2016-March/009294.html
+
   if(${FIND_HDF5_MODE} MATCHES "shared")
-	message(STATUS "adding preprocessor definition H5_BUILT_AS_DYNAMIC_LIB=1")
-	if(MSVC)
-		add_definitions(/DH5_BUILT_AS_DYNAMIC_LIB=1)
-	else()
-		add_definitions(-DH5_BUILT_AS_DYNAMIC_LIB=1)
-	endif()
+    message(STATUS "adding preprocessor definition H5_BUILT_AS_DYNAMIC_LIB=1")
+    if(MSVC)
+      add_definitions(/DH5_BUILT_AS_DYNAMIC_LIB=1)
+    else()
+      add_definitions(-DH5_BUILT_AS_DYNAMIC_LIB=1)
+    endif()
   endif()
-  
+
   #to discard compiler warnings in Debug mode
   IF(${CMAKE_BUILD_TYPE} MATCHES "Debug")
     SET(FORTIFY_INDEX "")
     list(FIND HDF5_DEFINITIONS "-D_FORTIFY_SOURCE=2" FORTIFY_INDEX)
-    
+
     IF(${FORTIFY_INDEX} GREATER -1)
       list(REMOVE_AT HDF5_DEFINITIONS ${FORTIFY_INDEX})
       list(APPEND HDF5_DEFINITIONS -D_FORTIFY_SOURCE=0)
     ENDIF()
 
   ENDIF()
-  
+
   ADD_DEFINITIONS(${HDF5_DEFINITIONS})
   if(DEFINED HDF5_LIBRARY_DIRS)
-	LINK_DIRECTORIES(${HDF5_LIBRARY_DIRS}) 
+    LINK_DIRECTORIES(${HDF5_LIBRARY_DIRS})
   else()
-	  if(IS_DIRECTORY ${HDF5_ROOT}/lib)
-		LINK_DIRECTORIES(${HDF5_ROOT}/lib) 
-	  endif()
+    if(IS_DIRECTORY ${HDF5_ROOT}/lib)
+      LINK_DIRECTORIES(${HDF5_ROOT}/lib)
+    endif()
   endif()
-  
+
   if(NOT HDF5_LIBRARIES)
-  message(STATUS "FindHDF5 didn't fill HDF5_LIBRARIES (${HDF5_LIBRARIES}), trying to fill it based on known targets")
-	set(REQUIRED_H5_TARGETS hdf5_hl_cpp;hdf5_hl;hdf5_cpp;hdf5)
-	foreach(_stub IN LISTS REQUIRED_H5_TARGETS)
-		if(TARGET ${_stub}-${FIND_HDF5_MODE})
-			list(APPEND HDF5_LIBRARIES ${_stub}-${FIND_HDF5_MODE})
-		else()
-			message(WARNING "${_stub}-${FIND_HDF5_MODE} not known as possible target")
-		endif()
-	endforeach()
+    message(STATUS "FindHDF5 didn't fill HDF5_LIBRARIES (${HDF5_LIBRARIES}), trying to fill it based on known targets")
+    set(REQUIRED_H5_TARGETS hdf5_hl_cpp;hdf5_hl;hdf5_cpp;hdf5)
+    foreach(_stub IN LISTS REQUIRED_H5_TARGETS)
+      if(TARGET ${_stub}-${FIND_HDF5_MODE})
+        list(APPEND HDF5_LIBRARIES ${_stub}-${FIND_HDF5_MODE})
+      else()
+        message(WARNING "${_stub}-${FIND_HDF5_MODE} not known as possible target")
+      endif()
+    endforeach()
   endif()
-  
+
 
   if(DEFINED UNIX AND DEFINED HDF5_USE_STATIC_LIBRARIES)
     #many Linux distros distribute static libs without -fPIC
@@ -463,11 +470,11 @@ endif()
     set(HDF5_LIBRARIES_CLONE ${HDF5_LIBRARIES})
     foreach(_H5_LIB IN LISTS HDF5_LIBRARIES_CLONE)
       if(${_H5_LIB} MATCHES ".*lib(m|dl).a$")
-	message(STATUS "removing ${_H5_LIB} from HDF5_LIBRARIES")
-	list(REMOVE_ITEM HDF5_LIBRARIES ${_H5_LIB})
-	get_filename_component(_H5_FSTEM ${_H5_LIB} NAME_WE)
-	string(REGEX REPLACE "^lib" "" _H5_LIBID ${_H5_FSTEM})
-	list(APPEND HDF5_LIBRARIES ${_H5_LIBID})
+        message(STATUS "removing ${_H5_LIB} from HDF5_LIBRARIES")
+        list(REMOVE_ITEM HDF5_LIBRARIES ${_H5_LIB})
+        get_filename_component(_H5_FSTEM ${_H5_LIB} NAME_WE)
+        string(REGEX REPLACE "^lib" "" _H5_LIBID ${_H5_FSTEM})
+        list(APPEND HDF5_LIBRARIES ${_H5_LIBID})
 
       endif()
     endforeach()
@@ -476,7 +483,7 @@ endif()
   endif()
   MESSAGE("++ hdf5 found at ${HDF5_INCLUDE_DIRS} ${HDF5_LIBRARY_DIRS} : ${HDF5_LIBRARIES}")
 ELSE()
-MESSAGE(FATAL_ERROR "++ HDF5 not found!")
+  MESSAGE(FATAL_ERROR "++ HDF5 not found!")
 ENDIF()
 
 #-------------------------------- FFMPEG       ---------------------------------
@@ -498,20 +505,20 @@ ENDIF()
 #-------------------------------- TIFF       ---------------------------------
 
 if(TIFF_ROOT OR DEFINED TIFF_ROOT)
-	if(EXISTS ${TIFF_ROOT})
-		list(APPEND CMAKE_PREFIX_PATH ${TIFF_ROOT})
-		set(TIFF_INCLUDE_DIR ${TIFF_ROOT}/include)
-	else()
-		message(FATAL_ERROR "provided TIFF_ROOT ${TIFF_ROOT} does not exist")
-	endif()
+    if(EXISTS ${TIFF_ROOT})
+        list(APPEND CMAKE_PREFIX_PATH ${TIFF_ROOT})
+        set(TIFF_INCLUDE_DIR ${TIFF_ROOT}/include)
+    else()
+        message(FATAL_ERROR "provided TIFF_ROOT ${TIFF_ROOT} does not exist")
+    endif()
 endif()
 
 # if(DEFINED TIFF_ROOT)
-	# if(EXISTS ${TIFF_ROOT})
-	  # list(APPEND CMAKE_PREFIX_PATH ${TIFF_ROOT})
-	# else()
-	  # message(FATAL_ERROR "provided TIFF_ROOT ${TIFF_ROOT} does not exist")
-	# endif()
+    # if(EXISTS ${TIFF_ROOT})
+      # list(APPEND CMAKE_PREFIX_PATH ${TIFF_ROOT})
+    # else()
+      # message(FATAL_ERROR "provided TIFF_ROOT ${TIFF_ROOT} does not exist")
+    # endif()
 # endif()
 
 message("++ [tiff] ${CMAKE_PREFIX_PATH}")
@@ -521,23 +528,23 @@ IF(TIFF_FOUND)
   get_filename_component(TIFF_LIB_PATH ${TIFF_LIBRARY} ABSOLUTE)
   get_filename_component(TIFF_LIB_ABSPATH ${TIFF_LIB_PATH} DIRECTORY)
   link_directories(${TIFF_LIB_ABSPATH})
-  
+
   SET(TIFF_DYN_LIB ${TIFF_LIBRARIES})
   SET(TIFF_STATIC_LIB "")
-  
+
   if(NOT EXISTS ${TIFF_DYN_LIB})
-	message(FATAL_ERROR "libtiff found by cmake does not exist! Aborting.")
+    message(FATAL_ERROR "libtiff found by cmake does not exist! Aborting.")
   else()
-	message("++ [tiff] using ${TIFF_INCLUDE_DIR} ${TIFF_DYN_LIB}")
+    message("++ [tiff] using ${TIFF_INCLUDE_DIR} ${TIFF_DYN_LIB}")
   endif()
-  
+
   IF(NOT WIN32)
-    
+
     IF(APPLE)
       IF("${TIFF_LIBRARY}" MATCHES ".*.so$")
-	STRING(REPLACE .so .dylib TIFF_DYN_LIB ${TIFF_LIBRARY})
-	#Homebrew ships a static library that fails to contain important symbols
-	#STRING(REPLACE .dylib .a TIFF_STATIC_LIB ${TIFF_DYN_LIB})
+    STRING(REPLACE .so .dylib TIFF_DYN_LIB ${TIFF_LIBRARY})
+    #Homebrew ships a static library that fails to contain important symbols
+    #STRING(REPLACE .dylib .a TIFF_STATIC_LIB ${TIFF_DYN_LIB})
       ENDIF()
     ELSE()
       STRING(REPLACE .so .a TIFF_STATIC_LIB ${TIFF_DYN_LIB})
@@ -549,13 +556,13 @@ IF(TIFF_FOUND)
     #   set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_STATIC_LIB}")
     # ELSE()
       IF(EXISTS ${TIFF_DYN_LIB})
-	add_library(ext_tiff SHARED IMPORTED)
-	set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_DYN_LIB}")
+    add_library(ext_tiff SHARED IMPORTED)
+    set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_DYN_LIB}")
       ENDIF()
     # ENDIF()
-    
+
   ENDIF(NOT WIN32)
-  
+
 ENDIF(TIFF_FOUND)
 
 
@@ -566,7 +573,7 @@ ENDIF(TIFF_FOUND)
 IF(Boost_FOUND AND HDF5_FOUND AND LZ4_FOUND AND FFMPEG_FOUND AND TIFF_FOUND)
 
   include_directories("${PROJECT_SOURCE_DIR}/inc")
-  
+
   #library and app
   ADD_SUBDIRECTORY(src) # source code of the library
 
@@ -576,12 +583,12 @@ IF(Boost_FOUND AND HDF5_FOUND AND LZ4_FOUND AND FFMPEG_FOUND AND TIFF_FOUND)
   include("CTestLists.txt")
 
   find_package(GoogleBenchmark REQUIRED)
-	if(${googlebenchmark_FOUND})
-		add_subdirectory(bench)
-	else()
-		message("google/benchmark not found, skipping benchmark suite")
-	endif()
-	
+    if(${googlebenchmark_FOUND})
+        add_subdirectory(bench)
+    else()
+        message("google/benchmark not found, skipping benchmark suite")
+    endif()
+
 ELSE()
   MESSAGE(FATAL_ERROR "++ required dependencies not found, sqeazy cannot be build")
 ENDIF()
@@ -615,11 +622,6 @@ install(FILES
   "${PROJECT_BINARY_DIR}/sqeazy-config-version.cmake"
   DESTINATION "${INSTALL_SHARE_DIR}" COMPONENT dev)
 
-# Install the export set for use with the install-tree 
-install(EXPORT sqeazy-targets 
+# Install the export set for use with the install-tree
+install(EXPORT sqeazy-targets
   DESTINATION "${INSTALL_SHARE_DIR}" COMPONENT dev)
-
-
-
-
-
