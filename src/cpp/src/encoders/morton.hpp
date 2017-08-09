@@ -183,12 +183,14 @@ namespace sqeazy {
 
 		};
 
-		#ifdef WIN32
+#ifdef WIN32
 		template<int stripe_size, int bitplane_width>
 		const std::array<std::uint32_t, 256> morton_at_ct< stripe_size, bitplane_width>::values = fill_array<stripe_size, bitplane_width, 256>();
-		#else
+#else
+#ifndef __clang__
 		template<int stripe_size, int bitplane_width>
 		constexpr std::array<std::uint32_t, 256> morton_at_ct< stripe_size, bitplane_width>::values;
+#endif
 		#endif
 	};
 };
