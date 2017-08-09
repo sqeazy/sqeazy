@@ -255,13 +255,6 @@ IF(HAS_FAST_MATH_COMPILERFLAG)
 ENDIF()
 
 
-find_package(OpenMP REQUIRED)
-if(${OPENMP_FOUND})
-  # add_definitions(${OpenMP_CXX_FLAGS})
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-  MESSAGE(STATUS "[sqy] appended openmp flags: ${OpenMP_CXX_FLAGS}")
-ENDIF()
 
 IF(SQY_EXPERIMENTAL)
   add_definitions(-D_SQY_X_=1)
@@ -290,13 +283,19 @@ if(${BUNDLE_SQEAZY})
   set(LZ4_USE_STATIC_LIBS ON)
   set(HDF5_USE_STATIC_LIBRARIES ON)
   set(FFMPEG_USE_STATIC_LIBS ON)
-  
-  # if(NOT APPLE)
-  #   set(FFMPEG_IGNORE_PKG_CONFIG ON)
-  # endif()
+
 endif()
 
 ################################# DEPENDENCIES #################################
+#-------------------------------- OpenMP          ---------------------------------
+find_package(OpenMP REQUIRED)
+if(${OPENMP_CXX_FOUND})
+  # add_definitions(${OpenMP_CXX_FLAGS})
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+  MESSAGE(STATUS "[sqy] appended openmp flags: ${OpenMP_CXX_FLAGS} ${OpenMP_C_FLAGS}")
+ENDIF()
 
 #-------------------------------- LZ4          ---------------------------------
 FIND_PACKAGE(LZ4 REQUIRED # QUIET
