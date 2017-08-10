@@ -160,7 +160,7 @@ namespace sqeazy {
       //retrieve the size of the loaded buffer
       _input.dimensions(input_shape);
 
-      series timings{input_shape, sizeof(raw_t), _input.location_.generic_string(),_n_repetitions};
+      series timings{input_shape, sizeof(raw_t), _input.location_.generic_string(),static_cast<std::size_t>(_n_repetitions)};
 
       //bench
       char* enc_end = nullptr;
@@ -236,7 +236,7 @@ namespace sqeazy {
       _input.dimensions(input_shape);
       std::size_t		input_size = std::accumulate(input_shape.begin(), input_shape.end(),1,std::multiplies<std::size_t>());
 
-      series timings{input_shape, sizeof(raw_t), _input.location_.generic_string(),_n_repetitions};
+      series timings{input_shape, sizeof(raw_t), _input.location_.generic_string(),static_cast<std::size_t>(_n_repetitions)};
 
 //bench
       char* enc_end = nullptr;
@@ -317,7 +317,7 @@ namespace sqeazy {
       _input.dimensions(input_shape);
 
 
-      series timings{input_shape, sizeof(raw_t), _input.location_.generic_string(),_n_repetitions};
+      series timings{input_shape, sizeof(raw_t), _input.location_.generic_string(),static_cast<std::size_t>(_n_repetitions)};
       int rvalue = 0;
 
       auto start = std::chrono::high_resolution_clock::now();
