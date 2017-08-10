@@ -272,39 +272,39 @@ task cmake_4_bundle(type:Exec) {
 // make task:
 task make_bundle(type:Exec) {
 
-  description 'use cmake to bundle libsqeazy.* and all first order dependencies'
-  group bundle_group
+    description 'use cmake to bundle libsqeazy.* and all first order dependencies'
+    group bundle_group
 
-  inputs.dir file(native_build_dir).absolutePath
+    inputs.dir file(native_build_dir).absolutePath
 
-  def path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake"
-  workingDir native_build_dir
+    def path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake"
+    workingDir native_build_dir
 
-  if (Os.isFamily(Os.FAMILY_WINDOWS))
-      {
-      path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake.exe"
+    if (Os.isFamily(Os.FAMILY_WINDOWS))
+    {
+        path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake.exe"
         outputs.file '.\\build\\cpp\\bundle\\libsqeazy.dll'
 
         commandLine 'cmd', '/c', path_to_cmake_app,'--build','.','--target',bundle_group,'--config','Release'
 
-      }
+    }
 
     if (Os.isFamily(Os.FAMILY_MAC))
-  {
-  workingDir native_build_dir
-    outputs.file './build/cpp/bundle/libsqeazy.dylib'
-    executable 'make'
-    args bundle_group
+    {
+        workingDir native_build_dir
+        outputs.file './build/cpp/bundle/libsqeazy.dylib'
+        executable 'make'
+        args bundle_group
 
-  }
+    }
 
-  if (Os.isFamily(Os.FAMILY_UNIX))
-  {
+    if (Os.isFamily(Os.FAMILY_UNIX))
+    {
 
-    outputs.file './build/cpp/bundle/libsqeazy.so'
-    executable 'make'
-    args bundle_group
-  }
+        outputs.file './build/cpp/bundle/libsqeazy.so'
+        executable 'make'
+        args bundle_group
+    }
 
 }
 
