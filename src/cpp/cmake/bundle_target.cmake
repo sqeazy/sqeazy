@@ -70,6 +70,8 @@ endfunction(COPY_IN_FORTARGET)
 # doc:
 function(BUNDLE tgt destdir)
 
+  find_package(PkgConfig QUIET)
+
   if(NOT TARGET ${tgt})
     message("++ [BUNDLE] There is no target named '${tgt}'")
     return()
@@ -102,22 +104,14 @@ function(BUNDLE tgt destdir)
     else()
 
       if(EXISTS ${_LIB})
-        # message("<< [BUNDLE ${_LIB}] is not a target that exists")
         set(LIB_2_ADD ${_LIB} )
-      else()
-        message("<< [BUNDLE ${_LIB}] is not a target and does not exist")
       endif()
 
     endif()
 
-    #get_filename_component(LIB_2_ADD_SUFFIX ${LIB_2_ADD} EXT)
-    # if(${LIB_2_ADD_SUFFIX} STREQUAL ${CMAKE_STATIC_LIBRARY_SUFFIX})
-    #message("<< [BUNDLE ${_LIB}] NOT added to copy-in files (${LIB_2_ADD},${LIB_2_ADD_SUFFIX},${CMAKE_STATIC_LIBRARY_SUFFIX})")
-    # else()
-    #message("<< [BUNDLE ${_LIB}] added to copy-in files with ${LIB_2_ADD}")
     list(APPEND TGT_LIB_FILES ${LIB_2_ADD} )
-    #endif()
     unset(LIB_2_ADD)
+
   endforeach()
 
   add_custom_target(bundle_directory_${tgt}
@@ -213,16 +207,11 @@ function(BUNDLE tgt destdir)
             add_library(${_DEP} STATIC IMPORTED)
             set_target_properties(${_DEP} PROPERTIES IMPORTED_LOCATION ${${_DEP}_RDIR})
             set_target_properties(${_DEP} PROPERTIES LINKER_LANGUAGE C)
-
             mark_as_advanced(${_DEP})
           endif()
           LIST (APPEND DEPS_FNAME_LIST ${_DEP})
           set(_DEP_INCLUDED TRUE)
           message("++ [BUNDLE] static ${_DEP} added ${${_DEP}_STATIC_LIBRARY_PATH}")
-          string(REPLACE " " ";" TGT_LDFLAGS "${TGT_LDFLAGS}")
-          REGEX_REMOVE_ITEM("${TGT_LDFLAGS}" ".*${_DEP}$" TGT_LDFLAGS)
-          string(REPLACE ";" " " TGT_LDFLAGS "${TGT_LDFLAGS}")
-
         else()
 
           if(EXISTS ${${_DEP}_DYNAMIC_LIBRARY_PATH})
@@ -240,17 +229,56 @@ function(BUNDLE tgt destdir)
               LIST (APPEND DEPS_FNAME_LIST ${_DEP})
               set(_DEP_INCLUDED TRUE)
               message("++ [BUNDLE] shared ${_DEP} added ${${_DEP}_DYNAMIC_LIBRARY_PATH}")
-              string(REPLACE " " ";" TGT_LDFLAGS "${TGT_LDFLAGS}")
-              REGEX_REMOVE_ITEM("${TGT_LDFLAGS}" ".*${_DEP}$" TGT_LDFLAGS)
-              string(REPLACE ";" " " TGT_LDFLAGS "${TGT_LDFLAGS}")
+
             endif()
           else()
-            message(WARNING "++ [BUNDLE] ${_DEP} not found on system")
+
+            #neither the static nor the dynamic library was found by find_library
+            #if on UNIX, pkg-config may help
+            if(UNIX OR APPLE)
+              if(PkgConfig_FOUND)
+                pkg_check_modules(PKG_${_DEP} REQUIRED IMPORTED_TARGET ${_DEP})
+
+                if(PKG_${_DEP}_FOUND AND IS_DIRECTORY ${PKG_${_DEP}_STATIC_LIBRARY_DIRS})
+                  link_directories(${PKG_${_DEP}_STATIC_LIBRARY_DIRS})
+                  # if(NOT TARGET ${_DEP})
+                  #   add_library(${_DEP} STATIC IMPORTED)
+                  # endif()
+                  LIST (APPEND DEPS_FNAME_LIST "PkgConfig::PKG_${_DEP}")
+                  set(_DEP_INCLUDED TRUE)
+                  set(${_DEP}_RDIR ${PKG_${_DEP}_STATIC_LIBRARY_DIRS}/lib${_DEP}${CMAKE_STATIC_LIBRARY_SUFFIX})
+                  message("++ [BUNDLE] static ${_DEP} added through pkg-config (${${_DEP}_RDIR})")
+
+                else()
+
+                  if(PKG_${_DEP}_FOUND)
+                    link_directories(${PKG_${_DEP}_LIBRARY_DIRS})
+                    set(_DEP_INCLUDED TRUE)
+                    set(${_DEP}_RDIR ${PKG_${_DEP}_LIBRARY_DIRS}/lib${_DEP}${CMAKE_SHARED_LIBRARY_SUFFIX})
+                    message("++ [BUNDLE] shared ${_DEP} added through pkg-config (${${_DEP}_RDIR})")
+                    LIST (APPEND DEPS_FNAME_LIST "PkgConfig::PKG_${_DEP}")
+
+                    # if(NOT TARGET ${_DEP})
+                    #   #add_library(PkgConfig::PKG_${_DEP} SHARED IMPORTED)
+                    #   add_library(${_DEP} SHARED IMPORTED)
+                    # endif()
+
+                  endif(PKG_${_DEP}_FOUND)
+
+                endif()
+              endif(PkgConfig_FOUND)
+            endif(UNIX OR APPLE)
+
+
           endif()
         endif()
 
         if(NOT ${_DEP_INCLUDED})
           message(WARNING "unable to locate lib${_DEP}, considered a dependency of requested FFMPEG targets")
+        else()
+          string(REPLACE " " ";" TGT_LDFLAGS "${TGT_LDFLAGS}")
+          REGEX_REMOVE_ITEM("${TGT_LDFLAGS}" ".*${_DEP}$" TGT_LDFLAGS)
+          string(REPLACE ";" " " TGT_LDFLAGS "${TGT_LDFLAGS}")
         endif()
 
       endforeach()
@@ -270,7 +298,7 @@ function(BUNDLE tgt destdir)
       if(NOT SQY_BLACKLIST_STATIC_LIBS)
         set(SQY_BLACKLIST_STATIC_LIBS "z;bz2;pthread;m;dl")
       else()
-        string(REPLACE " " ";" SQY_BLACKLIST_STATIC_LIBS "${}SQY_BLACKLIST_STATIC_LIBS")
+        string(REPLACE " " ";" SQY_BLACKLIST_STATIC_LIBS "${SQY_BLACKLIST_STATIC_LIBS}")
       endif()
 
       message("++ [BUNDLE] replacing blacklisted static libs ${SQY_BLACKLIST_STATIC_LIBS} in ${DEPS_FNAME_LIST}")
@@ -296,14 +324,6 @@ function(BUNDLE tgt destdir)
 
   set_property(TARGET bundle_${tgt} PROPERTY LINK_FLAGS ${TGT_LDFLAGS})
   message("++ [BUNDLE] link bundle to : ${DEPS_FNAME_LIST}")
-  if(UNIX)
-    if(APPLE)
-      target_link_libraries(bundle_${tgt} ${DEPS_FNAME_LIST})
-    else()
-      target_link_libraries(bundle_${tgt} ${DEPS_FNAME_LIST})#TODO: is this necessary, might only be required on Linux
-    endif()
-  else()
-    target_link_libraries(bundle_${tgt} ${DEPS_FNAME_LIST})
-  endif()
+  target_link_libraries(bundle_${tgt} ${DEPS_FNAME_LIST})
 
 endfunction(BUNDLE)

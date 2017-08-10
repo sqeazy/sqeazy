@@ -33,8 +33,8 @@ endif()
 # #target_link_libraries(${PROJECT_NAME} ${LZ4_LIBRARY} ${HDF5_LIBRARIES} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES})
 
 INSTALL(TARGETS ${SQY_SRC_TARGETS}
-  EXPORT sqeazy-targets 
-  LIBRARY DESTINATION "${INSTALL_LIB_DIR}" 
+  EXPORT sqeazy-targets
+  LIBRARY DESTINATION "${INSTALL_LIB_DIR}"
   ARCHIVE DESTINATION "${INSTALL_LIB_DIR}"
   PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}" COMPONENT inc)
 
@@ -47,17 +47,17 @@ if(NOT BUNDLE_SQEAZY OR NOT ${BUNDLE_SQEAZY})
   set_target_properties(sqy PROPERTIES POSITION_INDEPENDENT_CODE ON)
   message("++ [src] sqy deps: ${LZ4_LIBRARY} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES} ${HDF5_LIBRARIES} ${TIFF_LIBRARY}")
   target_link_libraries(sqy ${LZ4_LIBRARY} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES} ${HDF5_LIBRARIES} ${TIFF_LIBRARIES})
-  
-	
+
+
   INSTALL(TARGETS sqy
-    EXPORT sqeazy-targets 
-    RUNTIME DESTINATION "${INSTALL_BIN_DIR}" 
-    COMPONENT bin) 
+    EXPORT sqeazy-targets
+    RUNTIME DESTINATION "${INSTALL_BIN_DIR}"
+    COMPONENT bin)
 endif()
 
 ########################################### DEPLOYMENT LIBSQY ######################################################
 if(BUNDLE_SQEAZY OR ${BUNDLE_SQEAZY})
-  
+
   include(${PROJECT_SOURCE_DIR}/cmake/bundle_target.cmake)
 
   set(BUNDLE_DIR ${PROJECT_BINARY_DIR}/bundle CACHE STRING "directory to put sqeazy bundle into")
