@@ -36,6 +36,8 @@ INCLUDE (FindPackageHandleStandardArgs)
 INCLUDE (FindPkgConfig)
 INCLUDE (CheckFunctionExists)
 
+find_package(PkgConfig QUIET)
+
 #doc: REGEX_REMOVE_ITEM("${TESTLIST}" ".wo" result_list)
 #     remove any item that matches the regex .wo from TESTLIST
 #     save the result in result_list
@@ -61,12 +63,6 @@ endfunction()
 # SETUP VARIABLES #############################################################
 # set( CMAKE_FIND_LIBRARY_SUFFIXES_SAV ${CMAKE_FIND_LIBRARY_SUFFIXES} )
 
-#TODO: is this really necessary?
-# if( ${FFMPEG_USE_STATIC_LIBS})
-#  set( CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX} )
-#else()
-  #set( CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_SHARED_LIBRARY_SUFFIX} )
-#endif()
 
 IF (CMAKE_VERSION VERSION_GREATER 2.8.7)
   SET (_FFMPEG_CHECK_COMPONENTS FALSE)
@@ -79,7 +75,7 @@ IF (IS_DIRECTORY $ENV{FFMPEG_ROOT})
   SET(EXT_FFMPEG_ROOT_DIR $ENV{FFMPEG_ROOT})
 ENDIF ()
 
-IF (DEFINED FFMPEG_ROOT AND IS_DIRECTORY ${FFMPEG_ROOT})
+IF (IS_DIRECTORY "${FFMPEG_ROOT}")
   SET(EXT_FFMPEG_ROOT_DIR ${FFMPEG_ROOT})
 ENDIF ()
 #end of add
@@ -88,11 +84,9 @@ ENDIF ()
 # FIND INCLUDE DIR #############################################################
 
 FIND_PATH (FFMPEG_ROOT_DIR
-  NAMES include/ffmpegcodec/avcodec.h
-  include/ffmpegdevice/avdevice.h
-  include/ffmpegfilter/avfilter.h
-  include/ffmpegutil/avutil.h
-  include/libswscale/swscale.h
+  NAMES include/libavcodec/avcodec.h
+  libavformat/avformat.h
+  libavutil/avutil.h
   PATHS ${EXT_FFMPEG_ROOT_DIR}
   HINTS ${EXT_FFMPEG_ROOT_DIR}
   DOC "FFMPEG root directory")
@@ -103,11 +97,9 @@ endif()
 
 
 FIND_PATH (FFMPEG_INCLUDE_DIR
-  NAMES ffmpegcodec/avcodec.h
-  ffmpegdevice/avdevice.h
-  ffmpegfilter/avfilter.h
-  ffmpegutil/avutil.h
-  libswscale/swscale.h
+  NAMES libavcodec/avcodec.h
+  libavformat/avformat.h
+  libavutil/avutil.h
   HINTS ${FFMPEG_ROOT_DIR}
   PATH_SUFFIXES include inc
   DOC "FFMPEG include directory")
@@ -152,7 +144,9 @@ if(PKG_CONFIG_FOUND AND NOT FFMPEG_IGNORE_PKG_CONFIG)
   endforeach()
 
 
-  pkg_search_module(LOCAL_FFMPEG ${MY_PKGCONFIG_FINDARGS} ${comp_with_fixed_names})
+  pkg_check_modules(LOCAL_FFMPEG ${MY_PKGCONFIG_FINDARGS} ${comp_with_fixed_names})
+  set(FFMPEG_EXTRA_LINK_FLAGS ${LOCAL_FFMPEG_LDFLAGS} ${LOCAL_FFMPEG_LDFLAGS_OTHER})
+  message("!! ${FFMPEG_EXTRA_LINK_FLAGS}")
 
   if(LOCAL_FFMPEG_FOUND)
 
@@ -170,55 +164,55 @@ if(PKG_CONFIG_FOUND AND NOT FFMPEG_IGNORE_PKG_CONFIG)
       STRING (TOUPPER ${_COMP} _FFMPEG_COMPONENT_UPPER)
 
       if("${LOCAL_FFMPEG_LIBRARIES}" MATCHES ".*${_COMP}.*")
-    SET (FFMPEG_${_FFMPEG_COMPONENT_UPPER}_FOUND TRUE)
+        SET (FFMPEG_${_FFMPEG_COMPONENT_UPPER}_FOUND TRUE)
 
-    list(FIND FFMPEG_LIBRARIES ${_COMP} _COMP_INDEX)
-    list(GET FFMPEG_LIBRARIES ${_COMP_INDEX} FFMPEG_${_FFMPEG_COMPONENT_UPPER}_LIBRARY)
+        list(FIND FFMPEG_LIBRARIES ${_COMP} _COMP_INDEX)
+        list(GET FFMPEG_LIBRARIES ${_COMP_INDEX} FFMPEG_${_FFMPEG_COMPONENT_UPPER}_LIBRARY)
 
-    if(${FFMPEG_USE_STATIC_LIBS})
-        find_library(${_COMP}_PATH
-        NAMES ${_COMP}${CMAKE_STATIC_LIBRARY_SUFFIX} lib${_COMP}${CMAKE_STATIC_LIBRARY_SUFFIX} NAMES_PER_DIR
-        PATHS ${FFMPEG_ROOT_DIR}
-        HINTS ${FFMPEG_ROOT_DIR}
-        PATH_SUFFIXES lib lib64)
-    else()
-        find_library(${_COMP}_PATH
-        NAMES ${_COMP} lib${_COMP} NAMES_PER_DIR
-        PATHS ${FFMPEG_ROOT_DIR}
-        HINTS ${FFMPEG_ROOT_DIR}
-        PATH_SUFFIXES lib lib64 bin)
-    endif()
+        if(${FFMPEG_USE_STATIC_LIBS})
+          find_library(${_COMP}_PATH
+            NAMES ${_COMP}${CMAKE_STATIC_LIBRARY_SUFFIX} lib${_COMP}${CMAKE_STATIC_LIBRARY_SUFFIX} NAMES_PER_DIR
+            PATHS ${FFMPEG_ROOT_DIR}
+            HINTS ${FFMPEG_ROOT_DIR}
+            PATH_SUFFIXES lib lib64)
+        else()
+          find_library(${_COMP}_PATH
+            NAMES ${_COMP} lib${_COMP} NAMES_PER_DIR
+            PATHS ${FFMPEG_ROOT_DIR}
+            HINTS ${FFMPEG_ROOT_DIR}
+            PATH_SUFFIXES lib lib64 bin)
+        endif()
 
-    if(${${_COMP}_PATH} MATCHES ".*${CMAKE_SHARED_LIBRARY_SUFFIX}")
-      #message(STATUS "[FindFFMPEG] shared ${_COMP} found inside ${LOCAL_FFMPEG_LIBRARIES} (${${_COMP}_PATH})")
-      add_library(${_COMP} SHARED IMPORTED)
+        set(TEMP_FLAGS "")
+        if(${${_COMP}_PATH} MATCHES ".*${CMAKE_SHARED_LIBRARY_SUFFIX}")
+          #message(STATUS "[FindFFMPEG] shared ${_COMP} found inside ${LOCAL_FFMPEG_LIBRARIES} (${${_COMP}_PATH})")
+          add_library(${_COMP} SHARED IMPORTED)
+        else()
+          #message(STATUS "[FindFFMPEG] static ${_COMP} found inside ${LOCAL_FFMPEG_LIBRARIES} (${${_COMP}_PATH})")
+          add_library(${_COMP} STATIC IMPORTED)
+        endif()
 
-      string(REPLACE ";" " " FFMPEG_EXTRA_LINK_FLAGS "${LOCAL_FFMPEG_LDFLAGS}")
-    else()
-      #message(STATUS "[FindFFMPEG] static ${_COMP} found inside ${LOCAL_FFMPEG_LIBRARIES} (${${_COMP}_PATH})")
-      add_library(${_COMP} STATIC IMPORTED)
-      string(REPLACE ";" " " FFMPEG_EXTRA_LINK_FLAGS "${LOCAL_FFMPEG_STATIC_LDFLAGS}")
-    endif()
-    set_target_properties(${_COMP} PROPERTIES
-      INTERFACE_INCLUDE_DIRECTORIES ${FFMPEG_INCLUDE_DIR}
-      LINKER_LANGUAGE C
-      IMPORTED_LINK_INTERFACE_LANGUAGES "C"
-      IMPORTED_LOCATION ${${_COMP}_PATH}
-      IMPORTED_LINK_INTERFACE_LANGUAGES_RELEASE "C"
+
+        set_target_properties(${_COMP} PROPERTIES
+          INTERFACE_INCLUDE_DIRECTORIES ${FFMPEG_INCLUDE_DIR}
+          LINKER_LANGUAGE C
+          IMPORTED_LINK_INTERFACE_LANGUAGES "C"
+          IMPORTED_LOCATION ${${_COMP}_PATH}
+          IMPORTED_LINK_INTERFACE_LANGUAGES_RELEASE "C"
           IMPORTED_LOCATION_RELEASE ${${_COMP}_PATH}
-      )
+          )
 
-    set_property(TARGET ${_COMP} APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
+        set_property(TARGET ${_COMP} APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
 
-    mark_as_advanced (FFMPEG_${_FFMPEG_COMPONENT_UPPER}_LIBRARY)
-    mark_as_advanced (${_COMP})
+        mark_as_advanced (FFMPEG_${_FFMPEG_COMPONENT_UPPER}_LIBRARY)
+        mark_as_advanced (${_COMP})
 
 
       else()
-    SET (FFMPEG_${_FFMPEG_COMPONENT_UPPER}_FOUND FALSE)
-    IF (_FFMPEG_CHECK_COMPONENTS)
-      LIST (APPEND _FFMPEG_MISSING_LIBRARIES ${_FFMPEG_LIBRARY_BASE})
-    ENDIF (_FFMPEG_CHECK_COMPONENTS)
+        SET (FFMPEG_${_FFMPEG_COMPONENT_UPPER}_FOUND FALSE)
+        IF (_FFMPEG_CHECK_COMPONENTS)
+          LIST (APPEND _FFMPEG_MISSING_LIBRARIES ${_FFMPEG_LIBRARY_BASE})
+        ENDIF (_FFMPEG_CHECK_COMPONENTS)
       endif()
 
     endforeach()
@@ -230,7 +224,7 @@ if(PKG_CONFIG_FOUND AND NOT FFMPEG_IGNORE_PKG_CONFIG)
       STRING (TOUPPER ${_FFMPEG_COMPONENT} _FFMPEG_COMPONENT_UPPER)
       SET (FFMPEG_${_FFMPEG_COMPONENT_UPPER}_FOUND FALSE)
       IF (_FFMPEG_CHECK_COMPONENTS)
-    LIST (APPEND _FFMPEG_MISSING_LIBRARIES ${_FFMPEG_LIBRARY_BASE})
+        LIST (APPEND _FFMPEG_MISSING_LIBRARIES ${_FFMPEG_LIBRARY_BASE})
       endif(_FFMPEG_CHECK_COMPONENTS)
     endforeach()
   endif(LOCAL_FFMPEG_FOUND)
@@ -261,39 +255,50 @@ else(PKG_CONFIG_FOUND AND NOT FFMPEG_IGNORE_PKG_CONFIG)
       SET (FFMPEG_${_FFMPEG_COMPONENT_UPPER}_FOUND TRUE)
 
       if(${${_FFMPEG_LIBRARY_BASE}} MATCHES ".*${CMAKE_STATIC_LIBRARY_SUFFIX}")
-    add_library(${_FFMPEG_COMPONENT} STATIC IMPORTED)
-    message("** [FindFFMPEG] exporting target ${_FFMPEG_COMPONENT} as static library")
-    message("** [FindFFMPEG] static library requested and unable to use pkg-config, FFMPEG_EXTRA_LINK_FLAGS will be filled with a wild guess")
-    if(APPLE)
-      set(FFMPEG_EXTRA_LINK_FLAGS "-L/usr/local/lib -framework CoreFoundation -framework VideoToolbox -framework CoreMedia -framework QuartzCore -framework CoreVideo -framework CoreFoundation -framework VideoDecodeAcceleration -framework QuartzCore -liconv -Wl,-framework,CoreFoundation -Wl,-framework,Security -lx265 -lx264 -lm -lbz2 -lz -pthread -framework CoreServices -framework CoreFoundation -framework VideoToolbox -framework CoreMedia -framework QuartzCore -framework CoreVideo -framework CoreFoundation -framework VideoDecodeAcceleration -framework QuartzCore -liconv -Wl,-framework,CoreFoundation -Wl,-framework,Security -lx265 -lx264 -lm -lbz2 -lz -pthread -framework CoreServices -lm")
-    else()
-      if(NOT WIN32)
-        set(FFMPEG_EXTRA_LINK_FLAGS "-lXv -lX11 -lXext -lva -lva-x11 -lva -lxcb -lxcb-shm -lxcb -lxcb-xfixes -lxcb-render -lxcb-shape -lxcb -lxcb-shape -lxcb -lX11 -lasound -lSDL -lpthread -lx265 -lx264 -lm -llzma -lbz2 -lz -pthread -lXv -lX11 -lXext -lva -lva-x11 -lva -lxcb -lxcb-shm -lxcb -lxcb-xfixes -lxcb-render -lxcb-shape -lxcb -lxcb-shape -lxcb -lX11 -lasound -lSDL -lpthread -lx265 -lx264 -lm -llzma -lbz2 -lz -pthread -lm")
-      else()
-        set(FFMPEG_EXTRA_LINK_FLAGS "ws2_32.lib Secur32.lib x265.lib libx264.lib psapi.lib advapi32.lib shell32.lib")
-        string(REPLACE " " ";" FFMPEG_EXTRA_LINK_FLAGS_LIST "${FFMPEG_EXTRA_LINK_FLAGS}")
-        foreach(_XLIB IN LISTS FFMPEG_EXTRA_LINK_FLAGS_LIST)
-            find_library(${_XLIB}_PATH ${_XLIB})
-            if(${_XLIB}_PATH AND EXISTS ${${_XLIB}_PATH})
+        add_library(${_FFMPEG_COMPONENT} STATIC IMPORTED)
+        message("** [FindFFMPEG] exporting target ${_FFMPEG_COMPONENT} as static library")
+        message("** [FindFFMPEG] static library requested and unable to use pkg-config, FFMPEG_EXTRA_LINK_FLAGS will be filled with a wild guess")
+        if(APPLE)
+          # if(PKG_CONFIG_FOUND)
+          #   pkg_check_modules(PKG_FFMPEG QUIET ${_FFMPEG_COMPONENT})
+          #   set(FFMPEG_EXTRA_LINK_FLAGS ${FFMPEG_EXTRA_LINK_FLAGS} ${PKG_FFMPEG_STATIC_LDFLAGS} ${PKG_FFMPEG_STATIC_LDFLAGS_OTHER})
+
+          # else(PKG_CONFIG_FOUND)
+          set(FFMPEG_EXTRA_LINK_FLAGS "-L/usr/local/lib -framework CoreFoundation -framework VideoToolbox -framework CoreMedia -framework QuartzCore -framework CoreVideo -framework CoreFoundation -framework VideoDecodeAcceleration -framework QuartzCore -liconv -Wl,-framework,CoreFoundation -Wl,-framework,Security -lx265 -lx264 -lm -lbz2 -lz -pthread -framework CoreServices -framework CoreFoundation -framework VideoToolbox -framework CoreMedia -framework QuartzCore -framework CoreVideo -framework CoreFoundation -framework VideoDecodeAcceleration -framework QuartzCore -liconv -Wl,-framework,CoreFoundation -Wl,-framework,Security -lx265 -lx264 -lm -lbz2 -lz -pthread -framework CoreServices -lm")
+          # endif(PKG_CONFIG_FOUND)
+        else()
+          if(NOT WIN32)
+            # if(PKG_CONFIG_FOUND)
+            #   pkg_check_modules(PKG_FFMPEG QUIET ${_FFMPEG_COMPONENT})
+            #   set(FFMPEG_EXTRA_LINK_FLAGS ${FFMPEG_EXTRA_LINK_FLAGS} ${PKG_FFMPEG_STATIC_LDFLAGS} ${PKG_FFMPEG_STATIC_LDFLAGS_OTHER})
+            # else()
+              set(FFMPEG_EXTRA_LINK_FLAGS "-lXv -lX11 -lXext -lva -lva-x11 -lva -lxcb -lxcb-shm -lxcb -lxcb-xfixes -lxcb-render -lxcb-shape -lxcb -lxcb-shape -lxcb -lX11 -lasound -lSDL -lpthread -lx265 -lx264 -lm -llzma -lbz2 -lz -pthread -lXv -lX11 -lXext -lva -lva-x11 -lva -lxcb -lxcb-shm -lxcb -lxcb-xfixes -lxcb-render -lxcb-shape -lxcb -lxcb-shape -lxcb -lX11 -lasound -lSDL -lpthread -lx265 -lx264 -lm -llzma -lbz2 -lz -pthread -lm")
+            # endif()
+          else()
+            set(FFMPEG_EXTRA_LINK_FLAGS "ws2_32.lib Secur32.lib x265.lib libx264.lib psapi.lib advapi32.lib shell32.lib")
+            string(REPLACE " " ";" FFMPEG_EXTRA_LINK_FLAGS_LIST "${FFMPEG_EXTRA_LINK_FLAGS}")
+            foreach(_XLIB IN LISTS FFMPEG_EXTRA_LINK_FLAGS_LIST)
+              find_library(${_XLIB}_PATH ${_XLIB})
+              if(${_XLIB}_PATH AND EXISTS ${${_XLIB}_PATH})
                 get_filename_component(${_XLIB}_DIR "${${_XLIB}_PATH}" DIRECTORY)
                 link_directories(${${_XLIB}_DIR})
-            endif()
-        endforeach()
-      endif()
-    endif()
+              endif()
+            endforeach()
+          endif()
+        endif()
       else()
-    add_library(${_FFMPEG_COMPONENT} SHARED IMPORTED)
-    message("** [FindFFMPEG] exporting target ${_FFMPEG_COMPONENT} as shared library")
+        add_library(${_FFMPEG_COMPONENT} SHARED IMPORTED)
+        message("** [FindFFMPEG] exporting target ${_FFMPEG_COMPONENT} as shared library")
       endif()
 
       set_target_properties(${_FFMPEG_COMPONENT} PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES ${FFMPEG_INCLUDE_DIR}
-    LINKER_LANGUAGE C
-    IMPORTED_LINK_INTERFACE_LANGUAGES "C"
-    IMPORTED_LOCATION ${_FFMPEG_LIBRARY_BASE}
-    IMPORTED_LINK_INTERFACE_LANGUAGES_RELEASE "C"
+        INTERFACE_INCLUDE_DIRECTORIES ${FFMPEG_INCLUDE_DIR}
+        LINKER_LANGUAGE C
+        IMPORTED_LINK_INTERFACE_LANGUAGES "C"
+        IMPORTED_LOCATION ${_FFMPEG_LIBRARY_BASE}
+        IMPORTED_LINK_INTERFACE_LANGUAGES_RELEASE "C"
         IMPORTED_LOCATION_RELEASE ${_FFMPEG_LIBRARY_BASE}
-    )
+        )
       set_property(TARGET ${_FFMPEG_COMPONENT} APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
       mark_as_advanced(${_FFMPEG_COMPONENT})
       MARK_AS_ADVANCED (${_FFMPEG_LIBRARY_BASE})
@@ -305,7 +310,7 @@ else(PKG_CONFIG_FOUND AND NOT FFMPEG_IGNORE_PKG_CONFIG)
       SET (FFMPEG_${_FFMPEG_COMPONENT_UPPER}_FOUND FALSE)
       message("** [FindFFMPEG] target ${_FFMPEG_COMPONENT} not found")
       IF (_FFMPEG_CHECK_COMPONENTS)
-    LIST (APPEND _FFMPEG_MISSING_LIBRARIES ${_FFMPEG_LIBRARY_BASE})
+        LIST (APPEND _FFMPEG_MISSING_LIBRARIES ${_FFMPEG_LIBRARY_BASE})
       ENDIF (_FFMPEG_CHECK_COMPONENTS)
     ENDIF (${_FFMPEG_LIBRARY_BASE})
 
@@ -329,7 +334,9 @@ foreach(_FOUND_LIB IN LISTS FFMPEG_LIBRARIES)
     string(REPLACE "lib" "" _LIB_STEM "${_LIB_STEM}")
   endif()
   message("** [FindFFMPEG] removing ..${_LIB_STEM}$ from ${FFMPEG_EXTRA_LINK_FLAG_LIST}")
-  REGEX_REMOVE_ITEM("${FFMPEG_EXTRA_LINK_FLAG_LIST}" "..${_LIB_STEM}$" FFMPEG_EXTRA_LINK_FLAG_LIST)
+
+  #ATTENTION: this line can do quote some harm if '-l' is replaced by '..' in the second argument to REGEX_REMOVE_ITEM
+  REGEX_REMOVE_ITEM("${FFMPEG_EXTRA_LINK_FLAG_LIST}" "-l${_LIB_STEM}$" FFMPEG_EXTRA_LINK_FLAG_LIST)
 endforeach()
 
 if(NOT APPLE)
@@ -458,7 +465,7 @@ IF (NOT _FFMPEG_CHECK_COMPONENTS)
   SET (_FFMPEG_FPHSA_ADDITIONAL_ARGS HANDLE_COMPONENTS)
 ENDIF (NOT _FFMPEG_CHECK_COMPONENTS)
 
-
+message("!! EXTRA FLAGS: ${FFMPEG_EXTRA_LINK_FLAGS}")
 
 FIND_PACKAGE_HANDLE_STANDARD_ARGS (Ffmpeg REQUIRED_VARS FFMPEG_ROOT_DIR
   FFMPEG_INCLUDE_DIR ${_FFMPEG_MISSING_LIBRARIES} VERSION_VAR FFMPEG_VERSION
