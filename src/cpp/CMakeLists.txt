@@ -294,6 +294,14 @@ endif()
 
 ################################# DEPENDENCIES #################################
 #-------------------------------- OpenMP          ---------------------------------
+if(APPLE)
+  get_filename_component(CXX_COMPILER_APP_PATH "${CMAKE_CXX_COMPILER}" PATH)
+  if(${CXX_COMPILER_APP_PATH} MATCHES "/usr/local.*/bin")
+    string(REPLACE "bin" "lib" CXX_COMPILER_LIBS_PATH "${CXX_COMPILER_APP_PATH}")
+    link_directories(${CXX_COMPILER_LIBS_PATH})
+  endif()
+endif()
+
 find_package(OpenMP REQUIRED)
 if(${OPENMP_CXX_FOUND})
   # add_definitions(${OpenMP_CXX_FLAGS})
