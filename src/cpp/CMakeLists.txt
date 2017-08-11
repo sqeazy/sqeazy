@@ -295,8 +295,20 @@ endif()
 ################################# DEPENDENCIES #################################
 #-------------------------------- OpenMP          ---------------------------------
 if(APPLE)
+  #at the time of writing, Xcode was incapable of compiling OpenMP code
+  #thus, we have to require clang/gcc on APPLE
+  if(${CMAKE_CXX_COMPILER_ID} STREQUAL AppleClang)
+    message(FATAL_ERROR "This project requires OpenMP and thus cannot be compiled with XCode!")
+  endif()
+
   get_filename_component(CXX_COMPILER_APP_PATH "${CMAKE_CXX_COMPILER}" PATH)
-  if(${CXX_COMPILER_APP_PATH} MATCHES "/usr/local.*/bin")
+  if(CXX_COMPILER_APP_PATH)
+    if("${CXX_COMPILER_APP_PATH}" MATCHES "/Applications/Xcode.*" OR "${CXX_COMPILER_APP_PATH}" MATCHES "/usr/bin/clang.*")
+      message(FATAL_ERROR "This project requires OpenMP and thus cannot be compiled with XCode!")
+    endif()
+  endif()
+
+  if(${CXX_COMPILER_APP_PATH} MATCHES "/usr/local.*/bin" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL Clang)
     string(REPLACE "bin" "lib" CXX_COMPILER_LIBS_PATH "${CXX_COMPILER_APP_PATH}")
     link_directories(${CXX_COMPILER_LIBS_PATH})
   endif()
