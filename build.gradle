@@ -8,7 +8,7 @@ apply plugin: 'maven'
 apply plugin: 'maven-publish'
 
 
-version '0.3.1'
+version '0.3.2'
 
 def native_group = 'native'
 def bundle_group = 'bundle'
@@ -56,66 +56,66 @@ def build_cmake_args = {
 
 
 
-  def native_build_type = project.hasProperty("sqy_build_type") ? sqy_build_type : "Release"
-  def sqy_x = project.hasProperty("sqy_experimental") ? sqy_experimental : "0"
-  def path_to_lz4 = project.hasProperty("lz4_path") ? lz4_path : ""
-  def path_to_ffmpeg = project.hasProperty("ffmpeg_path") ? ffmpeg_path : ""
-  def path_to_hdf5 = project.hasProperty("hdf5_path") ? hdf5_path : ""
-  def path_to_tiff = project.hasProperty("tiff_path") ? tiff_path : ""
-  def path_to_boost = project.hasProperty("boost_path") ? boost_path : ""
+    def native_build_type = project.hasProperty("sqy_build_type") ? sqy_build_type : "Release"
+    def sqy_x = project.hasProperty("sqy_experimental") ? sqy_experimental : "0"
+    def path_to_lz4 = project.hasProperty("lz4_path") ? lz4_path : ""
+    def path_to_ffmpeg = project.hasProperty("ffmpeg_path") ? ffmpeg_path : ""
+    def path_to_hdf5 = project.hasProperty("hdf5_path") ? hdf5_path : ""
+    def path_to_tiff = project.hasProperty("tiff_path") ? tiff_path : ""
+    def path_to_boost = project.hasProperty("boost_path") ? boost_path : ""
 
 
-  def local_args = []
+    def local_args = []
 
-  local_args << "-DCMAKE_BUILD_TYPE="+native_build_type
+    local_args << "-DCMAKE_BUILD_TYPE="+native_build_type
 
-  if(sqy_x != "0"){
-    local_args << "-DSQY_EXPERIMENTAL=ON"
-  }
-
-
-
-  if(path_to_lz4){
-
-    local_args << "-DLZ4_ROOT=" + path_to_lz4
-  }
-
-
-  if(path_to_ffmpeg){
-    //TODO: see if path exists
-    local_args << "-DFFMPEG_ROOT=" + path_to_ffmpeg
-  }
-
-
-  if(path_to_hdf5){
-    //TODO: see if path exists
-    local_args << "-DHDF5_ROOT=" + path_to_hdf5
-  }
-
-  if(path_to_tiff){
-    //TODO: see if path exists
-    local_args << "-DTIFF_ROOT=" + path_to_tiff
-    /* if (Os.isFamily(Os.FAMILY_WINDOWS)){
-       def tiff_path = file(path_to_tiff).absolutePath
-       def tiff_include = tiff_path + "\\include"
-       def tiff_lib = tiff_path + "\\lib\\libtiff.dll"
-       local_args << "-DTIFF_INCLUDE_DIR="+ tiff_include
-       local_args << "-DTIFF_LIBRARY="+ tiff_lib
-       } else {
-       local_args << "-DTIFF_INCLUDE_DIR="+ path_to_tiff +"/include"
-       local_args << "-DTIFF_LIBRARY="+ path_to_tiff +"/lib/libtiff.so"
-       } */
-  }
+    if(sqy_x != "0"){
+        local_args << "-DSQY_EXPERIMENTAL=ON"
+    }
 
 
 
-  if(path_to_boost){
-    //TODO: see if path exists
-    local_args << "-DBOOST_ROOT=" + path_to_boost
-  }
+    if(path_to_lz4){
+
+        local_args << "-DLZ4_ROOT=" + path_to_lz4
+    }
 
 
-  return local_args
+    if(path_to_ffmpeg){
+        //TODO: see if path exists
+        local_args << "-DFFMPEG_ROOT=" + path_to_ffmpeg
+    }
+
+
+    if(path_to_hdf5){
+        //TODO: see if path exists
+        local_args << "-DHDF5_ROOT=" + path_to_hdf5
+    }
+
+    if(path_to_tiff){
+        //TODO: see if path exists
+        local_args << "-DTIFF_ROOT=" + path_to_tiff
+        /* if (Os.isFamily(Os.FAMILY_WINDOWS)){
+         def tiff_path = file(path_to_tiff).absolutePath
+         def tiff_include = tiff_path + "\\include"
+         def tiff_lib = tiff_path + "\\lib\\libtiff.dll"
+         local_args << "-DTIFF_INCLUDE_DIR="+ tiff_include
+         local_args << "-DTIFF_LIBRARY="+ tiff_lib
+     } else {
+         local_args << "-DTIFF_INCLUDE_DIR="+ path_to_tiff +"/include"
+         local_args << "-DTIFF_LIBRARY="+ path_to_tiff +"/lib/libtiff.so"
+     } */
+    }
+
+
+
+    if(path_to_boost){
+        //TODO: see if path exists
+        local_args << "-DBOOST_ROOT=" + path_to_boost
+    }
+
+
+    return local_args
 }
 
 task create_build_dir << {
@@ -130,52 +130,57 @@ task create_build_dir << {
 // cmake task:
 task cmake(type:Exec) {
 
-  description 'invoke cmake to build native libs in '+native_build_dir
-  group native_group
+    description 'invoke cmake to build native libs in '+native_build_dir
+    group native_group
 
-  workingDir native_build_dir
+    workingDir native_build_dir
 
-  inputs.dir file(native_source_dir).absolutePath
+    inputs.dir file(native_source_dir).absolutePath
 
-  if (Os.isFamily(Os.FAMILY_WINDOWS)){
-    outputs.files file(native_build_dir).absolutePath + '\\ALL_BUILD.vcxproj', file(native_build_dir).absolutePath + '\\CMakeCache.txt'
-  } else {
-    outputs.files file(native_build_dir).absolutePath + '/Makefile', file(native_build_dir).absolutePath + '/CMakeCache.txt'
-  }
+    if (Os.isFamily(Os.FAMILY_WINDOWS)){
+        outputs.files file(native_build_dir).absolutePath + '\\ALL_BUILD.vcxproj', file(native_build_dir).absolutePath + '\\CMakeCache.txt'
+    } else {
+        outputs.files file(native_build_dir).absolutePath + '/Makefile', file(native_build_dir).absolutePath + '/CMakeCache.txt'
+    }
 
-  def path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake"
+    def path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake"
 
-  //DEFINE DEFAULTS
-  if (Os.isFamily(Os.FAMILY_WINDOWS)){
+    //DEFINE DEFAULTS
+    if (Os.isFamily(Os.FAMILY_WINDOWS)){
 
-    path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake.exe"
-    executable path_to_cmake_app
+        path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake.exe"
+        executable path_to_cmake_app
 
-    if(System.getProperty("os.arch").indexOf("64") != -1){
-      args "-Ax64"
-    } //args "-G \"Visual Studio 14 2015 Win64\""
-
-
-
-    //args "-DCMAKE_BINARY_DIR="+file(native_build_dir).absolutePath
-  }
-  else if (Os.isFamily(Os.FAMILY_MAC))
-  {
-    executable path_to_cmake_app
-
-  }
-  else if (Os.isFamily(Os.FAMILY_UNIX))
-  {
-    executable path_to_cmake_app
-
-  }
+        if(System.getProperty("os.arch").indexOf("64") != -1){
+            args "-Ax64"
+        } //args "-G \"Visual Studio 14 2015 Win64\""
 
 
-  def some_args = build_cmake_args()
+
+        //args "-DCMAKE_BINARY_DIR="+file(native_build_dir).absolutePath
+    }
+    else if (Os.isFamily(Os.FAMILY_MAC))
+    {
+        executable path_to_cmake_app
+
+    }
+    else if (Os.isFamily(Os.FAMILY_UNIX))
+    {
+        executable path_to_cmake_app
+
+    }
+
+    def cxx_compiler_file = project.hasProperty("cxx_compiler") ? project.cxx_compiler : ""
+
+    if(cxx_compiler_file){
+        environment CXX: cxx_compiler
+    }
+
+    def some_args = build_cmake_args()
 
 
-  args some_args
-  args file(native_source_dir).absolutePath
+    args some_args
+    args file(native_source_dir).absolutePath
 
 
 }
@@ -218,52 +223,58 @@ task make(type:Exec) {
 // cmake task:
 task cmake_4_bundle(type:Exec) {
 
-  description 'invoke cmake to build sqeazy bundle in '+native_build_dir
-  group bundle_group
+    description 'invoke cmake to build sqeazy bundle in '+native_build_dir
+    group bundle_group
 
-  workingDir native_build_dir
+    workingDir native_build_dir
 
-  inputs.dir file(native_source_dir).absolutePath
+    inputs.dir file(native_source_dir).absolutePath
 
-  if (Os.isFamily(Os.FAMILY_WINDOWS)){
-    outputs.files file(native_build_dir).absolutePath + '\\ALL_BUILD.vcxproj', file(native_build_dir).absolutePath + '\\CMakeCache.txt'
-  } else {
-    outputs.files file(native_build_dir).absolutePath + '/Makefile', file(native_build_dir).absolutePath + '/CMakeCache.txt'
-  }
+    if (Os.isFamily(Os.FAMILY_WINDOWS)){
+        outputs.files file(native_build_dir).absolutePath + '\\ALL_BUILD.vcxproj', file(native_build_dir).absolutePath + '\\CMakeCache.txt'
+    } else {
+        outputs.files file(native_build_dir).absolutePath + '/Makefile', file(native_build_dir).absolutePath + '/CMakeCache.txt'
+    }
 
-  def path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake"
+    def path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake"
 
-  //DEFINE DEFAULTS
-  if (Os.isFamily(Os.FAMILY_WINDOWS)){
+    //DEFINE DEFAULTS
+    if (Os.isFamily(Os.FAMILY_WINDOWS)){
 
-    path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake.exe"
-    executable path_to_cmake_app
+        path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake.exe"
+        executable path_to_cmake_app
 
-    if(System.getProperty("os.arch").indexOf("64") != -1){
-      args "-Ax64"
-    } //args "-G \"Visual Studio 14 2015 Win64\""
-
-
-
-    //args "-DCMAKE_BINARY_DIR="+file(native_build_dir).absolutePath
-  }
-  else if (Os.isFamily(Os.FAMILY_MAC))
-  {
-    executable path_to_cmake_app
-
-  }
-  else if (Os.isFamily(Os.FAMILY_UNIX))
-  {
-    executable path_to_cmake_app
-
-  }
+        if(System.getProperty("os.arch").indexOf("64") != -1){
+            args "-Ax64"
+        } //args "-G \"Visual Studio 14 2015 Win64\""
 
 
-  args build_cmake_args()
 
-  args "-DBUNDLE_SQEAZY=ON"
+        //args "-DCMAKE_BINARY_DIR="+file(native_build_dir).absolutePath
+    }
+    else if (Os.isFamily(Os.FAMILY_MAC))
+    {
+        executable path_to_cmake_app
+        // environment CXX: "/usr/local/opt/llvm//bin/clang++"
 
-  args file(native_source_dir).absolutePath
+    }
+    else if (Os.isFamily(Os.FAMILY_UNIX))
+    {
+        executable path_to_cmake_app
+
+    }
+
+    def cxx_compiler_file = project.hasProperty("cxx_compiler") ? cxx_compiler : ""
+
+    if(cxx_compiler_file){
+        environment CXX: cxx_compiler
+    }
+
+    args build_cmake_args()
+
+    args "-DBUNDLE_SQEAZY=ON"
+
+    args file(native_source_dir).absolutePath
 
 
 }
