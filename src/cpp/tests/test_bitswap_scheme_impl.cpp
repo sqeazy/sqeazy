@@ -1,5 +1,6 @@
 #define BOOST_TEST_MODULE TEST_BITSWAP_SCHEME_IMPL
-#include "boost/test/unit_test.hpp"
+#define BOOST_TEST_MAIN
+#include "boost/test/included/unit_test.hpp"
 #include <cstdint>
 #include <numeric>
 #include <vector>

@@ -1,10 +1,11 @@
 #define BOOST_TEST_MODULE TEST_VIDEO_UTILS_IMPL
+#define BOOST_TEST_MAIN
 
 #include <numeric>
 #include <vector>
 #include <cstdint>
 
-#include "boost/test/unit_test.hpp"
+#include "boost/test/included/unit_test.hpp"
 #include "encoders/video_utils.hpp"
 
 #define DEBUG_H264

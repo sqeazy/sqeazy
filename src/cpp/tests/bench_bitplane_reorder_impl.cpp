@@ -1,5 +1,6 @@
 #define BOOST_TEST_MODULE BENCH_BITPLANE_REORDER
-#include "boost/test/unit_test.hpp"
+#define BOOST_TEST_MAIN
+#include "boost/test/included/unit_test.hpp"
 
 #include <vector>
 #include <iostream>

@@ -1,5 +1,6 @@
 #define BOOST_TEST_MODULE TEST_STRING_PARSERS
-#include "boost/test/unit_test.hpp"
+#define BOOST_TEST_MAIN
+#include "boost/test/included/unit_test.hpp"
 #include <numeric>
 #include <functional>
 #include <cmath>

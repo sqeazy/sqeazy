@@ -1,5 +1,6 @@
 #define BOOST_TEST_MODULE TEST_HIST_IMPL
-#include "boost/test/unit_test.hpp"
+#define BOOST_TEST_MAIN
+#include "boost/test/included/unit_test.hpp"
 #include "boost/random.hpp"
 #include <numeric>
 #include <cmath>

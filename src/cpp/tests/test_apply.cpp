@@ -1,5 +1,7 @@
 #define BOOST_TEST_MODULE TEST_APPLY
-#include "boost/test/unit_test.hpp"
+#define BOOST_TEST_MAIN
+#define BOOST_TEST_MAIN
+#include "boost/test/included/unit_test.hpp"
 #include <numeric>
 #include <vector>
 #include "pipeline.hpp"
