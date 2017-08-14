@@ -368,7 +368,7 @@ task upload_bundle(type:Exec) {
 
   def arch = jnaerator_platform()
   def fname = file(zip_bundle.outputs.files[0]).getName()
-  def url = 'https://api.bintray.com/content/psteinb/sqeazy/'+arch+'/'+project.version+'/'+arch+'/'+project.version+'/'+fname+'?publish=1'
+  def url = 'https://api.bintray.com/content/sqeazy/sqeazy/'+arch+'/'+project.version+'/'+arch+'/'+project.version+'/'+fname+'?publish=1'
 
   if(project.hasProperty('bintray_user') && project.hasProperty('bintray_key') ){
     args '-T'+fname,'-u'+project.bintray_user+':'+project.bintray_key, url
@@ -424,7 +424,7 @@ task fetch_version {
     def tgt_file = file(download_dir.absolutePath+'/sqeazy_bundle_'+plat+'.zip')
     def cmdstring = [app_string,
              '-L',
-             'https://dl.bintray.com/psteinb/sqeazy/'+plat+'/'+project.version+'/sqeazy_bundle.zip',
+             'https://dl.bintray.com/sqeazy/sqeazy/'+plat+'/'+project.version+'/sqeazy_bundle.zip',
              '-o',
              tgt_file.absolutePath
             ].join(" ")
