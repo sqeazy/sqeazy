@@ -91,6 +91,8 @@ check_cxx_compiler_flag(-ggdb HAS_GGDB_COMPILERFLAG)
 check_cxx_compiler_flag(-ggdb3 HAS_GGDB3_COMPILERFLAG)
 check_cxx_compiler_flag(-O3 HAS_O3_COMPILERFLAG)
 check_cxx_compiler_flag(/Oi HAS_OI_COMPILERFLAG)
+check_cxx_compiler_flag(/w HAS_NO_WARNINGS) #if given to cl.exe, no output will be printed to the console
+check_cxx_compiler_flag(/W1 HAS_VS_W1_WARNINGS) #see https://msdn.microsoft.com/en-us/library/thxezb7y.aspx for details
 check_cxx_compiler_flag(-Wno-overflow HAS_WNOOVERFLOW_COMPILERFLAG)
 
 #C/C++ specific flags
@@ -145,6 +147,10 @@ if(HAS_WNOOVERFLOW_COMPILERFLAG)
   add_definitions(-Wno-overflow)
 endif()
 
+if(HAS_VS_W1_WARNINGS)
+  add_definitions(/W1)
+endif()
+
 if(ALLCAPITAL_BUILD_TYPE STREQUAL DEBUG)
   if(HAS_GGDB3_COMPILERFLAG)
     add_definitions(-ggdb3)
@@ -154,6 +160,14 @@ if(ALLCAPITAL_BUILD_TYPE STREQUAL DEBUG)
       add_definitions(/Oi)
     endif()
 
+  endif()
+  
+  if(NOT MSVC)
+    add_definitions(-DSQY_TRACE=1)
+    ADD_DEFINITIONS(-D_SQY_DEBUG_=1)
+  else()
+    add_definitions(/DSQY_TRACE=1)
+    ADD_DEFINITIONS(/D_SQY_DEBUG_=1)
   endif()
 endif()
 
@@ -171,6 +185,7 @@ if(ALLCAPITAL_BUILD_TYPE STREQUAL RELEASE)
   if(HAS_O3_COMPILERFLAG)
     add_definitions(-O3)
   endif()
+  add_definitions(-DNDEBUG)
 endif()
 
  #for clang
@@ -188,34 +203,21 @@ endif()
    MESSAGE(STATUS "[Win32] Compiler used C++ ${CMAKE_CXX_COMPILER_ID}")
    MESSAGE(STATUS "[Win32] Compiler used C ${CMAKE_C_COMPILER_ID}")
    MESSAGE(STATUS "[Win32] default HOST_COMPILER_RELEASE_FLAGS : ${HOST_COMPILER_RELEASE_FLAGS}")
-
-   #for intrinsics to work
-
-   IF(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
-
-
-     # SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Oi")
-     # SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Oi")
-
-     MESSAGE(STATUS "[Win32] CMAKE_CXX_FLAGS          : ${CMAKE_CXX_FLAGS}")
-     MESSAGE(STATUS "[Win32] CMAKE_CXX_FLAGS_RELEASE  : ${CMAKE_CXX_FLAGS_RELEASE}")
-     MESSAGE(STATUS "[Win32] CMAKE_CXX_FLAGS_DEBUG    : ${CMAKE_CXX_FLAGS_DEBUG}")
-     MESSAGE(STATUS "[Win32] CMAKE_VS_PLATFORM_TOOLSET: ${CMAKE_VS_PLATFORM_TOOLSET}")
-     #SET(HOST_COMPILER_RELEASE_FLAGS "/Ox /MD /W3 /EHsc")
-     #MESSAGE(FATAL "Microsoft Visual Studio not supported! Please use mingw-w64!")
-   ENDIF()
-
+   MESSAGE(STATUS "[Win32] CMAKE_CXX_FLAGS          : ${CMAKE_CXX_FLAGS}")
+   MESSAGE(STATUS "[Win32] CMAKE_CXX_FLAGS_RELEASE  : ${CMAKE_CXX_FLAGS_RELEASE}")
+   MESSAGE(STATUS "[Win32] CMAKE_CXX_FLAGS_DEBUG    : ${CMAKE_CXX_FLAGS_DEBUG}")
+   MESSAGE(STATUS "[Win32] CMAKE_VS_PLATFORM_TOOLSET: ${CMAKE_VS_PLATFORM_TOOLSET}")
    MESSAGE(STATUS "[Win32] CMAKE_VS_PLATFORM_TOOLSET: ${CMAKE_VS_PLATFORM_TOOLSET}")
    MESSAGE(STATUS "[Win32] CMAKE_MODULE_LINKER_FLAGS: ${CMAKE_MODULE_LINKER_FLAGS}")
  ENDIF(WIN32)
 
 
 IF(HAS_CLANG_VECTORIZE_COMPILERFLAG)
-  SET(HOST_COMPILER_RELEASE_FLAGS "${HOST_COMPILER_RELEASE_FLAGS} -fvectorize")
+  add_definitions(-fvectorize)
 ENDIF()
 
 IF(HAS_GCC_TREE_VECTORIZE_COMPILERFLAG)
-  SET(HOST_COMPILER_RELEASE_FLAGS "${HOST_COMPILER_RELEASE_FLAGS} -ftree-vectorize")
+  add_definitions(-ftree-vectorize)
 ENDIF()
 
 
@@ -240,16 +242,6 @@ IF( CMAKE_GENERATOR STREQUAL Xcode )
     SET( CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++" )
 ENDIF()
 
-if(${ALLCAPITAL_BUILD_TYPE} MATCHES "DEBUG")
-  if(NOT MSVC)
-    add_definitions(-DSQY_TRACE=1)
-    ADD_DEFINITIONS(-D_SQY_DEBUG_=1)
-  else()
-    add_definitions(/DSQY_TRACE=1)
-    ADD_DEFINITIONS(/D_SQY_DEBUG_=1)
-  endif()
-endif()
-
 if(SQY_VERBOSE)
   ADD_DEFINITIONS(-D_SQY_VERBOSE_=1)
 endif(SQY_VERBOSE)
@@ -269,11 +261,8 @@ else(SQY_EXPERIMENTAL)
   add_definitions(-D_SQY_X_=0)
 endif(SQY_EXPERIMENTAL)
 
-IF(UNIX)
-check_cxx_compiler_flag(-std=c++11 HAS_CPP11_COMPILERFLAG)
-ELSE(UNIX)
-  SET(HAS_CPP11_COMPILERFLAG "NOT NEEDED")
-ENDIF(UNIX)
+#the following shouldn't be needed due to CMAKE_CXX_STANDARD variable
+#check_cxx_compiler_flag(-std=c++11 HAS_CPP11_COMPILERFLAG)
 
 #lz4 is needed for the entire project, so let's include it here
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake )
@@ -283,7 +272,7 @@ if(${BUNDLE_SQEAZY})
   set(BUILD_SHARED_LIBS OFF)
   set(Boost_USE_STATIC_LIBS ON)
   #TODO: unclear if that might also hold for UNIX derivates
-  if(MSVC)
+  if(WIN32) #was MSVC
     set(Boost_USE_STATIC_RUNTIME ON)
   endif()
   set(LZ4_USE_STATIC_LIBS ON)
@@ -314,7 +303,21 @@ if(APPLE)
   endif()
 endif()
 
-find_package(OpenMP REQUIRED)
+if(WIN32 AND ${CMAKE_CXX_COMPILER_ID} STREQUAL Clang)
+		get_filename_component(CXX_COMPILER_MSBUILD_PATH "${CMAKE_CXX_COMPILER}" PATH)
+		get_filename_component(CXX_COMPILER_ROOT "${CXX_COMPILER_MSBUILD_PATH}" PATH)
+		
+		message("++ adding ${CXX_COMPILER_ROOT}\/lib to link paths")
+		link_directories("${CXX_COMPILER_ROOT}\/lib")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
+		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L${CXX_COMPILER_ROOT}\/lib -lomp")
+	
+else()
+	find_package(OpenMP REQUIRED)
+endif()
+
+
 if(${OPENMP_CXX_FOUND})
   # add_definitions(${OpenMP_CXX_FLAGS})
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
@@ -370,37 +373,36 @@ endif()
 
 set(HDF5_NEW_FINDMODULE False)
 
-IF(EXISTS ${HDF5_ROOT})
+IF(EXISTS ${HDF5_ROOT} AND IS_DIRECTORY "${HDF5_ROOT}")
 
-  set($ENV{HDF5_ROOT} ${HDF5_ROOT})
-  set($ENV{HDF5_DIR} ${HDF5_ROOT})
-  set(HDF5_DIR ${HDF5_ROOT})
-  set($ENV{HDF5_ROOT_DIR_HINT} ${HDF5_ROOT})
+	set($ENV{HDF5_ROOT} ${HDF5_ROOT})
+	set($ENV{HDF5_DIR} ${HDF5_ROOT})
+	set(HDF5_DIR ${HDF5_ROOT})
+	set($ENV{HDF5_ROOT_DIR_HINT} ${HDF5_ROOT})
 
-  if(EXISTS ${HDF5_ROOT}/share/cmake/FindHDF5.cmake)
-    list(APPEND CMAKE_MODULE_PATH "${HDF5_ROOT}/share/cmake")
-    list(APPEND CMAKE_PREFIX_PATH "${HDF5_ROOT}/share/cmake")
-    set(HDF5_NEW_FINDMODULE True)
-  endif()
+	if(EXISTS ${HDF5_ROOT}/share/cmake/FindHDF5.cmake)
+		message(STATUS "found embedded share/cmake/FindHDF5.cmake in ${HDF5_ROOT}, adding it to CMAKE_MODULE_PATH")
+		list(APPEND CMAKE_MODULE_PATH "${HDF5_ROOT}/share/cmake")
+		list(APPEND CMAKE_PREFIX_PATH "${HDF5_ROOT}/share/cmake")
+		set(HDF5_NEW_FINDMODULE True)
+	endif()
 
-  if(EXISTS ${HDF5_ROOT}/cmake/FindHDF5.cmake)
-    list(APPEND CMAKE_MODULE_PATH "${HDF5_ROOT}/cmake")
-    list(APPEND CMAKE_PREFIX_PATH "${HDF5_ROOT}/cmake")
-    set(HDF5_NEW_FINDMODULE True)
-  endif()
+	if(EXISTS ${HDF5_ROOT}/cmake/FindHDF5.cmake AND IS_DIRECTORY ${HDF5_ROOT}/cmake)
+		message(STATUS "found embedded cmake/FindHDF5.cmake in ${HDF5_ROOT}, adding it to CMAKE_MODULE_PATH")
+		list(APPEND CMAKE_MODULE_PATH "${HDF5_ROOT}/cmake")
+		list(APPEND CMAKE_PREFIX_PATH "${HDF5_ROOT}/cmake")
+		set(HDF5_NEW_FINDMODULE True)
+	endif()
 
-  if(IS_DIRECTORY ${HDF5_ROOT}\\cmake)
-    list(APPEND CMAKE_MODULE_PATH "${HDF5_ROOT}\\cmake")
-    list(APPEND CMAKE_PREFIX_PATH "${HDF5_ROOT}\\cmake")
-    set(HDF5_NEW_FINDMODULE True)
-  endif()
+	if(IS_DIRECTORY ${HDF5_ROOT})
+		message(STATUS "calling FindHDF5 with ${HDF5_ROOT} (HDF5_NEW_FINDMODULE: ${HDF5_NEW_FINDMODULE})\n-- CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}\n-- CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
+	else()
+		message(FATAL_ERROR "calling FindHDF5 with non-existing ${HDF5_ROOT}")
+	endif()
 
-if(IS_DIRECTORY ${HDF5_ROOT})
-message(STATUS "calling FindHDF5 with ${HDF5_ROOT} (HDF5_NEW_FINDMODULE: ${HDF5_NEW_FINDMODULE})\n-- CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}\n-- CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
-else()
-message(FATAL_ERROR "calling FindHDF5 with non-existing ${HDF5_ROOT}")
-endif()
-ENDIF(EXISTS ${HDF5_ROOT})
+ELSE()
+	message(STATUS "HDF5_ROOT not found")
+ENDIF()
 
 
 if(${HDF5_USE_STATIC_LIBRARIES})
@@ -409,12 +411,12 @@ else()
   set(FIND_HDF5_MODE shared)
 endif()
 
-FIND_PACKAGE(HDF5 1.8 QUIET REQUIRED COMPONENTS CXX HL )
+FIND_PACKAGE(HDF5 1.8.15 QUIET REQUIRED COMPONENTS CXX HL)
 if(NOT "${HDF5_NEW_FINDMODULE}" MATCHES "False")
   #unset(HDF5_FOUND)
   message(STATUS "detected FindHDF5.cmake introduced with 1.8.16")
   #FIND_PACKAGE(HDF5 ${HDF5_VERSION} NAMES hdf5 COMPONENTS CXX HL ${FIND_HDF5_MODE})
-  FIND_PACKAGE(HDF5 QUIET REQUIRED COMPONENTS CXX HL ${FIND_HDF5_MODE} NAMES hdf5 )
+  FIND_PACKAGE(HDF5 1.8.15 QUIET REQUIRED COMPONENTS CXX HL ${FIND_HDF5_MODE} NAMES hdf5 )
 else()
   message(STATUS "FindHDF5.cmake undetected below ${HDF5_ROOT}, ${HDF5_VERSION}, (HDF5_NEW_FINDMODULE: ${HDF5_NEW_FINDMODULE})")
 endif()
@@ -508,7 +510,7 @@ ENDIF()
 
 #-------------------------------- FFMPEG       ---------------------------------
 
-find_package(FFMPEG REQUIRED COMPONENTS avformat avcodec avutil swscale)
+find_package(FFMPEG REQUIRED COMPONENTS avformat avcodec avutil swscale swresample)
 IF(FFMPEG_FOUND)
   INCLUDE_DIRECTORIES(${FFMPEG_INCLUDE_DIRS})
   LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
