@@ -8,7 +8,7 @@ apply plugin: 'maven'
 apply plugin: 'maven-publish'
 
 
-version '0.3.2'
+version '0.3.3'
 
 def native_group = 'native'
 def bundle_group = 'bundle'
@@ -112,6 +112,7 @@ def build_cmake_args = {
     if(path_to_boost){
         //TODO: see if path exists
         local_args << "-DBOOST_ROOT=" + path_to_boost
+		//local_args << "-DBOOST_LIBRARYDIR=" + path_to_boost+"/lib"
     }
 
 
@@ -152,8 +153,11 @@ task cmake(type:Exec) {
         executable path_to_cmake_app
 
         if(System.getProperty("os.arch").indexOf("64") != -1){
-            args "-Ax64"
-        } //args "-G \"Visual Studio 14 2015 Win64\""
+            def argslist = [ "-Ax64" ]
+			//TODO: needed for clang integration on Windows
+			//def argslist = ["-T", "LLVM-vs2014","-G", '"Visual Studio 15 2017 Win64"']
+			args = argslist
+        } 
 
 
 
@@ -245,17 +249,15 @@ task cmake_4_bundle(type:Exec) {
         executable path_to_cmake_app
 
         if(System.getProperty("os.arch").indexOf("64") != -1){
-            args "-Ax64"
-        } //args "-G \"Visual Studio 14 2015 Win64\""
-
-
-
-        //args "-DCMAKE_BINARY_DIR="+file(native_build_dir).absolutePath
+            def argslist = ["-Ax64"]
+			//TODO: needed for clang integration on Windows
+			//def argslist = ["-T", "LLVM-vs2014","-G", '"Visual Studio 15 2017 Win64"']
+			args = argslist
+        } 
     }
     else if (Os.isFamily(Os.FAMILY_MAC))
     {
         executable path_to_cmake_app
-        // environment CXX: "/usr/local/opt/llvm//bin/clang++"
 
     }
     else if (Os.isFamily(Os.FAMILY_UNIX))
