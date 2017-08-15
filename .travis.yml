@@ -1,5 +1,10 @@
 sudo: required
+
 dist: trusty
+
+compiler:
+    - gcc
+
 
 cache:
   directories:
@@ -17,11 +22,49 @@ before_install:
   - export PATH=/home/travis/sw/bin:${PATH}
   - export LD_LIBRARY_PATH=/home/travis/sw/lib:${LD_LIBRARY_PATH}
   - export PKG_CONFIG_PATH=/home/travis/sw/lib/pkgconfig:${PKG_CONFIG_PATH}
+  - sudo apt-get -qq update
+  - sudo apt-get install -y --no-install-recommends cmake yasm nasm 
+  - sudo apt-get install -y --no-install-recommends \
+        git \
+        mercurial \
+        wget \
+        bzip2 \
+        libbz2-dev \
+        make \
+        curl \
+        cpuid \
+        pkg-config \
+        software-properties-common \
+        binutils \
+#        build-essential \
+        cpp \
+        cpp-4.8 \
+        g++ \
+        g++-4.8 \
+        gcc \
+        gcc-4.8 \
+        libasan0 \
+        libatomic1 \
+        libcloog-isl4 \
+        libgcc-4.8-dev \
+        libgmp10 \
+        libgomp1 \
+        libisl10 \
+        libitm1 \
+        libmpc3 \
+        libmpfr4 \
+        libquadmath0 \
+        libstdc++-4.8-dev \
+        libtimedate-perl \
+        libtsan0 \
+        patch \
+        libtiff-dev \
+        zlib1g-dev \
+        libc6-dev ;
+        
   #############################################################################
   # LZ4                                                                       #
   #############################################################################
-  - sudo apt-get -qq update
-  - sudo apt-get install -y cmake wget bzip2 libbz2-dev make yasm nasm cpuid
   - travis_retry wget --no-check-certificate https://github.com/lz4/lz4/archive/v1.7.5.tar.gz
   - tar xf v1.7.5.tar.gz
   - pwd
