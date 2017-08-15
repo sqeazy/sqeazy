@@ -2,8 +2,8 @@ sudo: required
 
 dist: trusty
 
-compiler:
-    - gcc
+compiler: gcc
+
 
 
 cache:
