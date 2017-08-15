@@ -20,7 +20,7 @@ RUN add-apt-repository -y ppa:mc3man/trusty-media && apt-get -qq update && apt-g
 RUN git clone git://source.ffmpeg.org/ffmpeg.git && \
     cd ffmpeg && \
     git checkout n3.0.2 && \
-    ./configure  --enable-libx264 --enable-libx265 --enable-gpl --disable-sdl --disable-libxcb --disable-zlib --disable-bzlib --disable-xlib --disable-lzma --disable-indevs --disable-outdevs --prefix=/usr/local && \
+    ./configure  --enable-libx264 --enable-libx265 --enable-pic --enable-shared --enable-gpl --disable-sdl --disable-libxcb --disable-zlib --disable-bzlib --disable-xlib --disable-lzma --disable-indevs --disable-outdevs --prefix=/usr/local && \
     make -j8 && \
     make install;
 
