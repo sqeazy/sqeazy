@@ -1,0 +1,29 @@
+# Use an official Python runtime as a parent image
+FROM sqy/trusty/base:latest
+
+# Set the working directory to /app
+WORKDIR /build
+
+# Install lz4
+RUN git clone https://github.com/lz4/lz4.git && \
+    cd lz4 && \
+#    git checkout v1.8.0 && \
+    CFLAGS="-O3 -DNDEBUG -fPIC" PREFIX=/usr/local SHELL="/bin/bash -x" make -j8 install;
+
+# Install x264
+RUN add-apt-repository -y ppa:mc3man/trusty-media && apt-get -qq update && apt-get install -y --no-install-recommends \
+        libx264-dev x264 \
+        libx265-dev x265 \
+        libtiff5-dev;
+
+# Install ffmpeg
+RUN git clone git://source.ffmpeg.org/ffmpeg.git && \
+    cd ffmpeg && \
+    git checkout n3.0.2 && \
+    ./configure  --enable-libx264 --enable-libx265 --enable-gpl --disable-sdl --disable-libxcb --disable-zlib --disable-bzlib --disable-xlib --disable-lzma --disable-indevs --disable-outdevs --prefix=/usr/local && \
+    make -j8 && \
+    make install;
+
+RUN rm -rf /build/*
+# Run app.py when the container launches
+CMD ["bash"]
