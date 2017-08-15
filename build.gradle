@@ -846,40 +846,40 @@ publishing {
 
 if(project.hasProperty('bintray_user') && project.hasProperty('bintray_key') )
 {
-  bintray {
+    bintray {
 
-    // property must be set in ~/.gradle/gradle.properties
-    user = project.bintray_user
-    key =  project.bintray_key
+        // property must be set in ~/.gradle/gradle.properties
+        user = project.bintray_user
+        key =  project.bintray_key
 
-    publications = ['SqeazyPie'] //When uploading configuration files
+        publications = ['SqeazyPie'] //When uploading configuration files
 
-    dryRun = false //Whether to run this as dry-run, without deploying
-    publish = true //If version should be auto published after an upload
+        dryRun = false //Whether to run this as dry-run, without deploying
+        publish = true //If version should be auto published after an upload
 
-    pkg {
-      repo = 'maven'
-      userOrg = user //An optional organization name when the repo belongs to one of the user's orgs
-      name = 'sqeazy'
-      //desc = 'sqeazy'
-      websiteUrl = 'https://github.com/sqeazy/sqeazy'
-      issueTrackerUrl = 'https://github.com/sqeazy/sqeazy/issues'
-      vcsUrl = 'https://github.com/sqeazy/sqeazy.git'
-      licenses = ['LGPL-3.0']
-      labels = [
-    'compression',
-    'hardware',
-    'encoding',
-    'microscopy',
-    '3D',
-    'images'
-      ]
-      publicDownloadNumbers = true
+        pkg {
+            repo = 'maven'
+            userOrg = 'sqeazy' //An optional organization name when the repo belongs to one of the user's orgs
+            name = 'sqeazy'
+            //desc = 'sqeazy'
+            websiteUrl = 'https://github.com/sqeazy/sqeazy'
+            issueTrackerUrl = 'https://github.com/sqeazy/sqeazy/issues'
+            vcsUrl = 'https://github.com/sqeazy/sqeazy.git'
+            licenses = ['LGPL-3.0']
+            labels = [
+                'compression',
+                'hardware',
+                'encoding',
+                'microscopy',
+                '3D',
+                'images'
+            ]
+            publicDownloadNumbers = true
 
-      version {
-    name = project.version
-      }
+            version {
+                name = project.version
+            }
+        }
+        /**/
     }
-    /**/
-  }
 }
