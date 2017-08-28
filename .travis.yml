@@ -5,23 +5,23 @@ cache:
   directories:
   - /home/travis/sw
 
-
 language: java
 jdk:
   - oraclejdk8
 
 before_install:
-  
   - if [[ ! -d /home/travis/sw ]];then mkdir -p /home/travis/sw ;fi
   - ls -lrth /home/travis/sw
   - export PATH=/home/travis/sw/bin:${PATH}
   - export LD_LIBRARY_PATH=/home/travis/sw/lib:${LD_LIBRARY_PATH}
   - export PKG_CONFIG_PATH=/home/travis/sw/lib/pkgconfig:${PKG_CONFIG_PATH}
+  - sudo apt-get -qq update
+  - sudo apt-get install -y --no-install-recommends yasm nasm 
+  - sudo apt-get install -y --no-install-recommends git mercurial wget bzip2 libbz2-dev make curl cpuid pkg-config software-properties-common binutils cpp cpp-4.8 g++ g++-4.8 gcc gcc-4.8 libasan0 libatomic1 libcloog-isl4 libgcc-4.8-dev libgmp10 libgomp1 libisl10 libitm1 libmpc3 libmpfr4 libquadmath0 libstdc++-4.8-dev libtimedate-perl libtsan0 patch libtiff-dev zlib1g-dev libc6-dev
+        
   #############################################################################
   # LZ4                                                                       #
   #############################################################################
-  - sudo apt-get -qq update
-  - sudo apt-get install -y cmake wget bzip2 libbz2-dev make yasm nasm cpuid
   - travis_retry wget --no-check-certificate https://github.com/lz4/lz4/archive/v1.7.5.tar.gz
   - tar xf v1.7.5.tar.gz
   - pwd
@@ -81,17 +81,11 @@ before_install:
   #############################################################################
   # CMAKE                                                                     #
   #############################################################################
-  - CMAKE_33_FOUND=$(cmake --version | grep " 3\.3\." >/dev/null && { echo 0; } || { echo 1; })
-  - export CMAKE_ROOT=/tmp/cmake
-  - if [ $CMAKE_33_FOUND -ne 0 ]; then
-      mkdir -p $CMAKE_ROOT &&
-      cd $CMAKE_ROOT &&
-      travis_retry wget --no-check-certificate http://www.cmake.org/files/v3.3/cmake-3.3.2-Linux-x86_64.tar.gz &&
-      tar -xzf cmake-3.3.2-Linux-x86_64.tar.gz &&
-      sudo cp -r cmake-3.3.2-Linux-x86_64/* /home/travis/sw/ &&
-      rm -rf cmake-3.3.2-Linux-x86_64.tar.gz cmake-3.3.2-Linux-x86_64 &&
-      cd -;
-    fi
+  - travis_retry wget --no-check-certificate https://cmake.org/files/v3.9/cmake-3.9.0.tar.gz &&
+      tar xf cmake-3.9.0.tar.gz &&
+      cd cmake-3.9.0 &&
+      ./configure --prefix=/home/travis/sw/ && make -j8 && make install &&
+      cd ..;
   - cmake --version
   
   #############################################################################
