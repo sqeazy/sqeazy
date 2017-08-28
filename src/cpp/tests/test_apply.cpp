@@ -1,6 +1,5 @@
 #define BOOST_TEST_MODULE TEST_APPLY
 #define BOOST_TEST_MAIN
-#define BOOST_TEST_MAIN
 #include "boost/test/included/unit_test.hpp"
 #include <numeric>
 #include <vector>
@@ -29,7 +28,7 @@ struct add_one {
   static int encode( const T* _in, T* _out, const unsigned long& _size) {
     const T* begin = _in;
     const T* end = begin + _size;
-   
+
     add_one<T> adder;
     std::transform(begin, end, _out, adder);
 
@@ -72,7 +71,7 @@ struct square {
   static const unsigned long max_encoded_size(unsigned long _size_bytes){
     return _size_bytes;
   }
-  
+
 };
 
 typedef add_one<int> add_one_to_ints;
@@ -120,7 +119,7 @@ BOOST_AUTO_TEST_CASE (with_pipeline_apply) {
 
     BOOST_CHECK_EQUAL(encoded_bytes,test_in.size()*sizeof(int) + hdr_size_bytes);
     test_out.resize(encoded_bytes/sizeof(int));
-    
+
     std::vector<int> expected(test_in.size(),4);
 
     unsigned shift = std::ceil(float(hdr_size_bytes)/sizeof(int));
@@ -145,7 +144,7 @@ BOOST_AUTO_TEST_CASE( encode_bitswap1 )
 
     std::string pipe_name = current_pipe::name();
 
-    
+
 
     BOOST_CHECK_NE(pipe_name.size(),0);
     BOOST_CHECK_NE(pipe_name.find("lz4"),std::string::npos);
@@ -178,7 +177,7 @@ BOOST_AUTO_TEST_CASE( plain_encode_decode_chars )
 
     to_play_with.resize(current_pipe::static_max_bytes_encoded(to_play_with.size()));
     char* output = reinterpret_cast<char*>(&to_play_with[0]);
-    
+
     unsigned local_size = size;
     unsigned written_bytes=0;
 
@@ -194,7 +193,7 @@ BOOST_AUTO_TEST_CASE( plain_encode_decode_chars )
     BOOST_CHECK_EQUAL(enc_ret,0);
     BOOST_CHECK_EQUAL(dec_ret,0);
 
-    
+
     BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(), constant_cube.end(),
                                   &to_play_with[0], &to_play_with[0] + size
                                  );
@@ -270,7 +269,7 @@ BOOST_AUTO_TEST_CASE( encode_decode_bitswap_shorts )
 
     long hdr_size = current_pipe::header_size(size);
     long expected_size_byte = current_pipe::static_max_bytes_encoded(size_in_byte, hdr_size);
-    
+
     std::vector<char> output(expected_size_byte,'z');
 
     const unsigned local_size = size;
@@ -308,7 +307,7 @@ BOOST_AUTO_TEST_CASE( encode_decode_bitswap_shorts_dims_input )
     //COMPRESS
     unsigned written_bytes = 0;
     int enc_ret = current_pipe::compress(&constant_cube[0], &output[0], dims,written_bytes);
-    
+
     std::vector<char> temp(output.begin(),output.begin() + written_bytes);
     std::fill(to_play_with.begin(), to_play_with.end(),0);
 
@@ -420,11 +419,11 @@ BOOST_AUTO_TEST_CASE( encode_decode_diff_shorts_incrementing_onrow_types )
 
   typedef typename sqeazy::remove_unsigned<value_type>::type signed_value_type;
     typedef sqeazy::bmpl::vector<sqeazy::diff_scheme<value_type, sqeazy::last_pixels_on_line_neighborhood<> >,
-				 sqeazy::bitswap_scheme<value_type,1> > const_raw_type;
+                 sqeazy::bitswap_scheme<value_type,1> > const_raw_type;
     typedef sqeazy::pipeline<const_raw_type> const_raw_type_pipe;
 
     typedef sqeazy::bmpl::vector<sqeazy::diff_scheme<value_type, sqeazy::last_pixels_on_line_neighborhood<> >,
-				 sqeazy::bitswap_scheme<signed_value_type,1> > var_raw_type_;
+                 sqeazy::bitswap_scheme<signed_value_type,1> > var_raw_type_;
     typedef sqeazy::pipeline<var_raw_type_> var_type_pipe;
 
     long expected_size = const_raw_type_pipe::static_max_bytes_encoded(size_in_byte, const_raw_type_pipe::header_size(size));
@@ -439,9 +438,8 @@ BOOST_AUTO_TEST_CASE( encode_decode_diff_shorts_incrementing_onrow_types )
 
     std::copy(var_result.begin(), var_result.end(), to_play_with.begin());
     BOOST_CHECK_EQUAL_COLLECTIONS(const_result.begin(), const_result.end(),
-				  to_play_with.begin(), to_play_with.end());
-    
+                  to_play_with.begin(), to_play_with.end());
+
     BOOST_CHECK_EQUAL(const_ret, var_ret);
 }
 BOOST_AUTO_TEST_SUITE_END()
-
