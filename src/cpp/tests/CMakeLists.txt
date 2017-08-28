@@ -9,7 +9,7 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/include)
 #boost unit test framework has some defects if we wanna bind against shared and/or static libs
 ##that's why we bind against the dynamic loaded libraries primarily
 SET(Boost_USE_STATIC_LIBS OFF)
-FIND_PACKAGE (Boost 1.55 COMPONENTS regex filesystem system serialization REQUIRED QUIET)
+FIND_PACKAGE (Boost 1.55 COMPONENTS regex filesystem  serialization REQUIRED QUIET)
 if(Boost_FOUND)
     MESSAGE("++ [tests] Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES} ")
     INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
