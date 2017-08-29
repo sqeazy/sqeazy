@@ -1,5 +1,6 @@
 #define BOOST_TEST_MODULE TEST_DYNAMIC_STAGE_FACTORY
-#include "boost/test/unit_test.hpp"
+#define BOOST_TEST_MAIN
+#include "boost/test/included/unit_test.hpp"
 
 #include "test_dynamic_pipeline_impl.hpp"
 #include "dynamic_stage_factory.hpp"

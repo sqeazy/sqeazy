@@ -1,6 +1,7 @@
 #define BOOST_TEST_MODULE TEST_HISTOGRAM_FILL
+#define BOOST_TEST_MAIN
 
-#include "boost/test/unit_test.hpp"
+#include "boost/test/included/unit_test.hpp"
 
 #include <climits>
 #include <vector>

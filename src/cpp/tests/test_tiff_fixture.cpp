@@ -1,5 +1,6 @@
 #define BOOST_TEST_MODULE TEST_TIFF_FIXTURE
-#include "boost/test/unit_test.hpp"
+#define BOOST_TEST_MAIN
+#include "boost/test/included/unit_test.hpp"
 #include "tiff_utils.hpp"
 #include "tiff_fixtures.hpp"
 #include "boost/filesystem.hpp"
