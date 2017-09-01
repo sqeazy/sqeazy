@@ -110,4 +110,61 @@ BOOST_AUTO_TEST_CASE (on_wikipedia1) {
 
 
 }
+
+BOOST_AUTO_TEST_CASE (on_wikipedia2) {
+
+  std::string result = wikipedia2;
+  std::fill(result.begin(),result.end(),' ');
+
+  sqy::debase64_impl(wikipedia2_encoded.data(),
+                     wikipedia2_encoded.data() + wikipedia2_encoded.size(),
+                     (char*)result.data());
+
+  BOOST_CHECK_EQUAL(result,
+                    wikipedia2);
+
+
+}
+
+BOOST_AUTO_TEST_CASE (on_wikipedia3) {
+
+  std::string result = wikipedia3;
+  std::fill(result.begin(),result.end(),' ');
+
+  sqy::debase64_impl(wikipedia3_encoded.data(),
+                     wikipedia3_encoded.data() + wikipedia3_encoded.size(),
+                     (char*)result.data());
+
+  BOOST_CHECK_EQUAL(result,
+                    wikipedia3);
+
+
+}
+
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE( roundtrips, string_fixture )
+BOOST_AUTO_TEST_CASE (on_standard_text) {
+
+  std::string result = standard_text;
+  std::fill(result.begin(),result.end(),' ');
+
+  std::string intermediate;intermediate.resize(4*std::ceil(result.size()/3.));
+
+  sqy::base64_impl(standard_text.data(),
+                   standard_text.data() + standard_text.size(),
+                   (char*)intermediate.data());
+
+  sqy::debase64_impl(intermediate.data(),
+                   intermediate.data() + intermediate.size(),
+                   (char*)result.data());
+
+  BOOST_CHECK_EQUAL(result,
+                    standard_text);
+
+
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()
