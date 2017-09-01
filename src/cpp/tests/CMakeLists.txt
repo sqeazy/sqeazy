@@ -46,6 +46,9 @@ target_link_libraries(test_algorithms_impl ${Boost_LIBRARIES})
 add_executable(test_string_parsers_impl test_string_parsers_impl.cpp)
 target_link_libraries(test_string_parsers_impl ${Boost_LIBRARIES})
 
+add_executable(test_base64_impl test_base64_impl.cpp)
+target_link_libraries(test_base64_impl ${Boost_LIBRARIES})
+
 add_executable(test_string_shapers_impl test_string_shapers_impl.cpp)
 target_link_libraries(test_string_shapers_impl ${Boost_LIBRARIES})
 
