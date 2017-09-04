@@ -86,9 +86,9 @@ namespace sqeazy {
 
         using It = transform_width<binary_from_base64<std::string::const_iterator>, 8, 6>;
 
-        auto ops = [](char c) {
-                return c == '\0';
-        };
+        // auto ops = [](char c) {
+        //         return c == '\0';
+        // };
 
         //boost::algorithm::trim_right_copy_if(std::string(It(std::begin(val)), It(std::end(val))), ops);
         std::copy(It(_begin), It(_end),_dst);
