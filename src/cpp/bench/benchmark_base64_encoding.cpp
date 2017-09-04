@@ -74,8 +74,6 @@ BENCHMARK_DEFINE_F(synthetic_data, BM_single_thread_boost)(benchmark::State& sta
 
   auto bytes_processed = int64_t(state.iterations()) *  int64_t(size_)*sizeof(input_.front());
 
-  // std::cout << "bytes processed " << bytes_processed << "\n";
-
   state.SetBytesProcessed(bytes_processed);
 }
 
@@ -102,69 +100,31 @@ BENCHMARK_DEFINE_F(synthetic_data, BM_single_thread_mine)(benchmark::State& stat
 
 BENCHMARK_REGISTER_F(synthetic_data,BM_single_thread_mine)->Arg({1<<8})->Arg({1<<10})->Arg({1 << 12})->Arg({1 << 16})->Arg({4 << 20});
 
+BENCHMARK_DEFINE_F(synthetic_data, BM_single_thread_boost_decoding)(benchmark::State& state) {
 
 
-// BENCHMARK_DEFINE_F(dynamic_default_fixture, two_threads)(benchmark::State& state) {
+  if (state.thread_index == 0) {
+    SetUp(state);
+  }
 
+  sqeazy::my_base64_impl(input_.data(),input_.data()+size_,
+                         (char*)output_.data());
 
-//   if (state.thread_index == 0) {
-//     SetUp(state);
-//   }
+  auto decoded = input_;
 
-//   sqeazy::tile_shuffle_scheme<std::uint16_t> local;
-//   local.set_n_threads(2);
+  while (state.KeepRunning()) {
+    state.PauseTiming();
+    std::fill(decoded.begin(), decoded.end(),' ');
+    state.ResumeTiming();
 
+    sqeazy::debase64_impl(output_.data(),output_.data()+output_.size(),
+                          (char*)decoded.data());
+  }
 
-//   local.encode(sinus_.data(),
-//                output_.data(),
-//                shape_);
+  state.SetBytesProcessed(int64_t(state.iterations()) *
+                          int64_t(output_.size())*sizeof(output_.front()));
+}
 
-//   while (state.KeepRunning()) {
-//     state.PauseTiming();
-//     std::fill(output_.begin(), output_.end(),0);
-//     state.ResumeTiming();
-
-//     local.encode(sinus_.data(),
-//                output_.data(),
-//                shape_);
-//   }
-
-//   state.SetBytesProcessed(int64_t(state.iterations()) *
-//                           int64_t(size_)*sizeof(sinus_.front()));
-// }
-
-// BENCHMARK_REGISTER_F(dynamic_default_fixture, two_threads)->UseRealTime()->Arg({1<<16})->Arg({256 << 10})->Arg({64 << 20});
-
-// BENCHMARK_DEFINE_F(dynamic_default_fixture, max_threads)(benchmark::State& state) {
-
-
-//   if (state.thread_index == 0) {
-//     SetUp(state);
-//   }
-
-//   int nthreads = std::thread::hardware_concurrency();
-//   sqeazy::tile_shuffle_scheme<std::uint16_t> local;
-//   local.set_n_threads(nthreads);
-
-
-//   local.encode(sinus_.data(),
-//                output_.data(),
-//                shape_);
-
-//   while (state.KeepRunning()) {
-//     state.PauseTiming();
-//     std::fill(output_.begin(), output_.end(),0);
-//     state.ResumeTiming();
-
-//     local.encode(sinus_.data(),
-//                output_.data(),
-//                shape_);
-//   }
-
-//   state.SetBytesProcessed(int64_t(state.iterations()) *
-//                           int64_t(size_)*sizeof(sinus_.front()));
-// }
-
-// BENCHMARK_REGISTER_F(dynamic_default_fixture, max_threads)->UseRealTime()->Arg({1<<16})->Arg({256 << 10})->Arg({64 << 20});
+BENCHMARK_REGISTER_F(synthetic_data,BM_single_thread_boost_decoding)->Arg({1<<8})->Arg({1<<10})->Arg({1 << 12})->Arg({1 << 16})->Arg({4 << 20});
 
 BENCHMARK_MAIN();
