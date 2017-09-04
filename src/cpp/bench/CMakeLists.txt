@@ -57,6 +57,9 @@ target_link_libraries(test_benchmark_fixture_impl ${Boost_LIBRARIES} ${googleben
 add_executable(benchmark_bitswap_scheme_impl benchmark_bitswap_scheme_impl.cpp)
 target_link_libraries(benchmark_bitswap_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
+add_executable(benchmark_base64_encoding benchmark_base64_encoding.cpp)
+target_link_libraries(benchmark_base64_encoding ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+
 add_executable(benchmark_frame_shuffle_scheme_impl benchmark_frame_shuffle_scheme_impl.cpp)
 target_link_libraries(benchmark_frame_shuffle_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
