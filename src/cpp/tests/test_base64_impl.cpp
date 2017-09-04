@@ -164,5 +164,25 @@ BOOST_AUTO_TEST_CASE (on_standard_text) {
 
 }
 
+BOOST_AUTO_TEST_CASE (encode_with_mine_decode_with_boost) {
+
+  std::string result = standard_text;
+  std::fill(result.begin(),result.end(),' ');
+
+  std::string intermediate;intermediate.resize(4*std::ceil(result.size()/3.));
+
+  sqy::my_base64_impl(standard_text.data(),
+                   standard_text.data() + standard_text.size(),
+                   (char*)intermediate.data());
+
+  sqy::debase64_impl(intermediate.data(),
+                     intermediate.data() + intermediate.size(),
+                     (char*)result.data());
+
+  BOOST_CHECK_EQUAL(result,
+                    standard_text);
+
+
+}
 
 BOOST_AUTO_TEST_SUITE_END()
