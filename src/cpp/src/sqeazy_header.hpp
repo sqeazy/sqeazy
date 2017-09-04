@@ -60,7 +60,7 @@ namespace sqeazy {
   }
 
 
-  struct image_header {
+  struct header {
 
     static std::string header_end_delim;
     static const std::string header_end_delimeter() { return header_end_delim; }
@@ -85,7 +85,7 @@ namespace sqeazy {
        \retval
 
     */
-    friend void swap(image_header& _lhs, image_header& _rhs) // nothrow
+    friend void swap(header& _lhs, header& _rhs) // nothrow
     {
       std::swap(_lhs.header_, _rhs.header_);
       std::swap(_lhs.raw_shape_, _rhs.raw_shape_);
@@ -103,7 +103,7 @@ namespace sqeazy {
        \retval
 
     */
-    image_header():
+    header():
       header_(""),
       raw_shape_(0),
       pipeline_(""),
@@ -121,7 +121,7 @@ namespace sqeazy {
        \retval
 
     */
-    image_header(const image_header& _rhs):
+    header(const header& _rhs):
       header_			(_rhs.header_                  ),
       raw_shape_		(_rhs.raw_shape_              ),
       pipeline_		(_rhs.pipeline_               ),
@@ -139,7 +139,7 @@ namespace sqeazy {
        \retval
 
     */
-    image_header& operator=(image_header _rhs){
+    header& operator=(header _rhs){
 
       swap(*this, _rhs);
 
@@ -194,7 +194,7 @@ namespace sqeazy {
 
       // Write property tree to XML file
       bpt::write_json(json_stream, tree);
-      json_stream << image_header::header_end_delim;
+      json_stream << header::header_end_delim;
 
       std::string stripped = json_stream.str();
 
@@ -211,7 +211,7 @@ namespace sqeazy {
     template <typename value_type,
               typename size_type
               >
-    image_header(value_type,
+    header(value_type,
                  const std::vector<size_type>& _dims,
                  const std::string& _pipe_name = "no_pipeline",
                  const unsigned long& _payload_bytes = 0):
@@ -239,7 +239,7 @@ namespace sqeazy {
     }
 
     template <typename value_type>
-    image_header(value_type,
+    header(value_type,
                  unsigned long _raw_in_byte,
                  const std::string& _pipe_name = "no_pipeline",
                  const unsigned long& _payload_bytes = 0):
@@ -294,13 +294,13 @@ namespace sqeazy {
       }
     }
 
-    static const image_header unpack(const std::string& _buffer) {
+    static const header unpack(const std::string& _buffer) {
 
       return unpack(_buffer.begin(), _buffer.end());
     }
 
 
-    static const image_header unpack(const char* _buffer,
+    static const header unpack(const char* _buffer,
                                      unsigned long _buffer_size) {
 
       return unpack(_buffer, _buffer + _buffer_size);
@@ -308,13 +308,13 @@ namespace sqeazy {
 
 
     template <typename iter_type>
-    static const image_header unpack(iter_type _begin, iter_type _end) {
+    static const header unpack(iter_type _begin, iter_type _end) {
 
       iter_type header_end_ptr = header_end(_begin, _end);
 
       if(!valid_header(_begin,header_end_ptr)){
         std::ostringstream msg;
-        msg << "[image_header::unpack]\t received header: \n\t";
+        msg << "[header::unpack]\t received header: \n\t";
         std::copy(_begin,header_end_ptr,std::ostreambuf_iterator<char>(msg));
         msg <<"\n does not comply expected format\n";
         throw std::runtime_error(msg.str().c_str());
@@ -324,7 +324,7 @@ namespace sqeazy {
       std::string hdr(_begin, header_end_ptr-header_end_delimeter().size());
 
 
-      image_header value;
+      header value;
       std::stringstream incoming;
       incoming << hdr;
 
@@ -334,9 +334,9 @@ namespace sqeazy {
       }
       catch (std::exception &e){
         std::stringstream msg;
-        std::cerr << "[image_header::unpack]\t received header: \n\t>>"<< hdr << "<<\n"
+        std::cerr << "[header::unpack]\t received header: \n\t>>"<< hdr << "<<\n"
                   << "cannot create property tree from JSON\nreason: " <<  e.what() << "\n";
-        return image_header(value);
+        return header(value);
       }
 
       value.pipeline_ = tree.get("pipename", "");
@@ -359,7 +359,7 @@ namespace sqeazy {
       if(!ends_with(value.header_.begin(),value.header_.end(),header_end_delim))
         value.header_ += header_end_delim;
 
-      return image_header(value);//unnamed return-type optimisation
+      return header(value);//unnamed return-type optimisation
     }
 
 
@@ -372,7 +372,7 @@ namespace sqeazy {
        \retval
 
     */
-    image_header(const std::string& _str):
+    header(const std::string& _str):
       header_(""),
       raw_shape_(0),
       pipeline_(""),
@@ -380,7 +380,7 @@ namespace sqeazy {
       compressed_size_byte_(0){
 
 
-      image_header rhs;
+      header rhs;
 
       try{
         rhs = unpack(_str.begin(), _str.end());
@@ -395,7 +395,7 @@ namespace sqeazy {
     }
 
     template <typename Iter>
-    image_header(Iter _begin, Iter _end):
+    header(Iter _begin, Iter _end):
       header_(""),
       raw_shape_(0),
       pipeline_(""),
@@ -403,7 +403,7 @@ namespace sqeazy {
       compressed_size_byte_(0){
 
 
-      image_header rhs;
+      header rhs;
 
 
       try{
@@ -417,7 +417,7 @@ namespace sqeazy {
 
     }
 
-    ~image_header(){}
+    ~header(){}
 
 
 
@@ -567,7 +567,7 @@ namespace sqeazy {
 
     static const std::vector<std::size_t> unpack_shape(const char* _buffer, const unsigned& _size) {
 
-      image_header unpacked = unpack(_buffer,_buffer + _size);
+      header unpacked = unpack(_buffer,_buffer + _size);
       return unpacked.raw_shape_;
 
     }
@@ -577,17 +577,17 @@ namespace sqeazy {
 
 
 
-      image_header unpacked = unpack(_buffer, _buffer+_size);
+      header unpacked = unpack(_buffer, _buffer+_size);
       return static_cast<int>(unpacked.raw_shape_.size());
     }
 
     static const std::string unpack_type(const char* _buffer, const unsigned& _size) {
 
-      image_header unpacked = unpack(_buffer, _buffer+_size);
+      header unpacked = unpack(_buffer, _buffer+_size);
       return unpacked.raw_type_name_;
     }
 
-    friend inline bool operator==(const image_header& _left, const image_header& _right)
+    friend inline bool operator==(const header& _left, const header& _right)
     {
       bool value = true;
       value = value && _left.header_ ==  _right.header_;
@@ -598,11 +598,11 @@ namespace sqeazy {
       return value;
     }
 
-    friend inline bool operator!=(const image_header& lhs, const image_header& rhs){return !(lhs == rhs);}
+    friend inline bool operator!=(const header& lhs, const header& rhs){return !(lhs == rhs);}
   };
 
 
-  std::string image_header::header_end_delim = "|01307#!";
+  std::string header::header_end_delim = "|01307#!";
 
 };
 
