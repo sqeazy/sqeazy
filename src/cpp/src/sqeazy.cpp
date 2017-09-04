@@ -275,7 +275,7 @@ int SQY_LZ4_Max_Compressed_Length(long* length){
 
   // sqy::lz4_scheme<char> lz4_encoder;
   
-  // sqy::image_header hdr(char(),shape, lz4_encoder.name());
+  // sqy::header hdr(char(),shape, lz4_encoder.name());
   // long value = hdr.size() + lz4.max_encoded_size(*length);
   auto lz4 = sqy::dypeline_from_uint8::from_string("lz4");
   
@@ -288,7 +288,7 @@ int SQY_LZ4_Max_Compressed_Length(long* length){
 
 int SQY_LZ4_Decompressed_Length(const char* data, long *length){
   
-  sqy::image_header hdr(data, data + *length);
+  sqy::header hdr(data, data + *length);
   if(!hdr.empty())
     *length = hdr.raw_size_byte();
   else
@@ -313,7 +313,7 @@ int SQY_LZ4Decode(const char* src, long srclength, char* dst){
 
 int SQY_Header_Size(const char* src, long *srclength){
 
-  sqy::image_header hdr(src, src + *srclength);
+  sqy::header hdr(src, src + *srclength);
   *srclength = hdr.size();
   
   return 0;
@@ -429,7 +429,7 @@ int SQY_Pipeline_Decompressed_Length(const char* data,
   
   int value =0;
 
-  sqy::image_header hdr(data,data+(*length));
+  sqy::header hdr(data,data+(*length));
   
   *length = hdr.raw_size_byte();
   return value;
@@ -438,7 +438,7 @@ int SQY_Pipeline_Decompressed_Length(const char* data,
 int SQY_PipelineDecode_UI16(const char* src, long srclength, char* dst){
   int value =1;
 
-  sqy::image_header hdr(src,src+(srclength));
+  sqy::header hdr(src,src+(srclength));
   
   if(!sqy::dypeline<std::uint16_t>::can_be_built_from(hdr.pipeline())){
     std::cerr << "[sqeazy]\t" << hdr.pipeline() << " cannot be build with this version of sqeazy\n";

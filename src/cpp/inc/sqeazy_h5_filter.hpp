@@ -54,7 +54,7 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
     
     /* extract the header from the payload */
     std::size_t c_input_size = *_buf_size;
-    sqeazy::image_header hdr(c_input,  c_input + c_input_size);
+    sqeazy::header hdr(c_input,  c_input + c_input_size);
     size_t found_num_bits = hdr.sizeof_header_type()*CHAR_BIT;
     std::vector<size_t> out_shape(hdr.shape()->begin(), hdr.shape()->end());
     
@@ -114,14 +114,14 @@ SQY_FUNCTION_PREFIX size_t H5Z_filter_sqy(unsigned _flags,
     const char* cd_values_bytes = reinterpret_cast<const char*>(_cd_values);
     unsigned long cd_values_bytes_size = _cd_nelmts*sizeof(unsigned);
     const char* cd_values_bytes_end = cd_values_bytes+cd_values_bytes_size;
-    sqeazy::image_header cd_val_hdr(cd_values_bytes, cd_values_bytes_end);
+    sqeazy::header cd_val_hdr(cd_values_bytes, cd_values_bytes_end);
 
     unsigned long c_input_shift = (2*cd_values_bytes_size > _nbytes) ? _nbytes : 2*cd_values_bytes_size;
     
-    if(sqeazy::image_header::contained(c_input,  c_input + c_input_shift)){
+    if(sqeazy::header::contained(c_input,  c_input + c_input_shift)){
 
       //data is already compressed
-      sqeazy::image_header hdr(c_input,  c_input + c_input_shift);
+      sqeazy::header hdr(c_input,  c_input + c_input_shift);
       
       //headers mismatch
       if(hdr!=cd_val_hdr){

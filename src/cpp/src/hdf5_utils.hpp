@@ -709,7 +709,7 @@ namespace sqeazy {
       int rvalue = 1;
 
 
-      sqeazy::image_header hdr(_payload, _payload + _payload_size);
+      sqeazy::header hdr(_payload, _payload + _payload_size);
       std::vector<hsize_t> dims;
 
       if(!hdr.empty()){
@@ -862,7 +862,7 @@ namespace sqeazy {
       plist.setChunk(chunk_shape.size(), &chunk_shape[0]);
 
 
-      sqeazy::image_header hdr(T(),dims,filter_name);
+      sqeazy::header hdr(T(),dims,filter_name);
 
       std::vector<unsigned> cd_values(std::ceil(float(hdr.size())/(sizeof(unsigned)/sizeof(char))),0);
 
@@ -929,7 +929,7 @@ namespace sqeazy {
       H5::DSetCreatPropList  plist;
       plist.setChunk(chunk_shape.size(), &chunk_shape[0]);
 
-      sqeazy::image_header hdr(T(),dims, _filter_name);
+      sqeazy::header hdr(T(),dims, _filter_name);
       std::string hdr_str = hdr.str();
       size_t cd_values_size = std::ceil(float(hdr_str.size())/(sizeof(int)/sizeof(char)));
       std::vector<unsigned> cd_values(cd_values_size,0);
