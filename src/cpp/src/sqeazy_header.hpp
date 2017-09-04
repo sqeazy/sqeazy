@@ -81,8 +81,8 @@ namespace sqeazy {
        \param[in] _lhs reference to left-hand side
        \param[in] _rhs reference to right-hand side
 
-       \return 
-       \retval 
+       \return
+       \retval
 
     */
     friend void swap(image_header& _lhs, image_header& _rhs) // nothrow
@@ -91,16 +91,16 @@ namespace sqeazy {
       std::swap(_lhs.raw_shape_, _rhs.raw_shape_);
       std::swap(_lhs.pipeline_, _rhs.pipeline_);
       std::swap(_lhs.raw_type_name_, _rhs.raw_type_name_);
-      std::swap(_lhs.compressed_size_byte_, _rhs.compressed_size_byte_); 
+      std::swap(_lhs.compressed_size_byte_, _rhs.compressed_size_byte_);
     }
 
     /**
        \brief default constructor
 
-       \param[in] 
+       \param[in]
 
-       \return 
-       \retval 
+       \return
+       \retval
 
     */
     image_header():
@@ -115,10 +115,10 @@ namespace sqeazy {
     /**
        \brief copy constructor
 
-       \param[in] 
+       \param[in]
 
-       \return 
-       \retval 
+       \return
+       \retval
 
     */
     image_header(const image_header& _rhs):
@@ -133,10 +133,10 @@ namespace sqeazy {
     /**
        \brief copy-assignment
 
-       \param[in] 
+       \param[in]
 
-       \return 
-       \retval 
+       \return
+       \retval
 
     */
     image_header& operator=(image_header _rhs){
@@ -145,18 +145,18 @@ namespace sqeazy {
 
       return *this;
     }
-	
+
     /**
        \brief pack takes the parameters of a to-compress/compressed nD data set and packs them into a JSON compatible string, the output string needs to be aligned to raw_type
 
-       \param[in]  raw_type data type of the nD data set to compress       
+       \param[in]  raw_type data type of the nD data set to compress
        \param[in] _dims shape of the nD data set to compress
        \param[in] _pipename sqy pipeline used
        \param[in] _payload_bytes size of the sqy compressed buffer in Byte
 
 
        \return std::string that contains the JSON packed header (stripped of any whitespaces)
-       \retval 
+       \retval
 
     */
     template <typename raw_type,typename size_type>
@@ -176,7 +176,7 @@ namespace sqeazy {
 
       std::string raw_type_name = typeid(raw_type).name();
       auto space_pos = raw_type_name.find(" ");
-	  if (space_pos != std::string::npos)
+      if (space_pos != std::string::npos)
         raw_type_name.replace(space_pos, 1, "_");
 
       tree.put("raw.type", raw_type_name);
@@ -342,7 +342,7 @@ namespace sqeazy {
       value.pipeline_ = tree.get("pipename", "");
       value.raw_type_name_ = tree.get("raw.type", typeid(void).name());
 
-	  if (value.raw_type_name_.find("_") != std::string::npos)
+      if (value.raw_type_name_.find("_") != std::string::npos)
         value.raw_type_name_.replace(value.raw_type_name_.find("_"), 1, " ");
 
       unsigned rank = tree.get("raw.rank", (unsigned)0);//TODO: could be replaced by (tend - tbegin)
@@ -368,8 +368,8 @@ namespace sqeazy {
 
        \param[in] _str that contains the header
 
-       \return 
-       \retval 
+       \return
+       \retval
 
     */
     image_header(const std::string& _str):
@@ -381,7 +381,7 @@ namespace sqeazy {
 
 
       image_header rhs;
-	  
+
       try{
         rhs = unpack(_str.begin(), _str.end());
       }
@@ -404,7 +404,7 @@ namespace sqeazy {
 
 
       image_header rhs;
-	  	  
+
 
       try{
         rhs = unpack(_begin,_end);
@@ -469,7 +469,7 @@ namespace sqeazy {
 
     }
 
-	std::intmax_t compressed_size_byte() const {
+    std::intmax_t compressed_size_byte() const {
 
       return this->compressed_size_byte_;
 
@@ -606,5 +606,5 @@ namespace sqeazy {
 
 };
 
-  
+
 #endif /* _SQEAZY_HEADER_H_ */
