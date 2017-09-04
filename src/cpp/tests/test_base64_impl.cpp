@@ -15,8 +15,6 @@ namespace sqy = sqeazy;
 
 struct string_fixture
 {
-  const std::string one_liner = "Lorem ipsum dolor sit amet!";
-  const std::string two_liner = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque enim sapien, dignissim nec interdum id, ";
   const std::string standard_text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque enim sapien, dignissim nec interdum id, dignissim nec felis. Nulla facilisi. Sed vel enim a diam aliquam euismod et ut lorem. Aliquam felis felis, ultricies interdum sapien nec, consectetur gravida est. Nulla facilisi. Sed et hendrerit sapien. Donec id pellentesque orci, ut accumsan erat. Cras euismod id risus a faucibus. Duis in neque et elit iaculis finibus ac vel urna. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; In nec nibh quis turpis luctus bibendum tempus vel nisl. Nullam massa mi, semper eu tellus eget, iaculis interdum erat. Curabitur sit amet molestie mauris. Integer molestie fringilla nisi, in tristique metus placerat eu. Nam vitae tristique leo. In nunc tortor, imperdiet vitae pharetra iaculis, pulvinar malesuada ex.";
   const std::string wikipedia1 = "any carnal pleas";
   const std::string wikipedia2 = "any carnal pleasu";
@@ -31,14 +29,14 @@ BOOST_FIXTURE_TEST_SUITE( minimal, string_fixture )
 
 BOOST_AUTO_TEST_CASE (changes_string) {
 
-  std::string result = one_liner;
+  std::string result = wikipedia1;
   result.resize(result.size()*4/3);
 
-  sqy::base64_impl(one_liner.data(),
-                   one_liner.data() + one_liner.size(),
+  sqy::base64_impl(wikipedia1.data(),
+                   wikipedia1.data() + wikipedia1.size(),
                    (char*)result.data());
 
-  BOOST_CHECK_NE(one_liner[0],
+  BOOST_CHECK_NE(wikipedia1[0],
                  result[0]);
 
 
