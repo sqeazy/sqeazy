@@ -68,8 +68,8 @@ BENCHMARK_DEFINE_F(synthetic_data, BM_single_thread_boost)(benchmark::State& sta
     state.PauseTiming();
     std::fill(output_.begin(), output_.end(),' ');
     state.ResumeTiming();
-    sqeazy::base64_impl(input_.data(),input_.data()+size_,
-                        (char*)output_.data());
+    sqeazy::base64::encode_impl(input_.data(),input_.data()+size_,
+                                (char*)output_.data());
   }
 
   auto bytes_processed = int64_t(state.iterations()) *  int64_t(size_)*sizeof(input_.front());
@@ -90,8 +90,8 @@ BENCHMARK_DEFINE_F(synthetic_data, BM_single_thread_mine)(benchmark::State& stat
     state.PauseTiming();
     std::fill(output_.begin(), output_.end(),' ');
     state.ResumeTiming();
-    sqeazy::my_base64_impl(input_.data(),input_.data()+size_,
-                        (char*)output_.data());
+    sqeazy::base64::fast_encode_impl(input_.data(),input_.data()+size_,
+                                     (char*)output_.data());
   }
 
   state.SetBytesProcessed(int64_t(state.iterations()) *
@@ -107,7 +107,7 @@ BENCHMARK_DEFINE_F(synthetic_data, BM_single_thread_boost_decoding)(benchmark::S
     SetUp(state);
   }
 
-  sqeazy::my_base64_impl(input_.data(),input_.data()+size_,
+  sqeazy::base64::fast_encode_impl(input_.data(),input_.data()+size_,
                          (char*)output_.data());
 
   auto decoded = input_;
@@ -117,8 +117,8 @@ BENCHMARK_DEFINE_F(synthetic_data, BM_single_thread_boost_decoding)(benchmark::S
     std::fill(decoded.begin(), decoded.end(),' ');
     state.ResumeTiming();
 
-    sqeazy::debase64_impl(output_.data(),output_.data()+output_.size(),
-                          (char*)decoded.data());
+    sqeazy::base64::decode_impl(output_.data(),output_.data()+output_.size(),
+                                (char*)decoded.data());
   }
 
   state.SetBytesProcessed(int64_t(state.iterations()) *
