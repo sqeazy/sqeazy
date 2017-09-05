@@ -5,7 +5,7 @@
 # git_describe     ... interface to git describe command line call, note only stdout is captured in the output variable
 #
 
-find_package(Git)
+find_package(Git QUIET)
 
 function(find_git_root _git_root)
 
