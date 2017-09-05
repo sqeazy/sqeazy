@@ -365,7 +365,6 @@ BOOST_AUTO_TEST_CASE( removed_start )
                                                               1024);
   BOOST_CHECK(sqeazy::header::valid_header(header));
   BOOST_CHECK(!sqeazy::header::valid_header(header.begin()+10,header.end()));
-  BOOST_CHECK(!sqeazy::header::valid_header(header.begin()+1,header.end()));
   BOOST_CHECK(!sqeazy::header::valid_header(header.begin()+2,header.end()));
   BOOST_CHECK(!sqeazy::header::valid_header(header.begin()+4,header.end()));
 }
