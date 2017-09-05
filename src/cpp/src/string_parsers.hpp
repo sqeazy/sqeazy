@@ -458,9 +458,8 @@ namespace sqeazy {
     template <typename value_t,typename string_t>
     static std::size_t verbatim_yields_n_items_of(const string_t& _verbatim ){
 
-      std::size_t value = _verbatim.size()-ignore_this_delimiters.first.size()-ignore_this_delimiters.second.size();
-
-      std::size_t decoded_nbytes = base64::decoded_bytes(_verbatim.data(),_verbatim.data() + _verbatim.size());
+      std::size_t decoded_nbytes = base64::decoded_bytes(_verbatim.data()+ignore_this_delimiters.first.size(),
+                                                         _verbatim.data() + _verbatim.size()-ignore_this_delimiters.second.size());
 
       return decoded_nbytes/sizeof(value_t);
 
