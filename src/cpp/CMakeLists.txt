@@ -78,6 +78,7 @@ ENDIF(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
 MESSAGE(STATUS "Setting up ${CMAKE_BUILD_TYPE} build")
 string(TOUPPER "${CMAKE_BUILD_TYPE}" ALLCAPITAL_BUILD_TYPE)
 
+
 check_cxx_compiler_flag(-Wl,-Bsymbolic HAS_BSYMBOLIC_COMPILERFLAG)
 check_cxx_compiler_flag(-ftree-vectorize HAS_GCC_TREE_VECTORIZE_COMPILERFLAG)
 check_cxx_compiler_flag(-march=native HAS_MARCH_COMPILERFLAG)
@@ -87,6 +88,7 @@ check_cxx_compiler_flag(-fvectorize HAS_CLANG_VECTORIZE_COMPILERFLAG)
 check_cxx_compiler_flag(-ffast-math HAS_FAST_MATH_COMPILERFLAG)
 check_cxx_compiler_flag(-Wall HAS_WALL_COMPILERFLAG)
 check_cxx_compiler_flag(-Wfatal-errors HAS_WFATAL_ERRORS_COMPILERFLAG)
+check_cxx_compiler_flag(-Wno-unused-function HAS_WNO_UNUSED_FUNCTION_COMPILERFLAG)
 check_cxx_compiler_flag(-ggdb HAS_GGDB_COMPILERFLAG)
 check_cxx_compiler_flag(-ggdb3 HAS_GGDB3_COMPILERFLAG)
 check_cxx_compiler_flag(-O3 HAS_O3_COMPILERFLAG)
@@ -115,22 +117,17 @@ IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
     endif()
   endif()
 
-  # SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -ggdb3 -Wno-overflow")
-  # SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -ggdb3 -Wno-overflow")
-  if(ALLCAPITAL_BUILD_TYPE STREQUAL RELWDBG OR ALLCAPITAL_BUILD_TYPE STREQUAL RELWITHDEBINFO)
-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO -O3 -ggdb -DNDEBUG)
+  # if(ALLCAPITAL_BUILD_TYPE STREQUAL RELWDBG OR ALLCAPITAL_BUILD_TYPE STREQUAL RELWITHDEBINFO)
+  #   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO -O2 -ggdb)
 
-    if(HAS_GGDB_COMPILERFLAG)
-      add_definitions(-ggdb)
-    endif()
+  #   if(HAS_GGDB_COMPILERFLAG)
+  #     add_definitions(-ggdb)
+  #   endif()
 
-    if(HAS_O3_COMPILERFLAG)
-      add_definitions(-O3)
-    endif()
-  endif()
-
-  # SET(CMAKE_CXX_FLAGS_RELWDBG "${CMAKE_CXX_FLAGS_RELWDBG} -Wall -ggdb -O3 -Wno-overflow")
-  # SET(CMAKE_C_FLAGS_RELWDBG "${CMAKE_C_FLAGS_RELWDBG} -Wall -ggdb -O3 -Wno-overflow")
+  #   if(HAS_O3_COMPILERFLAG)
+  #     add_definitions(-O2)
+  #   endif()
+  # endif()
 
 ENDIF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
 
@@ -140,6 +137,10 @@ endif()
 
 if(HAS_WFATAL_ERRORS_COMPILERFLAG)
   add_definitions(-Wfatal-errors)
+endif()
+
+if(HAS_WNO_UNUSED_FUNCTION_COMPILERFLAG)
+  add_definitions(-Wno-unused-function)
 endif()
 
 
@@ -177,7 +178,7 @@ if(ALLCAPITAL_BUILD_TYPE STREQUAL RELWDBG)
   endif()
 
   if(HAS_O3_COMPILERFLAG)
-    add_definitions(-O3)
+    add_definitions(-O2)
   endif()
 endif()
 
