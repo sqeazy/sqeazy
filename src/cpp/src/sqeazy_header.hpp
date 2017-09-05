@@ -22,6 +22,8 @@
 #include "sqeazy_common.hpp"
 #include "string_shapers.hpp"
 
+#include "sqeazy_definitions.h"
+
 namespace bpt = boost::property_tree;
 
 namespace sqeazy {
@@ -187,6 +189,9 @@ namespace sqeazy {
       }
 
       tree.put("encoded.bytes", _payload_bytes);
+
+      tree.put("sqy.version", sqeazy_global_version);
+      tree.put("sqy.headref", sqeazy_global_refhash);
 
       // Add all the modules. Unlike put, which overwrites existing nodes, add
       // adds a new node at the lowest level, so the "modules" node will have
