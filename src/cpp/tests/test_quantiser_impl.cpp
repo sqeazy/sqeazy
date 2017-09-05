@@ -327,15 +327,23 @@ BOOST_AUTO_TEST_CASE( write_to_string ){
 
   std::vector<uint8_t> encoded(embryo_.num_elements(),0);
   shrinker.encode(embryo_.data(),embryo_.num_elements(),&encoded[0]);
+  std::vector<uint16_t> reconstructed(encoded.size(),0);
 
   decltype(shrinker.lut_decode_) lut_decode;
-  shrinker.lut_from_string(lut,lut_decode);
+  sqeazy::quantiser<uint16_t,uint8_t> other;
+  other.lut_from_string(lut,lut_decode);
+  other.decode(lut_decode,
+               &encoded[0],
+               encoded.size(),
+               &reconstructed[0]);
 
-  std::vector<uint16_t> reconstructed(encoded.size(),0);
-  shrinker.decode(lut_decode,
-          &encoded[0],
-          encoded.size(),
-          &reconstructed[0]);
+
+  // shrinker.lut_from_string(lut,lut_decode);
+
+  // shrinker.decode(lut_decode,
+  //         &encoded[0],
+  //         encoded.size(),
+  //         &reconstructed[0]);
 
   BOOST_REQUIRE_EQUAL_COLLECTIONS(reconstructed.begin(), reconstructed.end(),embryo_.data(),
                   embryo_.data()+ embryo_.num_elements());
@@ -351,49 +359,93 @@ BOOST_AUTO_TEST_CASE( inject_unknown_values ){
 
   std::stringstream lut_file;
   lut_file << "checkon_16bit_"
-       << boost::unit_test::framework::current_test_case().p_name
-       << ".log";
+           << boost::unit_test::framework::current_test_case().p_name
+           << ".log";
 
-  for(std::size_t i = 0;i<embryo_.num_elements();++i)
-    embryo_.data()[i] = embryo_.data()[i] % 1024;
+  std::vector<std::uint16_t> synthetic(512,0);
+  for(std::size_t i = 0;i<synthetic.size();++i)
+    synthetic.data()[i] = 1024 + 20*std::sin(i/4);
 
-  sqeazy::quantiser<uint16_t,uint8_t> shrinker(embryo_.data(),
-                           embryo_.data() + embryo_.num_elements());
+  sqeazy::quantiser<uint16_t,uint8_t> shrinker(synthetic.data(),
+                                               synthetic.data() + synthetic.size());
 
   auto unary = [](value_t item){
     return (item != 0);
   };
 
   auto fitr = std::find_if(shrinker.lut_decode_.rbegin(),
-               shrinker.lut_decode_.rend(),
-               unary);
+                           shrinker.lut_decode_.rend(),
+                           unary);
 
   std::size_t highest_nonzero_lut_key = std::distance(fitr,shrinker.lut_decode_.rend()-1);
+
 
   BOOST_CHECK_NE(highest_nonzero_lut_key,0u);
   BOOST_CHECK_LT(highest_nonzero_lut_key,shrinker.lut_decode_.size());
   BOOST_CHECK_NE(shrinker.lut_decode_[highest_nonzero_lut_key],0);
-  BOOST_CHECK_EQUAL(shrinker.lut_decode_[highest_nonzero_lut_key+1],0);
+  // BOOST_CHECK_EQUAL(shrinker.lut_decode_[highest_nonzero_lut_key+1],0);
 
 
   std::string lut = shrinker.lut_to_string(shrinker.lut_decode_);
-  std::vector<uint8_t> encoded(embryo_.num_elements(),0);
-  shrinker.encode(embryo_.data(),embryo_.num_elements(),&encoded[0]);
+  std::vector<std::uint8_t> encoded(synthetic.size(),0);
+  shrinker.encode(synthetic.data(),synthetic.size(),&encoded[0]);
 
-  std::fill(encoded.begin(), encoded.begin()+10,highest_nonzero_lut_key+1);
-  std::fill(encoded.begin()+10, encoded.begin()+20,std::numeric_limits<uint8_t>::max());
+  std::size_t highest_encoded_value   = *std::max_element(encoded.begin(),encoded.end());
+  std::size_t highest_value   = *std::max_element(synthetic.begin(),synthetic.end());
 
-  decltype(shrinker.lut_decode_) lut_decode;
-  shrinker.lut_from_string(lut,lut_decode);
+  BOOST_CHECK_EQUAL(shrinker.lut_decode_[highest_nonzero_lut_key],highest_value);
 
-  std::vector<uint16_t> reconstructed(encoded.size(),0);
-  shrinker.decode(lut_decode,
-          &encoded[0],
-          encoded.size(),
-          &reconstructed[0]);
+  //inject unknown values into the encoded volume from [0,10%)
+  std::size_t chunksize = (encoded.size()/2);
+  auto seq_begin = encoded.begin();
+  auto seq_end   = encoded.begin() + chunksize;
+  const std::uint8_t max_val = highest_encoded_value;
+  std::uint8_t max_repl = max_val + 10;
 
-  BOOST_REQUIRE_EQUAL_COLLECTIONS(reconstructed.begin(), reconstructed.end(),embryo_.data(),
-                  embryo_.data()+ embryo_.num_elements());
+  std::replace(seq_begin, seq_end,
+               max_val,
+               max_repl);
+  int count_replaced = std::count(seq_begin, seq_end,max_repl);
+  BOOST_CHECK_GT(count_replaced,0);
+
+  //inject unknown values into the encoded volume from [10%,25%)
+  seq_begin = seq_end;
+  seq_end = encoded.end();
+  max_repl = std::numeric_limits<std::uint8_t>::max();
+
+  std::replace(seq_begin, seq_end,
+               max_val,
+               max_repl);
+
+  count_replaced = std::count(seq_begin, seq_end,max_repl);
+  BOOST_CHECK_GT(count_replaced,0);
+
+  decltype(shrinker.lut_decode_) decode_lut_reloaded;
+  shrinker.lut_from_string(lut,decode_lut_reloaded);
+
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(decode_lut_reloaded.begin(),
+                                  decode_lut_reloaded.end(),
+                                  shrinker.lut_decode_.begin(),
+                                  shrinker.lut_decode_.end());
+
+  std::vector<std::uint16_t> reconstructed(encoded.size(),0);
+  shrinker.decode(decode_lut_reloaded,
+                  &encoded[0],
+                  encoded.size(),
+                  &reconstructed[0]);
+
+  //this would be due to highest_nonzero_lut_key+1
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(reconstructed.begin(),
+                                  reconstructed.begin()+chunksize,
+                                  synthetic.begin(),
+                                  synthetic.begin()+ chunksize);
+
+  //this would be due to std::numeric_limits<uint8_t>::max()
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(reconstructed.begin()+chunksize,
+                                  reconstructed.end(),
+                                  synthetic.begin()+ chunksize,
+                                  synthetic.end());
+
 }
 
 

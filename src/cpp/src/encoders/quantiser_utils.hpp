@@ -299,6 +299,12 @@ namespace sqeazy {
 
       }
 
+      if(comp_idx < lut_decode_.size() &&
+         comp_idx > 0 &&
+         lut_decode_[comp_idx] == std::numeric_limits<raw_type>::max()
+        ){
+        std::fill(lut_decode_.begin()+comp_idx, lut_decode_.end(),lut_decode_[comp_idx-1]);
+      }
 
     }
 
@@ -483,8 +489,8 @@ namespace sqeazy {
     }
 
     //could this be replaced by a stream operator overload?
-    template <typename T>
-    void lut_to_file(const std::string& _path, const T& _lut){
+    template <typename lut_type>
+    void lut_to_file(const std::string& _path, const lut_type& _lut){
 
       std::fstream lutf(_path,std::ios::out|std::ios::trunc);
 
@@ -492,15 +498,6 @@ namespace sqeazy {
         lutf << el << "\n";
 
       return;
-    }
-
-    //could this be replaced by a stream operator overload?
-    template <typename T>
-    std::string lut_to_string(const T& _lut){
-
-      std::string value = parsing::range_to_verbatim(_lut.begin(),_lut.end());
-
-      return value;
     }
 
     //could this be replaced by a stream operator overload?
@@ -516,6 +513,15 @@ namespace sqeazy {
         _lut[counter++] = val;
       }
 
+    }
+
+     //could this be replaced by a stream operator overload?
+    template <typename lut_type>
+    std::string lut_to_string(const lut_type& _lut){
+
+      std::string value = parsing::range_to_verbatim(_lut.begin(),_lut.end());
+
+      return value;
     }
 
     //could this be replaced by a stream operator overload?
