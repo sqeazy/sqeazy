@@ -155,8 +155,8 @@ BOOST_AUTO_TEST_CASE( encode_header_correct_num_dims )
   bpt::ptree tree;
 
   // BOOST_CHECK_NO_THROW(tree = header::from_string(header_stream.str()));
-  BOOST_CHECK_NO_THROW(bpt::read_json(header_stream.str(),tree));
-  BOOST_CHECK_EQUAL(tree.get<unsigned>("raw.rank"),3u);
+  BOOST_CHECK_NO_THROW(bpt::read_json(header_stream,tree));
+  BOOST_CHECK_EQUAL(tree.get<std::size_t>("raw.rank"),3u);
 
 }
 
