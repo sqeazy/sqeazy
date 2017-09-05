@@ -1,7 +1,7 @@
 #ifndef SQEAZY_H_   /* Include guard */
 #define SQEAZY_H_
 
-#include "sqeazy_definitions.hpp"
+#include "sqeazy_definitions.h"
 
 /*
 *	Sqeazy - Fast and flexible volume compression library
@@ -458,8 +458,6 @@ SQY_FUNCTION_PREFIX bool SQY_Pipeline_Possible(const char* pipeline_string);
 // TODO: check if these need to be here, hdf5 example does store all of this directly into library
 //
 
-// PLACEHOLDER
-// #include "sqeazy_h5_filter.hpp"
 
 ///////////////////////////////////////////////////////////////////////////////////
 // SQY HDF5 I/O functions 
