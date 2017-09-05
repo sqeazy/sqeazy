@@ -606,7 +606,14 @@ ENDIF(TIFF_FOUND)
 
 IF(Boost_FOUND AND HDF5_FOUND AND LZ4_FOUND AND FFMPEG_FOUND AND TIFF_FOUND)
 
-  include_directories("${PROJECT_SOURCE_DIR}/inc")
+  #setup headers
+  if(NOT IS_DIRECTORY ${PROJECT_BINARY_DIR}/inc)
+    file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/inc)
+  endif()
+  configure_file(${PROJECT_SOURCE_DIR}/inc/sqeazy_definitions.h.in ${PROJECT_BINARY_DIR}/inc/sqeazy_definitions.h)
+  file(COPY ${PROJECT_SOURCE_DIR}/inc/sqeazy.h ${PROJECT_SOURCE_DIR}/inc/sqeazy_h5_filter.hpp ${PROJECT_SOURCE_DIR}/inc/H5PLextern.h DESTINATION ${PROJECT_BINARY_DIR}/inc/)
+
+  include_directories("${PROJECT_BINARY_DIR}/inc")
 
   #library and app
   ADD_SUBDIRECTORY(src) # source code of the library

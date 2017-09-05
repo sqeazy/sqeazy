@@ -1,0 +1,16 @@
+#ifndef _SQEAZY_DEFINITIONS_H_
+#define _SQEAZY_DEFINITIONS_H_
+
+#ifdef _WIN32
+#define SQY_FUNCTION_PREFIX extern "C" __declspec(dllexport)
+#else
+#define SQY_FUNCTION_PREFIX extern "C"
+#endif
+
+static char sqeazy_global_version[]        = "@SQEAZY_VERSION@";
+static int  sqeazy_global_version_major    = @SQEAZY_VERSION_MAJOR@;
+static int  sqeazy_global_version_minor    = @SQEAZY_VERSION_MINOR@;
+static int  sqeazy_global_version_patch    = @SQEAZY_VERSION_PATCH@;
+static char sqeazy_global_refhash[]        = "@SQEAZY_VERSION_HEADREF@";
+
+#endif /* _SQEAZY_DEFINITIONS_H_ */
