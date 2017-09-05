@@ -18,7 +18,7 @@ VLDDisable();
 
 #include "hdf5.h"
 
-#include "sqeazy_definitions.hpp"
+#include "sqeazy_definitions.h"
 #include "sqeazy_pipelines.hpp"
 
 
