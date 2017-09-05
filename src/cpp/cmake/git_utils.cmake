@@ -1,4 +1,10 @@
-# small cmake module to help extracting the
+# small cmake module to help extracting the tag and head hash of the current source code tree
+#
+# find_git_root    ... tries to find the .git folder of this repo or any of it's parents
+# git_ready        ... helper function that checks if the current directory is under version control by git
+# git_describe     ... interface to git describe command line call, note only stdout is captured in the output variable
+#
+
 find_package(Git)
 
 function(find_git_root _git_root)
