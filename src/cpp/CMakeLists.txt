@@ -3,7 +3,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
 
 
 # project name
-PROJECT(sqeazy CXX)
+PROJECT(sqeazy VERSION ${SQEAZY_VERSION} LANGUAGES CXX)
 
 # this project is C++11
 set(CMAKE_CXX_STANDARD 11)
@@ -24,14 +24,25 @@ endif()
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 
+
 # Project information
 SET (SQEAZY_NAME "Sqeazy - Fast and Flexible Volume Compression Library")
 SET (SQEAZY_CODENAME "${PROJECT_NAME}")
 SET (SQEAZY_COPYRIGHT_YEARS "2016")
-SET (SQEAZY_VERSION_MAJOR 0)
-SET (SQEAZY_VERSION_MINOR 2)
-SET (SQEAZY_VERSION_PATCH 1)
-SET (SQEAZY_VERSION "${SQEAZY_VERSION_MAJOR}.${SQEAZY_VERSION_MINOR}.${SQEAZY_VERSION_PATCH}")
+
+#extract the version from the git tree
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake )
+include(git_utils)
+
+git_describe(SQEAZY_VERSION --tags --abbrev=0)
+git_describe(SQEAZY_VERSION_HEADREF --always)
+string(REPLACE "." ";" SQEAZY_VERSION_ASLIST ${SQEAZY_VERSION})
+list(GET SQEAZY_VERSION_ASLIST 0 SQEAZY_VERSION_MAJOR)
+list(GET SQEAZY_VERSION_ASLIST 1 SQEAZY_VERSION_MINOR)
+list(GET SQEAZY_VERSION_ASLIST 2 SQEAZY_VERSION_PATCH)
+
+message(STATUS "sqeazy version: ${SQEAZY_VERSION_MAJOR}.${SQEAZY_VERSION_MINOR}.${SQEAZY_VERSION_PATCH} (${SQEAZY_VERSION_HEADREF})")
+
 SET (SQEAZY_VENDOR_ID "mpi cbg")
 SET (SQEAZY_VENDOR_NAME "Max Planck Institute of Molecular Cell Biology and Genetics ")
 SET (SQEAZY_VENDOR_URL "www.mpi-cbg.de")
@@ -266,7 +277,7 @@ endif(SQY_EXPERIMENTAL)
 #check_cxx_compiler_flag(-std=c++11 HAS_CPP11_COMPILERFLAG)
 
 #lz4 is needed for the entire project, so let's include it here
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake )
+
 
 if(${BUNDLE_SQEAZY})
   #implies that all find_package calls will primarily look for static libs
