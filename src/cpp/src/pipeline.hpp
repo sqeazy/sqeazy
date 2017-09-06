@@ -252,7 +252,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
     _num_compressed_bytes = compressor_type::last_num_encoded_bytes;
 
     //produce header
-    sqeazy::image_header hdr(raw_type(),
+    sqeazy::header hdr(raw_type(),
 			     _size,
 			     pipeline::static_name(),
 			     _num_compressed_bytes);
@@ -297,7 +297,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
     typedef loop_encode<TypeList , size> pipe_loop;
 
     unsigned long in_size_in_bytes = sizeof(raw_type)*sqeazy::collapse::sum<SizeType>(_size);
-    sqeazy::image_header hdr(raw_type(),
+    sqeazy::header hdr(raw_type(),
 			     _size,
 			     pipeline::static_name(),
 			     in_size_in_bytes);
@@ -339,7 +339,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
     value = compress(_in,_out,_size);
 
     unsigned long in_size_in_bytes = sizeof(raw_type)*sqeazy::collapse::sum<SizeType>(_size);
-    sqeazy::image_header hdr(raw_type(),_size,pipeline::static_name(),in_size_in_bytes);
+    sqeazy::header hdr(raw_type(),_size,pipeline::static_name(),in_size_in_bytes);
     
     _num_compressed_bytes = hdr.raw_size_byte_as<raw_type>() + hdr.size();
     return value;
@@ -356,7 +356,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
     typedef typename pipe_loop::raw_type first_step_output_type;
     typedef typename pipe_loop::compressed_type first_step_input_type;
 
-    sqeazy::image_header hdr(_in, _in + _size);
+    sqeazy::header hdr(_in, _in + _size);
 
     //assumption: raw_type == first_step_input_type
     unsigned long temp_size_byte = hdr.raw_size_byte_as<raw_type>();
@@ -418,7 +418,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
   template <typename U>
   static const unsigned long header_size(const std::vector<U>& _in) {
 
-    image_header value(raw_type(),_in, pipeline::static_name());
+    header value(raw_type(),_in, pipeline::static_name());
 	
     return value.size();
 
@@ -428,7 +428,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
   static const unsigned long header_size(unsigned long _in) {
 
       
-    image_header value(raw_type(), _in, pipeline::static_name());
+    header value(raw_type(), _in, pipeline::static_name());
 	
     return value.size();
 
@@ -464,7 +464,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
   template <typename U>
   static const unsigned long decoded_size_byte(const compressed_type* _buf, const U& _size) {
     
-    image_header found_header(_buf, _buf + _size);
+    header found_header(_buf, _buf + _size);
     return found_header.raw_size_byte_as<raw_type>();
     
   }
@@ -472,7 +472,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
   template <typename U>
   static const std::vector<unsigned long> decode_dimensions(const compressed_type* _buf, const U& _size) {
 
-    image_header found_header(_buf, _buf + _size);
+    header found_header(_buf, _buf + _size);
     std::vector<unsigned long> result(found_header.shape()->begin(),found_header.shape()->end());
     return result;
 
@@ -482,7 +482,7 @@ struct pipeline : public bmpl::back<TypeList>::type {
   template <typename U>
   static const int decoded_num_dims(const compressed_type* _buf, const U& _size) {
 
-    image_header found_header(_buf, _buf + _size);
+    header found_header(_buf, _buf + _size);
     return found_header.shape()->size();
 
   }

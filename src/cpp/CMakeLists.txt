@@ -3,7 +3,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
 
 
 # project name
-PROJECT(sqeazy CXX)
+PROJECT(sqeazy VERSION ${SQEAZY_VERSION} LANGUAGES CXX)
 
 # this project is C++11
 set(CMAKE_CXX_STANDARD 11)
@@ -24,14 +24,25 @@ endif()
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 
+
 # Project information
 SET (SQEAZY_NAME "Sqeazy - Fast and Flexible Volume Compression Library")
 SET (SQEAZY_CODENAME "${PROJECT_NAME}")
 SET (SQEAZY_COPYRIGHT_YEARS "2016")
-SET (SQEAZY_VERSION_MAJOR 0)
-SET (SQEAZY_VERSION_MINOR 2)
-SET (SQEAZY_VERSION_PATCH 1)
-SET (SQEAZY_VERSION "${SQEAZY_VERSION_MAJOR}.${SQEAZY_VERSION_MINOR}.${SQEAZY_VERSION_PATCH}")
+
+#extract the version from the git tree
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake )
+include(git_utils)
+
+git_describe(SQEAZY_VERSION --tags --abbrev=0)
+git_describe(SQEAZY_VERSION_HEADREF --always)
+string(REPLACE "." ";" SQEAZY_VERSION_ASLIST ${SQEAZY_VERSION})
+list(GET SQEAZY_VERSION_ASLIST 0 SQEAZY_VERSION_MAJOR)
+list(GET SQEAZY_VERSION_ASLIST 1 SQEAZY_VERSION_MINOR)
+list(GET SQEAZY_VERSION_ASLIST 2 SQEAZY_VERSION_PATCH)
+
+message(STATUS "sqeazy version: ${SQEAZY_VERSION_MAJOR}.${SQEAZY_VERSION_MINOR}.${SQEAZY_VERSION_PATCH} (${SQEAZY_VERSION_HEADREF})")
+
 SET (SQEAZY_VENDOR_ID "mpi cbg")
 SET (SQEAZY_VENDOR_NAME "Max Planck Institute of Molecular Cell Biology and Genetics ")
 SET (SQEAZY_VENDOR_URL "www.mpi-cbg.de")
@@ -78,6 +89,7 @@ ENDIF(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
 MESSAGE(STATUS "Setting up ${CMAKE_BUILD_TYPE} build")
 string(TOUPPER "${CMAKE_BUILD_TYPE}" ALLCAPITAL_BUILD_TYPE)
 
+
 check_cxx_compiler_flag(-Wl,-Bsymbolic HAS_BSYMBOLIC_COMPILERFLAG)
 check_cxx_compiler_flag(-ftree-vectorize HAS_GCC_TREE_VECTORIZE_COMPILERFLAG)
 check_cxx_compiler_flag(-march=native HAS_MARCH_COMPILERFLAG)
@@ -87,6 +99,7 @@ check_cxx_compiler_flag(-fvectorize HAS_CLANG_VECTORIZE_COMPILERFLAG)
 check_cxx_compiler_flag(-ffast-math HAS_FAST_MATH_COMPILERFLAG)
 check_cxx_compiler_flag(-Wall HAS_WALL_COMPILERFLAG)
 check_cxx_compiler_flag(-Wfatal-errors HAS_WFATAL_ERRORS_COMPILERFLAG)
+check_cxx_compiler_flag(-Wno-unused-function HAS_WNO_UNUSED_FUNCTION_COMPILERFLAG)
 check_cxx_compiler_flag(-ggdb HAS_GGDB_COMPILERFLAG)
 check_cxx_compiler_flag(-ggdb3 HAS_GGDB3_COMPILERFLAG)
 check_cxx_compiler_flag(-O3 HAS_O3_COMPILERFLAG)
@@ -115,22 +128,17 @@ IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
     endif()
   endif()
 
-  # SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -ggdb3 -Wno-overflow")
-  # SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -ggdb3 -Wno-overflow")
-  if(ALLCAPITAL_BUILD_TYPE STREQUAL RELWDBG OR ALLCAPITAL_BUILD_TYPE STREQUAL RELWITHDEBINFO)
-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO -O3 -ggdb -DNDEBUG)
+  # if(ALLCAPITAL_BUILD_TYPE STREQUAL RELWDBG OR ALLCAPITAL_BUILD_TYPE STREQUAL RELWITHDEBINFO)
+  #   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO -O2 -ggdb)
 
-    if(HAS_GGDB_COMPILERFLAG)
-      add_definitions(-ggdb)
-    endif()
+  #   if(HAS_GGDB_COMPILERFLAG)
+  #     add_definitions(-ggdb)
+  #   endif()
 
-    if(HAS_O3_COMPILERFLAG)
-      add_definitions(-O3)
-    endif()
-  endif()
-
-  # SET(CMAKE_CXX_FLAGS_RELWDBG "${CMAKE_CXX_FLAGS_RELWDBG} -Wall -ggdb -O3 -Wno-overflow")
-  # SET(CMAKE_C_FLAGS_RELWDBG "${CMAKE_C_FLAGS_RELWDBG} -Wall -ggdb -O3 -Wno-overflow")
+  #   if(HAS_O3_COMPILERFLAG)
+  #     add_definitions(-O2)
+  #   endif()
+  # endif()
 
 ENDIF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
 
@@ -140,6 +148,10 @@ endif()
 
 if(HAS_WFATAL_ERRORS_COMPILERFLAG)
   add_definitions(-Wfatal-errors)
+endif()
+
+if(HAS_WNO_UNUSED_FUNCTION_COMPILERFLAG)
+  add_definitions(-Wno-unused-function)
 endif()
 
 
@@ -177,7 +189,7 @@ if(ALLCAPITAL_BUILD_TYPE STREQUAL RELWDBG)
   endif()
 
   if(HAS_O3_COMPILERFLAG)
-    add_definitions(-O3)
+    add_definitions(-O2)
   endif()
 endif()
 
@@ -265,7 +277,7 @@ endif(SQY_EXPERIMENTAL)
 #check_cxx_compiler_flag(-std=c++11 HAS_CPP11_COMPILERFLAG)
 
 #lz4 is needed for the entire project, so let's include it here
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake )
+
 
 if(${BUNDLE_SQEAZY})
   #implies that all find_package calls will primarily look for static libs
@@ -594,7 +606,14 @@ ENDIF(TIFF_FOUND)
 
 IF(Boost_FOUND AND HDF5_FOUND AND LZ4_FOUND AND FFMPEG_FOUND AND TIFF_FOUND)
 
-  include_directories("${PROJECT_SOURCE_DIR}/inc")
+  #setup headers
+  if(NOT IS_DIRECTORY ${PROJECT_BINARY_DIR}/inc)
+    file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/inc)
+  endif()
+  configure_file(${PROJECT_SOURCE_DIR}/inc/sqeazy_definitions.h.in ${PROJECT_BINARY_DIR}/inc/sqeazy_definitions.h)
+  file(COPY ${PROJECT_SOURCE_DIR}/inc/sqeazy.h ${PROJECT_SOURCE_DIR}/inc/sqeazy_h5_filter.hpp ${PROJECT_SOURCE_DIR}/inc/H5PLextern.h DESTINATION ${PROJECT_BINARY_DIR}/inc/)
+
+  include_directories("${PROJECT_BINARY_DIR}/inc")
 
   #library and app
   ADD_SUBDIRECTORY(src) # source code of the library

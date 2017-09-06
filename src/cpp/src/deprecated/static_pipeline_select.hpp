@@ -277,14 +277,14 @@ namespace sqeazy {
       typeholder_()
     {
 
-      sqeazy::image_header hdr(_hdr);
+      sqeazy::header hdr(_hdr);
       current_ = std::make_pair(hdr.sizeof_header_type()*CHAR_BIT, hdr.pipeline());
 
       reset(current_);
       
     }    
 
-    pipeline_select(const sqeazy::image_header& _hdr):
+    pipeline_select(const sqeazy::header& _hdr):
       current_(),
       pipeholder_(),
       const_typeholder_(),

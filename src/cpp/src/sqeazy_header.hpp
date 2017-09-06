@@ -21,9 +21,10 @@
 
 #include "sqeazy_common.hpp"
 #include "string_shapers.hpp"
-#include "header_tag.hpp"
 
-//namespace bpt = boost::property_tree;
+#include "sqeazy_definitions.h"
+
+namespace bpt = boost::property_tree;
 
 namespace sqeazy {
 
@@ -61,7 +62,7 @@ namespace sqeazy {
   }
 
 
-  struct image_header {
+  struct header {
 
     static std::string header_end_delim;
     static const std::string header_end_delimeter() { return header_end_delim; }
@@ -82,29 +83,29 @@ namespace sqeazy {
        \param[in] _lhs reference to left-hand side
        \param[in] _rhs reference to right-hand side
 
-       \return 
-       \retval 
+       \return
+       \retval
 
     */
-    friend void swap(image_header& _lhs, image_header& _rhs) // nothrow
+    friend void swap(header& _lhs, header& _rhs) // nothrow
     {
       std::swap(_lhs.header_, _rhs.header_);
       std::swap(_lhs.raw_shape_, _rhs.raw_shape_);
       std::swap(_lhs.pipeline_, _rhs.pipeline_);
       std::swap(_lhs.raw_type_name_, _rhs.raw_type_name_);
-      std::swap(_lhs.compressed_size_byte_, _rhs.compressed_size_byte_); 
+      std::swap(_lhs.compressed_size_byte_, _rhs.compressed_size_byte_);
     }
 
     /**
        \brief default constructor
 
-       \param[in] 
+       \param[in]
 
-       \return 
-       \retval 
+       \return
+       \retval
 
     */
-    image_header():
+    header():
       header_(""),
       raw_shape_(0),
       pipeline_(""),
@@ -116,13 +117,13 @@ namespace sqeazy {
     /**
        \brief copy constructor
 
-       \param[in] 
+       \param[in]
 
-       \return 
-       \retval 
+       \return
+       \retval
 
     */
-    image_header(const image_header& _rhs):
+    header(const header& _rhs):
       header_			(_rhs.header_                  ),
       raw_shape_		(_rhs.raw_shape_              ),
       pipeline_		(_rhs.pipeline_               ),
@@ -134,30 +135,30 @@ namespace sqeazy {
     /**
        \brief copy-assignment
 
-       \param[in] 
+       \param[in]
 
-       \return 
-       \retval 
+       \return
+       \retval
 
     */
-    image_header& operator=(image_header _rhs){
+    header& operator=(header _rhs){
 
       swap(*this, _rhs);
 
       return *this;
     }
-	
+
     /**
        \brief pack takes the parameters of a to-compress/compressed nD data set and packs them into a JSON compatible string, the output string needs to be aligned to raw_type
 
-       \param[in]  raw_type data type of the nD data set to compress       
+       \param[in]  raw_type data type of the nD data set to compress
        \param[in] _dims shape of the nD data set to compress
        \param[in] _pipename sqy pipeline used
        \param[in] _payload_bytes size of the sqy compressed buffer in Byte
 
 
        \return std::string that contains the JSON packed header (stripped of any whitespaces)
-       \retval 
+       \retval
 
     */
     template <typename raw_type,typename size_type>
@@ -167,44 +168,55 @@ namespace sqeazy {
                                   ) {
 
       // Create an empty property tree object.
-      header::tag tree;
+      bpt::ptree tree;
+      std::stringstream json_stream("");
 
       // Put the simple values into the tree. The integer is automatically
       // converted to a string. Note that the "debug" node is automatically
       // created if it doesn't exist.
-      tree.pipename_ = _pipe_name;
+      tree.put("pipename", _pipe_name);
 
       std::string raw_type_name = typeid(raw_type).name();
       auto space_pos = raw_type_name.find(" ");
-	  if (space_pos != std::string::npos)
+      if (space_pos != std::string::npos)
         raw_type_name.replace(space_pos, 1, "_");
 
-      tree.raw_type_id_ = raw_type_name;
+      tree.put("raw.type", raw_type_name);
+      tree.put("raw.rank",_dims.size());
 
-      tree.raw_shape_.resize(_dims.size());
-      std::copy(_dims.begin(), _dims.end(),tree.raw_shape_.begin());
+      for(unsigned i = 0;i<_dims.size();++i){
+        tree.add("raw.shape.dim", _dims[i]);
+      }
 
-      tree.encoded_bytes_ = _payload_bytes;
-      // tree.put("encoded.bytes", _payload_bytes);
+      tree.put("encoded.bytes", _payload_bytes);
+
+      tree.put("sqy.version", sqeazy_global_version);
+      tree.put("sqy.headref", sqeazy_global_refhash);
 
       // Add all the modules. Unlike put, which overwrites existing nodes, add
       // adds a new node at the lowest level, so the "modules" node will have
       // multiple "module" children.
 
-      std::stringstream serialized_stream;
-      serialized_stream << header::to_string(tree)
-        ;
+      // Write property tree to XML file
+      bpt::write_json(json_stream, tree);
+      json_stream << header::header_end_delim;
 
-      serialized_stream << std::setw(sizeof(raw_type) - (serialized_stream.str().size() % sizeof(raw_type))) << " ";
-      serialized_stream  << image_header::header_end_delim;
+      std::string stripped = json_stream.str();
 
-      return std::string(serialized_stream.str());
+      if(stripped.size() % sizeof(raw_type) != 0){
+        std::stringstream intermediate("");
+        intermediate << std::setw(sizeof(raw_type) - (stripped.size() % sizeof(raw_type))) << " ";
+        intermediate << stripped;
+        stripped = intermediate.str();
+      }
+
+      return std::string(stripped);
     }
 
     template <typename value_type,
               typename size_type
               >
-    image_header(value_type,
+    header(value_type,
                  const std::vector<size_type>& _dims,
                  const std::string& _pipe_name = "no_pipeline",
                  const unsigned long& _payload_bytes = 0):
@@ -232,7 +244,7 @@ namespace sqeazy {
     }
 
     template <typename value_type>
-    image_header(value_type,
+    header(value_type,
                  unsigned long _raw_in_byte,
                  const std::string& _pipe_name = "no_pipeline",
                  const unsigned long& _payload_bytes = 0):
@@ -287,13 +299,13 @@ namespace sqeazy {
       }
     }
 
-    static const image_header unpack(const std::string& _buffer) {
+    static const header unpack(const std::string& _buffer) {
 
       return unpack(_buffer.begin(), _buffer.end());
     }
 
 
-    static const image_header unpack(const char* _buffer,
+    static const header unpack(const char* _buffer,
                                      unsigned long _buffer_size) {
 
       return unpack(_buffer, _buffer + _buffer_size);
@@ -301,13 +313,13 @@ namespace sqeazy {
 
 
     template <typename iter_type>
-    static const image_header unpack(iter_type _begin, iter_type _end) {
+    static const header unpack(iter_type _begin, iter_type _end) {
 
       iter_type header_end_ptr = header_end(_begin, _end);
 
       if(!valid_header(_begin,header_end_ptr)){
         std::ostringstream msg;
-        msg << "[image_header::unpack]\t received header: \n\t";
+        msg << "[header::unpack]\t received header: \n\t";
         std::copy(_begin,header_end_ptr,std::ostreambuf_iterator<char>(msg));
         msg <<"\n does not comply expected format\n";
         throw std::runtime_error(msg.str().c_str());
@@ -317,33 +329,42 @@ namespace sqeazy {
       std::string hdr(_begin, header_end_ptr-header_end_delimeter().size());
 
 
-      image_header value;
-      // std::stringstream incoming(hdr);
-      // incoming << hdr;
+      header value;
+      std::stringstream incoming;
+      incoming << hdr;
 
-      header::tag tree;
+      bpt::ptree tree;
       try{
-        tree = header::from_string(hdr);
+        bpt::read_json(incoming, tree);
       }
       catch (std::exception &e){
-
-        std::cerr << "[image_header::unpack]\t received header: \n\n"<< hdr << "\n\n"
-                  << "[image_header::unpack]\t cannot create property tree from JSON\treason: " <<  e.what() << "\n";
-        return image_header(value);
+        std::stringstream msg;
+        std::cerr << "[header::unpack]\t received header: \n\t>>"<< hdr << "<<\n"
+                  << "cannot create property tree from JSON\nreason: " <<  e.what() << "\n";
+        return header(value);
       }
 
-      value.pipeline_ = tree.pipename_;
-      value.raw_type_name_ = tree.raw_type_id_;
+      value.pipeline_ = tree.get("pipename", "");
+      value.raw_type_name_ = tree.get("raw.type", typeid(void).name());
 
-      value.raw_shape_ = tree.raw_shape_;
-      value.compressed_size_byte_ = tree.encoded_bytes_;
+      if (value.raw_type_name_.find("_") != std::string::npos)
+        value.raw_type_name_.replace(value.raw_type_name_.find("_"), 1, " ");
 
+      unsigned rank = tree.get("raw.rank", (unsigned)0);//TODO: could be replaced by (tend - tbegin)
+      value.raw_shape_.reserve(rank);
+
+      bpt::ptree::const_iterator tbegin = tree.get_child("raw.shape").begin();
+      bpt::ptree::const_iterator tend = tree.get_child("raw.shape").end();
+
+      for(;tbegin!=tend;++tbegin)
+        value.raw_shape_.push_back(boost::lexical_cast<unsigned long>(tbegin->second.data()));
+
+      value.compressed_size_byte_ = tree.get("encoded.bytes", (unsigned long)0);
       value.header_ = hdr;
-
       if(!ends_with(value.header_.begin(),value.header_.end(),header_end_delim))
         value.header_ += header_end_delim;
 
-      return image_header(value);//unnamed return-type optimisation
+      return header(value);//unnamed return-type optimisation
     }
 
 
@@ -352,11 +373,11 @@ namespace sqeazy {
 
        \param[in] _str that contains the header
 
-       \return 
-       \retval 
+       \return
+       \retval
 
     */
-    image_header(const std::string& _str):
+    header(const std::string& _str):
       header_(""),
       raw_shape_(0),
       pipeline_(""),
@@ -364,8 +385,8 @@ namespace sqeazy {
       compressed_size_byte_(0){
 
 
-      image_header rhs;
-	  
+      header rhs;
+
       try{
         rhs = unpack(_str.begin(), _str.end());
       }
@@ -379,7 +400,7 @@ namespace sqeazy {
     }
 
     template <typename Iter>
-    image_header(Iter _begin, Iter _end):
+    header(Iter _begin, Iter _end):
       header_(""),
       raw_shape_(0),
       pipeline_(""),
@@ -387,8 +408,8 @@ namespace sqeazy {
       compressed_size_byte_(0){
 
 
-      image_header rhs;
-	  	  
+      header rhs;
+
 
       try{
         rhs = unpack(_begin,_end);
@@ -401,7 +422,7 @@ namespace sqeazy {
 
     }
 
-    ~image_header(){}
+    ~header(){}
 
 
 
@@ -453,7 +474,7 @@ namespace sqeazy {
 
     }
 
-	std::intmax_t compressed_size_byte() const {
+    std::intmax_t compressed_size_byte() const {
 
       return this->compressed_size_byte_;
 
@@ -509,13 +530,13 @@ namespace sqeazy {
     template <typename Iter>
     static const bool valid_header(Iter _begin, Iter _end){
 
-      bool value = ends_with(_begin,_end,header_end_delimeter());
+      bool value = std::count(_begin,_end, '}');
+      value = value && std::count(_begin,_end, '}') ==  std::count(_begin,_end, '{');
+      value = value && std::count(_begin,_end, ':')>1;
 
-      if(!value)
-        return value;
-
-      value = value && header::can_deserialize(_begin, _end - header_end_delimeter().size() );
+      value = value && ends_with(_begin,_end,header_end_delimeter());
       return value;
+
 
     }
 
@@ -551,7 +572,7 @@ namespace sqeazy {
 
     static const std::vector<std::size_t> unpack_shape(const char* _buffer, const unsigned& _size) {
 
-      image_header unpacked = unpack(_buffer,_buffer + _size);
+      header unpacked = unpack(_buffer,_buffer + _size);
       return unpacked.raw_shape_;
 
     }
@@ -561,17 +582,17 @@ namespace sqeazy {
 
 
 
-      image_header unpacked = unpack(_buffer, _buffer+_size);
+      header unpacked = unpack(_buffer, _buffer+_size);
       return static_cast<int>(unpacked.raw_shape_.size());
     }
 
     static const std::string unpack_type(const char* _buffer, const unsigned& _size) {
 
-      image_header unpacked = unpack(_buffer, _buffer+_size);
+      header unpacked = unpack(_buffer, _buffer+_size);
       return unpacked.raw_type_name_;
     }
 
-    friend inline bool operator==(const image_header& _left, const image_header& _right)
+    friend inline bool operator==(const header& _left, const header& _right)
     {
       bool value = true;
       value = value && _left.header_ ==  _right.header_;
@@ -582,13 +603,13 @@ namespace sqeazy {
       return value;
     }
 
-    friend inline bool operator!=(const image_header& lhs, const image_header& rhs){return !(lhs == rhs);}
+    friend inline bool operator!=(const header& lhs, const header& rhs){return !(lhs == rhs);}
   };
 
 
-  std::string image_header::header_end_delim = "|01307#!";
+  std::string header::header_end_delim = "|01307#!";
 
 };
 
-  
+
 #endif /* _SQEAZY_HEADER_H_ */

@@ -341,7 +341,7 @@ namespace sqeazy {
 		std::fill(n_full_frames.begin(), n_full_frames.end(),1);
 		n_full_frames[row_major::z] = _shape[row_major::z] / frame_chunk_size;
 
-		const shape_value_t n_chunks = (_shape[row_major::z] + frame_chunk_size - 1)/frame_chunk_size;
+		// const shape_value_t n_chunks = (_shape[row_major::z] + frame_chunk_size - 1)/frame_chunk_size;
 		// const auto len = std::distance(_begin,_end);
 
 		const omp_size_type loop_count = decode_map.size();

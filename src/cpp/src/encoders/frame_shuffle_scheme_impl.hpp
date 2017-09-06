@@ -99,7 +99,8 @@ namespace sqeazy {
 
       std::size_t length = std::accumulate(_ishape.begin(), _ishape.end(), 1, std::multiplies<std::size_t>());
 
-      std::vector<std::size_t> decode_map(parsing::verbatim_yields_n_items_of<std::size_t>(serialized_reorder_map),0);
+      std::size_t exp_size_of_decode_map = parsing::verbatim_yields_n_items_of<std::size_t>(serialized_reorder_map);
+      std::vector<std::size_t> decode_map(exp_size_of_decode_map,0);
 
       parsing::verbatim_to_range(serialized_reorder_map,
                                  decode_map.begin(), decode_map.end());

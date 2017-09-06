@@ -81,7 +81,7 @@ int decompress_files(const std::vector<std::string>& _files,
 			////////////////////////EXTRACT HEADER///////////////////////////////
 			const char* file_ptr = &file_content_buffer[0];
 
-			sqeazy::image_header sqy_header(file_ptr,
+			sqeazy::header sqy_header(file_ptr,
 				file_ptr + file_size_byte
 			);
 			file_shape.resize(sqy_header.shape()->size(), 1);

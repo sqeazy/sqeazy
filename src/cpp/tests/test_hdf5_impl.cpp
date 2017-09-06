@@ -417,7 +417,7 @@ BOOST_AUTO_TEST_CASE( write_compressed_dataset ){
 
   //write in 2 steps
   //1st compress
-  sqeazy::image_header hdr(std::uint16_t(),
+  sqeazy::header hdr(std::uint16_t(),
 			   dims,
 			   pipe16.name());
 
@@ -466,7 +466,7 @@ BOOST_AUTO_TEST_CASE( roundtrip_compressed_dataset ){
 
   //write in 2 steps
   //1. compress
-  sqeazy::image_header hdr(value_type(),
+  sqeazy::header hdr(value_type(),
                            dims,
                            pipe16.name());
 
@@ -537,7 +537,7 @@ BOOST_AUTO_TEST_CASE( roundtrip_compressed_dataset ){
 BOOST_AUTO_TEST_CASE( roundtrip_bswap1_lz4_as_reference ){
 
   int rvalue = 0;
-  sqeazy::image_header hdr(value_type(),
+  sqeazy::header hdr(value_type(),
 			   dims,
 			   pipe16.name());
   unsigned long max_size_compressed = pipe16.max_encoded_size(retrieved.size()*sizeof(std::uint16_t));

@@ -11,7 +11,7 @@ ENDIF()
 SET(SQY_SRC_TARGETS ${PROJECT_NAME})
 add_library(${PROJECT_NAME} SHARED sqeazy.cpp)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED YES)
-set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${PROJECT_SOURCE_DIR}/inc/sqeazy.h;${PROJECT_SOURCE_DIR}/inc/H5PLextern.h")
+set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${PROJECT_BINARY_DIR}/inc/sqeazy.h;${PROJECT_BINARY_DIR}/inc/H5PLextern.h;${PROJECT_BINARY_DIR}/inc/sqeazy_h5_filter.hpp;${PROJECT_BINARY_DIR}/inc/sqeazy_definitions.h")
 
 target_link_libraries(${PROJECT_NAME} ${LZ4_LIBRARY} ${HDF5_LIBRARIES} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES})
 
@@ -24,13 +24,6 @@ endif()
 if(${FFMPEG_USE_STATIC_LIBS})
   set_property(TARGET ${PROJECT_NAME} APPEND_STRING PROPERTY LINK_FLAGS " ${FFMPEG_EXTRA_LINK_FLAGS}")
 endif()
-
-# SET(SQY_SRC_TARGETS ${SQY_SRC_TARGETS} ${PROJECT_NAME}-static)
-# add_library(${PROJECT_NAME}-static STATIC sqeazy.cpp)
-# set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED YES)
-# set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${PROJECT_SOURCE_DIR}/inc/sqeazy.h;${PROJECT_SOURCE_DIR}/inc/H5PLextern.h")
-# #TODO: communicate dependencies to outside world somehow for static lib
-# #target_link_libraries(${PROJECT_NAME} ${LZ4_LIBRARY} ${HDF5_LIBRARIES} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES})
 
 INSTALL(TARGETS ${SQY_SRC_TARGETS}
   EXPORT sqeazy-targets

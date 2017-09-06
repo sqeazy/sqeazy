@@ -569,35 +569,35 @@ BOOST_AUTO_TEST_CASE (encode_range8) {
   BOOST_CHECK_GT(verbatim.size(),
          bytes_range8);
 
-  BOOST_CHECK_EQUAL(verbatim.size(),
-            bytes_range8+sqeazy::ignore_this_delimiters.first.size()+sqeazy::ignore_this_delimiters.second.size());
+  BOOST_CHECK_EQUAL(verbatim.size(),sqy::parsing::verbatim_bytes(range8.begin(),
+                           range8.end()));
 
   std::string last_entry(verbatim.end()-1-sqeazy::ignore_this_delimiters.second.size(),
-             verbatim.end()-sqeazy::ignore_this_delimiters.second.size());
+                         verbatim.end()-sqeazy::ignore_this_delimiters.second.size());
+
   const std::uint8_t* last_ptr = reinterpret_cast<const std::uint8_t*>(last_entry.data());
-  BOOST_CHECK_EQUAL(*last_ptr,range8.back());
+  BOOST_CHECK(*last_ptr == range8.back() || *last_ptr == '=');
 
 }
 
 BOOST_AUTO_TEST_CASE (encode_range32) {
 
+
   auto verbatim = sqy::parsing::range_to_verbatim(range32.begin(),
-                           range32.end());
+                                                  range32.end());
   BOOST_CHECK_EQUAL(verbatim.empty(),
-            false);
+                    false);
 
   BOOST_CHECK_GT(verbatim.size(),
-         bytes_range32);
+                 bytes_range32);
 
-  BOOST_CHECK_EQUAL(verbatim.size(),
-            bytes_range32+sqeazy::ignore_this_delimiters.first.size()+sqeazy::ignore_this_delimiters.second.size());
+  BOOST_CHECK_EQUAL(verbatim.size(),sqy::parsing::verbatim_bytes(range32.begin(),
+                                                                 range32.end()));
 
-  std::string last_entry(verbatim.end()-sizeof(std::uint32_t)-sqeazy::ignore_this_delimiters.second.size(),
-             verbatim.end()-sqeazy::ignore_this_delimiters.second.size());
-  const std::uint32_t* last_ptr = reinterpret_cast<const std::uint32_t*>(last_entry.data());
-  BOOST_CHECK_EQUAL(*last_ptr,range32.back());
+
 
 }
+
 
 BOOST_AUTO_TEST_CASE (rt_range8) {
 
@@ -605,13 +605,14 @@ BOOST_AUTO_TEST_CASE (rt_range8) {
   std::fill(decoded_range8.begin(), decoded_range8.end(),0);
 
   auto verbatim = sqy::parsing::range_to_verbatim(range8.begin(),
-                          range8.end());
+                                                  range8.end());
+
   BOOST_CHECK_EQUAL(verbatim.empty(),
-            false);
+                    false);
 
   auto res = sqy::parsing::verbatim_to_range(verbatim,
-                         decoded_range8.begin(),
-                         decoded_range8.end());
+                                             decoded_range8.begin(),
+                                             decoded_range8.end());
 
   BOOST_CHECK(res == decoded_range8.end());
   BOOST_CHECK_EQUAL_COLLECTIONS(range8.begin(), range8.end(),

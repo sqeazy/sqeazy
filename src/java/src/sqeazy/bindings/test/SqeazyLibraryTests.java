@@ -21,9 +21,9 @@ public class SqeazyLibraryTests
     {
 	final Pointer<Integer> version = Pointer.allocateInts(3);
 	SqeazyLibrary.SQY_Version_Triple(version);
-	assertEquals((Integer) 0, version.get(0));
-	assertEquals((Integer) 0, version.get(1));
-	assertEquals((Integer) 1, version.get(2));
+	assertTrue(version.get(0) >= 0);
+	assertTrue(version.get(1) >= 3);
+	assertTrue(version.get(2) >= 3);
     }
 
     @Test

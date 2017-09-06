@@ -117,7 +117,7 @@ namespace sqeazy
       if(!len)
         return dynamic_pipeline();
 
-      sqeazy::image_header hdr(_begin,_end);
+      sqeazy::header hdr(_begin,_end);
       auto pipe = hdr.pipeline();
       return from_string(pipe.begin(),pipe.end());
     }
@@ -514,7 +514,7 @@ namespace sqeazy
 
       std::size_t len = std::accumulate(_in_shape.begin(), _in_shape.end(),1,std::multiplies<std::size_t>());
 
-      sqeazy::image_header hdr(incoming_t(),
+      sqeazy::header hdr(incoming_t(),
                                _in_shape,
                                name(),
                                len*sizeof(incoming_t));
@@ -566,7 +566,7 @@ namespace sqeazy
 
       ////////////////////// HEADER RELATED //////////////////
       //insert header
-      sqeazy::image_header hdr(incoming_t(),
+      sqeazy::header hdr(incoming_t(),
                                _in_shape,
                                name(),
                                len*sizeof(incoming_t));
@@ -743,7 +743,7 @@ namespace sqeazy
       //FIXME: works only if len is greater than hdr.size()
       const char* _in_char_end = _in_char_begin + (len*sizeof(outgoing_t));
 
-      image_header hdr(_in_char_begin,_in_char_end);
+      sqeazy::header hdr(_in_char_begin,_in_char_end);
       std::vector<std::size_t> output_shape(hdr.shape()->begin(),
                                             hdr.shape()->end());
 
@@ -856,7 +856,7 @@ namespace sqeazy
     */
     std::intmax_t max_encoded_size(std::intmax_t _incoming_size_byte) const override final {
 
-      image_header hdr(incoming_t(),
+      sqeazy::header hdr(incoming_t(),
                        _incoming_size_byte,
                        name()
                        );
@@ -885,7 +885,7 @@ namespace sqeazy
 
       static_assert(sizeof(T)==1, "[dynamic_pipeline.hpp::decoded_size] recived non-byte-size iterator");
 
-      image_header found_header(_begin, _end);
+      sqeazy::header found_header(_begin, _end);
       std::intmax_t value = found_header.raw_size_byte_as<incoming_t>();
 
       return value;
@@ -905,7 +905,7 @@ namespace sqeazy
 
       static_assert(sizeof(T)==1, "[dynamic_pipeline.hpp::decoded_shape] recived non-byte-size iterator");
 
-      image_header found_header(_begin, _end);
+      sqeazy::header found_header(_begin, _end);
       std::vector<std::size_t> value(found_header.shape()->begin(),
                                      found_header.shape()->end());
 
