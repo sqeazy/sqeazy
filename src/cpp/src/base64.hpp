@@ -143,7 +143,7 @@ namespace sqeazy {
 
             using namespace boost::archive::iterators;
 
-            using It = transform_width<binary_from_base64<std::string::const_iterator>, 8, 6>;
+            using It = transform_width<binary_from_base64<const char*>, 8, 6>;
 
             // char* return_itr = std::copy(It(_begin), It(_end),_dst);
 
