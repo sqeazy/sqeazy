@@ -479,11 +479,6 @@ namespace sqeazy {
 		  running_sum += tile_sizes[i];
 		}
 
-		shape_value_t ztile = 0;
-		shape_value_t ytile = 0;
-		shape_value_t xtile = 0;
-
-
 		std::vector<std::array<std::size_t, 3> > tile_spatial_offsets(n_tiles, tile_shape);
 		auto linear_offsets_begin = tile_spatial_offsets.begin();
 		std::array<std::size_t, 3> loc;

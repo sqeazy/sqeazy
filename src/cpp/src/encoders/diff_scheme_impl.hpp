@@ -53,7 +53,7 @@ namespace sqeazy {
        \retval string .. that encodes the configuration paramters
 
     */
-    std::string config() const {
+    std::string config() const override {
 
       return "";
 
@@ -103,7 +103,6 @@ namespace sqeazy {
       }
 
 
-      size_type local_index = 0;
       const sum_type n_traversed_pixels = sqeazy::num_traversed_pixels<Neighborhood>();
 
       out_type* signed_compressed = reinterpret_cast<out_type*>(_compressed);
@@ -157,14 +156,13 @@ namespace sqeazy {
                                                      _shape[row_major::h],
                                                      _shape[row_major::d]);
       geometry.compute_offsets_in_x(offsets);
-      typename std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
 
       size_type halo_size_x = geometry.non_halo_end(0)-geometry.non_halo_begin(0);
       if(offsets.size()==1)//no offsets in other dimensions than x
       {
         halo_size_x = length - offsets.front();
       }
-      sum_type local_sum = 0;
+
       const sum_type n_traversed_pixels = sqeazy::num_traversed_pixels<Neighborhood>();
       const out_type* signed_in = reinterpret_cast<const out_type*>(_in);
       const int nthreads = this->n_threads();

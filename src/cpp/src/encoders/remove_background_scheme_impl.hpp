@@ -59,7 +59,7 @@ namespace sqeazy {
        \retval string .. that encodes the configuration paramters
 
     */
-    std::string config() const {
+    std::string config() const override {
 
       std::ostringstream msg;
       msg << "threshold=" << std::to_string(threshold);

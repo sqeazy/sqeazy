@@ -322,27 +322,16 @@ namespace sqeazy {
 										   const shape_container_t& _shape,
 										   int nthreads = 1) const {
 
-
-		// typedef typename std::iterator_traits<in_iterator_t>::value_type in_value_type;
-		// typedef typename std::remove_cv<in_value_type>::type in_value_t;
-
-		typedef typename std::iterator_traits<decltype(_shape.begin())>::value_type shape_value_type;
-		typedef typename std::remove_cv<shape_value_type>::type shape_value_t;
-
 		const shape_container_t rem = remainder(_shape);
 		const bool has_remainder = std::accumulate(rem.begin(), rem.end(),0) > 0;
 
 		const std::size_t n_elements_per_frame = _shape[row_major::y]*_shape[row_major::x];
-		// const std::size_t n_elements = std::distance(_begin,_end);
 
 		const std::size_t n_elements_per_frame_chunk = n_elements_per_frame*frame_chunk_size;
 
 		shape_container_t n_full_frames = _shape;
 		std::fill(n_full_frames.begin(), n_full_frames.end(),1);
 		n_full_frames[row_major::z] = _shape[row_major::z] / frame_chunk_size;
-
-		// const shape_value_t n_chunks = (_shape[row_major::z] + frame_chunk_size - 1)/frame_chunk_size;
-		// const auto len = std::distance(_begin,_end);
 
 		const omp_size_type loop_count = decode_map.size();
 		auto decode_map_itr = decode_map.data();

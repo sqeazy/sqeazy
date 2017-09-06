@@ -108,8 +108,6 @@ namespace sqeazy {
 
 
       unsigned n_neighbors_below_threshold = 0;
-      typename std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
-
 
       const float cut_fraction = fraction*(size<Neighborhood>()-1);
 

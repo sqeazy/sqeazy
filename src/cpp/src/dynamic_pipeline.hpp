@@ -419,7 +419,7 @@ namespace sqeazy
       return value;
     }
 
-    std::string input_type() const
+    std::string input_type() const override
     {
 
       if(head_filters_.size())
@@ -431,7 +431,7 @@ namespace sqeazy
       return std::string("");
     };
 
-    std::string output_type() const
+    std::string output_type() const override
     {
 
       if(sink_)
@@ -459,7 +459,7 @@ namespace sqeazy
         }
     };
 
-    bool is_compressor() const {
+    bool is_compressor() const override {
 
       return sink_ ? true : false ;
 
@@ -474,7 +474,7 @@ namespace sqeazy
        \retval
 
     */
-    std::string name() const
+    std::string name() const override
     {
 
       std::ostringstream value;
@@ -503,7 +503,7 @@ namespace sqeazy
       return value.str();
     };
 
-    std::string config() const
+    std::string config() const override
     {
       return name();
     }
@@ -912,11 +912,11 @@ namespace sqeazy
       return value;
     }
 
-    virtual std::uint32_t n_threads() const {
+    virtual std::uint32_t n_threads() const override {
       return n_threads_;
     }
 
-    virtual void set_n_threads(const std::uint32_t& _number)  {
+    virtual void set_n_threads(const std::uint32_t& _number) override {
 
       n_threads_ = clean_number_of_threads(_number);
 

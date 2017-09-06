@@ -80,7 +80,7 @@ namespace sqeazy {
        \retval string .. that encodes the configuration paramters
 
     */
-    std::string config() const {
+    std::string config() const override {
 
       std::ostringstream msg;
       msg << "num_bits_per_plane=" << std::to_string(num_bits_per_plane);
@@ -96,7 +96,7 @@ namespace sqeazy {
     compressed_type* encode( const raw_type* _input, compressed_type* _output, std::size_t _length) override final {
 
       std::size_t max_size = _length - (_length % num_planes);
-      std::size_t n_bits_per_element = sizeof(raw_type)*CHAR_BIT;
+//      std::size_t n_bits_per_element = sizeof(raw_type)*CHAR_BIT;
 
       if(max_size < _length)
         std::copy(_input+max_size,_input+_length,_output+max_size);

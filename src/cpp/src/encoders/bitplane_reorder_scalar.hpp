@@ -88,7 +88,7 @@ namespace sqeazy {
       static const unsigned raw_type_num_bits = sizeof(raw_type)*CHAR_BIT;
       static const unsigned num_planes = raw_type_num_bits/num_bits_per_plane;
 
-      const loop_size_type len = _length;
+      // const loop_size_type len = _length;
       const loop_size_type signed_num_planes = num_planes;
       const unsigned segment_length = _length/num_planes;
       const raw_type mask = ~(~0 << (num_bits_per_plane));

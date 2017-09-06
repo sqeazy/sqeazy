@@ -100,7 +100,7 @@ namespace sqeazy {
        \retval string .. that encodes the configuration paramters
 
     */
-    std::string config() const {
+    std::string config() const override {
 
       return hevc_config;
 

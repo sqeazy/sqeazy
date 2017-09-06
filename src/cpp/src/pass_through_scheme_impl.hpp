@@ -14,10 +14,10 @@ namespace sqeazy {
 
   template <typename in_type>
   using pass_through_scheme_base_type = typename binary_select_type<filter<in_type>,//true
-								    sink<in_type>,//false
-								    std::is_same<in_type,char>::value
-								    >::type;
-  
+                                    sink<in_type>,//false
+                                    std::is_same<in_type,char>::value
+                                    >::type;
+
   template <typename in_type, typename out_type = char >
   //  struct pass_through : public sink<in_type,out_type>  {
   struct pass_through : public pass_through_scheme_base_type<in_type>  {
@@ -31,7 +31,7 @@ namespace sqeazy {
     static_assert(std::is_arithmetic<raw_type>::value==true,"[pass_through] input type is non-arithmetic");
 
     static const std::string description() { return std::string("pass/copy content to next stage"); };
-    
+
     //TODO: check syntax of lz4 configuration at runtime
     pass_through(const std::string& _payload="")
     {
@@ -44,29 +44,29 @@ namespace sqeazy {
     std::string name() const override final {
 
       return std::string("pass_through");
-	
+
     }
 
 
     /**
        \brief serialize the parameters of this filter
-     
-       \return 
+
+       \return
        \retval string .. that encodes the configuration paramters
-     
+
     */
-    std::string config() const {
+    std::string config() const override {
 
       return "";
-    
+
     }
 
     std::intmax_t max_encoded_size(std::intmax_t _size_bytes) const override final {
-    
+
       return _size_bytes;
     }
 
-    
+
     /**
      * @brief encode input raw_type buffer and write to output (not owned, not allocated)
      *
@@ -76,56 +76,56 @@ namespace sqeazy {
      * @return sqeazy::error_code
      */
     compressed_type* encode( const raw_type* _in,
-			     compressed_type* _out,
-			     const std::vector<std::size_t>& _shape) override final {
+                 compressed_type* _out,
+                 const std::vector<std::size_t>& _shape) override final {
 
-      
+
       std::size_t in_elements = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
       raw_type* out_begin = reinterpret_cast<raw_type*>(_out);
       std::copy(_in,_in+in_elements,out_begin);
 
       std::size_t num_written_bytes = in_elements*sizeof(raw_type)/sizeof(compressed_type);
-      
+
       return _out+num_written_bytes;
     }
 
 
 
     int decode( const compressed_type* _in, raw_type* _out,
-		const std::vector<std::size_t>& _inshape,
-		std::vector<std::size_t> _outshape = std::vector<std::size_t>()) const override final {
+        const std::vector<std::size_t>& _inshape,
+        std::vector<std::size_t> _outshape = std::vector<std::size_t>()) const override final {
 
       if(_outshape.empty())
-	_outshape = _inshape;
-      
+    _outshape = _inshape;
+
       std::size_t in_elements = std::accumulate(_inshape.begin(), _inshape.end(),1,std::multiplies<std::size_t>());
       compressed_type* out_begin = reinterpret_cast<compressed_type*>(_out);
       std::copy(_in,_in+in_elements,out_begin);
-      
+
       return 0;
-      
+
     }
-    
-    
+
+
 
     ~pass_through(){};
 
     std::string output_type() const final override {
 
       return typeid(compressed_type).name();
-    
+
     }
 
     bool is_compressor() const final override {
-    
+
       return sink<in_type>::is_compressor;
-    
+
     }
 
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // DEPRECATED API
-    
+
     static const bool is_sink = false;
 
     /**
@@ -145,9 +145,9 @@ namespace sqeazy {
 
     template <typename size_type>
     /**
-     * @brief encoding the diff scheme, i.e. the output value for input intensity I is equal to the sum 
+     * @brief encoding the diff scheme, i.e. the output value for input intensity I is equal to the sum
      * of the neighborhood divided by the number of pixels traversed in the neighborhood
-     * 
+     *
      * @param _width width of input stack
      * @param _height height of the input stack
      * @param _depth depth of the input stack
@@ -156,10 +156,10 @@ namespace sqeazy {
      * @return sqeazy::error_code
      */
     static const error_code static_encode(const size_type& _width,
-					  const size_type& _height,
-					  const size_type& _depth,
-					  const raw_type* _input,
-					  compressed_type* _output)
+                      const size_type& _height,
+                      const size_type& _depth,
+                      const raw_type* _input,
+                      compressed_type* _output)
     {
 
       unsigned long length = _width*_height*_depth;
@@ -170,9 +170,9 @@ namespace sqeazy {
 
     template <typename size_type>
     static const error_code static_encode(const raw_type* _input,
-					  compressed_type* _output,
-					  size_type& _dim
-					  )
+                      compressed_type* _output,
+                      size_type& _dim
+                      )
     {
 
       return static_encode(_dim, 1, 1, _input, _output);
@@ -180,9 +180,9 @@ namespace sqeazy {
 
     template <typename size_type>
     static const error_code static_encode(const raw_type* _input,
-					  compressed_type* _output,
-					  std::vector<size_type>& _dims
-					  )
+                      compressed_type* _output,
+                      std::vector<size_type>& _dims
+                      )
     {
       return static_encode(_dims.at(0), _dims.at(1), _dims.at(2), _input, _output);
     }
@@ -190,14 +190,14 @@ namespace sqeazy {
     template <typename size_type>
     /**
      * @brief reconstructing data that was encoded by this diff scheme
-     * 
+     *
      * @return sqeazy::error_code
      */
     static const error_code static_decode(const size_type& _width,
-					  const size_type& _height,
-					  const size_type& _depth,
-					  const compressed_type* _input,
-					  raw_type* _output)
+                      const size_type& _height,
+                      const size_type& _depth,
+                      const compressed_type* _input,
+                      raw_type* _output)
     {
       unsigned long length = _width*_height*_depth;
       std::copy(_input,_input + length, _output);
@@ -207,9 +207,9 @@ namespace sqeazy {
 
     template <typename size_type>
     static const error_code static_decode(const compressed_type* _input,
-					  raw_type* _output,
-					  std::vector<size_type>& _dims
-					  ) {
+                      raw_type* _output,
+                      std::vector<size_type>& _dims
+                      ) {
 
       return static_decode(_dims.at(0), _dims.at(1), _dims.at(2), _input, _output);
 
@@ -217,15 +217,15 @@ namespace sqeazy {
 
     template <typename size_type>
     static const error_code static_decode(const compressed_type* _input,
-					  raw_type* _output,
-					  size_type& _dim
-					  ) {
+                      raw_type* _output,
+                      size_type& _dim
+                      ) {
 
       const size_type one = 1;
       return static_decode(_dim, one, one, _input, _output);
 
     }
-  
+
     template <typename U>
     static const unsigned long max_encoded_size(U _src_length_in_bytes){
       return _src_length_in_bytes;
