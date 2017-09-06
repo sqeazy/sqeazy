@@ -225,6 +225,10 @@ task make(type:Exec) {
     executable 'make'
   }
 
+    if (!Os.isFamily(Os.FAMILY_WINDOWS) && Runtime.runtime.availableProcessors() > 2){
+        args "-j"+(Runtime.runtime.availableProcessors()/2)
+    }
+
 }
 
 // cmake task:
