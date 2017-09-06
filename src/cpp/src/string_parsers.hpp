@@ -439,7 +439,11 @@ namespace sqeazy {
         return value;
 
       auto src = _verbatim.data() + ignore_this_delimiters.first.size();
-      auto src_end_pos = _verbatim.rfind(ignore_this_delimiters.second) - ignore_this_delimiters.first.size();
+      auto src_end_pos = _verbatim.rfind(ignore_this_delimiters.second);
+      if(src_end_pos!=std::string::npos)
+        src_end_pos -= ignore_this_delimiters.first.size();
+      else
+        src_end_pos = _verbatim.size() - ignore_this_delimiters.first.size();
 
       const std::size_t decoded_bytes = base64::decoded_bytes(src,src+src_end_pos);
       if(decoded_bytes > bytes)
@@ -448,7 +452,8 @@ namespace sqeazy {
       char* dst = reinterpret_cast<char*>(&*_begin);
       auto dst_end = base64::decode_impl(src,src+src_end_pos,dst);//std::copy(src,src+src_end_pos,dst);
 
-      value += std::distance(dst,dst_end)/sizeof(value_t);
+      std::size_t decoded_elements = std::distance(dst,dst_end);
+      value += (decoded_elements/sizeof(value_t));
 
       return value;
     }
