@@ -19,12 +19,12 @@ Add the following to your `build.gradle`:
 repositories 
 {
 	//...
-	maven { url  "https://dl.bintray.com/psteinb/maven"  }
+	maven { url  "https://dl.bintray.com/sqeazy/maven"  }
 }
 
 dependencies {
 	//...
-    compile 'net.sqeazy:sqeazy:0.1'
+    compile 'net.sqeazy:sqeazy:0.3.3'
 }
 ```
 
@@ -35,7 +35,7 @@ dependencies {
 	...
 	<repository>
 		<id>sqeazy</id>
-		<url>https://dl.bintray.com/psteinb/maven</url>
+		<url>https://dl.bintray.com/sqeazy/maven</url>
 	</repository>
 </repositories>
 
