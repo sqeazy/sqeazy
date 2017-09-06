@@ -23,7 +23,7 @@ public class SqeazyLibraryTests
 	SqeazyLibrary.SQY_Version_Triple(version);
 	assertTrue(version.get(0) >= 0);
 	assertTrue(version.get(1) >= 3);
-	assertTrue(version.get(2) >= 3);
+	assertTrue(version.get(2) >= 0);
     }
 
     @Test
