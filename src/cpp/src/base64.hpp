@@ -58,7 +58,35 @@ namespace sqeazy {
             return ;
         }
 
+        // repeating the base64 characters in the index array avoids the  077 &  operations
+        void padded_byte3_to_char4(const unsigned char* input, const unsigned char* input_end, char* output){
 
+            std::size_t len = std::distance(input,input_end);
+
+            if(len == 0){
+                //unlikely, but possible ... doing nothing
+                return;
+            }
+
+            if(len == 3){
+                byte3_to_char4(input,output);
+                return;
+            }
+
+            output[ 0 ] =  codes[       input[0] >> 2                     ];
+
+            if(len <= 1){
+                output[ 1 ] =  codes[077 & ((input[0] << 4)| (0 >> 4)) ];
+                std::fill(output+2,output+4,'=');
+                return;
+            }
+
+            output[ 1 ] =  codes[077 & ((input[0] << 4)| (input[1] >> 4)) ];
+            output[ 2 ] =  codes[077 & ((input[1] << 2)| (0 >> 6)) ];
+            std::fill(output+3,output+4,'=');
+            return;
+
+        }
         /**
          *  \brief implementation of base64 encoding
          *
@@ -117,12 +145,18 @@ namespace sqeazy {
 
             char* output_iter = _dst;
 
-            if(cropped_len != len){
-                std::string padded = "    ";
-                byte3_to_char4((const unsigned char*)(_begin), &padded[0]);
-                std::fill(padded.rbegin(),padded.rbegin()+(3-rest),'=');
-                std::copy(padded.data(),padded.data()+padded.size(),_dst);
-                output_iter += padded.size();
+            if(rest > 0){
+
+                padded_byte3_to_char4((const unsigned char*)(_begin),
+                                    (const unsigned char*)(_end),
+                                    _dst);
+
+
+                // std::string input(3,(char)0);
+                // std::copy(_begin,_end,input.begin());
+                // byte3_to_char4((const unsigned char*)input.data(),_dst);
+
+                output_iter += 4;
             }
             return output_iter;
         }
@@ -148,7 +182,8 @@ namespace sqeazy {
 
             const std::size_t n_decoded_bytes = decoded_bytes(_begin,_end);
 
-            char* return_itr = std::copy(It(_begin), It(_end),_dst);
+            std::string temp(n_decoded_bytes+6, ' ');
+            std::copy(It(_begin), It(_end),(char*)temp.data());
 
             // auto ops = [](char c) {
             //         return c == '\0';
@@ -162,10 +197,7 @@ namespace sqeazy {
             //NOTE: boost tends to padd the output string by '\0' bytes upon decoding,
             //      as the main purpose of this is encoding arrays of integers/floats,
             //      they are likely to have \0 in them; therefor I must crop the output
-            std::size_t boost_decoded_bytes = std::distance(_dst,return_itr);
-            if(boost_decoded_bytes>n_decoded_bytes)
-                return_itr = _dst+n_decoded_bytes;
-
+            char* return_itr = std::copy(temp.data(),temp.data()+n_decoded_bytes,_dst);
             return return_itr;
         }
 
