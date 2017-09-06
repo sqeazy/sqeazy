@@ -116,7 +116,10 @@ BOOST_FIXTURE_TEST_SUITE( splitters, string_fixture )
 BOOST_AUTO_TEST_CASE (fixture_picked_correctly) {
 
   BOOST_CHECK_EQUAL(serialized_longs.size(),sizeof(global_serial_longs)-1);
-  BOOST_CHECK_EQUAL(serialized_longs.capacity(),serialized_longs.size());
+
+  //this check depends on the implementation of std::string in the STL shipped with the compiler
+  //works with GCC, doesn't work with clang on macOS
+  // BOOST_CHECK_EQUAL(serialized_longs.capacity(),serialized_longs.size());
 
   BOOST_REQUIRE_EQUAL_COLLECTIONS(serialized_longs.begin(),serialized_longs.begin()+20,
                                   &global_serial_longs[0],&global_serial_longs[0] + 20);
@@ -613,7 +616,7 @@ BOOST_AUTO_TEST_CASE (rt_range8) {
                                              decoded_range8.begin(),
                                              decoded_range8.end());
 
-  BOOST_CHECK(res == decoded_range8.end());
+  BOOST_CHECK_EQUAL(std::distance(res,decoded_range8.end()),0);
   BOOST_CHECK_EQUAL_COLLECTIONS(range8.begin(), range8.end(),
                 decoded_range8.begin(), decoded_range8.end());
 }
@@ -632,7 +635,7 @@ BOOST_AUTO_TEST_CASE (rt_range32) {
                          decoded_range32.begin(),
                          decoded_range32.end());
 
-  BOOST_CHECK(res == decoded_range32.end());
+  BOOST_CHECK_EQUAL(std::distance(res,decoded_range32.end()),0);
   BOOST_CHECK_EQUAL_COLLECTIONS(range32.begin(), range32.end(),
                 decoded_range32.begin(), decoded_range32.end());
 }
