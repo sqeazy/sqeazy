@@ -65,7 +65,7 @@ struct set_to :  public sqy::filter<T> {
 
   }
 
-  std::string name() const {
+  std::string name() const override {
 
     return std::string("set_to");
 
@@ -78,7 +78,7 @@ struct set_to :  public sqy::filter<T> {
      \retval string .. that encodes the configuration paramters
 
   */
-  std::string config() const {
+  std::string config() const override {
 
     std::ostringstream cfg;
     cfg << "value=" << value << ",";
@@ -150,13 +150,13 @@ struct add_one :  public sqy::filter<T> {
 
   static const std::string description() { return std::string("adds 1 to all items"); };
 
-  std::string name() const {
+  std::string name() const override {
 
     return std::string("add_one");
 
   }
 
-  std::string config() const {
+  std::string config() const override {
 
     return std::string("");
 
@@ -208,13 +208,13 @@ struct add_one :  public sqy::filter<T> {
   ~add_one(){};
 
 
-  std::string input_type() const {
+  std::string input_type() const override {
 
     return typeid(raw_type).name();
 
   }
 
-  std::string output_type() const {
+  std::string output_type() const override {
 
     return typeid(compressed_type).name();
 
@@ -253,14 +253,14 @@ struct square :  public sqy::filter<T> {
   { }
 
 
-  std::string name() const {
+  std::string name() const override {
 
     return std::string("square");
 
   }
 
 
-  std::string config() const {
+  std::string config() const override {
 
     return std::string("");
 
@@ -278,13 +278,13 @@ struct square :  public sqy::filter<T> {
 
 
 
-  std::string input_type() const {
+  std::string input_type() const override {
 
     return typeid(raw_type).name();
 
   }
 
-  std::string output_type() const {
+  std::string output_type() const override {
 
     return typeid(compressed_type).name();
 
@@ -333,14 +333,14 @@ struct sum_up :  public sqy::sink<T> {
     return sizeof(result_type);
   }
 
-  std::string name() const {
+  std::string name() const override {
 
     return std::string("sum_up");
 
   }
 
 
-  std::string config() const {
+  std::string config() const override {
 
     return std::string("");
 
@@ -358,13 +358,13 @@ struct sum_up :  public sqy::sink<T> {
   ~sum_up(){};
 
 
-  std::string input_type() const {
+  std::string input_type() const override {
 
     return typeid(raw_type).name();
 
   }
 
-  std::string output_type() const {
+  std::string output_type() const override {
 
     return typeid(compressed_type).name();
 
@@ -432,14 +432,14 @@ struct high_bits :  public sqy::sink<T> {
     return scale*_incoming_size_byte;
   }
 
-  std::string name() const {
+  std::string name() const override {
 
     return std::string("high_bits");
 
   }
 
 
-  std::string config() const {
+  std::string config() const override {
 
     return std::string("");
 
@@ -459,13 +459,13 @@ struct high_bits :  public sqy::sink<T> {
   ~high_bits(){};
 
 
-  std::string input_type() const {
+  std::string input_type() const override {
 
     return typeid(raw_type).name();
 
   }
 
-  std::string output_type() const {
+  std::string output_type() const override {
 
     return typeid(compressed_type).name();
 

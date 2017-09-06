@@ -122,7 +122,6 @@ BOOST_AUTO_TEST_CASE (fixture_picked_correctly) {
                                   &global_serial_longs[0],&global_serial_longs[0] + 20);
 
   std::string serialized_longs_end_expected = "false)";
-  auto serialized_longs_end_str = serialized_longs.end() - serialized_longs_end_expected.size();
 
   BOOST_CHECK_EQUAL(serialized_longs.substr(serialized_longs.size()-serialized_longs_end_expected.size(),
                                             serialized_longs_end_expected.size()

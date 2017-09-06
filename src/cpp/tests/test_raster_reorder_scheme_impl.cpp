@@ -79,7 +79,6 @@ void encoded_tile_labels(iterator_t _begin,
     el = el/tile_size;
   }
 
-  shape_value_t n_tiles_size = std::accumulate(n_tiles_per_dim.begin(), n_tiles_per_dim.end(),1,std::multiplies<shape_value_t>());
   shape_value_t n_elements_per_tile = std::pow(tile_size,_shape.size());
   shape_value_t n_elements = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<shape_value_t>());
 
