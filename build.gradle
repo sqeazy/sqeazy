@@ -1,6 +1,6 @@
 plugins {
     id "com.jfrog.bintray" version "1.7.1"
-    id 'com.palantir.git-version' version '0.8.0'
+    id 'com.palantir.git-version' version '0.8.0' //https://github.com/palantir/gradle-git-version
 }
 
 import org.apache.tools.ant.taskdefs.condition.Os
@@ -11,7 +11,7 @@ apply plugin: 'maven'
 apply plugin: 'maven-publish'
 
 
-version gitVersion()
+version versionDetails().lastTag
 
 def native_group = 'native'
 def bundle_group = 'bundle'
