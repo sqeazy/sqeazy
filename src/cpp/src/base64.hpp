@@ -8,6 +8,7 @@
 #include <boost/archive/iterators/base64_from_binary.hpp>
 #include <boost/archive/iterators/transform_width.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/range.hpp>
 
 namespace sqeazy {
 
@@ -145,15 +146,16 @@ namespace sqeazy {
 
             using It = transform_width<binary_from_base64<const char*>, 8, 6>;
 
-            // char* return_itr = std::copy(It(_begin), It(_end),_dst);
+            char* return_itr = std::copy(It(_begin), It(_end),_dst);
 
-            auto ops = [](char c) {
-                    return c == '\0';
-            };
+            // auto ops = [](char c) {
+            //         return c == '\0';
+            // };
 
-            std::string val = boost::algorithm::trim_right_copy_if(std::string(It(_begin), It(_end)), ops);
+            // auto seq =  std::string(It(_begin), It(_end)) ;
+            // std::string val = boost::algorithm::trim_right_copy_if(seq, ops);
 
-            char* return_itr = std::copy(val.begin(), val.end(),_dst);
+            // char* return_itr = std::copy(val.begin(), val.end(),_dst);
             return return_itr;
         }
 
