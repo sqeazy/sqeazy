@@ -146,6 +146,8 @@ namespace sqeazy {
 
             using It = transform_width<binary_from_base64<const char*>, 8, 6>;
 
+            const std::size_t n_decoded_bytes = decoded_bytes(_begin,_end);
+
             char* return_itr = std::copy(It(_begin), It(_end),_dst);
 
             // auto ops = [](char c) {
@@ -156,6 +158,14 @@ namespace sqeazy {
             // std::string val = boost::algorithm::trim_right_copy_if(seq, ops);
 
             // char* return_itr = std::copy(val.begin(), val.end(),_dst);
+
+            //NOTE: boost tends to padd the output string by '\0' bytes upon decoding,
+            //      as the main purpose of this is encoding arrays of integers/floats,
+            //      they are likely to have \0 in them; therefor I must crop the output
+            std::size_t boost_decoded_bytes = std::distance(_dst,return_itr);
+            if(boost_decoded_bytes>n_decoded_bytes)
+                return_itr = _dst+n_decoded_bytes;
+
             return return_itr;
         }
 
