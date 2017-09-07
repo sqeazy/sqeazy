@@ -32,10 +32,18 @@ namespace compass {
       static std::array<std::bitset<32>,4> value;
 
       if(cpuid_rvalue < 1){
-	return value;
+        return value;
       }
 
-      
+      if (level >= 13)
+        __cpuid_count (level, 1, regs[eax], regs[ebx], regs[ecx], regs[edx]);
+      else if (level >= 7)
+        __cpuid_count (level, 0, regs[eax], regs[ebx], regs[ecx], regs[edx]);
+      else
+        __cpuid (level, regs[eax], regs[ebx], regs[ecx], regs[edx]);
+
+      if(level>=7)
+
       value[eax] = regs[eax];
       value[ebx] = regs[ebx];
       value[ecx] = regs[ecx];
