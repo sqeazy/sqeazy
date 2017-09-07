@@ -326,6 +326,11 @@ task make_bundle(type:Exec) {
         args bundle_group
     }
 
+    if (!Os.isFamily(Os.FAMILY_WINDOWS) && Runtime.runtime.availableProcessors() > 2){
+        args "-j"+(Runtime.runtime.availableProcessors()/2)
+    }
+
+
 }
 
 task zip_bundle(type:Zip) {
