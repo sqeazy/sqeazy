@@ -28,40 +28,21 @@ int SQY_Header_Size(const char* src, long *srclength){
 
 int SQY_Version_Triple(int* version){
 
-  //FIXME: introduce versioing infrastructure
-  version[0] = sqeazy_global_version_major;//major
-  version[1] = sqeazy_global_version_minor;//minor
-  version[2] = sqeazy_global_version_patch;//patch
+  version[0] = sqeazy_global_version_major;
+  version[1] = sqeazy_global_version_minor;
+  version[2] = sqeazy_global_version_patch;
 
   return 0;
 }
 
-// template <typename T>
-// inline static std::string prepend_type_id(const std::string& _in){
-
-//   static std::string type_name = sqy::type_to_name_match<unsigned short>::id();
-//   std::string pipeline = _in;
-//   std::stringstream filter_name_;
-//   if(pipeline.find(type_name)==std::string::npos)
-//     filter_name_ << type_name << "_";
-//   filter_name_ << pipeline;
-
-//   return filter_name_.str();
-// }
-
-// template <typename T>
-// inline static std::string prepend_type_id(const char* _in){
-
-//   std::string pipeline = _in;
-//   return prepend_type_id<T>(pipeline);
-// }
-
 int SQY_PipelineEncode_UI16(const char* pipeline,
-                const char* src,
-                long* shape,
-                unsigned shape_size ,
-                char* dst,
-                long* dstlength){
+                            const char* src,
+                            long* shape,
+                            unsigned shape_size ,
+                            char* dst,
+                            long* dstlength,
+                            int nthreads)
+{
 
   int value =1;
   if(!sqy::dypeline<std::uint16_t>::can_be_built_from(pipeline))
@@ -74,6 +55,8 @@ int SQY_PipelineEncode_UI16(const char* pipeline,
     std::cerr << "[sqeazy]\t received " << pipe.name() << "pipeline of size 0, cannot encode buffer\n";
     return value;
   }
+
+  pipe.set_n_threads(nthreads);
 
   char* encoded_end = pipe.encode(reinterpret_cast<const std::uint16_t*>(src),
                   dst,
@@ -142,7 +125,7 @@ int SQY_Pipeline_Decompressed_Length(const char* data,
   return value;
 }
 
-int SQY_PipelineDecode_UI16(const char* src, long srclength, char* dst){
+int SQY_PipelineDecode_UI16(const char* src, long srclength, char* dst, int nthreads){
   int value =1;
 
   sqy::header hdr(src,src+(srclength));
@@ -153,6 +136,8 @@ int SQY_PipelineDecode_UI16(const char* src, long srclength, char* dst){
   }
 
   auto pipe = sqy::dypeline<std::uint16_t>::from_string(hdr.pipeline());
+  pipe.set_n_threads(nthreads);
+
   if(!pipe.size()){
     std::cerr << "[sqeazy]\t received " << pipe.name() << "pipeline of size 0, no decoding possible\n";
     return value;}

@@ -55,14 +55,21 @@ SQY_FUNCTION_PREFIX int SQY_Version_Triple(int* version);
 	dst 					: Pipeline compressed buffer (already allocated)
 	dstlength 				: length in bytes of externally allocated destination buffer (needs to give the length of dst in Bytes),
 							  modified by function call to reflect the effective 
-							  compressed buffer length after the call.
-							  
+                              compressed buffer length after the call.
+    nthreads                : set the number of threads allowed for the entire pipeline.
+
 	Returns 0 if success, another code if there was an error (error codes provided below)
 
 			error 1 -  destination buffer is not large enough
 
 */
-SQY_FUNCTION_PREFIX int SQY_PipelineEncode_UI16(const char* pipeline,const char* src, long* shape, unsigned shape_size , char* dst, long* dstlength);
+SQY_FUNCTION_PREFIX int SQY_PipelineEncode_UI16(const char* pipeline,
+                                                const char* src,
+                                                long* shape,
+                                                unsigned shape_size ,
+                                                char* dst,
+                                                long* dstlength,
+                                                int nthreads);
 
 
 
@@ -115,11 +122,15 @@ SQY_FUNCTION_PREFIX int SQY_Pipeline_Decompressed_Length(const char* data, long 
 	srclength 				: length in bytes of compressed buffer
 	dst 					: contiguous array of voxels 
 							  (externally allocated, length from SQY_Pipeline_Decompressed_Length)
+    nthreads                : set the number of threads allowed for the entire pipeline.
 
 	Returns 0 if success, another code if there was an error (error codes provided below)
 
 */
-SQY_FUNCTION_PREFIX int SQY_PipelineDecode_UI16(const char* src, long srclength, char* dst);
+SQY_FUNCTION_PREFIX int SQY_PipelineDecode_UI16(const char* src,
+                                                long srclength,
+                                                char* dst,
+                                                int nthreads);
 
 /*
 	SQY_Pipeline_Possible - check if pipeline string can be used to build pipeline from
@@ -216,13 +227,14 @@ SQY_FUNCTION_PREFIX int SQY_h5_query_shape(const char* fname,
 	fname 					: hdf5 file to store data in
 	dname 					: dataset name inside hdf5 file 
 	data					: data buffer (externally allocated)
+    TODO: add multi-threading support for the pipeline only
 
 	Returns 0 if success, another code if there was an error
 
 */
 SQY_FUNCTION_PREFIX int SQY_h5_read_UI16(const char* fname,
-					 const char* dname,
-					 unsigned short* data);
+                                         const char* dname,
+                                         unsigned short* data);
 /*
 	SQY_h5_write_UI16 - store unsigned 16-bit int buffer in hdf5 file (no compression is applied).
 
@@ -233,6 +245,7 @@ SQY_FUNCTION_PREFIX int SQY_h5_read_UI16(const char* fname,
 	shape					: dimension of data
 	
 	filter					: filter to use
+    TODO: add multi-threading support for the pipeline only
 
 	Returns 0 if success, another code if there was an error
 
@@ -250,7 +263,9 @@ SQY_FUNCTION_PREFIX int SQY_h5_write_UI16(const char* fname,
 	fname 					: hdf5 file to store data in
 	dname 					: dataset name inside hdf5 file 
 	data					: compressed data
-	data_size				: size of data in byte
+    data_size				: size of data in byte
+
+    TODO: add multi-threading support for the pipeline only
 
 	Returns 0 if success, another code if there was an error
 
