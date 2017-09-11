@@ -72,11 +72,12 @@ BOOST_AUTO_TEST_CASE( decompressed_length ){
                          &length);
   std::vector<char> compressed(length,0);
   int rvalue = SQY_PipelineEncode_UI16(default_filter_name.c_str(),
-                       (const char*)&constant_cube[0],
-                       &ldims[0],
-                       dims.size(),
-                       (char*)&compressed[0],
-                       &length);
+                                       (const char*)&constant_cube[0],
+                                       &ldims[0],
+                                       dims.size(),
+                                       (char*)&compressed[0],
+                                       &length,
+                                       1);
   BOOST_CHECK_EQUAL(rvalue, 0);
   BOOST_CHECK_LT(std::size_t(length),compressed.size());
 
@@ -104,13 +105,14 @@ BOOST_AUTO_TEST_CASE( roundtrip ){
                        &ldims[0],
                        dims.size(),
                        (char*)&compressed[0],
-                       &length);
+                                       &length,1);
   BOOST_CHECK_EQUAL(rvalue, 0);
   BOOST_CHECK_LT(std::size_t(length),compressed.size());
 
   rvalue = SQY_PipelineDecode_UI16((const char*)&compressed[0],
                    length,
-                   (char*)&incrementing_cube[0]
+                                   (char*)&incrementing_cube[0],
+                                   1
                   );
 
   BOOST_CHECK_EQUAL(rvalue, 0);
@@ -151,17 +153,18 @@ BOOST_AUTO_TEST_CASE( roundtrip ){
                          &length);
   std::vector<char> compressed(length,0);
   int rvalue = SQY_PipelineEncode_UI16(tricky_filter_name.c_str(),
-                       (const char*)inputdata.data(),
-                       (long*)shape.data(),
-                       shape.size(),
-                       compressed.data(),
-                       &length);
+                                       (const char*)inputdata.data(),
+                                       (long*)shape.data(),
+                                       shape.size(),
+                                       compressed.data(),
+                                       &length,1);
   BOOST_REQUIRE_EQUAL(rvalue, 0);
   BOOST_CHECK_LT(std::size_t(length),compressed.size());
 
   rvalue = SQY_PipelineDecode_UI16((const char*)compressed.data(),
-                   length,
-                   (char*)outputdata.data()
+                                   length,
+                                   (char*)outputdata.data(),
+                                   1
                   );
 
   BOOST_REQUIRE_EQUAL(rvalue, 0);
@@ -213,13 +216,15 @@ BOOST_AUTO_TEST_CASE( quantiser_only ){
                        (long*)shape.data(),
                        shape.size(),
                        compressed.data(),
-                       &length);
+                                       &length,
+                                       1);
   BOOST_REQUIRE_EQUAL(rvalue, 0);
   BOOST_CHECK_LT((std::size_t)length,compressed.size());
 
   rvalue = SQY_PipelineDecode_UI16((const char*)compressed.data(),
                    length,
-                   (char*)outputdata.data()
+                                   (char*)outputdata.data(),
+                                   1
                   );
 
   BOOST_REQUIRE_EQUAL(rvalue, 0);
