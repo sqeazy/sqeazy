@@ -139,7 +139,7 @@ script:
        export LD_LIBRARY_PATH=/home/travis/sw/lib:$LD_LIBRARY_PATH &&
        export PATH=/home/travis/sw/bin:$PATH &&
        export PKG_CONFIG_PATH=/home/travis/sw/lib/pkgconfig:${PKG_CONFIG_PATH} &&
-       ./let_me_build_that_for_you.sh && ldd build/cpp/src/libsqeazy.so && exit $?;
+       gradle clean test && ldd build/cpp/src/libsqeazy.so && exit $?;
     fi
 
     
