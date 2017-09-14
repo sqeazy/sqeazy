@@ -41,9 +41,9 @@ public class SqeazyLibraryTests
 		final Pointer<CLong> lSourceShape = Pointer.pointerToCLongs(1,
 																	1,
 																	lBufferLength/2);
-
+		final Pointer<Byte> bPipelineName = Pointer.pointerToCString("lz4");
 		assertEquals(	0,
-						SqeazyLibrary.SQY_PipelineEncode_UI16("lz4",
+						SqeazyLibrary.SQY_PipelineEncode_UI16(bPipelineName,
 															  lSourceBytes,
 															  lSourceShape,
 															  3,
