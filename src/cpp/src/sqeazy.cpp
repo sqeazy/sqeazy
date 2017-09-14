@@ -18,299 +18,6 @@
 namespace sqy = sqeazy;
 namespace bfs = boost::filesystem;
 
-/*
-*	Sqeazy - Fast and flexible volume compression library
-*
-*   Header file
-*
-*	Note: endianess is little by default.
-*/
-
-int SQY_RasterDiffEncode_3D_UI16(int width, int height, int depth, const char* src, char* dst){
-
-  typedef unsigned short raw_type;
-
-  return sqy::diff_scheme<raw_type>::static_encode(width, height, depth,
-                              reinterpret_cast<const raw_type*>(src),
-                              reinterpret_cast<raw_type*>(dst)
-                              );
-
-}
-
-
-int SQY_RasterDiffDecode_3D_UI16(int width, int height, int depth, const char* src, char* dst){
-
-  typedef unsigned short raw_type;
-  // typedef short compressed_type;
-
-  return sqy::diff_scheme<raw_type>::static_decode(width, height, depth,
-                           reinterpret_cast<const raw_type*>(src),
-                           reinterpret_cast<raw_type*>(dst)
-                           );
-
-
-}
-
-
-int SQY_BitSwap4Encode_UI16(const char* src, char* dst, long length){
-
-  typedef unsigned short raw_type;
-
-  return sqy::bitswap_scheme<raw_type,4>::static_encode(reinterpret_cast<const raw_type*>(src),
-                          reinterpret_cast<raw_type*>(dst),
-                          length/sizeof(raw_type)
-                          );
-
-}
-
-int SQY_BitSwap4Encode_I16(const char* src, char* dst, long length){
-
-  typedef short raw_type;
-
-  return sqy::bitswap_scheme<raw_type,4>::static_encode(reinterpret_cast<const raw_type*>(src),
-                          reinterpret_cast<raw_type*>(dst),
-                          length/sizeof(raw_type)
-                          );
-
-}
-
-
-int SQY_BitSwap4Decode_UI16(const char* src, char* dst, long length){
-
-  typedef unsigned short raw_type;
-  return sqy::bitswap_scheme<raw_type,4>::static_decode(reinterpret_cast<const raw_type*>(src),
-                          reinterpret_cast<raw_type*>(dst),
-                          length/sizeof(raw_type)
-                          );
-}
-
-int SQY_BitSwap4Decode_I16(const char* src, char* dst, long length){
-
-  typedef short raw_type;
-  return sqy::bitswap_scheme<raw_type,4>::static_decode(reinterpret_cast<const raw_type*>(src),
-                          reinterpret_cast<raw_type*>(dst),
-                          length/sizeof(raw_type)
-                          );
-}
-
-
-
-int SQY_BitSwap8Encode_UI16(const char* src, char* dst, long length){
-    typedef unsigned short raw_type;
-    return sqy::bitswap_scheme<raw_type,8>::static_encode(reinterpret_cast<const raw_type*>(src),
-                              reinterpret_cast<raw_type*>(dst),
-                              length/sizeof(raw_type)
-                              );
-}
-
-
-int SQY_BitSwap8Decode_UI16(const char* src, char* dst, long length){
-
-  typedef unsigned short raw_type;
-  return sqy::bitswap_scheme<raw_type,8>::static_decode(reinterpret_cast<const raw_type*>(src),
-                            reinterpret_cast<raw_type*>(dst),
-                            length/sizeof(raw_type)
-                            );
-}
-
-int SQY_BitSwap8Encode_I16(const char* src, char* dst, long length){
-    typedef short raw_type;
-    return sqy::bitswap_scheme<raw_type,8>::static_encode(reinterpret_cast<const raw_type*>(src),
-                              reinterpret_cast<raw_type*>(dst),
-                              length/sizeof(raw_type)
-                              );
-}
-
-
-int SQY_BitSwap8Decode_I16(const char* src, char* dst, long length){
-
-  typedef  short raw_type;
-  return sqy::bitswap_scheme<raw_type,8>::static_decode(reinterpret_cast<const raw_type*>(src),
-                            reinterpret_cast<raw_type*>(dst),
-                            length/sizeof(raw_type)
-                            );
-}
-
-int SQY_BitSwap2Encode_UI16(const char* src, char* dst, long length){
-    typedef unsigned short raw_type;
-    return sqy::bitswap_scheme<raw_type,2>::static_encode(reinterpret_cast<const raw_type*>(src),
-                              reinterpret_cast<raw_type*>(dst),
-                              length/sizeof(raw_type)
-                              );
-}
-
-
-int SQY_BitSwap2Decode_UI16(const char* src, char* dst, long length){
-
-  typedef unsigned short raw_type;
-  return sqy::bitswap_scheme<raw_type,2>::static_decode(reinterpret_cast<const raw_type*>(src),
-                            reinterpret_cast<raw_type*>(dst),
-                            length/sizeof(raw_type)
-                            );
-}
-
-int SQY_BitSwap2Encode_I16(const char* src, char* dst, long length){
-    typedef short raw_type;
-    return sqy::bitswap_scheme<raw_type,2>::static_encode(reinterpret_cast<const raw_type*>(src),
-                              reinterpret_cast<raw_type*>(dst),
-                              length/sizeof(raw_type)
-                              );
-}
-
-
-int SQY_BitSwap2Decode_I16(const char* src, char* dst, long length){
-
-  typedef  short raw_type;
-  return sqy::bitswap_scheme<raw_type,2>::static_decode(reinterpret_cast<const raw_type*>(src),
-                            reinterpret_cast<raw_type*>(dst),
-                            length/sizeof(raw_type)
-                            );
-}
-
-
-int SQY_BitSwap1Encode_UI16(const char* src, char* dst, long length){
-    typedef unsigned short raw_type;
-    return sqy::bitswap_scheme<raw_type,1>::static_encode(reinterpret_cast<const raw_type*>(src),
-                              reinterpret_cast<raw_type*>(dst),
-                              length/sizeof(raw_type)
-                              );
-}
-
-
-int SQY_BitSwap1Decode_UI16(const char* src, char* dst, long length){
-
-  typedef unsigned short raw_type;
-  return sqy::bitswap_scheme<raw_type,1>::static_decode(reinterpret_cast<const raw_type*>(src),
-                            reinterpret_cast<raw_type*>(dst),
-                            length/sizeof(raw_type)
-                            );
-}
-
-int SQY_BitSwap1Encode_I16(const char* src, char* dst, long length){
-    typedef short raw_type;
-    return sqy::bitswap_scheme<raw_type,1>::static_encode(reinterpret_cast<const raw_type*>(src),
-                              reinterpret_cast<raw_type*>(dst),
-                              length/sizeof(raw_type)
-                              );
-}
-
-
-int SQY_BitSwap1Decode_I16(const char* src, char* dst, long length){
-
-  typedef  short raw_type;
-  return sqy::bitswap_scheme<raw_type,1>::static_decode(reinterpret_cast<const raw_type*>(src),
-                            reinterpret_cast<raw_type*>(dst),
-                            length/sizeof(raw_type)
-                            );
-}
-
-int SQY_RLEEncode_UI8(const char* src, char* dst, long length, long minrunlength){return 42;}
-
-
-int SQY_RLEDecode_UI8(const char* src, char* dst, long length){return 42;}
-
-
-int SQY_RmBackground_AtMode_UI16(char* src, char* dst, long length, unsigned short epsilon){
-
-  typedef unsigned short raw_type;
-  sqy::remove_background_scheme<raw_type> remove_it(epsilon);
-
-  if(!dst)
-    dst = src;
-
-  auto end = remove_it.encode(reinterpret_cast<raw_type*>(src),
-                  reinterpret_cast<raw_type*>(dst),
-                  length/sizeof(raw_type));
-
-  if(end!=nullptr)
-    return 0;
-  else
-    return 1;
-
-  // return sqy::remove_background<raw_type>::static_encode(reinterpret_cast<raw_type*>(src),
-  //                            reinterpret_cast<raw_type*>(dst),
-  //                            length/sizeof(raw_type),
-  //                            epsilon
-  //                            );
-
-}
-
-int SQY_RmBackground_Estimated_UI16(int width, int height, int depth, char* src, char* dst){
-  typedef unsigned short raw_type;
-  std::vector<int> dims(3);
-  dims[sqy::row_major::w] = width;
-  dims[sqy::row_major::h] = height;
-  dims[sqy::row_major::d] = depth;
-  return sqy::remove_estimated_background_scheme<raw_type>::static_encode(reinterpret_cast<raw_type*>(src),
-                                         reinterpret_cast<raw_type*>(dst),
-                                         dims
-                                         );
-}
-
-#ifndef LZ4_VERSION_MAJOR
-#include "encoders/external_encoders.hpp"
-#endif
-
-
-int SQY_LZ4Encode(const char* src, long srclength, char* dst, long* dstlength){
-
-  auto lz4 = sqy::dypeline_from_uint8::from_string("lz4");
-  char* encoded_end = lz4.encode((const std::uint8_t*)src,
-                 dst,
-                 srclength);
-
-  if(encoded_end)
-    *dstlength = encoded_end - dst;
-  else
-    return 1; // error!
-
-  return 0;
-}
-
-
-int SQY_LZ4_Max_Compressed_Length(long* length){
-
-  // std::vector<unsigned> shape(1);
-  // shape[0] = *length;
-
-  // sqy::lz4_scheme<char> lz4_encoder;
-
-  // sqy::header hdr(char(),shape, lz4_encoder.name());
-  // long value = hdr.size() + lz4.max_encoded_size(*length);
-  auto lz4 = sqy::dypeline_from_uint8::from_string("lz4");
-
-  long value = (long)lz4.max_encoded_size(*length);
-
-  *length = value;
-  return 0;
-
-}
-
-int SQY_LZ4_Decompressed_Length(const char* data, long *length){
-
-  sqy::header hdr(data, data + *length);
-  if(!hdr.empty())
-    *length = hdr.raw_size_byte();
-  else
-    *length = 0;
-  return 0;
-
-}
-
-
-
-int SQY_LZ4Decode(const char* src, long srclength, char* dst){
-
-  auto lz4 = sqy::dypeline_from_uint8::from_string("lz4");
-
-  int retcode = lz4.decode(src,
-               (std::uint8_t*)dst,
-               srclength);
-
-  return retcode;
-}
-
-
 int SQY_Header_Size(const char* src, long *srclength){
 
   sqy::header hdr(src, src + *srclength);
@@ -321,40 +28,21 @@ int SQY_Header_Size(const char* src, long *srclength){
 
 int SQY_Version_Triple(int* version){
 
-  //FIXME: introduce versioing infrastructure
-  version[0] = sqeazy_global_version_major;//major
-  version[1] = sqeazy_global_version_minor;//minor
-  version[2] = sqeazy_global_version_patch;//patch
+  version[0] = sqeazy_global_version_major;
+  version[1] = sqeazy_global_version_minor;
+  version[2] = sqeazy_global_version_patch;
 
   return 0;
 }
 
-// template <typename T>
-// inline static std::string prepend_type_id(const std::string& _in){
-
-//   static std::string type_name = sqy::type_to_name_match<unsigned short>::id();
-//   std::string pipeline = _in;
-//   std::stringstream filter_name_;
-//   if(pipeline.find(type_name)==std::string::npos)
-//     filter_name_ << type_name << "_";
-//   filter_name_ << pipeline;
-
-//   return filter_name_.str();
-// }
-
-// template <typename T>
-// inline static std::string prepend_type_id(const char* _in){
-
-//   std::string pipeline = _in;
-//   return prepend_type_id<T>(pipeline);
-// }
-
 int SQY_PipelineEncode_UI16(const char* pipeline,
-                const char* src,
-                long* shape,
-                unsigned shape_size ,
-                char* dst,
-                long* dstlength){
+                            const char* src,
+                            long* shape,
+                            unsigned shape_size ,
+                            char* dst,
+                            long* dstlength,
+                            int nthreads)
+{
 
   int value =1;
   if(!sqy::dypeline<std::uint16_t>::can_be_built_from(pipeline))
@@ -367,6 +55,8 @@ int SQY_PipelineEncode_UI16(const char* pipeline,
     std::cerr << "[sqeazy]\t received " << pipe.name() << "pipeline of size 0, cannot encode buffer\n";
     return value;
   }
+
+  pipe.set_n_threads(nthreads);
 
   char* encoded_end = pipe.encode(reinterpret_cast<const std::uint16_t*>(src),
                   dst,
@@ -435,7 +125,7 @@ int SQY_Pipeline_Decompressed_Length(const char* data,
   return value;
 }
 
-int SQY_PipelineDecode_UI16(const char* src, long srclength, char* dst){
+int SQY_PipelineDecode_UI16(const char* src, long srclength, char* dst, int nthreads){
   int value =1;
 
   sqy::header hdr(src,src+(srclength));
@@ -446,6 +136,8 @@ int SQY_PipelineDecode_UI16(const char* src, long srclength, char* dst){
   }
 
   auto pipe = sqy::dypeline<std::uint16_t>::from_string(hdr.pipeline());
+  pipe.set_n_threads(nthreads);
+
   if(!pipe.size()){
     std::cerr << "[sqeazy]\t received " << pipe.name() << "pipeline of size 0, no decoding possible\n";
     return value;}

@@ -108,10 +108,7 @@ target_link_libraries(test_zcurve_reorder_scheme_impl  ${Boost_LIBRARIES})
 add_executable(test_hist_impl test_hist_impl.cpp)
 target_link_libraries(test_hist_impl ${Boost_LIBRARIES})
 
-#add_executable(test_bench_utils_impl test_bench_utils_impl.cpp)
-
-
-add_executable(test_lz4_encoding test_lz4_encoding.cpp)
+#REDO tests with pipeline C API:  add_executable(test_lz4_encoding test_lz4_encoding.cpp)
 add_executable(test_hdf5_interface test_hdf5_interface.cpp)
 
 
@@ -122,16 +119,16 @@ add_executable(test_pipeline_interface test_pipeline_interface.cpp)
 if(EXISTS ${LZ4_STATIC_LIB})
   #if static libsqeazy exists, it will contain lz4, no need to link against it yet another time
   if(NOT DEFINED READY_4_BUNDLE)
-    target_link_libraries(test_lz4_encoding ${PROJECT_NAME}_static ${Boost_LIBRARIES})
+#REDO tests with pipeline C API:    target_link_libraries(test_lz4_encoding ${PROJECT_NAME}_static ${Boost_LIBRARIES})
     target_link_libraries(test_hdf5_interface ${PROJECT_NAME}_static ${Boost_LIBRARIES})
     target_link_libraries(test_pipeline_interface ${PROJECT_NAME}_static ${Boost_LIBRARIES})
   else()
-    target_link_libraries(test_lz4_encoding ${PROJECT_NAME}_static ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES})
+#REDO tests with pipeline C API:    target_link_libraries(test_lz4_encoding ${PROJECT_NAME}_static ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES})
     target_link_libraries(test_hdf5_interface ${PROJECT_NAME}_static ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES})
     target_link_libraries(test_pipeline_interface ${PROJECT_NAME}_static ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES})
   endif()
 else()
-  target_link_libraries(test_lz4_encoding ${SQY_LIB} ${Boost_LIBRARIES} ${LZ4_LIBRARY})
+#REDO tests with pipeline C API: target_link_libraries(test_lz4_encoding ${SQY_LIB} ${Boost_LIBRARIES} ${LZ4_LIBRARY})
   target_link_libraries(test_hdf5_interface ${SQY_LIB} ${Boost_LIBRARIES} ${LZ4_LIBRARY} ${HDF5_LIBRARIES})
   target_link_libraries(test_pipeline_interface ${SQY_LIB} ${Boost_LIBRARIES} ${LZ4_LIBRARY})
 endif()
@@ -158,14 +155,14 @@ add_executable(test_yuv_utils test_yuv_utils.cpp)
 target_link_libraries(test_yuv_utils ${Boost_LIBRARIES})
 
 
-add_executable(test_background_schemes test_background_schemes.cpp)
-target_link_libraries(test_background_schemes ${SQY_LIB} ${Boost_LIBRARIES})
+#REDO tests with pipeline C API: add_executable(test_background_schemes test_background_schemes.cpp)
+#REDO tests with pipeline C API: target_link_libraries(test_background_schemes ${SQY_LIB} ${Boost_LIBRARIES})
 
-add_executable(test_diff_schemes test_diff_schemes.cpp)
-target_link_libraries(test_diff_schemes ${SQY_LIB} ${Boost_LIBRARIES})
+#REDO tests with pipeline C API: add_executable(test_diff_schemes test_diff_schemes.cpp)
+#REDO tests with pipeline C API: target_link_libraries(test_diff_schemes ${SQY_LIB} ${Boost_LIBRARIES})
 
-add_executable(test_bitswap_schemes test_bitswap_schemes.cpp)
-target_link_libraries(test_bitswap_schemes ${SQY_LIB} ${Boost_LIBRARIES})
+#REDO tests with pipeline C API: add_executable(test_bitswap_schemes test_bitswap_schemes.cpp)
+#REDO tests with pipeline C API: target_link_libraries(test_bitswap_schemes ${SQY_LIB} ${Boost_LIBRARIES})
 
 
 IF(TIFF_FOUND)

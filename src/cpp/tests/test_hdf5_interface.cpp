@@ -302,34 +302,35 @@ BOOST_AUTO_TEST_CASE( write_compressed_data ){
   uint16_cube_of_8 data;
 
   int rvalue = SQY_h5_write_UI16(no_filter_path.string().c_str(),
-				 dname.c_str(),
-				 &data.constant_cube[0],
-				 data.dims.size(),
-				 &data.dims[0],
-				 "lz4");
+                                 dname.c_str(),
+                                 &data.constant_cube[0],
+                                 data.dims.size(),
+                                 &data.dims[0],
+                                 "lz4");
 
   BOOST_REQUIRE_EQUAL(rvalue,0);
   BOOST_REQUIRE(bfs::exists(no_filter_path));
   BOOST_REQUIRE_GT(bfs::file_size(no_filter_path),0u);
 
   long size = data.size_in_byte;
-  SQY_LZ4_Max_Compressed_Length(&size);
+  SQY_Pipeline_Max_Compressed_Length_UI16("lz4",&size);
   std::vector<char> compressed(size);
 
   std::vector<long> ldims(data.dims.begin(), data.dims.end());
   rvalue = SQY_PipelineEncode_UI16("lz4",
-				   (const char*)&data.constant_cube[0],
-				   &ldims[0],
-				   ldims.size(),
-				   &compressed[0],
-				   &size
-				   );
+                                   (const char*)&data.constant_cube[0],
+                                   &ldims[0],
+                                   ldims.size(),
+                                   &compressed[0],
+                                   &size,
+                                   1
+    );
 
 
   rvalue = SQY_h5_write(test_output_name.c_str(),
-			dname.c_str(),
-			&compressed[0],
-			size);
+                        dname.c_str(),
+                        &compressed[0],
+                        size);
 
 
   BOOST_REQUIRE_EQUAL(rvalue,0);
@@ -337,8 +338,8 @@ BOOST_AUTO_TEST_CASE( write_compressed_data ){
   BOOST_REQUIRE_CLOSE_FRACTION(float(bfs::file_size(test_output_path)),float(bfs::file_size(no_filter_path)),.4);
 
   rvalue = SQY_h5_read_UI16(test_output_name.c_str(),
-			    dname.c_str(),
-			    &data.to_play_with[0]);
+                            dname.c_str(),
+                            &data.to_play_with[0]);
 
   BOOST_REQUIRE_EQUAL(rvalue,0);
 
