@@ -17,59 +17,65 @@ public class SqeazyLibraryTests
 {
 
     @Test
-    public void testSQY_VERSION()
-    {
-	final Pointer<Integer> version = Pointer.allocateInts(3);
-	SqeazyLibrary.SQY_Version_Triple(version);
-	assertTrue(version.get(0) >= 0);
-	assertTrue(version.get(1) >= 3);
-	assertTrue(version.get(2) >= 0);
+	public void testSQY_VERSION(){
+		final Pointer<Integer> version = Pointer.allocateInts(3);
+		SqeazyLibrary.SQY_Version_Triple(version);
+		assertTrue(version.get(0) >= 0);
+		assertTrue(version.get(1) >= 3);
+		assertTrue(version.get(2) >= 0);
     }
 
     @Test
-    public void testLZ4()
-    {
-	final int lBufferLength = 1024;
+	public void testLZ4(){
+		final int lBufferLength = 1024;
 
-	final Pointer<Byte> lSourceBytes = Pointer.allocateBytes(lBufferLength);
-	for (int i = 0; i < lBufferLength; i++)
-	    {
-		lSourceBytes.set(i, (byte) (i));
-	    }
+		final Pointer<Byte> lSourceBytes = Pointer.allocateBytes(lBufferLength);
+		for (int i = 0; i < lBufferLength; i++)
+		{
+			lSourceBytes.set(i, (byte) (i));
+		}
 
-	final Pointer<Byte> lCompressedBytes = Pointer.allocateBytes((long) (lBufferLength * 1.1));
-	final Pointer<CLong> lPointerToDestinationLength = Pointer.allocateCLong();
-	lPointerToDestinationLength.setCLong((long) (lBufferLength * 1.1));
+		final Pointer<Byte> lCompressedBytes = Pointer.allocateBytes((long) (lBufferLength * 1.1));
+		final Pointer<CLong> lPointerToDestinationLength = Pointer.allocateCLong();
+		lPointerToDestinationLength.setCLong((long) (lBufferLength * 1.1));
+		final Pointer<CLong> lSourceShape = Pointer.pointerToCLongs(1,
+																	1,
+																	lBufferLength/2);
 
-	assertEquals(	0,
-			SqeazyLibrary.SQY_LZ4Encode(lSourceBytes,
-						    lSourceBytes.getValidBytes(),
-						    lCompressedBytes,
-						    lPointerToDestinationLength));
+		assertEquals(	0,
+						SqeazyLibrary.SQY_PipelineEncode_UI16("lz4",
+															  lSourceBytes,
+															  lSourceShape,
+															  3,
+															  lCompressedBytes,
+															  lPointerToDestinationLength,
+															  1)
+			);
 
-	final long lCompresssedBufferLength = lPointerToDestinationLength.getCLong();
+		final long lCompresssedBufferLength = lPointerToDestinationLength.getCLong();
 
-	assertTrue(lCompresssedBufferLength != 0);
-	assertTrue(lCompresssedBufferLength < lSourceBytes.getValidBytes());
+		assertTrue(lCompresssedBufferLength != 0);
+		assertTrue(lCompresssedBufferLength < lSourceBytes.getValidBytes());
 
-	assertEquals(	0,
-			SqeazyLibrary.SQY_LZ4_Decompressed_Length(lCompressedBytes,
-								  lPointerToDestinationLength));
+		assertEquals(	0,
+						SqeazyLibrary.SQY_Pipeline_Decompressed_Length(lCompressedBytes,
+																	   lPointerToDestinationLength));
 
-	assertEquals(	lBufferLength,
-			lPointerToDestinationLength.getCLong());
+		assertEquals(	lBufferLength,
+						lPointerToDestinationLength.getCLong());
 
-	final Pointer<Byte> lDecodedBytes = Pointer.allocateBytes(lBufferLength);
+		final Pointer<Byte> lDecodedBytes = Pointer.allocateBytes(lBufferLength);
 
-	assertEquals(	0,
-			SqeazyLibrary.SQY_LZ4Decode(lCompressedBytes,
-						    lCompresssedBufferLength,
-						    lDecodedBytes));
+		assertEquals(	0,
+						SqeazyLibrary.SQY_PipelineDecode_UI16(lCompressedBytes,
+															  lCompresssedBufferLength,
+															  lDecodedBytes,
+															  1));
 
-	assertArrayEquals(lSourceBytes.getBytes(lBufferLength),
-			  lDecodedBytes.getBytes(lBufferLength));
+		assertArrayEquals(lSourceBytes.getBytes(lBufferLength),
+						  lDecodedBytes.getBytes(lBufferLength));
 
-    }
+	}
 
     @Test
     public void testH5_RoundTRIP() throws IOException
