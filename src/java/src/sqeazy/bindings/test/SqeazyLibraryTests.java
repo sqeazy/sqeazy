@@ -197,12 +197,13 @@ public class SqeazyLibraryTests
 	final Pointer<Byte> bInputData = lSourceShort.as(Byte.class);
 	final Pointer<CLong> lEncodedBytes = Pointer.allocateCLong();
 	assertEquals(0,
-		     SqeazyLibrary.SQY_PipelineEncode_UI16(bPipelineName,
-							   bInputData,
-							   lSourceShape,
-							   3,
-							   bCompressedData,
-							   lEncodedBytes)
+				 SqeazyLibrary.SQY_PipelineEncode_UI16(bPipelineName,
+													   bInputData,
+													   lSourceShape,
+													   3,
+													   bCompressedData,
+													   lEncodedBytes,
+													   1)
 		     );
 
 	assertTrue(lEncodedBytes.getLong()>nil);
@@ -211,8 +212,9 @@ public class SqeazyLibraryTests
 	final Pointer<Byte> bDestShort = lDestShort.as(Byte.class);
 	assertEquals(0,
 		     SqeazyLibrary.SQY_PipelineDecode_UI16(bCompressedData,
-							   lEncodedBytes.getCLong(),
-							   bDestShort)
+												   lEncodedBytes.getCLong(),
+												   bDestShort,
+												   1)
 		     );
     }
 }
