@@ -16,3 +16,5 @@ libsqeazy.dylib
 /src/cpp/GPATH
 *~
 .tramp_history
+*tiff
+*tif
