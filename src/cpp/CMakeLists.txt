@@ -286,52 +286,18 @@ if(${BUNDLE_SQEAZY})
   set(LZ4_USE_STATIC_LIBS ON)
   set(HDF5_USE_STATIC_LIBRARIES ON)
   set(FFMPEG_USE_STATIC_LIBS ON)
-
+  set(OpenMP_LINK_STATIC ON)
 endif()
 
 ################################# DEPENDENCIES #################################
 #-------------------------------- OpenMP          ---------------------------------
-if(APPLE)
-  #at the time of writing, Xcode was incapable of compiling OpenMP code
-  #thus, we have to require clang/gcc on APPLE
-  if(${CMAKE_CXX_COMPILER_ID} STREQUAL AppleClang)
-    message(FATAL_ERROR "This project requires OpenMP and thus cannot be compiled with XCode!")
-  endif()
-
-  get_filename_component(CXX_COMPILER_APP_PATH "${CMAKE_CXX_COMPILER}" PATH)
-  if(CXX_COMPILER_APP_PATH)
-    if("${CXX_COMPILER_APP_PATH}" MATCHES "/Applications/Xcode.*" OR "${CXX_COMPILER_APP_PATH}" MATCHES "/usr/bin/clang.*")
-      message(FATAL_ERROR "This project requires OpenMP and thus cannot be compiled with XCode!")
-    endif()
-  endif()
-
-  if(${CXX_COMPILER_APP_PATH} MATCHES "/usr/local.*/bin" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL Clang)
-    string(REPLACE "bin" "lib" CXX_COMPILER_LIBS_PATH "${CXX_COMPILER_APP_PATH}")
-    link_directories(${CXX_COMPILER_LIBS_PATH})
-  endif()
-endif()
-
-if(WIN32 AND ${CMAKE_CXX_COMPILER_ID} STREQUAL Clang)
-		get_filename_component(CXX_COMPILER_MSBUILD_PATH "${CMAKE_CXX_COMPILER}" PATH)
-		get_filename_component(CXX_COMPILER_ROOT "${CXX_COMPILER_MSBUILD_PATH}" PATH)
-		
-		message("++ adding ${CXX_COMPILER_ROOT}\/lib to link paths")
-		link_directories("${CXX_COMPILER_ROOT}\/lib")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
-		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L${CXX_COMPILER_ROOT}\/lib -lomp")
-	
-else()
-	find_package(OpenMP REQUIRED)
-endif()
-
+find_package(OpenMP++ REQUIRED)
 
 if(${OPENMP_CXX_FOUND})
   # add_definitions(${OpenMP_CXX_FLAGS})
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-  MESSAGE(STATUS "[sqy] appended openmp flags: ${OpenMP_CXX_FLAGS} ${OpenMP_C_FLAGS}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP++_FLAGS}")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP++_FLAGS}")
+  MESSAGE(STATUS "[sqy] appended openmp flags: ${OpenMP++_FLAGS}")
 ENDIF()
 
 #-------------------------------- LZ4          ---------------------------------
