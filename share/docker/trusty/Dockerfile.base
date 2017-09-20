@@ -18,8 +18,6 @@ RUN apt-get -qq update && apt-get install -y --no-install-recommends \
         software-properties-common \
         binutils \
 #        build-essential \
-        # g++ \
-        gcc \
         libasan0 \
         libatomic1 \
         libcloog-isl4 \
@@ -38,6 +36,8 @@ RUN apt-get -qq update && \
             dpkg-dev \
             dirmngr \
             gnupg2 \
+            g++ \
+            gcc \
             # libmpc-dev \
             # libgmp-dev \
             # libmpfr-dev \
