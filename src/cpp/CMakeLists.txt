@@ -12,10 +12,6 @@ include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 
 
-if(NOT(${CMAKE_VERSION} VERSION_LESS "3.0.0"))
-cmake_policy(SET CMP0042 NEW)
-endif()
-
 if(NOT(${CMAKE_VERSION} VERSION_LESS "3.3.0"))
 cmake_policy(SET CMP0054 NEW)
 endif()
