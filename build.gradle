@@ -335,25 +335,26 @@ task make_bundle(type:Exec) {
 
 task zip_bundle(type:Zip) {
 
-  description 'zip the libsqeazy.* bundle'
-  group bundle_group
+    description 'zip the libsqeazy.* bundle'
+    group bundle_group
 
-  def zinpath = file(native_build_dir).absolutePath+'/bundle'
+    def zinpath = file(native_build_dir).absolutePath+'/bundle'
 
-  from (zinpath)
-  into jnaerator_platform()
+    from (zinpath)
+    into jnaerator_platform()
 
-  include 'lib*'
-  include '*lib'
-  include '*dll'
-  include '*h'
-  include '*hpp'
+    include 'lib*'
+    include '*lib'
+    include '*dll'
+    include '*h'
+    include '*hpp'
+    include 'sqy*'
 
-  destinationDir file(native_build_dir+'/bundle') // directory that you want your archive to be placed in
-  archiveName 'sqeazy_bundle.zip'
+    destinationDir file(native_build_dir+'/bundle') // directory that you want your archive to be placed in
+    archiveName 'sqeazy_bundle.zip'
 
-  def outputs_exp = file(native_build_dir+'/bundle/').absolutePath+'/'+archiveName
-  outputs.files outputs_exp
+    def outputs_exp = file(native_build_dir+'/bundle/').absolutePath+'/'+archiveName
+    outputs.files outputs_exp
 }
 
 task upload_bundle(type:Exec) {
