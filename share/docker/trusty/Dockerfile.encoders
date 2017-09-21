@@ -21,6 +21,7 @@ RUN git clone git://source.ffmpeg.org/ffmpeg.git && \
     cd ffmpeg && \
     git checkout n3.0.2 && \
     ./configure  --enable-libx264 --enable-libx265 --enable-pic --enable-shared --enable-gpl --disable-sdl --disable-libxcb --disable-zlib --disable-bzlib --disable-xlib --disable-lzma --disable-indevs --disable-outdevs --prefix=/usr/local && \
+    #./configure --enable-shared --disable-encoders --disable-decoders --enable-encoder=libx264,libx264rgb,libx265 --enable-decoder=h264,h264_vda,hevc,vp8,vp9 --disable-protocols --disable-muxers --disable-demuxers  --enable-pic --enable-static --enable-libx264 --enable-libx265 --enable-gpl --extra-ldflags='/Users/steinbac/software/x264/master/lib/libx264.a /Users/steinbac/software/x265/2.5/lib/libx265.a' --disable-sdl --disable-libxcb --disable-zlib --disable-bzlib --disable-xlib --disable-lzma --disable-indevs --disable-outdevs --pkg-config-flags=--static --prefix=/Users/steinbac/software/ffmpeg/3.0.2-x264-hevc-test
     make -j8 && \
     make install;
 
