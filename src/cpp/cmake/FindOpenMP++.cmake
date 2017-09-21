@@ -76,7 +76,7 @@ if(APPLE)
 endif()
 
 if(DEFINED OpenMP++_FIND_REQUIRED)
-  find_package(OpenMP REQUIRED)
+  find_package(OpenMP)
 else()
   if(DEFINED OpenMP++_FIND_QUIETLY)
     find_package(OpenMP QUIET)
@@ -168,7 +168,7 @@ if(OpenMP++_FOUND AND NOT OpenMP_CXX_LIBRARIES)
       )
   endif()
 
-  if(DEFINED OpenMP_LINK_STATIC AND ${OpenMP_LINK_STATIC} MATCHES ON)
+  if(${OpenMP_LINK_STATIC} MATCHES ON)
 
 
     if(EXISTS ${OMP_LIB_PATH})
@@ -183,7 +183,7 @@ if(OpenMP++_FOUND AND NOT OpenMP_CXX_LIBRARIES)
       list(APPEND OpenMP_CXX_LIBRARIES dl pthread)
     endif()
 
-  else(DEFINED OpenMP_LINK_STATIC AND ${OpenMP_LINK_STATIC} MATCHES ON)
+  else(${OpenMP_LINK_STATIC} MATCHES ON)
 
     link_directories(${CXX_COMPILER_LIBS_PATH})
 
@@ -197,7 +197,7 @@ if(OpenMP++_FOUND AND NOT OpenMP_CXX_LIBRARIES)
       list(APPEND OpenMP_CXX_LIBRARIES pthread)
     endif()
 
-  endif(DEFINED OpenMP_LINK_STATIC AND ${OpenMP_LINK_STATIC} MATCHES ON)
+  endif(${OpenMP_LINK_STATIC} MATCHES ON)
 
 
 
