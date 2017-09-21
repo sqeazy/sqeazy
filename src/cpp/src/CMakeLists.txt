@@ -34,19 +34,26 @@ INSTALL(TARGETS ${SQY_SRC_TARGETS}
 
 
 ########################################### SQY ######################################################
-if(NOT BUNDLE_SQEAZY OR NOT ${BUNDLE_SQEAZY})
+#if(NOT BUNDLE_SQEAZY OR NOT ${BUNDLE_SQEAZY})
   add_executable(sqy sqy.cpp)
 
   set_target_properties(sqy PROPERTIES POSITION_INDEPENDENT_CODE ON)
   message("++ [src] sqy deps: ${LZ4_LIBRARY} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES} ${HDF5_LIBRARIES} ${TIFF_LIBRARY} ${OpenMP++_LIBRARIES}")
   target_link_libraries(sqy ${LZ4_LIBRARY} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES} ${HDF5_LIBRARIES} ${TIFF_LIBRARIES} ${OpenMP++_LIBRARIES})
 
+if(HAS_BSYMBOLIC_COMPILERFLAG AND UNIX AND NOT APPLE)
+  set_property(TARGET sqy APPEND_STRING PROPERTY LINK_FLAGS "-Wl,-Bsymbolic")
+endif()
+
+if(${FFMPEG_USE_STATIC_LIBS})
+  set_property(TARGET sqy APPEND_STRING PROPERTY LINK_FLAGS " ${FFMPEG_EXTRA_LINK_FLAGS}")
+endif()
 
   INSTALL(TARGETS sqy
     EXPORT sqeazy-targets
     RUNTIME DESTINATION "${INSTALL_BIN_DIR}"
     COMPONENT bin)
-endif()
+#endif()
 
 ########################################### DEPLOYMENT LIBSQY ######################################################
 if(BUNDLE_SQEAZY OR ${BUNDLE_SQEAZY})
@@ -57,8 +64,9 @@ if(BUNDLE_SQEAZY OR ${BUNDLE_SQEAZY})
   set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES ${BUNDLE_DIR})
 
   bundle(${PROJECT_NAME} ${BUNDLE_DIR})
+  bundle(sqy ${BUNDLE_DIR})
 
-  add_custom_target(bundle DEPENDS bundle_${PROJECT_NAME} )
+  add_custom_target(bundle DEPENDS bundle_${PROJECT_NAME} bundle_sqy)
 
   set_target_properties(bundle PROPERTIES EXCLUDE_FROM_ALL TRUE)
 endif()
