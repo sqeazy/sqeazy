@@ -17,7 +17,6 @@ RUN apt-get -qq update && apt-get install -y --no-install-recommends \
         pkg-config \
         software-properties-common \
         binutils \
-#        build-essential \
         libasan0 \
         libatomic1 \
         libcloog-isl4 \
@@ -38,9 +37,6 @@ RUN apt-get -qq update && \
             gnupg2 \
             g++ \
             gcc \
-            # libmpc-dev \
-            # libgmp-dev \
-            # libmpfr-dev \
             flex;
 
 ENV GCC_VERSION 7.2.0
@@ -119,12 +115,14 @@ RUN set -ex; \
 RUN wget --no-check-certificate http://www.nasm.us/pub/nasm/releasebuilds/2.13.01/nasm-2.13.01.tar.bz2 && \
     tar xf nasm-2.13.01.tar.bz2 && \
     cd nasm-2.13.01 && \
-    ./configure --prefix=/usr/local && make -j8 && make install;
+    ./configure --prefix=/usr/local && make -j8 && make install && \
+    cd .. && rm -rf nasm-2.13.01;
 
 RUN wget --no-check-certificate https://cmake.org/files/v3.9/cmake-3.9.0.tar.gz && \
     tar xf cmake-3.9.0.tar.gz && \
     cd cmake-3.9.0 && \
-    ./configure --prefix=/usr/local && make -j8 && make install;
+    ./configure --prefix=/usr/local && make -j8 && make install && \
+    cd .. && rm -rf cmake-3.9.0;
 
 RUN git clone https://github.com/yasm/yasm.git && cd yasm && \
     mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=/usr/local .. && make -j8 && make install;
