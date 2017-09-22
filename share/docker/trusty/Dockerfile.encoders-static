@@ -34,8 +34,7 @@ RUN hg clone https://bitbucket.org/multicoreware/x265 && \
 RUN git clone git://source.ffmpeg.org/ffmpeg.git && \
     cd ffmpeg && \
     git checkout n3.0.9 && \
-    #./configure  --disable-shared --enable-pic --enable-static --enable-libx264 --enable-libx265 --enable-gpl --extra-ldflags="/usr/local/lib/libx264.a /usr/local/lib/libx265.a" --disable-sdl --disable-libxcb --disable-zlib --disable-bzlib --disable-xlib --disable-lzma --disable-indevs --disable-outdevs --pkg-config-flags="--static" --prefix=/usr/local && \
-    ./configure --enable-small --enable-shared --disable-encoders --disable-decoders --enable-encoder=libx264,libx264rgb,libx265 --enable-decoder=h264,h264_vda,hevc --enable-pic --enable-static --enable-libx264 --enable-libx265 --enable-gpl --extra-ldflags='/usr/local/lib/libx264.a /usr/local/lib/libx265.a' --disable-sdl --disable-libxcb --disable-zlib --disable-bzlib --disable-xlib --disable-lzma --disable-indevs --disable-outdevs --pkg-config-flags=--static --disable-protocols --disable-muxers --disable-demuxers --enable-muxer=h264,hevc --enable-demuxer=h264,hevc --disable-filters --disable-parsers --enable-parser=x264,hevc --prefix=/usr/local && \
+    ./configure --pkg-config-flags=--static --extra-ldflags='/usr/lib/libx264.a /usr/local/lib/libx265.a' --disable-doc --enable-small --disable-shared --disable-encoders --disable-decoders --enable-encoder=libx264,libx264rgb,libx265 --enable-decoder=h264,h264_vda,hevc --enable-pic --enable-static --enable-libx264 --enable-libx265 --enable-gpl  --disable-sdl --disable-libxcb --disable-zlib --disable-bzlib --disable-xlib --disable-lzma --disable-indevs --disable-outdevs  --disable-protocols --disable-muxers --disable-demuxers --enable-muxer=h264,hevc --enable-demuxer=h264,hevc --disable-filters --disable-parsers --enable-parser=x264,hevc --prefix=/usr/local && \
     make -j8 && \
     make -j8 install && \
     cd .. && rm -rf ffmpeg;
