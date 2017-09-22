@@ -1,5 +1,6 @@
-# Use an official Python runtime as a parent image
-FROM sqy/trusty/base:latest
+ARG SQY_VERSION=latest
+
+FROM sqy/trusty/base:${SQY_VERSION}
 
 # Set the working directory to /app
 WORKDIR /build

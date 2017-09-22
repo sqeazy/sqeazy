@@ -1,6 +1,8 @@
-FROM sqy/trusty/base:latest as base
-FROM sqy/trusty/encoders-static:latest as encoders
-FROM sqy/trusty/utils-static:latest as utils
+ARG SQY_VERSION=latest
+
+FROM sqy/trusty/base:${SQY_VERSION} as base
+FROM sqy/trusty/encoders-static:${SQY_VERSION} as encoders
+FROM sqy/trusty/utils-static:${SQY_VERSION} as utils
 
 COPY --from=base /usr/local /usr/local
 COPY --from=encoders /usr/local /usr/local
