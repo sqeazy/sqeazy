@@ -264,7 +264,7 @@ else(PKG_CONFIG_FOUND AND NOT FFMPEG_IGNORE_PKG_CONFIG)
           #   set(FFMPEG_EXTRA_LINK_FLAGS ${FFMPEG_EXTRA_LINK_FLAGS} ${PKG_FFMPEG_STATIC_LDFLAGS} ${PKG_FFMPEG_STATIC_LDFLAGS_OTHER})
 
           # else(PKG_CONFIG_FOUND)
-          set(FFMPEG_EXTRA_LINK_FLAGS "-L/usr/local/lib -framework CoreFoundation -framework VideoToolbox -framework CoreMedia -framework QuartzCore -framework CoreVideo -framework CoreFoundation -framework VideoDecodeAcceleration -framework QuartzCore -liconv -Wl,-framework,CoreFoundation -Wl,-framework,Security -lx265 -lx264 -lm -lbz2 -lz -pthread -framework CoreServices -framework CoreFoundation -framework VideoToolbox -framework CoreMedia -framework QuartzCore -framework CoreVideo -framework CoreFoundation -framework VideoDecodeAcceleration -framework QuartzCore -liconv -Wl,-framework,CoreFoundation -Wl,-framework,Security -lx265 -lx264 -lm -lbz2 -lz -pthread -framework CoreServices -lm")
+          set(FFMPEG_EXTRA_LINK_FLAGS "-L${FFMPEG_ROOT_DIR}/lib -L/Users/steinbac/software/x265/2.5-static/lib -L/Users/steinbac/software/x264/master-static//lib  -lavformat  -liconv -lavcodec  -framework VideoToolbox -framework CoreMedia  -framework CoreVideo -framework CoreFoundation -framework VideoDecodeAcceleration -framework QuartzCore -liconv -lx265 -lc++ -ldl -lx264 -lpthread -lm -pthread -framework CoreServices -lswscale -lm -lavutil -lm")#-Wl,-framework,CoreFoundation -Wl,-framework,Security
           # endif(PKG_CONFIG_FOUND)
         else()
           if(NOT WIN32)
