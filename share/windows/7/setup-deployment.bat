@@ -9,56 +9,75 @@
 :: CMD reads the system environment variables when it starts. To re-read those variables you need to restart CMD
 :: Use console 2 http://sourceforge.net/projects/console/
 
-SET SW_ROOT="%HOMEDRIVE%%HOMEPATH%\software"
-SETX SW_ROOT "%HOMEDRIVE%%HOMEPATH%\software"
+SET "SW_ROOT=%HOMEDRIVE%%HOMEPATH%\software"
+:: SETX SW_ROOT "%HOMEDRIVE%%HOMEPATH%\software"
 
 :: utilities
-SET CMAKE_BIN="%SW_ROOT%\cmake\3.9.1\bin"
-SET GRADLE_BIN="%SW_ROOT%\gradle\3.0\bin"
-SET GIT_BIN="%SW_ROOT%\gradle\3.0\bin"
-SET CURL_BIN="%SW_ROOT%\curl\7.50.1"
-SET TIFF_BIN="%SW_ROOT%\tiff\4.0.6\bin"
-SET HDF5_BIN="%SW_ROOT%\hdf5\1.8.17-static\bin"
-SET FFMPEG_BIN="%SW_ROOT%\ffmpeg\3.0.2-static\bin"
-SET LZ4_BIN="%SW_ROOT%\lz4\1.7.5\bin"
+SET "ZIP_ROOT=%SW_ROOT%\7-Zip\17.01beta"
+SET "CMAKE_ROOT=%SW_ROOT%\cmake\3.9.1"
+SET "GRADLE_ROOT=%SW_ROOT%\gradle\3.0"
+SET "GIT_ROOT=%SW_ROOT%\gradle\4.1"
+SET "CURL_ROOT=%SW_ROOT%\curl\7.50.1"
+SET "TIFF_ROOT=%SW_ROOT%\tiff\4.0.6"
+SET "HDF5_ROOT=%SW_ROOT%\hdf5\1.8.17-static"
+SET "FFMPEG_ROOT=%SW_ROOT%\ffmpeg\3.0.2-static"
+SET "LZ4_ROOT=%SW_ROOT%\lz4\1.7.5"
+SET "BOOST_ROOT=%SW_ROOT%\boost\1_59_0_static"
+SET "X264_ROOT=%SW_ROOT%\x264\master-static"
+SET "X265_ROOT=%SW_ROOT%\x265\2.0-static-crt"
 
-SET LLVM_BIN="%HOMEDRIVE%\Program Files\LLVM\bin"
-SET LLVM_LIB="%HOMEDRIVE%\Program Files\LLVM\lib"
-SET LLVM_INCLUDE="%HOMEDRIVE%\Program Files\LLVM\include"
+SET "CMAKE_bin=%CMAKE_ROOT%\bin"
+SET "GRADLE_bin=%GRADLE_ROOT%\bin"
+SET "GIT_bin=%GIT_ROOT%\bin"
+SET "CURL_bin=%CURL_ROOT%\
+SET "TIFF_bin=%TIFF_ROOT%\bin"
+SET "HDF5_bin=%HDF5_ROOT%\bin"
+SET "FFMPEG_bin=%FFMPEG_ROOT%\bin"
+SET "LZ4_bin=%LZ4_ROOT%\bin"
+SET "ZIP_bin=%ZIP_ROOT%"
+
+SET "LLVM_BIN=%HOMEDRIVE%\Program Files\LLVM\bin"
+SET "LLVM_LIB=%HOMEDRIVE%\Program Files\LLVM\lib"
+SET "LLVM_INCLUDE=%HOMEDRIVE%\Program Files\LLVM\include"
 
 :: libraries
-SET LZ4_LIB="%SW_ROOT%\lz4\1.7.5\lib"
-SET LZ4_INCLUDE="%SW_ROOT%\lz4\1.7.5\include"
+SET "LZ4_lib=%LZ4_ROOT%\lib"
+SET "LZ4_INCLUDE=%LZ4_ROOT%\include"
 
-SET BOOST_LIB="%SW_ROOT%\boost\1_59_0_static\lib"
-SET BOOST_INCLUDE="%SW_ROOT%\boost\1_59_0_static\include"
+SET "BOOST_lib=%BOOST_ROOT%\lib"
+SET "BOOST_INCLUDE=%BOOST_ROOT%\include"
 
-SET TIFF_LIB="%SW_ROOT%\tiff\4.0.6\lib"
-SET TIFF_INCLUDE="%SW_ROOT%\tiff\4.0.6\include"
+SET "TIFF_lib=%TIFF_ROOT%\lib"
+SET "TIFF_INCLUDE=%TIFF_ROOT%\include"
 
-SET HDF5_LIB="%SW_ROOT%\hdf5\1.8.17-static\lib"
-SET HDF5_INCLUDE="%SW_ROOT%\hdf5\1.8.17-static\include"
+SET "HDF5_lib=%HDF5_ROOT%\lib"
+SET "HDF5_INCLUDE=%HDF5_ROOT%\include"
 
-SET FFMPEG_LIB="%SW_ROOT%\ffmpeg\3.0.2-static\lib"
-SET FFMPEG_INCLUDE="%SW_ROOT%\ffmpeg\3.0.2-static\include"
+SET "FFMPEG_lib=%FFMPEG_ROOT%\lib"
+SET "FFMPEG_INCLUDE=%FFMPEG_ROOT%\include"
 
-SET X264_LIB="%SW_ROOT%\x264\master-static\lib"
-SET X264_INCLUDE="%SW_ROOT%\x264\master-static\include"
+SET "X264_lib=%X264_ROOT%\lib"
+SET "X264_INCLUDE=%X264_ROOT%\include"
 
-SET X265_LIB="%SW_ROOT%\x265\2.0-static-crt\lib"
-SET X265_INCLUDE="%SW_ROOT%\x265\2.0-static-crt\include"
+SET "X265_lib=%X265_ROOT%\lib"
+SET "X265_INCLUDE=%X265_ROOT%\include"
 
-:: Set Path variable
-setx PATH %CMAKE_BIN%;%GRADLE_BIN%;%GIT_BIN%;%CURL_BIN%;%LLVM_BIN%;%TIFF_BIN%;%HDF5_BIN%;%FFMPEG_BIN%;%LZ4_BIN%
 
-:: Set LIB variable
-setx LIB "%BOOST_LIB%;%TIFF_LIB%;%HDF5_LIB%;%FFMPEG_LIB%;%X264_LIB%;%X265_LIB%;%LLVM_LIB%;%LZ4_LIB%"
+:: SET "Path variable
+setx PATH "%ZIP_BIN%;%CMAKE_BIN%;%GRADLE_BIN%;%GIT_BIN%;%CURL_BIN% 
 
-:: Set INCLUDE variable
-setx INCLUDE "%BOOST_INCLUDE%;%TIFF_INCLUDE%;%HDF5_INCLUDE%;%FFMPEG_INCLUDE%;%X264_INCLUDE%;%X265_INCLUDE%;%LLVM_INCLUDE%;%LZ4_INCLUDE%"
+:: SET "LIB variable
+setx LIB "%BOOST_LIB%;%TIFF_LIB%;%HDF5_LIB%;%FFMPEG_LIB%;%X264_LIB%;%X265_LIB%;%LLVM_LIB%;%LZ4_LIB%
 
-:: Set Java variable, C:\Program Files\Java\jdk1.8.0_73
+:: SET "INCLUDE variable
+setx INCLUDE "%BOOST_INCLUDE%;%TIFF_INCLUDE%;%HDF5_INCLUDE%;%FFMPEG_INCLUDE%;%X264_INCLUDE%;%X265_INCLUDE%;%LZ4_INCLUDE%
+
+:: SET "CMAKE_PREFIX_PATH variable to make find_package calls happy
+setx CMAKE_PREFIX_PATH "%BOOST_ROOT%;%TIFF_ROOT%;%HDF5_ROOT%;%FFMPEG_ROOT%;%X264_ROOT%;%X265_ROOT%;%LZ4_ROOT%
+
+:: SET "Java variable, C:\Program Files\Java\jdk1.8.0_73
 setx JAVA_HOME "%HOMEDRIVE%\Program Files\Java\jdk1.8.0_73"
+
 
 :: PAUSE
 
