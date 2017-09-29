@@ -504,9 +504,9 @@ task unpack_for_bake {
 	def tgt_dir_flag = "-d"
 	
 	if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-        app_to_use = "7z.exe"
-		flags = "e -aoa"
-		tgt_dir_flag = "-o"
+        app_to_use = "jar"
+		flags = "xf"
+		tgt_dir_flag = "-C"
     } 
     doLast {
 
