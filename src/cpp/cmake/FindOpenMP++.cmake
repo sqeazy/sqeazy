@@ -39,7 +39,9 @@ include(CheckCXXCompilerFlag)
 
 get_filename_component(CXX_COMPILER_APP_PATH "${CMAKE_CXX_COMPILER}" PATH)
 get_filename_component(CXX_COMPILER_ROOT_PATH "${CXX_COMPILER_APP_PATH}" PATH)
-
+if(NOT OpenMP_LINK_STATIC)
+	set(OpenMP_LINK_STATIC OFF)
+endif()	
 string(REPLACE "bin" "lib" CXX_COMPILER_LIBS_PATH "${CXX_COMPILER_APP_PATH}")
 
 if(NOT EXISTS ${CXX_COMPILER_LIBS_PATH})
