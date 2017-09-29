@@ -1,0 +1,32 @@
+@ECHO OFF
+
+SET "SW_ROOT=%HOMEDRIVE%%HOMEPATH%\software"
+
+
+SET "X264_ROOT=%SW_ROOT%\x264\ba24899b-static"
+SET "X265_ROOT=%SW_ROOT%\x265\2.0"
+
+SET "X264_LIB=%X264_ROOT%\lib"
+SET "X264_INCLUDE=%X264_ROOT%\include"
+
+SET "X265_BIN=%X265_ROOT%\bin"
+SET "X265_LIB=%X265_ROOT%\lib"
+SET "X265_INCLUDE=%X265_ROOT%\include"
+
+
+:: SET "Path variable
+set "PATH=%X264_BIN%;%X265_BIN%;%PATH%"
+
+:: SET "BIN variable
+set "LIB=%X264_LIB%;%X265_LIB%;%LIB%"
+set "LIBPATH=%X264_LIB%;%X265_LIB%;%LIBPATH%"
+set "PKG_CONFIG_PATH=%X265_LIB%\pkgconfig"
+
+:: SET "INCLUDE variable
+set "INCLUDE=%X264_INCLUDE%;%X265_INCLUDE%;%INLUDE%"
+
+:: SET "CMAKE_PREFIX_PATH variable to make find_package calls happy
+set "CMAKE_PREFIX_PATH=%X264_ROOT%;%X265_ROOT%"
+
+:: PAUSE
+
