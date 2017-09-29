@@ -39,13 +39,13 @@ INSTALL(TARGETS ${SQY_SRC_TARGETS}
 ########################################### SQY ######################################################
 #if(NOT BUNDLE_SQEAZY OR NOT ${BUNDLE_SQEAZY})
 add_executable(sqy sqy.cpp)
-
+set_target_properties(sqy PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED YES)
 set_target_properties(sqy PROPERTIES POSITION_INDEPENDENT_CODE ON)
-message("++ [src] sqy deps: ${LZ4_LIBRARY} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES} ${HDF5_LIBRARIES} ${TIFF_LIBRARY} ${OpenMP++_LIBRARIES}")
+message("++ [src] sqy deps: ${LZ4_LIBRARY} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES} ${HDF5_LIBRARIES} ${TIFF_LIB_FOR_SQY} ${OpenMP++_LIBRARIES}")
 if(NOT WIN32)
-	target_link_libraries(sqy ${LZ4_LIBRARY} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES} ${HDF5_LIBRARIES} ${TIFF_LIBRARIES} ${OpenMP++_LIBRARIES})
+	target_link_libraries(sqy ${LZ4_LIBRARY} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES} ${HDF5_LIBRARIES} ${TIFF_LIB_FOR_SQY} ${OpenMP++_LIBRARIES})
 else()
-	target_link_libraries(sqy ${LZ4_LIBRARY} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES} ${HDF5_LIBRARIES} ${TIFF_LIBRARIES})
+	target_link_libraries(sqy ${LZ4_LIBRARY} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES} ${HDF5_LIBRARIES} ${TIFF_LIB_FOR_SQY})
 endif()
 
 if(HAS_BSYMBOLIC_COMPILERFLAG AND UNIX AND NOT APPLE)

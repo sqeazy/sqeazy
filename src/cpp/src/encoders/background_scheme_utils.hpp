@@ -28,7 +28,11 @@ namespace sqeazy {
 
       typedef typename add_unsigned<typename twice_as_wide<size_type>::type >::type index_type;
 
+#ifdef _WIN32
+	  raw_type support = (std::numeric_limits<raw_type>::max)();
+#else
       raw_type support = std::numeric_limits<raw_type>::max();
+#endif
       index_type input_index =0;
       const index_type frame_size = _dims[_dims.size()-2]*_dims[_dims.size()-1];
       index_type face_index =0;
