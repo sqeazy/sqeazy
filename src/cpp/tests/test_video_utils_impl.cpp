@@ -62,7 +62,7 @@ struct av_frame_fixture{
     std::uint8_t val = count % 255;
 
     ref[count] = val;
-    ref16[count] = count % std::numeric_limits<std::uint16_t>::max();
+    ref16[count] = count % (std::numeric_limits<std::uint16_t>::max)();
 
     gray8.get()->data[0][y*(gray8.get()->linesize[0])+x] = val;
     yuv420.get()->data[0][y*(yuv420.get()->linesize[0])+x] = val ;
@@ -435,7 +435,7 @@ BOOST_AUTO_TEST_CASE( sixteen_bit_rt_odd_width ){
 
   ref16.resize((fix_width+6)*fix_height);
   for(std::size_t i = 0; i < ref16.size();++i)
-    ref16[i] = i % std::numeric_limits<std::uint16_t>::max();
+    ref16[i] = i % (std::numeric_limits<std::uint16_t>::max)();
 
   auto decoded = ref16;
   std::fill(decoded.begin(), decoded.end(),0);
@@ -467,7 +467,7 @@ BOOST_AUTO_TEST_CASE( sixteen_bit_rt_odd_shape ){
 
   ref16.resize(70*74);
   for(std::size_t i = 0; i < ref16.size();++i)
-    ref16[i] = i % std::numeric_limits<std::uint16_t>::max();
+    ref16[i] = i % (std::numeric_limits<std::uint16_t>::max)();
 
   auto decoded = ref16;
   std::fill(decoded.begin(), decoded.end(),0);

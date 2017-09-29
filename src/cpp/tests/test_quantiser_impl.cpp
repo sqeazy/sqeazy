@@ -411,7 +411,7 @@ BOOST_AUTO_TEST_CASE( inject_unknown_values ){
   //inject unknown values into the encoded volume from [10%,25%)
   seq_begin = seq_end;
   seq_end = encoded.end();
-  max_repl = std::numeric_limits<std::uint8_t>::max();
+  max_repl = (std::numeric_limits<std::uint8_t>::max)();
 
   std::replace(seq_begin, seq_end,
                max_val,
@@ -1063,7 +1063,7 @@ BOOST_AUTO_TEST_CASE( decode_lut_yields_only_unique_peaky_bucket ){
   std::mt19937 gen(rd());
 
   std::normal_distribution<> peak(4048,.1);
-  std::uniform_int_distribution<> background(0, std::numeric_limits<uint16_t>::max());
+  std::uniform_int_distribution<> background(0, (std::numeric_limits<uint16_t>::max)());
 
 
   for( uint16_t& _el : input )
@@ -1092,15 +1092,15 @@ struct weighters_fixture {
   std::vector<T> ramp;
   std::vector<T> ramp_w_gaps;
 
-  constexpr static std::size_t ten_percent   = .1*std::numeric_limits<T>::max();
-  constexpr static std::size_t half_elements = .5*std::numeric_limits<T>::max();
+  constexpr static std::size_t ten_percent   = .1*(std::numeric_limits<T>::max)();
+  constexpr static std::size_t half_elements = .5*(std::numeric_limits<T>::max)();
 
 
   weighters_fixture():
-    constv	(std::numeric_limits<T>::max(),2),
-    output	(std::numeric_limits<T>::max(),0),
-    ramp    (std::numeric_limits<T>::max(),0),
-    ramp_w_gaps	(std::numeric_limits<T>::max(),0)
+    constv	((std::numeric_limits<T>::max)(),2),
+    output	((std::numeric_limits<T>::max)(),0),
+    ramp    ((std::numeric_limits<T>::max)(),0),
+    ramp_w_gaps	((std::numeric_limits<T>::max)(),0)
   {
 
     std::size_t count = 0;
