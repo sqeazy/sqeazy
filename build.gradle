@@ -500,18 +500,17 @@ task unpack_for_bake {
     }
 
 	def app_to_use = "unzip"
-    def flags = "-o"
+  def flags = "-o"
 	def tgt_dir_flag = "-d"
 	
 	if (Os.isFamily(Os.FAMILY_WINDOWS)) {
         app_to_use = "jar"
-		flags = "xf"
-		tgt_dir_flag = "-C"
+        flags = "xf"
+        tgt_dir_flag = "-C"
     } 
-    doLast {
 
-        ftree.each{ File zfile ->
-                   exec {
+  doLast {
+      ftree.each{ File zfile -> exec {
 
                 commandLine app_to_use, flags, tgt_dir_flag, dist_dir+'/lib', zfile
                 println commandLine.join(" ")
@@ -521,11 +520,11 @@ task unpack_for_bake {
 
     }
 
-    def bundled_headers = []
-    supported_platforms.each{ String plat ->
+  def bundled_headers = []
+  supported_platforms.each{ String plat ->
                              bundled_headers.add(dist_dir+"/lib/"+plat+"/sqeazy.h")
     }
-    outputs.files bundled_headers
+  outputs.files bundled_headers
 }
 
 
