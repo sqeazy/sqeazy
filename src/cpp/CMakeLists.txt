@@ -235,6 +235,7 @@ IF(UNIX OR APPLE)
     if(NOT ${BUNDLE_SQEAZY})
       add_definitions(-march=native)
     else()
+      #check https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html for details
       add_definitions(-march=nehalem)
     endif()
   ELSE()
