@@ -45,6 +45,7 @@ SET (SQEAZY_VENDOR_URL "www.mpi-cbg.de")
 SET (SQEAZY_ID "${SQEAZY_VENDOR_ID}.${PROJECT_NAME}")
 
 option(BUNDLE_SQEAZY "compile sqeazy ready for bundling" OFF)
+option(WITH_MARCH_NATIVE "compile sqeazy for the currently found hardware" OFF)
 option(USE_CXX11_ABI "enable _GLIBCXX_USE_CXX11_ABI in GCC 5.0+" ON)
 
 # trying to setup paths so this package can be picked up
@@ -232,11 +233,13 @@ ENDIF()
 
 IF(UNIX OR APPLE)
   IF(HAS_MARCH_COMPILERFLAG)
-    if(NOT ${BUNDLE_SQEAZY})
+    if(${WITH_MARCH_NATIVE})
       add_definitions(-march=native)
+      MESSAGE(STATUS "allowing compiler to choose x86 architecture, using -march=native")
     else()
       #check https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html for details
       add_definitions(-march=nehalem)
+      MESSAGE(STATUS "using -march=nehalem")
     endif()
   ELSE()
     MESSAGE(WARNING "Compiler does not support -march=native!")
