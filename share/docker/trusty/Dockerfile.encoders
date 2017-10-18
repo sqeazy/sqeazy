@@ -21,7 +21,7 @@ RUN add-apt-repository -y ppa:mc3man/trusty-media && apt-get -qq update && apt-g
 RUN git clone git://source.ffmpeg.org/ffmpeg.git && \
     cd ffmpeg && \
     git checkout n3.0.9 && \
-    ./configure --enable-small --disable-doc --enable-shared --disable-encoders --disable-decoders --enable-encoder=libx264,libx264rgb,libx265 --enable-decoder=h264,h264_vda,hevc --enable-pic --enable-static --enable-libx264 --enable-libx265 --enable-gpl --disable-sdl --disable-libxcb --disable-zlib --disable-bzlib --disable-xlib --disable-lzma --disable-indevs --disable-outdevs --disable-protocols --disable-muxers --disable-demuxers --enable-muxer=h264,hevc --enable-demuxer=h264,hevc --disable-filters --disable-parsers --enable-parser=x264,hevc --prefix=/usr/local && \
+    ./configure --enable-small --disable-doc --enable-shared --disable-encoders --disable-decoders --enable-encoder=libx264,libx264rgb,libx265 --enable-decoder=h264,h264_vda,hevc --enable-pic --enable-static --enable-libx264 --enable-libx265 --enable-gpl --disable-sdl --disable-libxcb --disable-zlib --disable-bzlib --disable-xlib --disable-lzma --disable-indevs --disable-outdevs --disable-protocols --disable-muxers --disable-demuxers --enable-muxer=h264,hevc --enable-demuxer=h264,hevc --disable-filters --disable-parsers --enable-parser=h264,hevc --prefix=/usr/local && \
     make -j8 && \
     make -j8 install;
 
