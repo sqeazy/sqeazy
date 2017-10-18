@@ -89,7 +89,7 @@ RUN cd /usr/src/gcc; \
     cd "$dir"; \
     \
     gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)"; \
-    CFLAGS=-fPIC CXXFLAGS=-fPIC LDFLAGS=-fPIC /usr/src/gcc/configure --build=`dpkg-architecture --query DEB_BUILD_GNU_TYPE` --enable-threads=posix --enable-checking=release --with-system-zlib --enable-__cxa_atexit --enable-languages=c,c++ --with-cpu=generic --disable-multilib --disable-nls --disable-bootstrap && \
+    CFLAGS=-fPIC CXXFLAGS=-fPIC LDFLAGS=-fPIC /usr/src/gcc/configure --build=`dpkg-architecture --query DEB_BUILD_GNU_TYPE` --enable-threads=posix --enable-checking=release --with-system-zlib --enable-__cxa_atexit --enable-languages=c,c++,lto --disable-multilib --disable-nls --disable-bootstrap && \
     make -j 8 && \
     make install-strip; \
     \
