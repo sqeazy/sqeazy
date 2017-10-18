@@ -6,7 +6,6 @@ WORKDIR /build
 
 # Install any needed packages
 RUN apt-get -qq update && apt-get install -y --no-install-recommends \
-        git \
         mercurial \
         wget \
         bzip2 \
@@ -29,6 +28,8 @@ RUN apt-get -qq update && apt-get install -y --no-install-recommends \
         libtiff-dev \
         zlib1g-dev \
         libc6-dev ;
+
+RUN add-apt-repository ppa:git-core/ppa && apt-get -qq update && apt-get install -y --no-install-recommends git ;
 
 RUN apt-get -qq update && \
     apt-get install -y --no-install-recommends \
