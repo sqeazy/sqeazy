@@ -18,367 +18,13 @@ public class SqeazyLibrary {
 		BridJ.register();
 	}
 	/**
-	 * SQY_RasterDiffEncode_3D_UI16 - Raster differencing scheme on 3D unsigned 16 bit int data.<br>
-	 * Encoding: Each following voxel is visited in row major order and the difference between the current voxel<br>
-	 * and the average of already visited neighboring voxels is computed and stored at the<br>
-	 * corresponding location in the destination buffer. Boundary conditions: if a neighbor of a <br>
-	 * voxel is outside of the volume, its value is assumed to be 0. For the first voxel, all neighbors<br>
-	 * are outside of the volume and the average is thus 0.<br>
-	 * width, height, depth 	: volume dimensions in voxels<br>
-	 * src 					: row major 3D contiguous array of voxels (externally allocated)<br>
-	 * dst 					: row major 3D contiguous array of voxels (externally allocated)<br>
-	 * Returns 0 if success, another code if there was an error (error codes provided below)<br>
-	 * extensions 1: if src==dst the function is capable of doing in-place processing.<br>
-	 * Original signature : <code>int SQY_RasterDiffEncode_3D_UI16(int, int, int, const char*, char*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:49</i>
-	 */
-	public static int SQY_RasterDiffEncode_3D_UI16(int width, int height, int depth, Pointer<Byte > src, Pointer<Byte > dst) {
-		return SQY_RasterDiffEncode_3D_UI16(width, height, depth, Pointer.getPeer(src), Pointer.getPeer(dst));
-	}
-	protected native static int SQY_RasterDiffEncode_3D_UI16(int width, int height, int depth, @Ptr long src, @Ptr long dst);
-	/**
-	 * SQY_RasterDiffDecode_3D_UI16 - Raster differencing scheme on 3D unsigned 16 bit int data.<br>
-	 * Decoding: Each voxel is visited in row major order. The voxel in the destination buffer at the<br>
-	 * current location is computed as the sum of the average of the already decoded neighboring voxels<br>
-	 * and the current difference value stored in the source buffer at the current location.<br>
-	 * Boundary conditions: if a neighbor of a voxel is outside of the volume, its value is assumed to be 0.<br>
-	 * For the first voxel, all neighbors are outside of the volume and the average is thus 0.<br>
-	 * width, height, depth 	: volume dimensions in voxels<br>
-	 * src 					: row major 3D contiguous array of voxels (externally allocated)<br>
-	 * dst 					: row major 3D contiguous array of voxels (externally allocated)<br>
-	 * Returns 0 if success, another code if there was an error (error codes provided below)<br>
-	 * extensions 1: if src==dst the function is capable of doing in-place processing.<br>
-	 * Original signature : <code>int SQY_RasterDiffDecode_3D_UI16(int, int, int, const char*, char*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:68</i>
-	 */
-	public static int SQY_RasterDiffDecode_3D_UI16(int width, int height, int depth, Pointer<Byte > src, Pointer<Byte > dst) {
-		return SQY_RasterDiffDecode_3D_UI16(width, height, depth, Pointer.getPeer(src), Pointer.getPeer(dst));
-	}
-	protected native static int SQY_RasterDiffDecode_3D_UI16(int width, int height, int depth, @Ptr long src, @Ptr long dst);
-	/**
-	 * SQY_BitSwap4Encode_UI16 - 4 Bit swapping scheme on unsigned 16 bit int data.<br>
-	 * Encoding: Each 16 bit integer is split in four 4 bit parts: Ai, Bi, Ci, Di.<br>
-	 * The destination buffer is filled with first all Ai, then all Bi, then all Ci, <br>
-	 * then all Di. Thus the destination buffer has the same length as the source buffer.<br>
-	 * src 					: contiguous array of voxels (externally allocated)<br>
-	 * dst 					: contiguous array of voxels (externally allocated)<br>
-	 * length 					: length of both buffers<br>
-	 * Returns 0 if success, another code if there was an error (error codes provided below)<br>
-	 * extensions 1: if src==dst the function is capable of doing in-place processing.<br>
-	 * Original signature : <code>int SQY_BitSwap4Encode_UI16(const char*, char*, long)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:90</i>
-	 */
-	public static int SQY_BitSwap4Encode_UI16(Pointer<Byte > src, Pointer<Byte > dst, @org.bridj.ann.CLong long length) {
-		return SQY_BitSwap4Encode_UI16(Pointer.getPeer(src), Pointer.getPeer(dst), length);
-	}
-	protected native static int SQY_BitSwap4Encode_UI16(@Ptr long src, @Ptr long dst, @org.bridj.ann.CLong long length);
-	/**
-	 * Original signature : <code>int SQY_BitSwap4Encode_I16(const char*, char*, long)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:91</i>
-	 */
-	public static int SQY_BitSwap4Encode_I16(Pointer<Byte > src, Pointer<Byte > dst, @org.bridj.ann.CLong long length) {
-		return SQY_BitSwap4Encode_I16(Pointer.getPeer(src), Pointer.getPeer(dst), length);
-	}
-	protected native static int SQY_BitSwap4Encode_I16(@Ptr long src, @Ptr long dst, @org.bridj.ann.CLong long length);
-	/**
-	 * SQY_BitSwap4Decode_UI16 - 4 Bit swapping scheme on unsigned 16 bit int data.<br>
-	 * Encoding: The permutation described above is inverted.<br>
-	 * src 					: contiguous array of voxels (externally allocated)<br>
-	 * dst 					: contiguous array of voxels (externally allocated)<br>
-	 * length 					: length of both buffers<br>
-	 * Returns 0 if success, another code if there was an error (error codes provided below)<br>
-	 * extensions 1: if src==dst the function is capable of doing in-place processing.<br>
-	 * Original signature : <code>int SQY_BitSwap4Decode_UI16(const char*, char*, long)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:106</i>
-	 */
-	public static int SQY_BitSwap4Decode_UI16(Pointer<Byte > src, Pointer<Byte > dst, @org.bridj.ann.CLong long length) {
-		return SQY_BitSwap4Decode_UI16(Pointer.getPeer(src), Pointer.getPeer(dst), length);
-	}
-	protected native static int SQY_BitSwap4Decode_UI16(@Ptr long src, @Ptr long dst, @org.bridj.ann.CLong long length);
-	/**
-	 * Original signature : <code>int SQY_BitSwap4Decode_I16(const char*, char*, long)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:107</i>
-	 */
-	public static int SQY_BitSwap4Decode_I16(Pointer<Byte > src, Pointer<Byte > dst, @org.bridj.ann.CLong long length) {
-		return SQY_BitSwap4Decode_I16(Pointer.getPeer(src), Pointer.getPeer(dst), length);
-	}
-	protected native static int SQY_BitSwap4Decode_I16(@Ptr long src, @Ptr long dst, @org.bridj.ann.CLong long length);
-	/**
-	 * SQY_BitSwap8Encode_UI16 - 8 Bit swapping scheme on unsigned 16 bit int data.<br>
-	 * Encoding: Each 16 bit integer is split in two 8 bit parts: Ai, Bi.<br>
-	 * The destination buffer is filled with first all Ai, then all Bi, <br>
-	 * Thus the destination buffer has the same length as the source buffer.<br>
-	 * src 					: contiguous array of voxels (externally allocated)<br>
-	 * dst 					: contiguous array of voxels (externally allocated)<br>
-	 * length 					: length of both buffers<br>
-	 * Returns 0 if success, another code if there was an error (error codes provided below)<br>
-	 * extensions 1: if src==dst the function is capable of doing in-place processing.<br>
-	 * Original signature : <code>int SQY_BitSwap8Encode_UI16(const char*, char*, long)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:124</i>
-	 */
-	public static int SQY_BitSwap8Encode_UI16(Pointer<Byte > src, Pointer<Byte > dst, @org.bridj.ann.CLong long length) {
-		return SQY_BitSwap8Encode_UI16(Pointer.getPeer(src), Pointer.getPeer(dst), length);
-	}
-	protected native static int SQY_BitSwap8Encode_UI16(@Ptr long src, @Ptr long dst, @org.bridj.ann.CLong long length);
-	/**
-	 * SQY_BitSwap8Decode_UI16 - 8 Bit swapping scheme on unsigned 16 bit int data.<br>
-	 * Encoding: The permutation described above is inverted.<br>
-	 * src 					: contiguous array of voxels (externally allocated)<br>
-	 * dst 					: contiguous array of voxels (externally allocated)<br>
-	 * length 					: length of both buffers<br>
-	 * Returns 0 if success, another code if there was an error (error codes provided below)<br>
-	 * extensions 1: if src==dst the function is capable of doing in-place processing.<br>
-	 * Original signature : <code>int SQY_BitSwap8Decode_UI16(const char*, char*, long)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:139</i>
-	 */
-	public static int SQY_BitSwap8Decode_UI16(Pointer<Byte > src, Pointer<Byte > dst, @org.bridj.ann.CLong long length) {
-		return SQY_BitSwap8Decode_UI16(Pointer.getPeer(src), Pointer.getPeer(dst), length);
-	}
-	protected native static int SQY_BitSwap8Decode_UI16(@Ptr long src, @Ptr long dst, @org.bridj.ann.CLong long length);
-	/**
-	 * Original signature : <code>int SQY_BitSwap8Encode_I16(const char*, char*, long)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:140</i>
-	 */
-	public static int SQY_BitSwap8Encode_I16(Pointer<Byte > src, Pointer<Byte > dst, @org.bridj.ann.CLong long length) {
-		return SQY_BitSwap8Encode_I16(Pointer.getPeer(src), Pointer.getPeer(dst), length);
-	}
-	protected native static int SQY_BitSwap8Encode_I16(@Ptr long src, @Ptr long dst, @org.bridj.ann.CLong long length);
-	/**
-	 * Original signature : <code>int SQY_BitSwap8Decode_I16(const char*, char*, long)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:141</i>
-	 */
-	public static int SQY_BitSwap8Decode_I16(Pointer<Byte > src, Pointer<Byte > dst, @org.bridj.ann.CLong long length) {
-		return SQY_BitSwap8Decode_I16(Pointer.getPeer(src), Pointer.getPeer(dst), length);
-	}
-	protected native static int SQY_BitSwap8Decode_I16(@Ptr long src, @Ptr long dst, @org.bridj.ann.CLong long length);
-	/**
-	 * Original signature : <code>int SQY_BitSwap2Encode_UI16(const char*, char*, long)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:144</i>
-	 */
-	public static int SQY_BitSwap2Encode_UI16(Pointer<Byte > src, Pointer<Byte > dst, @org.bridj.ann.CLong long length) {
-		return SQY_BitSwap2Encode_UI16(Pointer.getPeer(src), Pointer.getPeer(dst), length);
-	}
-	protected native static int SQY_BitSwap2Encode_UI16(@Ptr long src, @Ptr long dst, @org.bridj.ann.CLong long length);
-	/**
-	 * Original signature : <code>int SQY_BitSwap2Decode_UI16(const char*, char*, long)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:145</i>
-	 */
-	public static int SQY_BitSwap2Decode_UI16(Pointer<Byte > src, Pointer<Byte > dst, @org.bridj.ann.CLong long length) {
-		return SQY_BitSwap2Decode_UI16(Pointer.getPeer(src), Pointer.getPeer(dst), length);
-	}
-	protected native static int SQY_BitSwap2Decode_UI16(@Ptr long src, @Ptr long dst, @org.bridj.ann.CLong long length);
-	/**
-	 * Original signature : <code>int SQY_BitSwap2Encode_I16(const char*, char*, long)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:146</i>
-	 */
-	public static int SQY_BitSwap2Encode_I16(Pointer<Byte > src, Pointer<Byte > dst, @org.bridj.ann.CLong long length) {
-		return SQY_BitSwap2Encode_I16(Pointer.getPeer(src), Pointer.getPeer(dst), length);
-	}
-	protected native static int SQY_BitSwap2Encode_I16(@Ptr long src, @Ptr long dst, @org.bridj.ann.CLong long length);
-	/**
-	 * Original signature : <code>int SQY_BitSwap2Decode_I16(const char*, char*, long)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:147</i>
-	 */
-	public static int SQY_BitSwap2Decode_I16(Pointer<Byte > src, Pointer<Byte > dst, @org.bridj.ann.CLong long length) {
-		return SQY_BitSwap2Decode_I16(Pointer.getPeer(src), Pointer.getPeer(dst), length);
-	}
-	protected native static int SQY_BitSwap2Decode_I16(@Ptr long src, @Ptr long dst, @org.bridj.ann.CLong long length);
-	/**
-	 * Original signature : <code>int SQY_BitSwap1Encode_UI16(const char*, char*, long)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:149</i>
-	 */
-	public static int SQY_BitSwap1Encode_UI16(Pointer<Byte > src, Pointer<Byte > dst, @org.bridj.ann.CLong long length) {
-		return SQY_BitSwap1Encode_UI16(Pointer.getPeer(src), Pointer.getPeer(dst), length);
-	}
-	protected native static int SQY_BitSwap1Encode_UI16(@Ptr long src, @Ptr long dst, @org.bridj.ann.CLong long length);
-	/**
-	 * Original signature : <code>int SQY_BitSwap1Decode_UI16(const char*, char*, long)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:150</i>
-	 */
-	public static int SQY_BitSwap1Decode_UI16(Pointer<Byte > src, Pointer<Byte > dst, @org.bridj.ann.CLong long length) {
-		return SQY_BitSwap1Decode_UI16(Pointer.getPeer(src), Pointer.getPeer(dst), length);
-	}
-	protected native static int SQY_BitSwap1Decode_UI16(@Ptr long src, @Ptr long dst, @org.bridj.ann.CLong long length);
-	/**
-	 * Original signature : <code>int SQY_BitSwap1Encode_I16(const char*, char*, long)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:151</i>
-	 */
-	public static int SQY_BitSwap1Encode_I16(Pointer<Byte > src, Pointer<Byte > dst, @org.bridj.ann.CLong long length) {
-		return SQY_BitSwap1Encode_I16(Pointer.getPeer(src), Pointer.getPeer(dst), length);
-	}
-	protected native static int SQY_BitSwap1Encode_I16(@Ptr long src, @Ptr long dst, @org.bridj.ann.CLong long length);
-	/**
-	 * Original signature : <code>int SQY_BitSwap1Decode_I16(const char*, char*, long)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:152</i>
-	 */
-	public static int SQY_BitSwap1Decode_I16(Pointer<Byte > src, Pointer<Byte > dst, @org.bridj.ann.CLong long length) {
-		return SQY_BitSwap1Decode_I16(Pointer.getPeer(src), Pointer.getPeer(dst), length);
-	}
-	protected native static int SQY_BitSwap1Decode_I16(@Ptr long src, @Ptr long dst, @org.bridj.ann.CLong long length);
-	/**
-	 * SQY_RLEEncode_UI8 - 8 Bit Run length encoding scheme.<br>
-	 * Encoding: The first 8 bytes represented an unsigned <br>
-	 * a contiguous stretch of repeated bytes: i.e. XXXXXXX...X of length n<br>
-	 * with n >= minrunlength is outputed as the byte sequence: <br>
-	 * 1nX 	: where 1 indicates that integer n is encoded with 1 byte (unsigned).<br>
-	 * this is in the case that n<256<br>
-	 * 2nnX	: where	2 indicates that the integer n is encoded with 2 bytes (unsigned).<br>
-	 * this is the case that  256<= n < 256*256	<br>
-	 * 4nnnnX	: where	4 indicates that the integer n is encoded with 4 bytes (unsigned).<br>
-	 * this is the case that  256*256<= n 		<br>
-	 * Regions of length l (i.e.: 'XYZ...XYZ' )that are not repeated or with repetitions of length less than <br>
-	 * minrunlength are simply copied to the destination buffer with a the following similar block structure:<br>
-	 * OlXYZ...XYZ 	: where O (O=One=1) indicates that integer l is encoded with 1 byte (unsigned).<br>
-	 * this is in the case that l<256<br>
-	 * TllXYZ...XYZ 	: where	T (T=Two=2) indicates that the integer l is encoded with 2 bytes (unsigned).<br>
-	 * this is the case that  256<= l < 256*256	<br>
-	 * FllllXYZ...XYZ 	: where	F (F=Four=4) indicates that the integer l is encoded with 4 bytes (unsigned).<br>
-	 * this is the case that  256*256<= l<br>
-	 * The block headers 1n, 2nn, 4nnnn, Ol, Tll, Fllll  ensure that the output stream is made of blocks <br>
-	 * of clearly defined lengths.<br>
-	 * src 					: contiguous array of voxels (externally allocated)<br>
-	 * dst 					: contiguous array of voxels (externally allocated)<br>
-	 * length 					: length of both buffers<br>
-	 * minrunlength			: minimal run length to encode<br>
-	 * Returns 0 if success, another code if there was an error (error codes provided below)<br>
-	 * extensions 1: if src==dst the function is capable of doing in-place processing.<br>
-	 * Original signature : <code>int SQY_RLEEncode_UI8(const char*, char*, long, long)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:194</i>
-	 */
-	public static int SQY_RLEEncode_UI8(Pointer<Byte > src, Pointer<Byte > dst, @org.bridj.ann.CLong long length, @org.bridj.ann.CLong long minrunlength) {
-		return SQY_RLEEncode_UI8(Pointer.getPeer(src), Pointer.getPeer(dst), length, minrunlength);
-	}
-	protected native static int SQY_RLEEncode_UI8(@Ptr long src, @Ptr long dst, @org.bridj.ann.CLong long length, @org.bridj.ann.CLong long minrunlength);
-	/**
-	 * SQY_RLEDecode_UI8 - 8 Bit Run length encoding scheme.<br>
-	 * Decoding: The block stream described above is parsed and a decompressed stream of bytes<br>
-	 * is appended to the output buffer.<br>
-	 * src 					: contiguous array of voxels (externally allocated)<br>
-	 * dst 					: contiguous array of voxels (externally allocated)<br>
-	 * length 					: length of both buffers<br>
-	 * minrunlength			: minimal run length to encode<br>
-	 * Returns 0 if success, another code if there was an error (error codes provided below)<br>
-	 * Original signature : <code>int SQY_RLEDecode_UI8(const char*, char*, long)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:210</i>
-	 */
-	public static int SQY_RLEDecode_UI8(Pointer<Byte > src, Pointer<Byte > dst, @org.bridj.ann.CLong long length) {
-		return SQY_RLEDecode_UI8(Pointer.getPeer(src), Pointer.getPeer(dst), length);
-	}
-	protected native static int SQY_RLEDecode_UI8(@Ptr long src, @Ptr long dst, @org.bridj.ann.CLong long length);
-	/**
-	 * SQY_RmBackground_AtMode_UI16 - Subtract background from src <br>
-	 * Given the mode M of all voxels, subtract M+epsilon from every voxel in src (clipping at 0). <br>
-	 * If dst is 0, the operation is performed in-place.<br>
-	 * src 					: contiguous array of voxels (externally allocated)<br>
-	 * dst       				: contiguous array of voxels (externally allocated)<br>
-	 * length 					: length of both buffers<br>
-	 * epsilon					: epsilon to be provided by user<br>
-	 * Returns 0 if success, another code if there was an error (error codes provided below)<br>
-	 * Original signature : <code>int SQY_RmBackground_AtMode_UI16(char*, char*, long, unsigned short)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:228</i>
-	 */
-	public static int SQY_RmBackground_AtMode_UI16(Pointer<Byte > src, Pointer<Byte > dst, @org.bridj.ann.CLong long length, short epsilon) {
-		return SQY_RmBackground_AtMode_UI16(Pointer.getPeer(src), Pointer.getPeer(dst), length, epsilon);
-	}
-	protected native static int SQY_RmBackground_AtMode_UI16(@Ptr long src, @Ptr long dst, @org.bridj.ann.CLong long length, short epsilon);
-	/**
-	 * SQY_RmBackground_Estimated_UI16 - Subtract background from src using an estimate of the noise<br>
-	 * In order to allow an automated removal of the background, we assume that the shot noise locate <br>
-	 * at the mode of the pixel value distribution is sampled from a Poisson PDF. Hence, the mode <br>
-	 * (being the mean of the Poisson, aka lambda) and the variance of the Poisson (for a Poisson <br>
-	 * PDF this equals lambda as well) are subtraced from every voxel in src (clipping at 0). If dst <br>
-	 * is 0, the operation is performed in-place.<br>
-	 * src 					: contiguous array of voxels (externally allocated)<br>
-	 * dst       				: contiguous array of voxels (externally allocated)<br>
-	 * width 					: width of the image stack as 16-bit integer<br>
-	 * height 					: height of the image stack as 16-bit integer<br>
-	 * depth 					: depth of the image stack as 16-bit integer<br>
-	 * Returns 0 if success, another code if there was an error (error codes provided below)<br>
-	 * Original signature : <code>int SQY_RmBackground_Estimated_UI16(int, int, int, char*, char*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:248</i>
-	 */
-	public static int SQY_RmBackground_Estimated_UI16(int width, int height, int depth, Pointer<Byte > src, Pointer<Byte > dst) {
-		return SQY_RmBackground_Estimated_UI16(width, height, depth, Pointer.getPeer(src), Pointer.getPeer(dst));
-	}
-	protected native static int SQY_RmBackground_Estimated_UI16(int width, int height, int depth, @Ptr long src, @Ptr long dst);
-	/**
-	 * SQY_LZ4Encode - Compress using LZ4.<br>
-	 * Compresses the source buffer into the destination buffer using LZ4.<br>
-	 * The destination buffer should be a bit larger than the source buffer<br>
-	 * in case the compressed buffer requires more space. <br>
-	 * The first 8 bytes of the destination buffer encode a 64 bit long that<br>
-	 * represents the length of the source buffer.<br>
-	 * src 					: contiguous array of voxels (externally allocated)<br>
-	 * srclength 				: length in bytes of source buffer<br>
-	 * dst 					: LZ4 compressed buffer (already allocated)<br>
-	 * dstlength 				: length in bytes of externally allocated destination buffer (needs to give the length of dst in Bytes),<br>
-	 * modified by function call to reflect the effective <br>
-	 * compressed buffer length after the call.<br>
-	 * Returns 0 if success, another code if there was an error (error codes provided below)<br>
-	 * error 1 -  destination buffer is not large enough<br>
-	 * Original signature : <code>int SQY_LZ4Encode(const char*, long, char*, long*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:277</i>
-	 */
-	public static int SQY_LZ4Encode(Pointer<Byte > src, @org.bridj.ann.CLong long srclength, Pointer<Byte > dst, Pointer<org.bridj.CLong > dstlength) {
-		return SQY_LZ4Encode(Pointer.getPeer(src), srclength, Pointer.getPeer(dst), Pointer.getPeer(dstlength));
-	}
-	protected native static int SQY_LZ4Encode(@Ptr long src, @org.bridj.ann.CLong long srclength, @Ptr long dst, @Ptr long dstlength);
-	/**
-	 * SQY_LZ4_Max_Compressed_Length - Calculates the maximum size of the output buffer from LZ4 compression<br>
-	 * The first 8 bytes of the destination buffer encode a 64 bit long that<br>
-	 * represents the length of the source buffer.<br>
-	 * length 					: (in) length in bytes of decompressed buffer<br>
-	 * (out) maximum length in bytes of compressed buffer<br>
-	 * Returns 0 if success, another code if there was an error (error codes provided below)<br>
-	 * Original signature : <code>int SQY_LZ4_Max_Compressed_Length(long*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:292</i>
-	 */
-	public static int SQY_LZ4_Max_Compressed_Length(Pointer<org.bridj.CLong > length) {
-		return SQY_LZ4_Max_Compressed_Length(Pointer.getPeer(length));
-	}
-	protected native static int SQY_LZ4_Max_Compressed_Length(@Ptr long length);
-	/**
-	 * SQY_LZ4_Decompressed_Length - Extracts the size of the decompressed buffer from the first 8 Byte of data<br>
-	 * The first 8 bytes of the destination buffer encode a 64 bit long that<br>
-	 * represents the length of the source buffer. This function extracts it.<br>
-	 * data					: buffer to contain the compressed data as output by SQY_LZ4Encode<br>
-	 * length					: (in) length in bytes of incoming data buffer<br>
-	 * (out) extracted length in bytes of decompressed buffer to be output by SQY_LZ4Decode called on data<br>
-	 * Returns 0 if success, another code if there was an error (error codes provided below)<br>
-	 * Original signature : <code>int SQY_LZ4_Decompressed_Length(const char*, long*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:307</i>
-	 */
-	public static int SQY_LZ4_Decompressed_Length(Pointer<Byte > data, Pointer<org.bridj.CLong > length) {
-		return SQY_LZ4_Decompressed_Length(Pointer.getPeer(data), Pointer.getPeer(length));
-	}
-	protected native static int SQY_LZ4_Decompressed_Length(@Ptr long data, @Ptr long length);
-	/**
-	 * SQY_LZ4Decode - Decompress using LZ4.<br>
-	 * Decompresses the source buffer into the destination buffer using LZ4.<br>
-	 * The destination buffer should be allocated externally. The first 8 bytes of <br>
-	 * the source buffer are not part of the LZ4 compressed buffer but indicate the<br>
-	 * length of the original uncompressed buffer.<br>
-	 * The necessary buffer length can be obtained by calling SQY_LZ4Length. <br>
-	 * src 					: LZ4 compressed buffer (externally allocated)<br>
-	 * srclength 				: length in bytes of compressed buffer<br>
-	 * dst 					: contiguous array of voxels <br>
-	 * (externally allocated, length from SQY_LZ4Length)<br>
-	 * Returns 0 if success, another code if there was an error (error codes provided below)<br>
-	 * Original signature : <code>int SQY_LZ4Decode(const char*, long, char*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:326</i>
-	 */
-	public static int SQY_LZ4Decode(Pointer<Byte > src, @org.bridj.ann.CLong long srclength, Pointer<Byte > dst) {
-		return SQY_LZ4Decode(Pointer.getPeer(src), srclength, Pointer.getPeer(dst));
-	}
-	protected native static int SQY_LZ4Decode(@Ptr long src, @org.bridj.ann.CLong long srclength, @Ptr long dst);
-	/**
 	 * SQY_Header_Size - Detect length of header stored in src.<br>
 	 * Search for the sqy header in src and save its length in Byte in lenght<br>
 	 * src 					: LZ4 compressed buffer (externally allocated & filled)<br>
 	 * length					: length in bytes of header in compressed buffer<br>
 	 * Returns 0 if success, another code if there was an error (error codes provided below)<br>
 	 * Original signature : <code>int SQY_Header_Size(const char*, long*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:339</i>
+	 * <i>native declaration : src/cpp/inc/sqeazy.h:22</i>
 	 */
 	public static int SQY_Header_Size(Pointer<Byte > src, Pointer<org.bridj.CLong > length) {
 		return SQY_Header_Size(Pointer.getPeer(src), Pointer.getPeer(length));
@@ -390,7 +36,7 @@ public class SqeazyLibrary {
 	 * version					: 3 element int array that holds the sqeazy version<br>
 	 * Returns 0 if success, another code if there was an error (error codes provided below)<br>
 	 * Original signature : <code>int SQY_Version_Triple(int*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:351</i>
+	 * <i>native declaration : src/cpp/inc/sqeazy.h:34</i>
 	 */
 	public static int SQY_Version_Triple(Pointer<Integer > version) {
 		return SQY_Version_Triple(Pointer.getPeer(version));
@@ -410,15 +56,16 @@ public class SqeazyLibrary {
 	 * dstlength 				: length in bytes of externally allocated destination buffer (needs to give the length of dst in Bytes),<br>
 	 * modified by function call to reflect the effective <br>
 	 * compressed buffer length after the call.<br>
+	 * nthreads                : set the number of threads allowed for the entire pipeline.<br>
 	 * Returns 0 if success, another code if there was an error (error codes provided below)<br>
 	 * error 1 -  destination buffer is not large enough<br>
-	 * Original signature : <code>int SQY_PipelineEncode_UI16(const char*, const char*, long*, unsigned, char*, long*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:378</i>
+	 * Original signature : <code>int SQY_PipelineEncode_UI16(const char*, const char*, long*, unsigned, char*, long*, int)</code><br>
+	 * <i>native declaration : src/cpp/inc/sqeazy.h:62</i>
 	 */
-	public static int SQY_PipelineEncode_UI16(Pointer<Byte > pipeline, Pointer<Byte > src, Pointer<org.bridj.CLong > shape, int shape_size, Pointer<Byte > dst, Pointer<org.bridj.CLong > dstlength) {
-		return SQY_PipelineEncode_UI16(Pointer.getPeer(pipeline), Pointer.getPeer(src), Pointer.getPeer(shape), shape_size, Pointer.getPeer(dst), Pointer.getPeer(dstlength));
+	public static int SQY_PipelineEncode_UI16(Pointer<Byte > pipeline, Pointer<Byte > src, Pointer<org.bridj.CLong > shape, int shape_size, Pointer<Byte > dst, Pointer<org.bridj.CLong > dstlength, int nthreads) {
+		return SQY_PipelineEncode_UI16(Pointer.getPeer(pipeline), Pointer.getPeer(src), Pointer.getPeer(shape), shape_size, Pointer.getPeer(dst), Pointer.getPeer(dstlength), nthreads);
 	}
-	protected native static int SQY_PipelineEncode_UI16(@Ptr long pipeline, @Ptr long src, @Ptr long shape, int shape_size, @Ptr long dst, @Ptr long dstlength);
+	protected native static int SQY_PipelineEncode_UI16(@Ptr long pipeline, @Ptr long src, @Ptr long shape, int shape_size, @Ptr long dst, @Ptr long dstlength, int nthreads);
 	/**
 	 * SQY_Pipeline_Max_Compressed_Length - Calculates the maximum size of the output buffer from Pipeline compression<br>
 	 * pipeline				: pipeline name<br>
@@ -426,7 +73,7 @@ public class SqeazyLibrary {
 	 * (out) maximum length in bytes of compressed buffer<br>
 	 * Returns 0 if success, another code if there was an error (error codes provided below)<br>
 	 * Original signature : <code>int SQY_Pipeline_Max_Compressed_Length_UI16(const char*, long*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:391</i>
+	 * <i>native declaration : src/cpp/inc/sqeazy.h:81</i>
 	 */
 	public static int SQY_Pipeline_Max_Compressed_Length_UI16(Pointer<Byte > pipeline, Pointer<org.bridj.CLong > length) {
 		return SQY_Pipeline_Max_Compressed_Length_UI16(Pointer.getPeer(pipeline), Pointer.getPeer(length));
@@ -440,7 +87,7 @@ public class SqeazyLibrary {
 	 * length 					: (out) maximum length in bytes of compressed buffer<br>
 	 * Returns 0 if success, another code if there was an error (error codes provided below)<br>
 	 * Original signature : <code>int SQY_Pipeline_Max_Compressed_Length_3D_UI16(const char*, long*, unsigned, long*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:403</i>
+	 * <i>native declaration : src/cpp/inc/sqeazy.h:93</i>
 	 */
 	public static int SQY_Pipeline_Max_Compressed_Length_3D_UI16(Pointer<Byte > pipeline, Pointer<org.bridj.CLong > shape, int shape_size, Pointer<org.bridj.CLong > length) {
 		return SQY_Pipeline_Max_Compressed_Length_3D_UI16(Pointer.getPeer(pipeline), Pointer.getPeer(shape), shape_size, Pointer.getPeer(length));
@@ -453,7 +100,7 @@ public class SqeazyLibrary {
 	 * (out) extracted length in bytes of decompressed buffer to be output by SQY_PipelineDecode called on data<br>
 	 * Returns 0 if success, another code if there was an error (error codes provided below)<br>
 	 * Original signature : <code>int SQY_Pipeline_Decompressed_Length(const char*, long*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:415</i>
+	 * <i>native declaration : src/cpp/inc/sqeazy.h:105</i>
 	 */
 	public static int SQY_Pipeline_Decompressed_Length(Pointer<Byte > data, Pointer<org.bridj.CLong > length) {
 		return SQY_Pipeline_Decompressed_Length(Pointer.getPeer(data), Pointer.getPeer(length));
@@ -471,21 +118,22 @@ public class SqeazyLibrary {
 	 * srclength 				: length in bytes of compressed buffer<br>
 	 * dst 					: contiguous array of voxels <br>
 	 * (externally allocated, length from SQY_Pipeline_Decompressed_Length)<br>
+	 * nthreads                : set the number of threads allowed for the entire pipeline.<br>
 	 * Returns 0 if success, another code if there was an error (error codes provided below)<br>
-	 * Original signature : <code>int SQY_PipelineDecode_UI16(const char*, long, char*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:435</i>
+	 * Original signature : <code>int SQY_PipelineDecode_UI16(const char*, long, char*, int)</code><br>
+	 * <i>native declaration : src/cpp/inc/sqeazy.h:126</i>
 	 */
-	public static int SQY_PipelineDecode_UI16(Pointer<Byte > src, @org.bridj.ann.CLong long srclength, Pointer<Byte > dst) {
-		return SQY_PipelineDecode_UI16(Pointer.getPeer(src), srclength, Pointer.getPeer(dst));
+	public static int SQY_PipelineDecode_UI16(Pointer<Byte > src, @org.bridj.ann.CLong long srclength, Pointer<Byte > dst, int nthreads) {
+		return SQY_PipelineDecode_UI16(Pointer.getPeer(src), srclength, Pointer.getPeer(dst), nthreads);
 	}
-	protected native static int SQY_PipelineDecode_UI16(@Ptr long src, @org.bridj.ann.CLong long srclength, @Ptr long dst);
+	protected native static int SQY_PipelineDecode_UI16(@Ptr long src, @org.bridj.ann.CLong long srclength, @Ptr long dst, int nthreads);
 	/**
 	 * SQY_Pipeline_Possible - check if pipeline string can be used to build pipeline from<br>
 	 * By default 16-bit input data is assumed.<br>
 	 * pipeline_string				: string that describes the pipeline ('->' delimited)<br>
 	 * Returns true if success, false if not!<br>
 	 * Original signature : <code>bool SQY_Pipeline_Possible(const char*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:447</i>
+	 * <i>native declaration : src/cpp/inc/sqeazy.h:141</i>
 	 */
 	public static boolean SQY_Pipeline_Possible(Pointer<Byte > pipeline_string) {
 		return SQY_Pipeline_Possible(Pointer.getPeer(pipeline_string));
@@ -499,7 +147,7 @@ public class SqeazyLibrary {
 	 * (filled with 0 if dataset is not found)<br>
 	 * Returns 0 if success, another code if there was an error<br>
 	 * Original signature : <code>int SQY_h5_query_sizeof(const char*, const char*, unsigned*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:479</i>
+	 * <i>native declaration : src/cpp/inc/sqeazy.h:171</i>
 	 */
 	public static int SQY_h5_query_sizeof(Pointer<Byte > fname, Pointer<Byte > dname, Pointer<Integer > _sizeof) {
 		return SQY_h5_query_sizeof(Pointer.getPeer(fname), Pointer.getPeer(dname), Pointer.getPeer(_sizeof));
@@ -515,7 +163,7 @@ public class SqeazyLibrary {
 	 * dtype = 2			: unsigned integer<br>
 	 * Returns 0 if success, another code if there was an error<br>
 	 * Original signature : <code>int SQY_h5_query_dtype(const char*, const char*, unsigned*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:496</i>
+	 * <i>native declaration : src/cpp/inc/sqeazy.h:188</i>
 	 */
 	public static int SQY_h5_query_dtype(Pointer<Byte > fname, Pointer<Byte > dname, Pointer<Integer > dtype) {
 		return SQY_h5_query_dtype(Pointer.getPeer(fname), Pointer.getPeer(dname), Pointer.getPeer(dtype));
@@ -528,7 +176,7 @@ public class SqeazyLibrary {
 	 * dtype					: rank of the stored data<br>
 	 * Returns 0 if success, another code if there was an error<br>
 	 * Original signature : <code>int SQY_h5_query_ndims(const char*, const char*, unsigned*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:510</i>
+	 * <i>native declaration : src/cpp/inc/sqeazy.h:202</i>
 	 */
 	public static int SQY_h5_query_ndims(Pointer<Byte > fname, Pointer<Byte > dname, Pointer<Integer > rank) {
 		return SQY_h5_query_ndims(Pointer.getPeer(fname), Pointer.getPeer(dname), Pointer.getPeer(rank));
@@ -541,7 +189,7 @@ public class SqeazyLibrary {
 	 * shape					: shape of the stored data (in row-wise ordering a la C), externally allocated<br>
 	 * Returns 0 if success, another code if there was an error<br>
 	 * Original signature : <code>int SQY_h5_query_shape(const char*, const char*, unsigned*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:524</i>
+	 * <i>native declaration : src/cpp/inc/sqeazy.h:216</i>
 	 */
 	public static int SQY_h5_query_shape(Pointer<Byte > fname, Pointer<Byte > dname, Pointer<Integer > shape) {
 		return SQY_h5_query_shape(Pointer.getPeer(fname), Pointer.getPeer(dname), Pointer.getPeer(shape));
@@ -552,9 +200,10 @@ public class SqeazyLibrary {
 	 * fname 					: hdf5 file to store data in<br>
 	 * dname 					: dataset name inside hdf5 file <br>
 	 * data					: data buffer (externally allocated)<br>
+	 * TODO: add multi-threading support for the pipeline only<br>
 	 * Returns 0 if success, another code if there was an error<br>
 	 * Original signature : <code>int SQY_h5_read_UI16(const char*, const char*, unsigned short*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:538</i>
+	 * <i>native declaration : src/cpp/inc/sqeazy.h:231</i>
 	 */
 	public static int SQY_h5_read_UI16(Pointer<Byte > fname, Pointer<Byte > dname, Pointer<Short > data) {
 		return SQY_h5_read_UI16(Pointer.getPeer(fname), Pointer.getPeer(dname), Pointer.getPeer(data));
@@ -568,9 +217,10 @@ public class SqeazyLibrary {
 	 * shape_size				: number of dimensions in data<br>
 	 * shape					: dimension of data<br>
 	 * filter					: filter to use<br>
+	 * TODO: add multi-threading support for the pipeline only<br>
 	 * Returns 0 if success, another code if there was an error<br>
 	 * Original signature : <code>int SQY_h5_write_UI16(const char*, const char*, const unsigned short*, unsigned, const unsigned*, const char*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:555</i>
+	 * <i>native declaration : src/cpp/inc/sqeazy.h:249</i>
 	 */
 	public static int SQY_h5_write_UI16(Pointer<Byte > fname, Pointer<Byte > dname, Pointer<Short > data, int shape_size, Pointer<Integer > shape, Pointer<Byte > filter) {
 		return SQY_h5_write_UI16(Pointer.getPeer(fname), Pointer.getPeer(dname), Pointer.getPeer(data), shape_size, Pointer.getPeer(shape), Pointer.getPeer(filter));
@@ -582,9 +232,10 @@ public class SqeazyLibrary {
 	 * dname 					: dataset name inside hdf5 file <br>
 	 * data					: compressed data<br>
 	 * data_size				: size of data in byte<br>
+	 * TODO: add multi-threading support for the pipeline only<br>
 	 * Returns 0 if success, another code if there was an error<br>
 	 * Original signature : <code>int SQY_h5_write(const char*, const char*, const char*, unsigned long)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:573</i>
+	 * <i>native declaration : src/cpp/inc/sqeazy.h:269</i>
 	 */
 	public static int SQY_h5_write(Pointer<Byte > fname, Pointer<Byte > dname, Pointer<Byte > data, @org.bridj.ann.CLong long data_size) {
 		return SQY_h5_write(Pointer.getPeer(fname), Pointer.getPeer(dname), Pointer.getPeer(data), data_size);
@@ -600,7 +251,7 @@ public class SqeazyLibrary {
 	 * pDestDatasetName			: name of dataset inside pDestFileName<br>
 	 * Returns 0 if success, another code if there was an error<br>
 	 * Original signature : <code>int SQY_h5_link(const char*, const char*, const char*, const char*, const char*, const char*)</code><br>
-	 * <i>native declaration : src/cpp/inc/sqeazy.h:592</i>
+	 * <i>native declaration : src/cpp/inc/sqeazy.h:288</i>
 	 */
 	public static int SQY_h5_link(Pointer<Byte > pSrcFileName, Pointer<Byte > pSrcLinkPath, Pointer<Byte > pSrcLinkName, Pointer<Byte > pTargetFile, Pointer<Byte > pTargetDatasetPath, Pointer<Byte > pTargetDatasetName) {
 		return SQY_h5_link(Pointer.getPeer(pSrcFileName), Pointer.getPeer(pSrcLinkPath), Pointer.getPeer(pSrcLinkName), Pointer.getPeer(pTargetFile), Pointer.getPeer(pTargetDatasetPath), Pointer.getPeer(pTargetDatasetName));
