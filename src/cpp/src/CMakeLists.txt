@@ -74,6 +74,7 @@ if(BUNDLE_SQEAZY OR ${BUNDLE_SQEAZY})
     string(TOLOWER "-static-${_flag}" _lower_flag)
     if(HAS_STATIC_${_flag}_COMPILERFLAG)
       set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${_lower_flag}")
+      add_definitions(${_lower_flag})
     endif()
   endforeach()
 
