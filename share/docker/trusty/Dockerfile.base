@@ -25,7 +25,6 @@ RUN apt-get -qq update && apt-get install -y --no-install-recommends \
         libtimedate-perl \
         libtsan0 \
         patch \
-        libtiff-dev \
         zlib1g-dev \
         libc6-dev ;
 
@@ -89,7 +88,7 @@ RUN cd /usr/src/gcc; \
     cd "$dir"; \
     \
     gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)"; \
-    CFLAGS=-fPIC CXXFLAGS=-fPIC LDFLAGS=-fPIC /usr/src/gcc/configure --build=`dpkg-architecture --query DEB_BUILD_GNU_TYPE` --enable-threads=posix --enable-checking=release --with-system-zlib --enable-__cxa_atexit --enable-languages=c,c++,lto --disable-multilib --disable-nls --disable-bootstrap && \
+    CFLAGS=-fPIC CXXFLAGS=-fPIC LDFLAGS=-fPIC /usr/src/gcc/configure --build=`dpkg-architecture --query DEB_BUILD_GNU_TYPE` --enable-threads=posix --enable-checking=release --with-system-zlib --enable-__cxa_atexit --enable-languages=c,c++,lto --disable-multilib --disable-nls --enable-bootstrap && \
     make -j 8 && \
     make install-strip; \
     \
@@ -100,17 +99,20 @@ RUN cd /usr/src/gcc; \
     apt-get purge -y --auto-remove dpkg-dev flex;
 
 
-# ensure that alternatives are pointing to the new compiler and that old one is no longer used
+#ensure that alternatives are pointing to the new compiler and that old one is no longer used
 RUN set -ex; \
     dpkg-divert --divert /usr/bin/gcc.orig --rename /usr/bin/gcc; \
     dpkg-divert --divert /usr/bin/g++.orig --rename /usr/bin/g++; \
     dpkg-divert --divert /usr/bin/gfortran.orig --rename /usr/bin/gfortran; \
-    update-alternatives --install /usr/bin/cc cc /usr/local/bin/gcc 999
+    update-alternatives --install /usr/bin/cc cc /usr/local/bin/gcc 999; \
+    update-alternatives --install /usr/bin/c++ c++ /usr/local/bin/g++ 999
+
+RUN apt remove -y libgomp1 gcc g++ libstdc++-4.8-dev;
 
 RUN wget --no-check-certificate http://www.nasm.us/pub/nasm/releasebuilds/2.13.01/nasm-2.13.01.tar.bz2 && \
     tar xf nasm-2.13.01.tar.bz2 && \
     cd nasm-2.13.01 && \
-    ./configure --prefix=/usr/local && make -j8 && make install && \
+    ./configure --prefix=/usr/ && make -j8 && make install && \
     cd .. && rm -rf nasm-2.13.01;
 
 RUN wget --no-check-certificate https://cmake.org/files/v3.9/cmake-3.9.3-Linux-x86_64.tar.gz && \
@@ -119,13 +121,13 @@ RUN wget --no-check-certificate https://cmake.org/files/v3.9/cmake-3.9.3-Linux-x
 
 RUN git clone https://github.com/yasm/yasm.git && cd yasm && \
     git checkout v1.3.0 && mkdir build && cd build && \
-    cmake -DCMAKE_INSTALL_PREFIX=/usr/local .. && make -j8 && make install && \
+    cmake -DCMAKE_INSTALL_PREFIX=/usr/ .. && make -j8 && make install && \
     cd /build && rm -vrf yasm;
 
 RUN wget --no-check-certificate https://services.gradle.org/distributions/gradle-4.0.2-bin.zip && \
     unzip gradle-4.0.2-bin.zip && \
     cd gradle-4.0.2 && \
-    cp -r bin /usr/local && cp -r lib /usr/local && \
+    cp -r bin /usr/ && cp -r lib /usr/ && \
     cd /build && rm -rf gradle-4.0.2;
 
 # gcc installs .so files in /usr/local/lib64...
