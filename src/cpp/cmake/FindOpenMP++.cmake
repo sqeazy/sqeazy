@@ -40,8 +40,8 @@ include(CheckCXXCompilerFlag)
 get_filename_component(CXX_COMPILER_APP_PATH "${CMAKE_CXX_COMPILER}" PATH)
 get_filename_component(CXX_COMPILER_ROOT_PATH "${CXX_COMPILER_APP_PATH}" PATH)
 if(NOT OpenMP_LINK_STATIC)
-	set(OpenMP_LINK_STATIC OFF)
-endif()	
+    set(OpenMP_LINK_STATIC OFF)
+endif()
 string(REPLACE "bin" "lib" CXX_COMPILER_LIBS_PATH "${CXX_COMPILER_APP_PATH}")
 
 if(NOT EXISTS ${CXX_COMPILER_LIBS_PATH})
@@ -102,16 +102,16 @@ if(OpenMP_CXX_FOUND)
   set(OpenMP_FOUND TRUE)
   set(OpenMP++_FOUND TRUE)
 
-  
+
   if(NOT OpenMP++_FIND_QUIETLY)
-	if(NOT WIN32)
-		message(STATUS "[FindOpenMP++] found openmp libraries ${OpenMP_CXX_LIBRARIES} and flags ${OpenMP_CXX_FLAGS}")
-	else()
-		message(STATUS "[FindOpenMP++] found openmp flags ${OpenMP_CXX_FLAGS}")
-	endif()
+    if(NOT WIN32)
+        message(STATUS "[FindOpenMP++] found openmp libraries ${OpenMP_CXX_LIBRARIES} and flags ${OpenMP_CXX_FLAGS}")
+    else()
+        message(STATUS "[FindOpenMP++] found openmp flags ${OpenMP_CXX_FLAGS}")
+    endif()
   endif()
-  
-  
+
+
 
   if(${OpenMP_LINK_STATIC} AND NOT WIN32)
 
@@ -119,14 +119,21 @@ if(OpenMP_CXX_FOUND)
       message(STATUS "[FindOpenMP++] found ${OpenMP_CXX_LIBRARIES}, trying to replace ${CMAKE_SHARED_LIBRARY_SUFFIX} libraries for ${CMAKE_STATIC_LIBRARY_SUFFIX} libraries")
     endif()
 
-    if( ${OpenMP_CXX_LIBRARIES} MATCHES ${CMAKE_SHARED_LIBRARY_SUFFIX})
+    if( "${OpenMP_CXX_LIBRARIES}" MATCHES ${CMAKE_SHARED_LIBRARY_SUFFIX})
+
+      list(LENGTH OpenMP_CXX_LIBRARIES OpenMP_CXX_LIBRARIES_SIZE)
       string(REPLACE "${CMAKE_SHARED_LIBRARY_SUFFIX}" "${CMAKE_STATIC_LIBRARY_SUFFIX}" TEMP_OpenMP_CXX_LIBRARIES "${OpenMP_CXX_LIBRARIES}")
-      if( EXISTS ${TEMP_OpenMP_CXX_LIBRARIES} )
+      set(REPLACE_OpenMP_CXX_LIBRARIES_BY)
+      foreach(_libfile IN LISTS TEMP_OpenMP_CXX_LIBRARIES)
+      if( EXISTS ${_libfile})
         if(NOT OpenMP++_FIND_QUIETLY)
           message(STATUS "[FindOpenMP++] using ${TEMP_OpenMP_CXX_LIBRARIES} in favor of ${OpenMP_CXX_LIBRARIES}")
         endif()
-        set(OpenMP_CXX_LIBRARIES "${TEMP_OpenMP_CXX_LIBRARIES}")
+        list(APPEND REPLACE_OpenMP_CXX_LIBRARIES_BY ${_libfile})
       endif()
+    endforeach()
+
+      set(OpenMP_CXX_LIBRARIES "${REPLACE_OpenMP_CXX_LIBRARIES_BY}")
     endif()
   endif()
 
@@ -185,9 +192,9 @@ if(OpenMP++_FOUND AND NOT OpenMP_CXX_LIBRARIES AND NOT WIN32)
       list(APPEND OpenMP_CXX_LIBRARIES ${OMP_LIB_PATH})
 
     else()
-		if(NOT WIN32)
-			message(WARNING "[FindOpenMP++] libgomp${CMAKE_STATIC_LIBRARY_SUFFIX}/libomp${CMAKE_STATIC_LIBRARY_SUFFIX} not found, using OpenMP_CXX_LIBRARIES=${OpenMP_CXX_LIBRARIES}")
-		endif()	
+        if(NOT WIN32)
+            message(WARNING "[FindOpenMP++] libgomp${CMAKE_STATIC_LIBRARY_SUFFIX}/libomp${CMAKE_STATIC_LIBRARY_SUFFIX} not found, using OpenMP_CXX_LIBRARIES=${OpenMP_CXX_LIBRARIES}")
+        endif()
     endif()
 
     if(UNIX)
@@ -231,6 +238,7 @@ if(OpenMP++_FOUND)
     set(OpenMP++_VERSION ${OpenMP_CXX_VERSION})
   endif()
 
+  #TODO: shouldn't the consumer of this module be doing this?
   add_definitions(${OpenMP++_FLAGS})
 
   if(NOT OpenMP++_FIND_QUIETLY)
@@ -241,11 +249,11 @@ endif()
 include(FindPackageHandleStandardArgs)
 
 if(NOT WIN32)
-	find_package_handle_standard_args(OpenMP++
-		REQUIRED_VARS OpenMP++_FLAGS OpenMP++_LIBRARIES
-		VERSION_VAR OpenMP++_VERSION)
+    find_package_handle_standard_args(OpenMP++
+        REQUIRED_VARS OpenMP++_FLAGS OpenMP++_LIBRARIES
+        VERSION_VAR OpenMP++_VERSION)
 else()
-	find_package_handle_standard_args(OpenMP++
-		REQUIRED_VARS OpenMP++_FLAGS
-		VERSION_VAR OpenMP++_VERSION)
-endif()	
+    find_package_handle_standard_args(OpenMP++
+        REQUIRED_VARS OpenMP++_FLAGS
+        VERSION_VAR OpenMP++_VERSION)
+endif()
