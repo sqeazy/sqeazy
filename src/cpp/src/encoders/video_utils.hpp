@@ -403,7 +403,7 @@ namespace sqeazy {
   static int read_packet(void *opaque, std::uint8_t *buf, int buf_size)
   {
     avio_buffer_data *bd = (avio_buffer_data *)opaque;
-    buf_size = std::min((decltype(bd->size))buf_size, bd->size);
+    buf_size = (std::min)((decltype(bd->size))buf_size, bd->size);
 
     /* copy internal buffer data to buf */
     std::copy(bd->ptr, bd->ptr + buf_size,buf);
@@ -606,7 +606,7 @@ namespace sqeazy {
         else
           min_el_bot = min_el_top;
 
-        min_el = std::min(min_el_top,min_el_bot);
+        min_el = (std::min)(min_el_top,min_el_bot);
 
         frame_c_t hihalf = (min_el >> 8) & 0xff;
         frame_c_t lohalf = (min_el) & 0xff;

@@ -146,7 +146,7 @@ if(PKG_CONFIG_FOUND AND NOT FFMPEG_IGNORE_PKG_CONFIG)
 
   pkg_check_modules(LOCAL_FFMPEG ${MY_PKGCONFIG_FINDARGS} ${comp_with_fixed_names})
   set(FFMPEG_EXTRA_LINK_FLAGS ${LOCAL_FFMPEG_LDFLAGS} ${LOCAL_FFMPEG_LDFLAGS_OTHER})
-  message("!! ${FFMPEG_EXTRA_LINK_FLAGS}")
+  
 
   if(LOCAL_FFMPEG_FOUND)
 
@@ -170,18 +170,19 @@ if(PKG_CONFIG_FOUND AND NOT FFMPEG_IGNORE_PKG_CONFIG)
         list(GET FFMPEG_LIBRARIES ${_COMP_INDEX} FFMPEG_${_FFMPEG_COMPONENT_UPPER}_LIBRARY)
 
         if(${FFMPEG_USE_STATIC_LIBS})
+		
           find_library(${_COMP}_PATH
-            NAMES ${_COMP}${CMAKE_STATIC_LIBRARY_SUFFIX} lib${_COMP}${CMAKE_STATIC_LIBRARY_SUFFIX} NAMES_PER_DIR
+            NAMES ${_COMP}${CMAKE_STATIC_LIBRARY_SUFFIX} lib${_COMP}${CMAKE_STATIC_LIBRARY_SUFFIX} ${_COMP}.a lib${_COMP}.a 
             PATHS ${FFMPEG_ROOT_DIR}
             HINTS ${FFMPEG_ROOT_DIR}
             PATH_SUFFIXES lib lib64)
-        else()
+        endif()
           find_library(${_COMP}_PATH
-            NAMES ${_COMP} lib${_COMP} NAMES_PER_DIR
+            NAMES ${_COMP} lib${_COMP} 
             PATHS ${FFMPEG_ROOT_DIR}
             HINTS ${FFMPEG_ROOT_DIR}
             PATH_SUFFIXES lib lib64 bin)
-        endif()
+        
 
         set(TEMP_FLAGS "")
         if(${${_COMP}_PATH} MATCHES ".*${CMAKE_SHARED_LIBRARY_SUFFIX}")
@@ -236,13 +237,34 @@ else(PKG_CONFIG_FOUND AND NOT FFMPEG_IGNORE_PKG_CONFIG)
     SET (_FFMPEG_LIBRARY_BASE FFMPEG_${_FFMPEG_COMPONENT_UPPER}_LIBRARY)
 
     #tries to obtain FFMPEG_COMPONENT_LIBRARY
-
+	if(${FFMPEG_USE_STATIC_LIBS})
+	    #the artificial .a suffix at the end of the last 2 names is due to the fact that ffmpeg has such a great build system that it doesn't honor file name conventions under windows
+		FIND_LIBRARY (${_FFMPEG_LIBRARY_BASE}
+			NAMES ${_FFMPEG_COMPONENT}${CMAKE_STATIC_LIBRARY_SUFFIX} lib${_FFMPEG_COMPONENT}${CMAKE_STATIC_LIBRARY_SUFFIX} ${_FFMPEG_COMPONENT}.a lib${_FFMPEG_COMPONENT}.a 
+			HINTS ${FFMPEG_ROOT_DIR}
+			PATHS ${FFMPEG_ROOT_DIR}
+			PATH_SUFFIXES lib lib64
+			DOC "Ffmpeg ${_FFMPEG_COMPONENT} library"
+			NO_DEFAULT_PATH)
+		FIND_LIBRARY(${_FFMPEG_LIBRARY_BASE}
+			NAMES ${_FFMPEG_COMPONENT}${CMAKE_STATIC_LIBRARY_SUFFIX} lib${_FFMPEG_COMPONENT}${CMAKE_STATIC_LIBRARY_SUFFIX} ${_FFMPEG_COMPONENT}.a lib${_FFMPEG_COMPONENT}.a)
+		FIND_FILE (${_FFMPEG_LIBRARY_BASE}
+			NAMES ${_FFMPEG_COMPONENT}${CMAKE_STATIC_LIBRARY_SUFFIX} lib${_FFMPEG_COMPONENT}${CMAKE_STATIC_LIBRARY_SUFFIX} ${_FFMPEG_COMPONENT}.a lib${_FFMPEG_COMPONENT}.a 
+			HINTS ${FFMPEG_ROOT_DIR}
+			PATHS ${FFMPEG_ROOT_DIR}
+			PATH_SUFFIXES lib lib64
+			DOC "Ffmpeg ${_FFMPEG_COMPONENT} library"
+			NO_DEFAULT_PATH)
+	endif()
+	
     FIND_LIBRARY (${_FFMPEG_LIBRARY_BASE}
-      NAMES ${_FFMPEG_COMPONENT} lib${_FFMPEG_COMPONENT} ${_FFMPEG_COMPONENT}${CMAKE_STATIC_LIBRARY_SUFFIX} lib${_FFMPEG_COMPONENT}${CMAKE_STATIC_LIBRARY_SUFFIX} NAMES_PER_DIR
+      NAMES ${_FFMPEG_COMPONENT} lib${_FFMPEG_COMPONENT} ${_FFMPEG_COMPONENT}${CMAKE_STATIC_LIBRARY_SUFFIX} lib${_FFMPEG_COMPONENT}${CMAKE_STATIC_LIBRARY_SUFFIX} 
       HINTS ${FFMPEG_ROOT_DIR}
       PATHS ${FFMPEG_ROOT_DIR}
       PATH_SUFFIXES bin lib lib64
       DOC "Ffmpeg ${_FFMPEG_COMPONENT} library")
+	FIND_LIBRARY (${_FFMPEG_LIBRARY_BASE}
+      NAMES ${_FFMPEG_COMPONENT} lib${_FFMPEG_COMPONENT} ${_FFMPEG_COMPONENT}${CMAKE_STATIC_LIBRARY_SUFFIX} lib${_FFMPEG_COMPONENT}${CMAKE_STATIC_LIBRARY_SUFFIX} )
 
     if(NOT FFMPEG_FIND_QUIETLY)
       message("** [FindFFMPEG] found ${_FFMPEG_COMPONENT} ${_FFMPEG_LIBRARY_BASE} ${${_FFMPEG_LIBRARY_BASE}}, setting FFMPEG_${_FFMPEG_COMPONENT_UPPER}_FOUND")
@@ -264,7 +286,7 @@ else(PKG_CONFIG_FOUND AND NOT FFMPEG_IGNORE_PKG_CONFIG)
           #   set(FFMPEG_EXTRA_LINK_FLAGS ${FFMPEG_EXTRA_LINK_FLAGS} ${PKG_FFMPEG_STATIC_LDFLAGS} ${PKG_FFMPEG_STATIC_LDFLAGS_OTHER})
 
           # else(PKG_CONFIG_FOUND)
-          set(FFMPEG_EXTRA_LINK_FLAGS "-L/usr/local/lib -framework CoreFoundation -framework VideoToolbox -framework CoreMedia -framework QuartzCore -framework CoreVideo -framework CoreFoundation -framework VideoDecodeAcceleration -framework QuartzCore -liconv -Wl,-framework,CoreFoundation -Wl,-framework,Security -lx265 -lx264 -lm -lbz2 -lz -pthread -framework CoreServices -framework CoreFoundation -framework VideoToolbox -framework CoreMedia -framework QuartzCore -framework CoreVideo -framework CoreFoundation -framework VideoDecodeAcceleration -framework QuartzCore -liconv -Wl,-framework,CoreFoundation -Wl,-framework,Security -lx265 -lx264 -lm -lbz2 -lz -pthread -framework CoreServices -lm")
+          set(FFMPEG_EXTRA_LINK_FLAGS "-L${FFMPEG_ROOT_DIR}/lib -L/Users/steinbac/software/x265/2.5-static/lib -L/Users/steinbac/software/x264/master-static//lib  -lavformat  -liconv -lavcodec  -framework VideoToolbox -framework CoreMedia  -framework CoreVideo -framework CoreFoundation -framework VideoDecodeAcceleration -framework QuartzCore -liconv -lx265 -lc++ -ldl -lx264 -lpthread -lm -pthread -framework CoreServices -lswscale -lm -lavutil -lm")#-Wl,-framework,CoreFoundation -Wl,-framework,Security
           # endif(PKG_CONFIG_FOUND)
         else()
           if(NOT WIN32)

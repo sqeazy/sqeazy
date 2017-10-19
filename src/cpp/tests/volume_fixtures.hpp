@@ -26,7 +26,11 @@ namespace sqeazy {
     typedef image_stack stack_t;
     typedef T pixel_t;
 
-    static const T signal_intensity_ = std::numeric_limits<T>::max()*perc_of_max/100.f;
+#ifdef _WIN32
+    static const T signal_intensity_ = (std::numeric_limits<T>::max)()*perc_of_max/100.f;
+#else
+	static const T signal_intensity_ = std::numeric_limits<T>::max()*perc_of_max / 100.f;
+#endif
 
     image_stack embryo_;
     image_stack noisy_embryo_;

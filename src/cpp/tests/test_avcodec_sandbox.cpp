@@ -28,6 +28,8 @@ extern "C" {
   
 }
 
+#include <cmath>
+
 #define DEBUG_HEVC
 
 #include "volume_fixtures.hpp"
@@ -310,9 +312,16 @@ struct buffer_data {
 
 static int read_packet(void *opaque, uint8_t *buf, int buf_size)
 {
+	
     struct buffer_data *bd = (struct buffer_data *)opaque;
-    buf_size = std::min((decltype(bd->size))buf_size, bd->size);
-    
+	using local_size_t = decltype(bd->size);
+
+#ifdef _WIN32
+	buf_size = min(static_cast<local_size_t>(buf_size), bd->size);
+#else
+    buf_size = std::min(static_cast<local_size_t>(buf_size), bd->size);
+#endif
+
     /* copy internal buffer data to buf */
     memcpy(buf, bd->ptr, buf_size);
     bd->ptr  += buf_size;

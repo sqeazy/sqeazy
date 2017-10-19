@@ -1,6 +1,7 @@
 #ifndef HISTOGRAM_UTILS_H
 #define HISTOGRAM_UTILS_H
 
+
 #include <array>
 #include <iterator>
 
@@ -394,7 +395,11 @@ namespace sqeazy {
                 _nthreads = std::thread::hardware_concurrency();
 
             const omp_size_type len = std::distance(_begin,_end);
-            value_t max_value = std::numeric_limits<value_t>::min();
+#ifdef _WIN32
+            value_t max_value = (std::numeric_limits<value_t>::min)();
+#else
+			value_t max_value = std::numeric_limits<value_t>::min();
+#endif
             std::size_t value = len;
 
 #pragma omp parallel for                        \

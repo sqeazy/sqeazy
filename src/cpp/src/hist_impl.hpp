@@ -128,7 +128,11 @@ namespace sqeazy {
             support_value(0),
             mode_value(0),
             small_pop_bin_value(0),
+#ifdef _WIN32
+			large_pop_bin_value((std::numeric_limits<T>::max)()),
+#else
             large_pop_bin_value(std::numeric_limits<T>::max()),
+#endif
             nthreads(1)
             {
 
@@ -147,7 +151,7 @@ namespace sqeazy {
             support_value(0),
             mode_value(0),
             small_pop_bin_value(0),
-            large_pop_bin_value(std::numeric_limits<T>::max()),
+            large_pop_bin_value((std::numeric_limits<T>::max)()),
             nthreads(_nthreads)
             {
                 if(_size>0)
@@ -168,7 +172,11 @@ namespace sqeazy {
             support_value(0),
             mode_value(0),
             small_pop_bin_value(0),
-            large_pop_bin_value(std::numeric_limits<T>::max()),
+#ifdef _WIN32
+            large_pop_bin_value((std::numeric_limits<T>::max)()),
+#else
+			large_pop_bin_value(std::numeric_limits<T>::max()),
+#endif
             nthreads(_nthreads)
             {
                 if(num_entries)
@@ -190,7 +198,11 @@ namespace sqeazy {
             support_value= (0);
             mode_value= (0);
             small_pop_bin_value= (0);
+#ifdef _WIN32
+			large_pop_bin_value = ((std::numeric_limits<T>::max)());
+#else
             large_pop_bin_value= (std::numeric_limits<T>::max());
+#endif
         }
 
         template <typename ItrT>

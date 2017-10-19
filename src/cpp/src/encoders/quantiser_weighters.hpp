@@ -14,14 +14,14 @@ namespace sqeazy {
 
         struct offset_power_of{
 
-            std::size_t first_nonzero_index = std::numeric_limits<std::size_t>::max();
+            std::size_t first_nonzero_index = (std::numeric_limits<std::size_t>::max)();
 
             int exp_enum;
             int exp_denom;
             const float exponent;
 
             offset_power_of(int _enum = 1, int _denom = 1):
-                first_nonzero_index(std::numeric_limits<std::size_t>::max()),
+                first_nonzero_index((std::numeric_limits<std::size_t>::max)()),
                 exp_enum(_enum),
                 exp_denom(_denom),
                 exponent(float(exp_enum)/exp_denom)

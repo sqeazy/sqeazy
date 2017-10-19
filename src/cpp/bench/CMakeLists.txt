@@ -51,47 +51,47 @@ else()
 endif()
 
 add_executable(test_benchmark_fixture_impl test_benchmark_fixture_impl.cpp)
-target_link_libraries(test_benchmark_fixture_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY}
+target_link_libraries(test_benchmark_fixture_impl${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY}
 )
 
 add_executable(benchmark_bitswap_scheme_impl benchmark_bitswap_scheme_impl.cpp)
-target_link_libraries(benchmark_bitswap_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+target_link_libraries(benchmark_bitswap_scheme_impl${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
 add_executable(benchmark_base64_encoding benchmark_base64_encoding.cpp)
-target_link_libraries(benchmark_base64_encoding ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+target_link_libraries(benchmark_base64_encoding${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
 add_executable(benchmark_frame_shuffle_scheme_impl benchmark_frame_shuffle_scheme_impl.cpp)
-target_link_libraries(benchmark_frame_shuffle_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+target_link_libraries(benchmark_frame_shuffle_scheme_impl${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
 add_executable(benchmark_diff_scheme_impl benchmark_diff_scheme_impl.cpp)
-target_link_libraries(benchmark_diff_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+target_link_libraries(benchmark_diff_scheme_impl${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
 add_executable(benchmark_flatten_to_neighborhood_scheme_impl benchmark_flatten_to_neighborhood_scheme_impl.cpp)
-target_link_libraries(benchmark_flatten_to_neighborhood_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+target_link_libraries(benchmark_flatten_to_neighborhood_scheme_impl${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
 add_executable(benchmark_remove_background_scheme_impl benchmark_remove_background_scheme_impl.cpp)
-target_link_libraries(benchmark_remove_background_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+target_link_libraries(benchmark_remove_background_scheme_impl${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
 add_executable(benchmark_remove_estimated_background_scheme_impl benchmark_remove_estimated_background_scheme_impl.cpp)
-target_link_libraries(benchmark_remove_estimated_background_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+target_link_libraries(benchmark_remove_estimated_background_scheme_impl${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
 add_executable(benchmark_quantiser_scheme_impl benchmark_quantiser_scheme_impl.cpp)
-target_link_libraries(benchmark_quantiser_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+target_link_libraries(benchmark_quantiser_scheme_impl${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
 add_executable(benchmark_histogram_utils benchmark_histogram_utils.cpp)
-target_link_libraries(benchmark_histogram_utils ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+target_link_libraries(benchmark_histogram_utils${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
 add_executable(benchmark_pipeline_construction benchmark_pipeline_construction.cpp)
-target_link_libraries(benchmark_pipeline_construction ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+target_link_libraries(benchmark_pipeline_construction${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
 add_executable(benchmark_raster_reorder_scheme_impl benchmark_raster_reorder_scheme_impl.cpp)
-target_link_libraries(benchmark_raster_reorder_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+target_link_libraries(benchmark_raster_reorder_scheme_impl${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
 add_executable(benchmark_zcurve_reorder_scheme_impl benchmark_zcurve_reorder_scheme_impl.cpp)
-target_link_libraries(benchmark_zcurve_reorder_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+target_link_libraries(benchmark_zcurve_reorder_scheme_impl${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
 add_executable(benchmark_tile_shuffle_scheme_impl benchmark_tile_shuffle_scheme_impl.cpp)
-target_link_libraries(benchmark_tile_shuffle_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+target_link_libraries(benchmark_tile_shuffle_scheme_impl${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
 
 IF(FFMPEG_FOUND)
@@ -108,9 +108,9 @@ IF(FFMPEG_FOUND)
   endif()
 
   add_executable(benchmark_h264_scheme_impl benchmark_h264_scheme_impl.cpp)
-  target_link_libraries(benchmark_h264_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY} ${SQY_FFMPEG_Libraries})
+  target_link_libraries(benchmark_h264_scheme_impl${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY} ${SQY_FFMPEG_Libraries})
 
   add_executable(benchmark_hevc_scheme_impl benchmark_hevc_scheme_impl.cpp)
-  target_link_libraries(benchmark_hevc_scheme_impl ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY} ${SQY_FFMPEG_Libraries})
+  target_link_libraries(benchmark_hevc_scheme_impl${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY} ${SQY_FFMPEG_Libraries})
 
 endif()

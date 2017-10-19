@@ -335,25 +335,26 @@ task make_bundle(type:Exec) {
 
 task zip_bundle(type:Zip) {
 
-  description 'zip the libsqeazy.* bundle'
-  group bundle_group
+    description 'zip the libsqeazy.* bundle'
+    group bundle_group
 
-  def zinpath = file(native_build_dir).absolutePath+'/bundle'
+    def zinpath = file(native_build_dir).absolutePath+'/bundle'
 
-  from (zinpath)
-  into jnaerator_platform()
+    from (zinpath)
+    into jnaerator_platform()
 
-  include 'lib*'
-  include '*lib'
-  include '*dll'
-  include '*h'
-  include '*hpp'
+    include 'lib*'
+    include '*lib'
+    include '*dll'
+    include '*h'
+    include '*hpp'
+    include 'sqy*'
 
-  destinationDir file(native_build_dir+'/bundle') // directory that you want your archive to be placed in
-  archiveName 'sqeazy_bundle.zip'
+    destinationDir file(native_build_dir+'/bundle') // directory that you want your archive to be placed in
+    archiveName 'sqeazy_bundle.zip'
 
-  def outputs_exp = file(native_build_dir+'/bundle/').absolutePath+'/'+archiveName
-  outputs.files outputs_exp
+    def outputs_exp = file(native_build_dir+'/bundle/').absolutePath+'/'+archiveName
+    outputs.files outputs_exp
 }
 
 task upload_bundle(type:Exec) {
@@ -498,16 +499,20 @@ task unpack_for_bake {
 
     }
 
-    if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-        throw StopActionException
-    }
+	def app_to_use = "unzip"
+  def flags = "-o"
+	def tgt_dir_flag = "-d"
+	
+	if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+        app_to_use = "jar"
+        flags = "xf"
+        tgt_dir_flag = "-C"
+    } 
 
-    doLast {
+  doLast {
+      ftree.each{ File zfile -> exec {
 
-        ftree.each{ File zfile ->
-                   exec {
-
-                commandLine 'unzip', '-o', '-d', dist_dir+'/lib', zfile
+                commandLine app_to_use, flags, tgt_dir_flag, dist_dir+'/lib', zfile
                 println commandLine.join(" ")
 
             }
@@ -515,11 +520,11 @@ task unpack_for_bake {
 
     }
 
-    def bundled_headers = []
-    supported_platforms.each{ String plat ->
+  def bundled_headers = []
+  supported_platforms.each{ String plat ->
                              bundled_headers.add(dist_dir+"/lib/"+plat+"/sqeazy.h")
     }
-    outputs.files bundled_headers
+  outputs.files bundled_headers
 }
 
 

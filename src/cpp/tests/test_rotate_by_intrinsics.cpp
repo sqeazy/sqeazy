@@ -267,7 +267,7 @@ BOOST_AUTO_TEST_CASE( understand_movemask_for_8bit_input ){
     unsigned char value = 128;
     __m128i test = _mm_set1_epi8(value);
     int result = _mm_movemask_epi8(test);
-    BOOST_REQUIRE(result == std::numeric_limits<unsigned short>::max());
+    BOOST_REQUIRE(result == (std::numeric_limits<unsigned short>::max)());
 
 }
 
@@ -276,7 +276,7 @@ BOOST_AUTO_TEST_CASE( understand_movemask_for_16bit_input ){
     unsigned short value = 1 << 15;
     __m128i test = _mm_set1_epi16(value);
     int result = _mm_movemask_epi8(test);
-    BOOST_REQUIRE(result != std::numeric_limits<unsigned short>::max());
+    BOOST_REQUIRE(result != (std::numeric_limits<unsigned short>::max)());
     BOOST_REQUIRE(result == 170 + (170 << 8)); // that is 1010101010101010
   }
 

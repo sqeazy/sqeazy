@@ -6,7 +6,6 @@ WORKDIR /build
 
 # Install any needed packages
 RUN apt-get -qq update && apt-get install -y --no-install-recommends \
-        git \
         mercurial \
         wget \
         bzip2 \
@@ -17,49 +16,125 @@ RUN apt-get -qq update && apt-get install -y --no-install-recommends \
         pkg-config \
         software-properties-common \
         binutils \
-#        build-essential \
-        cpp \
-        cpp-4.8 \
-        g++ \
-        g++-4.8 \
-        gcc \
-        gcc-4.8 \
         libasan0 \
         libatomic1 \
         libcloog-isl4 \
-        libgcc-4.8-dev \
-        libgmp10 \
-        libgomp1 \
         libisl10 \
         libitm1 \
-        libmpc3 \
-        libmpfr4 \
         libquadmath0 \
-        libstdc++-4.8-dev \
         libtimedate-perl \
         libtsan0 \
         patch \
-        libtiff-dev \
         zlib1g-dev \
         libc6-dev ;
+
+RUN add-apt-repository ppa:git-core/ppa && apt-get -qq update && apt-get install -y --no-install-recommends git ;
+
+RUN apt-get -qq update && \
+    apt-get install -y --no-install-recommends \
+            dpkg-dev \
+            dirmngr \
+            gnupg2 \
+            g++ \
+            gcc \
+            flex;
+
+ENV GCC_VERSION 7.2.0
+
+ENV GPG_KEYS \
+# 1024D/745C015A 1999-11-09 Gerald Pfeifer <gerald@pfeifer.com>
+    B215C1633BCA0477615F1B35A5B3A004745C015A \
+# 1024D/B75C61B8 2003-04-10 Mark Mitchell <mark@codesourcery.com>
+    B3C42148A44E6983B3E4CC0793FA9B1AB75C61B8 \
+# 1024D/902C9419 2004-12-06 Gabriel Dos Reis <gdr@acm.org>
+    90AA470469D3965A87A5DCB494D03953902C9419 \
+# 1024D/F71EDF1C 2000-02-13 Joseph Samuel Myers <jsm@polyomino.org.uk>
+    80F98B2E0DAB6C8281BDF541A7C8C3B2F71EDF1C \
+# 2048R/FC26A641 2005-09-13 Richard Guenther <richard.guenther@gmail.com>
+    7F74F97C103468EE5D750B583AB00996FC26A641 \
+# 1024D/C3C45C06 2004-04-21 Jakub Jelinek <jakub@redhat.com>
+    33C235A34C46AA3FFB293709A328C3A2C3C45C06
+RUN set -ex; \
+    for key in $GPG_KEYS; do \
+        gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
+    done
+
+RUN set -ex; \
+    \
+    buildDeps=' \
+        dpkg-dev \
+        flex \
+    '; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends $buildDeps; \
+    rm -r /var/lib/apt/lists/*; \
+    \
+    curl -fSL "http://ftpmirror.gnu.org/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.xz" -o gcc.tar.xz; \
+    curl -fSL "http://ftpmirror.gnu.org/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.xz.sig" -o gcc.tar.xz.sig; \
+    gpg --batch --verify gcc.tar.xz.sig gcc.tar.xz; \
+    mkdir -p /usr/src/gcc; \
+    tar -xf gcc.tar.xz -C /usr/src/gcc --strip-components=1; \
+    rm gcc.tar.xz*;
+
+RUN cd /usr/src/gcc; \
+    ./contrib/download_prerequisites; \
+    { rm *.tar.* || true; }; \
+    for f in config.guess config.sub; do \
+        wget -O "$f" "https://git.savannah.gnu.org/cgit/config.git/plain/$f?id=7d3d27baf8107b630586c962c057e22149653deb"; \
+        find -mindepth 2 -name "$f" -exec cp -v "$f" '{}' ';'; \
+    done; \
+    \
+    dir="$(mktemp -d)"; \
+    cd "$dir"; \
+    \
+    gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)"; \
+    CFLAGS=-fPIC CXXFLAGS=-fPIC LDFLAGS=-fPIC /usr/src/gcc/configure --build=`dpkg-architecture --query DEB_BUILD_GNU_TYPE` --enable-threads=posix --enable-checking=release --with-system-zlib --enable-__cxa_atexit --enable-languages=c,c++,lto --disable-multilib --disable-nls --enable-bootstrap && \
+    make -j 8 && \
+    make install-strip; \
+    \
+    cd ..; \
+    \
+    rm -rf "$dir"; \
+    \
+    apt-get purge -y --auto-remove dpkg-dev flex;
+
+
+#ensure that alternatives are pointing to the new compiler and that old one is no longer used
+RUN set -ex; \
+    dpkg-divert --divert /usr/bin/gcc.orig --rename /usr/bin/gcc; \
+    dpkg-divert --divert /usr/bin/g++.orig --rename /usr/bin/g++; \
+    dpkg-divert --divert /usr/bin/gfortran.orig --rename /usr/bin/gfortran; \
+    update-alternatives --install /usr/bin/cc cc /usr/local/bin/gcc 999; \
+    update-alternatives --install /usr/bin/c++ c++ /usr/local/bin/g++ 999
+
+RUN apt remove -y libgomp1 gcc g++ libstdc++-4.8-dev;
 
 RUN wget --no-check-certificate http://www.nasm.us/pub/nasm/releasebuilds/2.13.01/nasm-2.13.01.tar.bz2 && \
     tar xf nasm-2.13.01.tar.bz2 && \
     cd nasm-2.13.01 && \
-    ./configure --prefix=/usr/local && make -j8 && make install;
+    ./configure --prefix=/usr/ && make -j8 && make install && \
+    cd .. && rm -rf nasm-2.13.01;
 
-RUN wget --no-check-certificate https://cmake.org/files/v3.9/cmake-3.9.0.tar.gz && \
-    tar xf cmake-3.9.0.tar.gz && \
-    cd cmake-3.9.0 && \
-    ./configure --prefix=/usr/local && make -j8 && make install;
+RUN wget --no-check-certificate https://cmake.org/files/v3.9/cmake-3.9.3-Linux-x86_64.tar.gz && \
+    tar xf cmake-3.9.3-Linux-x86_64.tar.gz -C /usr/ --strip-components=1 && \
+    rm cmake-3.9.3-Linux-x86_64.tar.gz;
 
 RUN git clone https://github.com/yasm/yasm.git && cd yasm && \
-    mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=/usr/local .. && make -j8 && make install;
+    git checkout v1.3.0 && mkdir build && cd build && \
+    cmake -DCMAKE_INSTALL_PREFIX=/usr/ .. && make -j8 && make install && \
+    cd /build && rm -vrf yasm;
 
 RUN wget --no-check-certificate https://services.gradle.org/distributions/gradle-4.0.2-bin.zip && \
     unzip gradle-4.0.2-bin.zip && \
     cd gradle-4.0.2 && \
-    cp -r bin /usr/local && cp -r lib /usr/local ;
+    cp -r bin /usr/ && cp -r lib /usr/ && \
+    cd /build && rm -rf gradle-4.0.2;
+
+# gcc installs .so files in /usr/local/lib64...
+RUN set -ex; \
+    echo '/usr/local/lib64' > /etc/ld.so.conf.d/local-lib64.conf; \
+    echo '/usr/local/lib' > /etc/ld.so.conf.d/local-lib.conf; \
+    ldconfig -v
 
 RUN rm -rf /build/*
 

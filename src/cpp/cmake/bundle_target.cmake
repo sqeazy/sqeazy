@@ -129,7 +129,14 @@ function(BUNDLE tgt destdir)
   #  - CMAKE_POSITION_INDEPENDENT_CODE
   #  - BUILD_SHARED_LIBS
   #
-  add_library(bundle_${tgt} SHARED ${TGT_SRC})
+  get_target_property(type_of_tgt ${tgt} TYPE)
+  if(${type_of_tgt} MATCHES "EXECUTABLE")
+    add_executable(bundle_${tgt} ${TGT_SRC})
+  else()
+    add_library(bundle_${tgt} SHARED ${TGT_SRC})
+  endif()
+
+
   add_dependencies(bundle_copy_${tgt} bundle_directory_${tgt})
   add_dependencies(bundle_${tgt} bundle_copy_${tgt})
 
@@ -323,7 +330,7 @@ function(BUNDLE tgt destdir)
   endif()
 
   set_property(TARGET bundle_${tgt} PROPERTY LINK_FLAGS ${TGT_LDFLAGS})
-  message("++ [BUNDLE] link bundle to : ${DEPS_FNAME_LIST}")
+  message("++ [BUNDLE] link bundle ${tgt} to : ${DEPS_FNAME_LIST}")
   target_link_libraries(bundle_${tgt} ${DEPS_FNAME_LIST})
 
 endfunction(BUNDLE)

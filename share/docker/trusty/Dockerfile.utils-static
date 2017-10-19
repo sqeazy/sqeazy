@@ -1,5 +1,6 @@
-# Use an official Python runtime as a parent image
-FROM sqy/trusty/base:latest
+ARG SQY_VERSION=latest
+
+FROM sqy/trusty/base:${SQY_VERSION}
 
 # Set the working directory to /app
 WORKDIR /build
@@ -8,13 +9,13 @@ WORKDIR /build
 RUN wget --no-check-certificate https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.16/src/hdf5-1.8.16.tar.bz2 && \
     tar xf hdf5-1.8.16.tar.bz2 && \
     cd hdf5-1.8.16 && \
-    ./configure --prefix=/usr/local --enable-cxx --enable-hl --with-pic --disable-shared && make -j8 && make install;
+    ./configure --prefix=/usr/ --enable-cxx --enable-hl --with-pic --disable-shared && make -j8 && make install;
 
 # Install boost
 RUN wget --no-check-certificate -O boost.tar.bz2 http://sourceforge.net/projects/boost/files/boost/1.61.0/boost_1_61_0.tar.bz2/download && \
     tar xf boost.tar.bz2 && \
     cd boost_1_*/ && \
-    ./bootstrap.sh --prefix=/usr/local --with-toolset=gcc --with-libraries=date_time,system,filesystem,test,thread,program_options,regex,serialization  && \
+    ./bootstrap.sh --prefix=/usr/ --with-toolset=gcc --with-libraries=date_time,system,filesystem,test,thread,program_options,regex,serialization  && \
     ./b2 -j8 link=static --build-type=minimal variant=release toolset=gcc runtime-link=static threading=multi cflags=-fPIC cxxflags=-fPIC && \
     ./b2 link=static --build-type=minimal variant=release toolset=gcc runtime-link=static threading=multi cflags=-fPIC cxxflags=-fPIC  install;
 

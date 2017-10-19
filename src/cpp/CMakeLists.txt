@@ -12,10 +12,6 @@ include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 
 
-if(NOT(${CMAKE_VERSION} VERSION_LESS "3.0.0"))
-cmake_policy(SET CMP0042 NEW)
-endif()
-
 if(NOT(${CMAKE_VERSION} VERSION_LESS "3.3.0"))
 cmake_policy(SET CMP0054 NEW)
 endif()
@@ -49,6 +45,7 @@ SET (SQEAZY_VENDOR_URL "www.mpi-cbg.de")
 SET (SQEAZY_ID "${SQEAZY_VENDOR_ID}.${PROJECT_NAME}")
 
 option(BUNDLE_SQEAZY "compile sqeazy ready for bundling" OFF)
+option(WITH_MARCH_NATIVE "compile sqeazy for the currently found hardware" OFF)
 option(USE_CXX11_ABI "enable _GLIBCXX_USE_CXX11_ABI in GCC 5.0+" ON)
 
 # trying to setup paths so this package can be picked up
@@ -92,7 +89,9 @@ string(TOUPPER "${CMAKE_BUILD_TYPE}" ALLCAPITAL_BUILD_TYPE)
 
 check_cxx_compiler_flag(-Wl,-Bsymbolic HAS_BSYMBOLIC_COMPILERFLAG)
 check_cxx_compiler_flag(-ftree-vectorize HAS_GCC_TREE_VECTORIZE_COMPILERFLAG)
-check_cxx_compiler_flag(-march=native HAS_MARCH_COMPILERFLAG)
+check_cxx_compiler_flag(-march=native HAS_MARCH_NATIVE_COMPILERFLAG)
+check_cxx_compiler_flag(-march=x86-64 HAS_MARCH_GENERIC_COMPILERFLAG)
+check_cxx_compiler_flag(-mtune=generic HAS_MTUNE_GENERIC_COMPILERFLAG)
 check_cxx_compiler_flag(-ffast-math HAS_FAST_MATH_COMPILERFLAG)
 check_cxx_compiler_flag("-Xclang -march=native" HAS_XCLANG_COMPILERFLAG)
 check_cxx_compiler_flag(-fvectorize HAS_CLANG_VECTORIZE_COMPILERFLAG)
@@ -103,6 +102,19 @@ check_cxx_compiler_flag(-Wno-unused-function HAS_WNO_UNUSED_FUNCTION_COMPILERFLA
 check_cxx_compiler_flag(-ggdb HAS_GGDB_COMPILERFLAG)
 check_cxx_compiler_flag(-ggdb3 HAS_GGDB3_COMPILERFLAG)
 check_cxx_compiler_flag(-O3 HAS_O3_COMPILERFLAG)
+check_cxx_compiler_flag(-Ofast HAS_OFAST_COMPILERFLAG)
+check_cxx_compiler_flag(-flto HAS_LTO_COMPILERFLAG)
+check_cxx_compiler_flag(-msse HAS_MSSE_COMPILERFLAG)
+check_cxx_compiler_flag(-msse2 HAS_MSSE2_COMPILERFLAG)
+check_cxx_compiler_flag(-msse3 HAS_MSSE3_COMPILERFLAG)
+check_cxx_compiler_flag(-msse4 HAS_MSSE4_COMPILERFLAG)
+check_cxx_compiler_flag(-msse4.1 HAS_MSSE4.1_COMPILERFLAG)
+check_cxx_compiler_flag(-msse4.2 HAS_MSSE4.2_COMPILERFLAG)
+check_cxx_compiler_flag(-mssse3 HAS_MSSSE3_COMPILERFLAG)
+check_cxx_compiler_flag(-static-libgcc HAS_STATIC_LIBGCC_COMPILERFLAG)
+check_cxx_compiler_flag(-static-libstdc++ HAS_STATIC_LIBSTDC++_COMPILERFLAG)
+check_cxx_compiler_flag(-static-libc++ HAS_STATIC_LIBC++_COMPILERFLAG)
+
 check_cxx_compiler_flag(/Oi HAS_OI_COMPILERFLAG)
 check_cxx_compiler_flag(/w HAS_NO_WARNINGS) #if given to cl.exe, no output will be printed to the console
 check_cxx_compiler_flag(/W1 HAS_VS_W1_WARNINGS) #see https://msdn.microsoft.com/en-us/library/thxezb7y.aspx for details
@@ -194,8 +206,8 @@ if(ALLCAPITAL_BUILD_TYPE STREQUAL RELWDBG)
 endif()
 
 if(ALLCAPITAL_BUILD_TYPE STREQUAL RELEASE)
-  if(HAS_O3_COMPILERFLAG)
-    add_definitions(-O3)
+  if(HAS_OFAST_COMPILERFLAG)
+    add_definitions(-Ofast)
   endif()
   add_definitions(-DNDEBUG)
 endif()
@@ -234,18 +246,31 @@ ENDIF()
 
 
 
-IF(UNIX OR APPLE)
-  IF(HAS_MARCH_COMPILERFLAG)
-    #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+IF(HAS_MARCH_NATIVE_COMPILERFLAG)
+  if(${WITH_MARCH_NATIVE})
     add_definitions(-march=native)
-  ELSE()
-    MESSAGE(WARNING "Compiler does not support -march=native!")
-  ENDIF()
-
-  # if(HAS_BSYMBOLIC_COMPILERFLAG)
-  #   SET(CMAKE_LINK_FLAGS "${CMAKE_LINK_FLAGS} -Wl,-Bsymbolic")
-  #   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wl,-Bsymbolic")
-  # endif()
+    MESSAGE(STATUS "allowing compiler to choose x86 architecture, using -march=native")
+  else()
+    #check https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html for details
+    set(MY_RELEASE_FLAG "")
+    if(HAS_MARCH_GENERIC_COMPILERFLAG)
+      set(MY_RELEASE_FLAG "-march=x86-64")
+    endif()
+    if(HAS_MTUNE_GENERIC_COMPILERFLAG)
+      set(MY_RELEASE_FLAG "${MY_RELEASE_FLAG} -mtune=generic")
+    endif()
+    set(SSE_FLAGS "MSSE;MSSE2;MSSE3;MSSSE3;MSSE4;MSSE4.1;MSSE4.2")
+    foreach(_flag IN LISTS SSE_FLAGS)
+      string(TOLOWER "-${_flag}" _compiler_flag)
+      if(HAS_${_flag}_COMPILERFLAG)
+        set(MY_RELEASE_FLAG "${MY_RELEASE_FLAG} ${_compiler_flag}")
+      endif()
+    endforeach()
+    add_definitions(${MY_RELEASE_FLAG})
+    MESSAGE(STATUS "using ${MY_RELEASE_FLAG} as build flag")
+  endif()
+ELSE()
+  MESSAGE(WARNING "Compiler does not support -march=native!")
 ENDIF()
 
 #TODO: look into preference of libc++ over other std libraries
@@ -290,52 +315,19 @@ if(${BUNDLE_SQEAZY})
   set(LZ4_USE_STATIC_LIBS ON)
   set(HDF5_USE_STATIC_LIBRARIES ON)
   set(FFMPEG_USE_STATIC_LIBS ON)
-
+  set(OpenMP_LINK_STATIC ON)
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
 endif()
 
 ################################# DEPENDENCIES #################################
 #-------------------------------- OpenMP          ---------------------------------
-if(APPLE)
-  #at the time of writing, Xcode was incapable of compiling OpenMP code
-  #thus, we have to require clang/gcc on APPLE
-  if(${CMAKE_CXX_COMPILER_ID} STREQUAL AppleClang)
-    message(FATAL_ERROR "This project requires OpenMP and thus cannot be compiled with XCode!")
-  endif()
-
-  get_filename_component(CXX_COMPILER_APP_PATH "${CMAKE_CXX_COMPILER}" PATH)
-  if(CXX_COMPILER_APP_PATH)
-    if("${CXX_COMPILER_APP_PATH}" MATCHES "/Applications/Xcode.*" OR "${CXX_COMPILER_APP_PATH}" MATCHES "/usr/bin/clang.*")
-      message(FATAL_ERROR "This project requires OpenMP and thus cannot be compiled with XCode!")
-    endif()
-  endif()
-
-  if(${CXX_COMPILER_APP_PATH} MATCHES "/usr/local.*/bin" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL Clang)
-    string(REPLACE "bin" "lib" CXX_COMPILER_LIBS_PATH "${CXX_COMPILER_APP_PATH}")
-    link_directories(${CXX_COMPILER_LIBS_PATH})
-  endif()
-endif()
-
-if(WIN32 AND ${CMAKE_CXX_COMPILER_ID} STREQUAL Clang)
-		get_filename_component(CXX_COMPILER_MSBUILD_PATH "${CMAKE_CXX_COMPILER}" PATH)
-		get_filename_component(CXX_COMPILER_ROOT "${CXX_COMPILER_MSBUILD_PATH}" PATH)
-		
-		message("++ adding ${CXX_COMPILER_ROOT}\/lib to link paths")
-		link_directories("${CXX_COMPILER_ROOT}\/lib")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
-		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L${CXX_COMPILER_ROOT}\/lib -lomp")
-	
-else()
-	find_package(OpenMP REQUIRED)
-endif()
-
+find_package(OpenMP++ REQUIRED)
 
 if(${OPENMP_CXX_FOUND})
-  # add_definitions(${OpenMP_CXX_FLAGS})
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-  MESSAGE(STATUS "[sqy] appended openmp flags: ${OpenMP_CXX_FLAGS} ${OpenMP_C_FLAGS}")
+  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP++_FLAGS}")
+  add_definitions(${OpenMP_CXX_FLAGS})
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP++_FLAGS}")
+  MESSAGE(STATUS "[sqy] appended openmp flags: ${OpenMP++_FLAGS}")
 ENDIF()
 
 #-------------------------------- LZ4          ---------------------------------
@@ -523,7 +515,7 @@ ENDIF()
 
 #-------------------------------- FFMPEG       ---------------------------------
 
-find_package(FFMPEG REQUIRED COMPONENTS avformat avcodec avutil swscale swresample)
+find_package(FFMPEG REQUIRED COMPONENTS avformat avcodec avutil swscale)
 IF(FFMPEG_FOUND)
   INCLUDE_DIRECTORIES(${FFMPEG_INCLUDE_DIRS})
   LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}/lib)
@@ -548,15 +540,7 @@ if(TIFF_ROOT OR DEFINED TIFF_ROOT)
     endif()
 endif()
 
-# if(DEFINED TIFF_ROOT)
-    # if(EXISTS ${TIFF_ROOT})
-      # list(APPEND CMAKE_PREFIX_PATH ${TIFF_ROOT})
-    # else()
-      # message(FATAL_ERROR "provided TIFF_ROOT ${TIFF_ROOT} does not exist")
-    # endif()
-# endif()
 
-message("++ [tiff] ${CMAKE_PREFIX_PATH}")
 FIND_PACKAGE(TIFF REQUIRED)
 IF(TIFF_FOUND)
   include_directories(${TIFF_INCLUDE_DIR})
@@ -564,36 +548,31 @@ IF(TIFF_FOUND)
   get_filename_component(TIFF_LIB_ABSPATH ${TIFF_LIB_PATH} DIRECTORY)
   link_directories(${TIFF_LIB_ABSPATH})
 
-  SET(TIFF_DYN_LIB ${TIFF_LIBRARIES})
+  SET(TIFF_LIB_FOR_SQY ${TIFF_LIBRARIES})
   SET(TIFF_STATIC_LIB "")
 
-  if(NOT EXISTS ${TIFF_DYN_LIB})
+  if(NOT EXISTS ${TIFF_LIB_FOR_SQY})
     message(FATAL_ERROR "libtiff found by cmake does not exist! Aborting.")
   else()
-    message("++ [tiff] using ${TIFF_INCLUDE_DIR} ${TIFF_DYN_LIB}")
+    message("++ [tiff] using ${TIFF_INCLUDE_DIR} ${TIFF_LIB_FOR_SQY}")
   endif()
 
   IF(NOT WIN32)
 
     IF(APPLE)
       IF("${TIFF_LIBRARY}" MATCHES ".*.so$")
-    STRING(REPLACE .so .dylib TIFF_DYN_LIB ${TIFF_LIBRARY})
-    #Homebrew ships a static library that fails to contain important symbols
-    #STRING(REPLACE .dylib .a TIFF_STATIC_LIB ${TIFF_DYN_LIB})
+        STRING(REPLACE .so .dylib TIFF_LIB_FOR_SQY ${TIFF_LIBRARY})
+        #Homebrew ships a static library that fails to contain important symbols
+        #STRING(REPLACE .dylib .a TIFF_STATIC_LIB ${TIFF_LIB_FOR_SQY})
       ENDIF()
     ELSE()
-      STRING(REPLACE .so .a TIFF_STATIC_LIB ${TIFF_DYN_LIB})
+      STRING(REPLACE .so .a TIFF_STATIC_LIB ${TIFF_LIB_FOR_SQY})
     ENDIF()
 
-    #FIXME: static includes of libtiff showed missing symbols (mostly deflate, there must be a depenency to libz or something)
-    # IF(EXISTS ${TIFF_STATIC_LIB})
-    #   add_library(ext_tiff STATIC IMPORTED)
-    #   set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_STATIC_LIB}")
-    # ELSE()
-      IF(EXISTS ${TIFF_DYN_LIB})
-    add_library(ext_tiff SHARED IMPORTED)
-    set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_DYN_LIB}")
-      ENDIF()
+    IF(EXISTS ${TIFF_LIB_FOR_SQY})
+      add_library(ext_tiff SHARED IMPORTED)
+      set_target_properties(ext_tiff PROPERTIES IMPORTED_LOCATION "${TIFF_LIB_FOR_SQY}")
+    ENDIF()
     # ENDIF()
 
   ENDIF(NOT WIN32)

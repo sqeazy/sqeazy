@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE( mode_and_mean )
     BOOST_CHECK_EQUAL(of_constant.mode(),1);
     BOOST_CHECK_EQUAL(of_constant.mean(),1);
 
-    value_type upper_limit = std::numeric_limits<value_type>::max()/2;
+    value_type upper_limit = (std::numeric_limits<value_type>::max)()/2;
 
     for(unsigned i = 0; i<uint8_cube_of_8::size; ++i) {
         int eff_index = i % upper_limit;
@@ -72,7 +72,7 @@ BOOST_AUTO_TEST_CASE( mode_and_mean )
 
 BOOST_AUTO_TEST_CASE( min_max_populated_bin )
 {
-    value_type upper_limit = std::numeric_limits<value_type>::max()/2;
+    value_type upper_limit = (std::numeric_limits<value_type>::max)()/2;
 
     for(unsigned i = 0; i<uint8_cube_of_8::size; ++i) {
         int eff_index = i % upper_limit;
@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE( median_vs_mean )
 
     unsigned value_index = 0;
     unsigned idx = 0;
-    for(; value_index<std::numeric_limits<value_type>::max(); ++value_index) {
+    for(; value_index<(std::numeric_limits<value_type>::max)(); ++value_index) {
         for(unsigned num = 0; num<value_index; ++num) {
             if(idx<size) {
                 to_play_with[idx] = value_index;
@@ -184,7 +184,7 @@ BOOST_AUTO_TEST_CASE( mode_and_mean )
     BOOST_CHECK_EQUAL(of_constant.mode(),1);
     BOOST_CHECK_EQUAL(of_constant.mean(),1);
 
-    value_type upper_limit = std::numeric_limits<value_type>::max()/2;
+    value_type upper_limit = (std::numeric_limits<value_type>::max)()/2;
 
     for(unsigned i = 0; i<uint8_cube_of_8::size; ++i) {
         int eff_index = i % upper_limit;

@@ -55,8 +55,8 @@ namespace sqeazy {
     static const size_t max_raw_ = 1 << (sizeof(raw_type)*CHAR_BIT);
     static const size_t max_compressed_ = 1 << (sizeof(compressed_type)*CHAR_BIT);
 
-    static const raw_type max_value_raw_ =  std::numeric_limits<raw_type>::max() ;
-    static const compressed_type max_value_compressed_ = std::numeric_limits<compressed_type>::max();
+    static const raw_type max_value_raw_ =  (std::numeric_limits<raw_type>::max)() ;
+    static const compressed_type max_value_compressed_ = (std::numeric_limits<compressed_type>::max)();
 
     static const char lut_field_separator = ':';
 
@@ -301,7 +301,7 @@ namespace sqeazy {
 
       if(comp_idx < lut_decode_.size() &&
          comp_idx > 0 &&
-         lut_decode_[comp_idx] == std::numeric_limits<raw_type>::max()
+         lut_decode_[comp_idx] == (std::numeric_limits<raw_type>::max)()
         ){
         std::fill(lut_decode_.begin()+comp_idx, lut_decode_.end(),lut_decode_[comp_idx-1]);
       }

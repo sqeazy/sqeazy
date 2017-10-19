@@ -253,7 +253,7 @@ namespace sqeazy {
 
       size_t size = _inlength;
       if(_outlength < _inlength){
-        size = std::min(_outlength,_inlength);
+        size = (std::min)(_outlength,_inlength);
       }
 
       applyLUT<compressed_type, raw_type> lutApplyer(shrinker.lut_decode_);
