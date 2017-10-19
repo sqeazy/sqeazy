@@ -111,6 +111,9 @@ check_cxx_compiler_flag(-msse4 HAS_MSSE4_COMPILERFLAG)
 check_cxx_compiler_flag(-msse4.1 HAS_MSSE4.1_COMPILERFLAG)
 check_cxx_compiler_flag(-msse4.2 HAS_MSSE4.2_COMPILERFLAG)
 check_cxx_compiler_flag(-mssse3 HAS_MSSSE3_COMPILERFLAG)
+check_cxx_compiler_flag(-static-libgcc HAS_STATIC_LIBGCC_COMPILERFLAG)
+check_cxx_compiler_flag(-static-libstdc++ HAS_STATIC_LIBSTDC++_COMPILERFLAG)
+check_cxx_compiler_flag(-static-libc++ HAS_STATIC_LIBC++_COMPILERFLAG)
 
 check_cxx_compiler_flag(/Oi HAS_OI_COMPILERFLAG)
 check_cxx_compiler_flag(/w HAS_NO_WARNINGS) #if given to cl.exe, no output will be printed to the console
@@ -313,6 +316,7 @@ if(${BUNDLE_SQEAZY})
   set(HDF5_USE_STATIC_LIBRARIES ON)
   set(FFMPEG_USE_STATIC_LIBS ON)
   set(OpenMP_LINK_STATIC ON)
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
 endif()
 
 ################################# DEPENDENCIES #################################

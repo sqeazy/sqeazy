@@ -13,6 +13,7 @@ add_library(${PROJECT_NAME} SHARED sqeazy.cpp)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED YES)
 set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${PROJECT_BINARY_DIR}/inc/sqeazy.h;${PROJECT_BINARY_DIR}/inc/H5PLextern.h;${PROJECT_BINARY_DIR}/inc/sqeazy_h5_filter.hpp;${PROJECT_BINARY_DIR}/inc/sqeazy_definitions.h")
 
+
 if(NOT WIN32)
 	target_link_libraries(${PROJECT_NAME} ${LZ4_LIBRARY} ${HDF5_LIBRARIES} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES} ${OpenMP++_LIBRARIES})
 else()
@@ -39,6 +40,8 @@ INSTALL(TARGETS ${SQY_SRC_TARGETS}
 ########################################### SQY ######################################################
 #if(NOT BUNDLE_SQEAZY OR NOT ${BUNDLE_SQEAZY})
 add_executable(sqy sqy.cpp)
+
+
 set_target_properties(sqy PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED YES)
 set_target_properties(sqy PROPERTIES POSITION_INDEPENDENT_CODE ON)
 message("++ [src] sqy deps: ${LZ4_LIBRARY} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES} ${HDF5_LIBRARIES} ${TIFF_LIB_FOR_SQY} ${OpenMP++_LIBRARIES}")
@@ -64,6 +67,15 @@ endif()
 
 ########################################### DEPLOYMENT LIBSQY ######################################################
 if(BUNDLE_SQEAZY OR ${BUNDLE_SQEAZY})
+
+  #TODO: checkout this link https://stackoverflow.com/questions/16991225/cmake-and-static-linking
+  set(STATIC_LIB_FLAGS "LIBGCC;LIBSTDC++;LIBC++")
+  foreach(_flag IN LISTS STATIC_LIB_FLAGS)
+    string(TOLOWER "-static-${_flag}" _lower_flag)
+    if(HAS_STATIC_${_flag}_COMPILERFLAG)
+      set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${_lower_flag}")
+    endif()
+  endforeach()
 
   include(${PROJECT_SOURCE_DIR}/cmake/bundle_target.cmake)
 
