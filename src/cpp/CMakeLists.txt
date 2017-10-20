@@ -351,7 +351,7 @@ IF(WIN32)
 ENDIF()
 
 
-FIND_PACKAGE (Boost 1.55 COMPONENTS program_options regex  filesystem  serialization REQUIRED QUIET)
+FIND_PACKAGE (Boost 1.55 COMPONENTS program_options regex filesystem system serialization REQUIRED QUIET)
 IF(Boost_FOUND)
   MESSAGE("++ Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES} : ${Boost_LIBRARIES}")
   INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
