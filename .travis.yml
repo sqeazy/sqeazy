@@ -195,7 +195,7 @@ script:
        export PATH=/home/travis/sw/bin:$PATH &&
        export PKG_CONFIG_PATH=/home/travis/sw/lib/pkgconfig:${PKG_CONFIG_PATH} &&
        export CMAKE_PREFIX_PATH=/home/travis/sw/:${CMAKE_PREFIX_PATH} &&
-       gradle clean test && ldd build/cpp/src/libsqeazy.so && exit $?;
+       gradle -Pcxx_compiler=`which g++-5` clean test && ldd build/cpp/src/libsqeazy.so && exit $?;
     fi
 
     
