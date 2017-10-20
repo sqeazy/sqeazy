@@ -22,10 +22,10 @@ before_install:
   #############################################################################
   # LZ4                                                                       #
   #############################################################################
-  - travis_retry wget --no-check-certificate https://github.com/lz4/lz4/archive/v1.7.5.tar.gz
-  - tar xf v1.7.5.tar.gz
+  - travis_retry wget --no-check-certificate https://github.com/lz4/lz4/archive/v1.8.0.tar.gz
+  - tar xf v1.8.0.tar.gz
   - pwd
-  - cd lz4-1.7.5
+  - cd lz4-1.8.0
   - if [[ ! -e /home/travis/sw/lib/liblz4.so ]]; then
       pwd &&
       sudo PREFIX=/home/travis/sw SHELL="/bin/bash -x" make install  &&
@@ -34,8 +34,8 @@ before_install:
     else
       echo "lz4 found in /home/travis/sw";
     fi
-  - cd ../.. && sudo rm -rf lz4-1.7.5
-  - nm /home/travis/sw/lib/liblz4.so
+  - cd ../.. && sudo rm -rf lz4-1.8.0
+#  - nm /home/travis/sw/lib/liblz4.so
 
   #############################################################################
   # FFMPEG                                                                    #
@@ -81,12 +81,12 @@ before_install:
   #############################################################################
   # CMAKE                                                                     #
   #############################################################################
-  - travis_retry wget --no-check-certificate https://cmake.org/files/v3.9/cmake-3.9.0.tar.gz &&
-      tar xf cmake-3.9.0.tar.gz &&
-      cd cmake-3.9.0 &&
-      ./configure --prefix=/home/travis/sw/ && make -j2 && sudo make install &&
-      cd ..;
-  - cmake --version
+  # - travis_retry wget --no-check-certificate https://cmake.org/files/v3.9/cmake-3.9.0.tar.gz &&
+  #     tar xf cmake-3.9.0.tar.gz &&
+  #     cd cmake-3.9.0 &&
+  #     ./configure --prefix=/home/travis/sw/ && make -j2 && sudo make install &&
+  #     cd ..;
+  # - cmake --version
   
   #############################################################################
   # BOOST                                                                     #
