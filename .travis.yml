@@ -16,7 +16,6 @@ addons:
     - ubuntu-toolchain-r-test
     - llvm-toolchain-precise-3.6
     - sourceline: 'ppa:mc3man/trusty-media'
-    - sourceline: 'ppa:nschloe/boost-nightly'
     packages:
     # install toolchains
     - gcc-7
@@ -64,7 +63,6 @@ addons:
     - libx265-dev
     - x265
     - libtiff5-dev
-    - boost1.63
 
 before_install:
   - if [[ ! -d /home/travis/sw ]];then mkdir -p /home/travis/sw ;fi
@@ -148,19 +146,19 @@ before_install:
   #############################################################################
   # BOOST                                                                     #
   #############################################################################
-  # - travis_retry wget --no-check-certificate -O boost.tar.bz2 http://sourceforge.net/projects/boost/files/boost/1.63.0/boost_1_63_0.tar.bz2/download
-  # - tar xf boost.tar.bz2
-  # - cd boost_1_*/
-  # - if [[ ! -e /home/travis/sw/lib/libboost_date_time.so ]]; then
-  #     ./bootstrap.sh --with-toolset=gcc --with-libraries=date_time,system,filesystem,test,thread,program_options,regex,serialization --prefix=/home/travis/sw &&
-  #     ./b2 --build-type=minimal variant=release toolset=gcc threading=multi -j2 &&
-  #     sudo ./b2 --build-type=minimal variant=release toolset=gcc threading=multi install &&
-  #     echo "boost installed in /home/travis/sw" &&
-  #     find /home/travis/sw/lib/ -name "libboost_*so";
-  #   else
-  #     echo "boost found in /home/travis/sw" && find /home/travis/sw/lib/ -name "libboost_*so";
-  #   fi
-  # - cd .. && sudo rm -rf boost_1_*/
+  - travis_retry wget --no-check-certificate -O boost.tar.bz2 http://sourceforge.net/projects/boost/files/boost/1.63.0/boost_1_63_0.tar.bz2/download
+  - tar xf boost.tar.bz2
+  - cd boost_1_*/
+  - if [[ ! -e /home/travis/sw/lib/libboost_date_time.so ]]; then
+      ./bootstrap.sh --with-toolset=gcc --with-libraries=date_time,system,filesystem,test,thread,program_options,regex,serialization --prefix=/home/travis/sw &&
+      ./b2 --build-type=minimal variant=release toolset=gcc threading=multi -j2 &&
+      sudo ./b2 --build-type=minimal variant=release toolset=gcc threading=multi install &&
+      echo "boost installed in /home/travis/sw" &&
+      find /home/travis/sw/lib/ -name "libboost_*so";
+    else
+      echo "boost found in /home/travis/sw" && find /home/travis/sw/lib/ -name "libboost_*so";
+    fi
+  - cd .. && sudo rm -rf boost_1_*/
   
 
   #############################################################################
