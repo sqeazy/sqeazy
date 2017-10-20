@@ -9,6 +9,61 @@ language: java
 jdk:
   - oraclejdk8
 
+addons:
+  apt:
+    sources:
+    # add PPAs with more up-to-date toolchains
+    - ubuntu-toolchain-r-test
+    - llvm-toolchain-precise-3.6
+    - sourceline: 'ppa:mc3man/trusty-media'
+    packages:
+    # install toolchains
+    - gcc-5
+    - g++-5
+    - clang-3.6
+    - yasm
+    - nasm 
+    - git
+    - mercurial
+    - wget
+    - bzip2
+    - libbz2-dev
+    - make
+    - curl
+    - cpuid
+    - pkg-config
+    - software-properties-common
+    - binutils
+    # - cpp
+    # - cpp-4.8
+    # - g++
+    # - g++-4.8
+    # - gcc
+    # - gcc-4.8
+    - libasan0
+    - libatomic1
+    - libcloog-isl4
+    - libgcc-4.8-dev
+    - libgmp10
+    - libgomp1
+    - libisl10
+    - libitm1
+    - libmpc3
+    - libmpfr4
+    - libquadmath0
+    - libstdc++-4.8-dev
+    - libtimedate-perl
+    - libtsan0
+    - patch
+    - libtiff-dev
+    - zlib1g-dev
+    - libc6-dev
+    - libx264-dev
+    - x264
+    - libx265-dev
+    - x265
+    - libtiff5-dev
+
 before_install:
   - if [[ ! -d /home/travis/sw ]];then mkdir -p /home/travis/sw ;fi
   - ls -lrth /home/travis/sw
@@ -16,8 +71,8 @@ before_install:
   - export LD_LIBRARY_PATH=/home/travis/sw/lib:${LD_LIBRARY_PATH}
   - export PKG_CONFIG_PATH=/home/travis/sw/lib/pkgconfig:${PKG_CONFIG_PATH}
   - sudo apt-get -qq update
-  - sudo apt-get install -y --no-install-recommends yasm nasm 
-  - sudo apt-get install -y --no-install-recommends git mercurial wget bzip2 libbz2-dev make curl cpuid pkg-config software-properties-common binutils cpp cpp-4.8 g++ g++-4.8 gcc gcc-4.8 libasan0 libatomic1 libcloog-isl4 libgcc-4.8-dev libgmp10 libgomp1 libisl10 libitm1 libmpc3 libmpfr4 libquadmath0 libstdc++-4.8-dev libtimedate-perl libtsan0 patch libtiff-dev zlib1g-dev libc6-dev
+  #- sudo apt-get install -y --no-install-recommends yasm nasm 
+#  - sudo apt-get install -y --no-install-recommends git mercurial wget bzip2 libbz2-dev make curl cpuid pkg-config software-properties-common binutils cpp cpp-4.8 g++ g++-4.8 gcc gcc-4.8 libasan0 libatomic1 libcloog-isl4 libgcc-4.8-dev libgmp10 libgomp1 libisl10 libitm1 libmpc3 libmpfr4 libquadmath0 libstdc++-4.8-dev libtimedate-perl libtsan0 patch libtiff-dev zlib1g-dev libc6-dev
         
   #############################################################################
   # LZ4                                                                       #
@@ -40,9 +95,9 @@ before_install:
   #############################################################################
   # FFMPEG                                                                    #
   #############################################################################
-  - sudo add-apt-repository -y ppa:mc3man/trusty-media
-  - sudo apt-get -qq update
-  - sudo apt-get install -y libx264-dev x264  libx265-dev x265 libtiff5-dev 
+  - sudo add-apt-repository -y 
+#  - sudo apt-get -qq update
+#  - sudo apt-get install -y libx264-dev x264  libx265-dev x265 libtiff5-dev 
   - if [[ -e /home/travis/sw/lib/libavcodec.so ]]; then
       echo "ffmpeg found in /home/travis/sw" && find /home/travis/sw/lib/ -name "libav*so";
     else
@@ -109,10 +164,10 @@ before_install:
   #############################################################################
   # GRADLE                                                                     #
   #############################################################################
-  - sudo add-apt-repository -y ppa:cwchien/gradle
-  - sudo apt-get -qq update
-  - sudo apt-get install gradle-3.0
-  - gradle --version
+  # - sudo add-apt-repository -y ppa:cwchien/gradle
+  # - sudo apt-get -qq update
+  # - sudo apt-get install gradle-3.0
+  # - gradle --version
 
   #############################################################################
   # GENERAL CHECKS                                                            #
