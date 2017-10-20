@@ -163,10 +163,11 @@ endif()
 
 if(OpenMP++_FOUND AND NOT OpenMP_CXX_LIBRARIES AND NOT WIN32)
 
-
+  check_cxx_compiler_flag(-lomp HAS_LOMP_COMPILERFLAG)
+  check_cxx_compiler_flag(-lgomp HAS_LGOMP_COMPILERFLAG)
   ##TODO: check if the compiler supports this flag
 
-  if(OpenMP_LINK_STATIC)
+  if(OpenMP_LINK_STATIC AND ${OpenMP_LINK_STATIC} MATCHES ON)
 
     find_library(OMP_LIB_PATH
       NAMES libgomp${CMAKE_STATIC_LIBRARY_SUFFIX} libomp${CMAKE_STATIC_LIBRARY_SUFFIX} gomp${CMAKE_STATIC_LIBRARY_SUFFIX} omp${CMAKE_STATIC_LIBRARY_SUFFIX}
@@ -174,6 +175,10 @@ if(OpenMP++_FOUND AND NOT OpenMP_CXX_LIBRARIES AND NOT WIN32)
       HINTS ${CXX_COMPILER_LIBS_PATH} ${CXX_COMPILER_ROOT_PATH}
       PATH_SUFFIXES lib lib32 lib64
       )
+    find_library(OMP_LIB_PATH
+      NAMES libgomp${CMAKE_STATIC_LIBRARY_SUFFIX} libomp${CMAKE_STATIC_LIBRARY_SUFFIX} gomp${CMAKE_STATIC_LIBRARY_SUFFIX} omp${CMAKE_STATIC_LIBRARY_SUFFIX}
+      )
+
 
   else()
     find_library(OMP_LIB_PATH
@@ -181,6 +186,9 @@ if(OpenMP++_FOUND AND NOT OpenMP_CXX_LIBRARIES AND NOT WIN32)
       PATHS ${CXX_COMPILER_LIBS_PATH} ${CXX_COMPILER_ROOT_PATH}
       HINTS ${CXX_COMPILER_LIBS_PATH} ${CXX_COMPILER_ROOT_PATH}
       PATH_SUFFIXES lib lib32 lib64
+      )
+    find_library(OMP_LIB_PATH
+      NAMES libgomp${CMAKE_SHARED_LIBRARY_SUFFIX} libomp${CMAKE_SHARED_LIBRARY_SUFFIX} gomp${CMAKE_SHARED_LIBRARY_SUFFIX} omp${CMAKE_SHARED_LIBRARY_SUFFIX}
       )
   endif()
 
@@ -205,11 +213,14 @@ if(OpenMP++_FOUND AND NOT OpenMP_CXX_LIBRARIES AND NOT WIN32)
 
     link_directories(${CXX_COMPILER_LIBS_PATH})
 
-    if(${LIBGOMP_SHARED_RVALUE} MATCHES "0" AND EXISTS ${LIBGOMP_SHARED_LOCATION})
+    if( ${OMP_LIB_PATH} MATCHES "gomp${CMAKE_SHARED_LIBRARY_SUFFIX}" OR ${HAS_LGOMP_COMPILERFLAG} MATCHES "1" )
       list(APPEND OpenMP_CXX_LIBRARIES gomp)
     else()
-      list(APPEND OpenMP_CXX_LIBRARIES omp)
+      if(${OMP_LIB_PATH} MATCHES "omp${CMAKE_SHARED_LIBRARY_SUFFIX}" OR ${HAS_LOMP_COMPILERFLAG} MATCHES "1")
+        list(APPEND OpenMP_CXX_LIBRARIES omp)
+      endif()
     endif()
+
 
     if(UNIX)
       list(APPEND OpenMP_CXX_LIBRARIES pthread)
@@ -222,9 +233,6 @@ if(OpenMP++_FOUND AND NOT OpenMP_CXX_LIBRARIES AND NOT WIN32)
 endif()
 
 if(OpenMP++_FOUND)
-  # message(STATUS "[FindOpenMP++] ${OpenMP++_FLAGS} <=> ${OpenMP_CXX_FLAGS}")
-  # message(STATUS "[FindOpenMP++] ${OpenMP++_LIBRARIES} <=> ${OpenMP_CXX_LIBRARIES}")
-  # message(STATUS "[FindOpenMP++] ${OpenMP++_VERSION} <=> ${OpenMP_CXX_VERSION}")
 
   if(OpenMP_CXX_FLAGS AND NOT OpenMP++_FLAGS)
     set(OpenMP++_FLAGS ${OpenMP_CXX_FLAGS})
