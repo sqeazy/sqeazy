@@ -191,10 +191,11 @@ script:
       cd sqeazy;
     fi
   - if [[ -e ./let_me_build_that_for_you.sh ]]; then
-       export LD_LIBRARY_PATH=/home/travis/sw/lib:$LD_LIBRARY_PATH &&
-       export PATH=/home/travis/sw/bin:$PATH &&
+       export LD_LIBRARY_PATH=/home/travis/sw/lib:${LD_LIBRARY_PATH} &&
+       export PATH=/home/travis/sw/bin:${PATH} &&
        export PKG_CONFIG_PATH=/home/travis/sw/lib/pkgconfig:${PKG_CONFIG_PATH} &&
        export CMAKE_PREFIX_PATH=/home/travis/sw/:${CMAKE_PREFIX_PATH} &&
+       env && 
        find /usr -name "libomp*" -or -name "libgomp*" &&
        gradle -Pcxx_compiler=`which g++-5` clean test && ldd build/cpp/src/libsqeazy.so && exit $?;
     fi
