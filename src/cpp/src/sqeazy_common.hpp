@@ -37,20 +37,8 @@ namespace sqeazy {
     namespace ct = compass::compiletime;
     namespace ft = compass::feature;
 
-    // struct use_vectorisation {
-    //   const static bool value = (ct::has<ft::sse2>() && ct::has<ft::sse3>() && ct::has<ft::sse4>()) && _SQY_X_;
-
-    //   static void debug() {
-
-    //  std::cout << "sse2 ? " << ct::has<ft::sse2>() << "\n"
-    //        << "sse3 ? " << ct::has<ft::sse3>() << "\n"
-    //        << "sse4 ? " << ct::has<ft::sse4>() << "\n"
-    //        << "sqyx ? " << _SQY_X_ << "\n";
-    //   }
-    // };
-
     struct use_vectorisation {
-      const static bool value = (ct::has<ft::sse2>::enabled && ct::has<ft::sse3>::enabled && ct::has<ft::sse4>::enabled) && _SQY_X_;
+      const static bool value = (ct::has<ft::sse2>::enabled && ct::has<ft::sse3>::enabled && ct::has<ft::sse4>::enabled);
 
       static void debug() {
 
