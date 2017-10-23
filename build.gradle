@@ -417,7 +417,7 @@ task fetch_version{
             download {
                 src 'https://dl.bintray.com/sqeazy/sqeazy/'+plat+'/'+project.version+'/sqeazy_bundle.zip'
                 dest tgt_file
-                overwrite true
+                onlyIfNewer true
             }
         }
 
