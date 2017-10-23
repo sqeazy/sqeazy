@@ -115,7 +115,7 @@ def build_cmake_args = {
     if(path_to_boost){
         //TODO: see if path exists
         local_args << "-DBOOST_ROOT=" + path_to_boost
-		//local_args << "-DBOOST_LIBRARYDIR=" + path_to_boost+"/lib"
+        //local_args << "-DBOOST_LIBRARYDIR=" + path_to_boost+"/lib"
     }
 
 
@@ -157,10 +157,10 @@ task cmake(type:Exec) {
 
         if(System.getProperty("os.arch").indexOf("64") != -1){
             def argslist = [ "-Ax64" ]
-			//TODO: needed for clang integration on Windows
-			//def argslist = ["-T", "LLVM-vs2014","-G", '"Visual Studio 15 2017 Win64"']
-			args = argslist
-        } 
+            //TODO: needed for clang integration on Windows
+            //def argslist = ["-T", "LLVM-vs2014","-G", '"Visual Studio 15 2017 Win64"']
+            args = argslist
+        }
 
 
 
@@ -257,10 +257,10 @@ task cmake_4_bundle(type:Exec) {
 
         if(System.getProperty("os.arch").indexOf("64") != -1){
             def argslist = ["-Ax64"]
-			//TODO: needed for clang integration on Windows
-			//def argslist = ["-T", "LLVM-vs2014","-G", '"Visual Studio 15 2017 Win64"']
-			args = argslist
-        } 
+            //TODO: needed for clang integration on Windows
+            //def argslist = ["-T", "LLVM-vs2014","-G", '"Visual Studio 15 2017 Win64"']
+            args = argslist
+        }
     }
     else if (Os.isFamily(Os.FAMILY_MAC))
     {
@@ -395,44 +395,46 @@ task upload_bundle(type:Exec) {
 
 task fetch_version {
 
-  description 'download all known libsqeazy* bundles from bintray'
-  group bundle_group
+    description 'download all known libsqeazy* bundles from bintray'
+    group bundle_group
 
-  def version_to_fetch = project.hasProperty("version_to_fetch") ? version_to_fetch : project.version
+    def version_to_fetch = project.hasProperty("version_to_fetch") ? version_to_fetch : project.version
 
-  def bdir = file(build_dir)
+    def bdir = file(build_dir)
 
-  if(!bdir.exists())
-    bdir.mkdir()
+    if(!bdir.exists()){
+        bdir.mkdir()
+        }
 
     def download_dir = file(build_dir+'/distribution/')
 
-    if(!download_dir.exists())
-      download_dir.mkdir()
+    if(!download_dir.exists()){
+        download_dir.mkdir()
+        }
 
+    def filename = 'sqeazy_bundle.zip'
 
-      def filename = 'sqeazy_bundle.zip'
+    def expected_zips = []
+    supported_platforms.each{ String plat ->
+                             expected_zips.add(download_dir.absolutePath+'/sqeazy_bundle_'+plat+'.zip')
+    }
+    outputs.files expected_zips
 
-      def expected_zips = []
-      supported_platforms.each{ String plat ->
-    expected_zips.add(download_dir.absolutePath+'/sqeazy_bundle_'+plat+'.zip')
-      }
-      outputs.files expected_zips
+    def app_string = ""
 
-      def app_string = ""
+    if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+        app_string = 'curl.exe'
+    }
 
-      if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-    app_string = 'curl.exe'
-      }
+    if (Os.isFamily(Os.FAMILY_MAC)) {
+        app_string = 'curl'
+    }
 
-      if (Os.isFamily(Os.FAMILY_MAC)) {
-    app_string = 'curl'
-      }
+    if (Os.isFamily(Os.FAMILY_UNIX)) {
+        app_string = 'curl'
+    }
 
-      if (Os.isFamily(Os.FAMILY_UNIX)) {
-    app_string = 'curl'
-      }
-
+    def bundles = []
     supported_platforms.each { String plat ->
                               def tgt_file = file(download_dir.absolutePath+'/sqeazy_bundle_'+plat+'.zip')
                               def cmdstring = [app_string,
@@ -443,88 +445,70 @@ task fetch_version {
         ].join(" ")
 
                               def curl_ret = cmdstring.execute()
-
+                              bundles.add(tgt_file)
     }
 
 
+
+    outputs.files bundles
 }
 
-// task unpack_for_bake(type: Copy){
 
-//     description 'unpack libsqeazy* bundles from bintray to '+dist_dir
-//     group bundle_group
-
-//     def ftree = fileTree(dist_dir).include('*.zip')
-//     inputs.files ftree
-
-//     supported_platforms.each{ String plat ->
-//             def download_dir = file(build_dir+'/distribution/lib/'+plat)
-
-//             if(!download_dir.exists()){
-//                 download_dir.mkdir()
-//             }
-
-//     }
-
-//     ftree.getFiles().each { File bundle ->
-//                            from zipTree(bundle)
-//                            include "**/*"
-
-//     }
-
-//     into dist_dir+"/lib"
-
-
-//     def bundled_headers = []
-//     supported_platforms.each{ String plat ->
-//                              bundled_headers.add(dist_dir+"/lib/"+plat+"/sqeazy.h")
-//     }
-//     outputs.files bundled_headers
-// }
-
-task unpack_for_bake {
+task unpack_for_bake(type:Exec) {
 
     description 'unpack libsqeazy* bundles from bintray to '+dist_dir
     group bundle_group
 
     def ftree = fileTree(dist_dir).include('*.zip')
     inputs.files ftree
-
-    supported_platforms.each{ String plat ->
-            def download_dir = file(build_dir+'/distribution/lib/'+plat)
-
-            if(!download_dir.exists()){
-                download_dir.mkdir()
-            }
-
+    def lib_dir = file(build_dir+'/distribution/lib')
+    if(!lib_dir.exists()){
+        lib_dir.mkdir()
     }
 
-	def app_to_use = "unzip"
-  def flags = "-o"
-	def tgt_dir_flag = "-d"
-	
-	if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-        app_to_use = "jar"
-        flags = "xf"
-        tgt_dir_flag = "-C"
-    } 
+    workingDir lib_dir
 
-  doLast {
-      ftree.each{ File zfile -> exec {
 
-                commandLine app_to_use, flags, tgt_dir_flag, dist_dir+'/lib', zfile
-                println commandLine.join(" ")
+    supported_platforms.each{ String plat ->
+                             def download_dir = file(build_dir+'/distribution/lib/'+plat)
 
-            }
+                             if(!download_dir.exists()){
+            download_dir.mkdir()
         }
 
     }
 
-  def bundled_headers = []
-  supported_platforms.each{ String plat ->
+    def app_to_use = "unzip"
+    def flags = "-o"
+    // def tgt_dir_flag = "-d"
+
+     if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+        app_to_use = "jar"
+        flags = "xf"
+        // tgt_dir_flag = "-C"
+     }
+
+    executable(app_to_use)
+
+
+    ftree.each{
+        File zfile -> // doLast {
+            // exec
+            //    {
+                commandLine(app_to_use,flags,zfile)
+                // args(zfile)
+                // println commandLine.join(" ")
+                // println executable, (args).join(" ")
+
+            // }
+        //}
+    }
+
+    def bundled_headers = []
+    supported_platforms.each{ String plat ->
                              bundled_headers.add(dist_dir+"/lib/"+plat+"/sqeazy.h")
     }
-  outputs.files bundled_headers
+    outputs.files bundled_headers
 }
 
 
