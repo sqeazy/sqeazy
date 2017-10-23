@@ -1,6 +1,7 @@
 plugins {
     id "com.jfrog.bintray" version "1.7.1"
     id 'com.palantir.git-version' version '0.8.0' //https://github.com/palantir/gradle-git-version
+    id "de.undercouch.download" version "3.2.0" //https://github.com/michel-kraemer/gradle-download-task
 }
 
 import org.apache.tools.ant.taskdefs.condition.Os
@@ -392,65 +393,42 @@ task upload_bundle(type:Exec) {
 
 }
 
-
-task fetch_version {
-
-    description 'download all known libsqeazy* bundles from bintray'
-    group bundle_group
-
-    def version_to_fetch = project.hasProperty("version_to_fetch") ? version_to_fetch : project.version
+task fetch_version{
 
     def bdir = file(build_dir)
-
-    if(!bdir.exists()){
-        bdir.mkdir()
-        }
-
     def download_dir = file(build_dir+'/distribution/')
 
-    if(!download_dir.exists()){
-        download_dir.mkdir()
+    doFirst{
+        if(!bdir.exists()){
+            println "creating "+bdir
+            bdir.mkdir()
         }
 
-    def filename = 'sqeazy_bundle.zip'
-
-    def expected_zips = []
-    supported_platforms.each{ String plat ->
-                             expected_zips.add(download_dir.absolutePath+'/sqeazy_bundle_'+plat+'.zip')
-    }
-    outputs.files expected_zips
-
-    def app_string = ""
-
-    if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-        app_string = 'curl.exe'
+        if(!download_dir.exists()){
+            println "creating "+download_dir
+            download_dir.mkdir()
+        }
     }
 
-    if (Os.isFamily(Os.FAMILY_MAC)) {
-        app_string = 'curl'
-    }
-
-    if (Os.isFamily(Os.FAMILY_UNIX)) {
-        app_string = 'curl'
-    }
-
-    def bundles = []
     supported_platforms.each { String plat ->
-                              def tgt_file = file(download_dir.absolutePath+'/sqeazy_bundle_'+plat+'.zip')
-                              def cmdstring = [app_string,
-                                               '-L',
-                                               'https://dl.bintray.com/sqeazy/sqeazy/'+plat+'/'+project.version+'/sqeazy_bundle.zip',
-                                               '-o',
-                                               tgt_file.absolutePath
-        ].join(" ")
+                              def tgt_file = new File(download_dir.absolutePath+'/'+'sqeazy_bundle_'+plat+'.zip')
 
-                              def curl_ret = cmdstring.execute()
-                              bundles.add(tgt_file)
+                              doLast {
+            download {
+                src 'https://dl.bintray.com/sqeazy/sqeazy/'+plat+'/'+project.version+'/sqeazy_bundle.zip'
+                dest tgt_file
+                overwrite true
+            }
+        }
+
+                              outputs.file(tgt_file)
+
+
     }
 
 
+    outputs.dir(download_dir)
 
-    outputs.files bundles
 }
 
 
@@ -460,7 +438,7 @@ task unpack_for_bake(type:Exec) {
     group bundle_group
 
     def ftree = fileTree(dist_dir).include('*.zip')
-    inputs.files ftree
+    inputs.files(ftree)
     def lib_dir = file(build_dir+'/distribution/lib')
     if(!lib_dir.exists()){
         lib_dir.mkdir()
@@ -508,7 +486,7 @@ task unpack_for_bake(type:Exec) {
     supported_platforms.each{ String plat ->
                              bundled_headers.add(dist_dir+"/lib/"+plat+"/sqeazy.h")
     }
-    outputs.files bundled_headers
+    outputs.files(bundled_headers)
 }
 
 
