@@ -47,6 +47,8 @@ SET (SQEAZY_ID "${SQEAZY_VENDOR_ID}.${PROJECT_NAME}")
 option(BUNDLE_SQEAZY "compile sqeazy ready for bundling" OFF)
 option(WITH_MARCH_NATIVE "compile sqeazy for the currently found hardware" OFF)
 option(USE_CXX11_ABI "enable _GLIBCXX_USE_CXX11_ABI in GCC 5.0+" ON)
+option(WITH_EXPERIMENTAL "enable experimental code paths in sqeazy" OFF)
+option(WITH_TRACE_MSG "enable trace messages for debugging sqeazy" OFF)
 
 # trying to setup paths so this package can be picked up
 set(INSTALL_BIN_DIR bin CACHE PATH "Installation directory for executables")
@@ -166,6 +168,13 @@ if(HAS_WNO_UNUSED_FUNCTION_COMPILERFLAG)
   add_definitions(-Wno-unused-function)
 endif()
 
+if(WITH_TRACE_MSG)
+  if(NOT MSVC)
+    add_definitions(-DSQY_TRACE=1)
+  else()
+    add_definitions(/DSQY_TRACE=1)
+  endif()
+endif()
 
 if(HAS_WNOOVERFLOW_COMPILERFLAG)
   add_definitions(-Wno-overflow)
@@ -185,15 +194,16 @@ if(ALLCAPITAL_BUILD_TYPE STREQUAL DEBUG)
     endif()
 
   endif()
-  
+
   if(NOT MSVC)
     add_definitions(-DSQY_TRACE=1)
-    ADD_DEFINITIONS(-D_SQY_DEBUG_=1)
+    add_definitions(-D_SQY_DEBUG_=1)
   else()
     add_definitions(/DSQY_TRACE=1)
-    ADD_DEFINITIONS(/D_SQY_DEBUG_=1)
+    add_definitions(/D_SQY_DEBUG_=1)
   endif()
 endif()
+
 
 if(ALLCAPITAL_BUILD_TYPE STREQUAL RELWDBG)
   if(HAS_GGDB_COMPILERFLAG)
@@ -208,6 +218,7 @@ endif()
 if(ALLCAPITAL_BUILD_TYPE STREQUAL RELEASE)
   if(HAS_OFAST_COMPILERFLAG)
     add_definitions(-Ofast)
+    set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -Ofast")
   endif()
   add_definitions(-DNDEBUG)
 endif()
@@ -291,12 +302,12 @@ ENDIF()
 
 
 
-IF(SQY_EXPERIMENTAL)
+IF(WITH_EXPERIMENTAL)
   add_definitions(-D_SQY_X_=1)
   MESSAGE(STATUS "[sqy] appended experimental flags: -D_SQY_X_=1")
-else(SQY_EXPERIMENTAL)
+else(WITH_EXPERIMENTAL)
   add_definitions(-D_SQY_X_=0)
-endif(SQY_EXPERIMENTAL)
+endif(WITH_EXPERIMENTAL)
 
 #the following shouldn't be needed due to CMAKE_CXX_STANDARD variable
 #check_cxx_compiler_flag(-std=c++11 HAS_CPP11_COMPILERFLAG)
