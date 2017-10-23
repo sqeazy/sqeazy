@@ -431,62 +431,36 @@ task fetch_version{
 
 }
 
+task unpack_for_bake {
 
-task unpack_for_bake(type:Exec) {
+    inputs.dir(dist_dir)
 
-    description 'unpack libsqeazy* bundles from bintray to '+dist_dir
-    group bundle_group
-
-    def ftree = fileTree(dist_dir).include('*.zip')
-    inputs.files(ftree)
-    def lib_dir = file(build_dir+'/distribution/lib')
-    if(!lib_dir.exists()){
-        lib_dir.mkdir()
-    }
-
-    workingDir lib_dir
-
-
-    supported_platforms.each{ String plat ->
-                             def download_dir = file(build_dir+'/distribution/lib/'+plat)
-
-                             if(!download_dir.exists()){
-            download_dir.mkdir()
+    def lib_dir = file(dist_dir + '/lib')
+    doFirst
+    {
+        if(!lib_dir.exists()){
+            lib_dir.mkdir()
         }
 
     }
+    outputs.dir(lib_dir)
 
-    def app_to_use = "unzip"
-    def flags = "-o"
-    // def tgt_dir_flag = "-d"
+    def ftree = fileTree(dist_dir).include('*.zip')
+    ftree.each{
+        File zfile ->
 
-     if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-        app_to_use = "jar"
-        flags = "xf"
-        // tgt_dir_flag = "-C"
+        doLast {
+            copy {
+                from zipTree(zfile)
+                into lib_dir
+            }
+
+         }
      }
 
-    executable(app_to_use)
-
-
-    ftree.each{
-        File zfile -> // doLast {
-            // exec
-            //    {
-                commandLine(app_to_use,flags,zfile)
-                // args(zfile)
-                // println commandLine.join(" ")
-                // println executable, (args).join(" ")
-
-            // }
-        //}
-    }
-
-    def bundled_headers = []
     supported_platforms.each{ String plat ->
-                             bundled_headers.add(dist_dir+"/lib/"+plat+"/sqeazy.h")
+                             outputs.files(dist_dir+"/"+plat+"/sqeazy.h")
     }
-    outputs.files(bundled_headers)
 }
 
 
@@ -506,7 +480,8 @@ task bake_bindings(type:JavaExec) {
     bundled_headers.add(dist_dir+"/"+plat+"/sqeazy.h")
   }
 
-  inputs.files sqeazy_header, bundled_headers
+    inputs.files(sqeazy_header)
+    inputs.files(bundled_headers)
 
 
   workingDir '.'
