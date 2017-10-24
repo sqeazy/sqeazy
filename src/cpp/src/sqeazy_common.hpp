@@ -38,14 +38,23 @@ namespace sqeazy {
     namespace ft = compass::feature;
 
     struct use_vectorisation {
+      #ifdef _MSC_FULL_VER
+      //MSVC doesn't honor hardware specific preprocessor flags, we are happy if anyone of them is true
+      const static bool value = (ct::has<ft::sse2>::enabled || ct::has<ft::sse3>::enabled || ct::has<ft::sse4>::enabled);
+      #else
       const static bool value = (ct::has<ft::sse2>::enabled && ct::has<ft::sse3>::enabled && ct::has<ft::sse4>::enabled);
+      #endif
 
       static void debug() {
 
+        std::string slb = "\n";
+        #ifndef _MSB_FULL_VER
+        slb = "(not used in MSVC)\n";
+        #endif
         std::cout << "sse2 ? " << ct::has<ft::sse2>::enabled << "\n"
-              << "sse3 ? " << ct::has<ft::sse3>::enabled << "\n"
-              << "sse4 ? " << ct::has<ft::sse4>::enabled << "\n"
-              << "sqyx ? " << _SQY_X_ << "\n";
+                  << "sse3 ? " << ct::has<ft::sse3>::enabled << slb
+                  << "sse4 ? " << ct::has<ft::sse4>::enabled << slb
+                  << "sqyx ? " << _SQY_X_ << "\n";
       }
     };
 
