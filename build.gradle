@@ -1,6 +1,7 @@
 plugins {
     id "com.jfrog.bintray" version "1.7.1"
     id 'com.palantir.git-version' version '0.8.0' //https://github.com/palantir/gradle-git-version
+    id "de.undercouch.download" version "3.2.0" //https://github.com/michel-kraemer/gradle-download-task
 }
 
 import org.apache.tools.ant.taskdefs.condition.Os
@@ -403,110 +404,62 @@ task fetch_version {
     description 'download all known libsqeazy* bundles from bintray'
     group bundle_group
 
-    def version_to_fetch = project.hasProperty("version_to_fetch") ? version_to_fetch : project.version
-
     def bdir = file(build_dir)
+    def download_dir = file(build_dir+'/distribution/')
 
+    doFirst{
     if(!bdir.exists()){
         bdir.mkdir()
         }
 
-    def download_dir = file(build_dir+'/distribution/')
-
     if(!download_dir.exists()){
         download_dir.mkdir()
         }
-
-    def filename = 'sqeazy_bundle.zip'
-
-    def expected_zips = []
-    supported_platforms.each{ String plat ->
-                             expected_zips.add(download_dir.absolutePath+'/sqeazy_bundle_'+plat+'.zip')
     }
-    outputs.files expected_zips
+    outputs.dir(download_dir)
 
-    def app_string = ""
+    def version_to_fetch = project.hasProperty("version_to_fetch") ? version_to_fetch : project.version
+    supported_platforms.each {
+        String plat ->
 
-    if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-        app_string = 'curl.exe'
-    }
-
-    if (Os.isFamily(Os.FAMILY_MAC)) {
-        app_string = 'curl'
+        def tgt_file = file(download_dir.toString()+'/sqeazy_bundle_'+plat+'.zip')
+        download
+        {
+            src 'https://dl.bintray.com/sqeazy/sqeazy/'+plat+'/'+version_to_fetch+'/sqeazy_bundle.zip'
+            dest new File(tgt_file.toString())
+            onlyIfNewer true
+        }
+        outputs.files(tgt_file.toString())
     }
 
-    if (Os.isFamily(Os.FAMILY_UNIX)) {
-        app_string = 'curl'
-    }
-
-    def bundles = []
-    supported_platforms.each { String plat ->
-                              def tgt_file = file(download_dir.absolutePath+'/sqeazy_bundle_'+plat+'.zip')
-                              def cmdstring = [app_string,
-                                               '-L',
-                                               'https://dl.bintray.com/sqeazy/sqeazy/'+plat+'/'+project.version+'/sqeazy_bundle.zip',
-                                               '-o',
-                                               tgt_file.absolutePath
-        ].join(" ")
-
-                              def curl_ret = cmdstring.execute()
-                              bundles.add(tgt_file)
-    }
-
-
-
-    outputs.files bundles
 }
 
 
-task unpack_for_bake(type:Exec) {
+task unpack_for_bake(type : Copy) {
 
     description 'unpack libsqeazy* bundles from bintray to '+dist_dir
     group bundle_group
 
-    def ftree = fileTree(dist_dir).include('*.zip')
-    inputs.files ftree
+
     def lib_dir = file(build_dir+'/distribution/lib')
-    if(!lib_dir.exists()){
-        lib_dir.mkdir()
-    }
 
-    workingDir lib_dir
-
-
-    supported_platforms.each{ String plat ->
-                             def download_dir = file(build_dir+'/distribution/lib/'+plat)
-
-                             if(!download_dir.exists()){
-            download_dir.mkdir()
+    doFirst{
+        if(!lib_dir.exists()){
+            lib_dir.mkdir()
         }
-
     }
 
-    def app_to_use = "unzip"
-    def flags = "-o"
-    // def tgt_dir_flag = "-d"
+    supported_platforms.each{
+        String plat ->
 
-     if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-        app_to_use = "jar"
-        flags = "xf"
-        // tgt_dir_flag = "-C"
-     }
+        def infile = file(build_dir+"/distribution/sqeazy_bundle_"+plat+".zip")
+        inputs.files(infile)
 
-    executable(app_to_use)
+        from zipTree(infile)
+        into lib_dir
 
-
-    ftree.each{
-        File zfile -> 
-                commandLine(app_to_use,flags,zfile)
-                
+        outputs.files(lib_dir.toString()+"/"+plat+"/sqeazy.h")
     }
-
-    def bundled_headers = []
-    supported_platforms.each{ String plat ->
-                             bundled_headers.add(dist_dir+"/lib/"+plat+"/sqeazy.h")
-    }
-    outputs.files bundled_headers
 }
 
 
