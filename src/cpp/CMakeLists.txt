@@ -47,6 +47,12 @@ SET (SQEAZY_ID "${SQEAZY_VENDOR_ID}.${PROJECT_NAME}")
 option(BUNDLE_SQEAZY "compile sqeazy ready for bundling" OFF)
 option(WITH_MARCH_NATIVE "compile sqeazy for the currently found hardware" OFF)
 option(USE_CXX11_ABI "enable _GLIBCXX_USE_CXX11_ABI in GCC 5.0+" ON)
+option(WITH_EXPERIMENTAL "enable experimental code paths in sqeazy" OFF)
+option(WITH_TRACE_MSG "enable trace messages for debugging sqeazy (enables verbose messages)" OFF)
+option(WITH_VERBOSE "enable verbose messages for debugging sqeazy" OFF)
+if(${WITH_TRACE_MSG})
+  set(WITH_VERBOSE ON)
+endif()
 
 # trying to setup paths so this package can be picked up
 set(INSTALL_BIN_DIR bin CACHE PATH "Installation directory for executables")
@@ -115,7 +121,13 @@ check_cxx_compiler_flag(-static-libgcc HAS_STATIC_LIBGCC_COMPILERFLAG)
 check_cxx_compiler_flag(-static-libstdc++ HAS_STATIC_LIBSTDC++_COMPILERFLAG)
 check_cxx_compiler_flag(-static-libc++ HAS_STATIC_LIBC++_COMPILERFLAG)
 
+check_cxx_compiler_flag(/arch:SSE HAS_ARCH_SSE_COMPILERFLAG)
+check_cxx_compiler_flag(/arch:SSE2 HAS_ARCH_SSE2_COMPILERFLAG)
+check_cxx_compiler_flag(/arch:AVX HAS_ARCH_AVX_COMPILERFLAG)
+check_cxx_compiler_flag(/arch:AVX2 HAS_ARCH_AVX2_COMPILERFLAG)
 check_cxx_compiler_flag(/Oi HAS_OI_COMPILERFLAG)
+check_cxx_compiler_flag(/Ot HAS_Ot_COMPILERFLAG)
+check_cxx_compiler_flag(/O2 HAS_O2_COMPILERFLAG)
 check_cxx_compiler_flag(/w HAS_NO_WARNINGS) #if given to cl.exe, no output will be printed to the console
 check_cxx_compiler_flag(/W1 HAS_VS_W1_WARNINGS) #see https://msdn.microsoft.com/en-us/library/thxezb7y.aspx for details
 check_cxx_compiler_flag(-Wno-overflow HAS_WNOOVERFLOW_COMPILERFLAG)
@@ -166,6 +178,13 @@ if(HAS_WNO_UNUSED_FUNCTION_COMPILERFLAG)
   add_definitions(-Wno-unused-function)
 endif()
 
+if(WITH_TRACE_MSG)
+  if(NOT MSVC)
+    add_definitions(-DSQY_TRACE=1)
+  else()
+    add_definitions(/DSQY_TRACE=1)
+  endif()
+endif()
 
 if(HAS_WNOOVERFLOW_COMPILERFLAG)
   add_definitions(-Wno-overflow)
@@ -179,21 +198,16 @@ if(ALLCAPITAL_BUILD_TYPE STREQUAL DEBUG)
   if(HAS_GGDB3_COMPILERFLAG)
     add_definitions(-ggdb3)
   endif()
-  IF(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
-    if(HAS_OI_COMPILERFLAG)
-      add_definitions(/Oi)
-    endif()
-
-  endif()
   
   if(NOT MSVC)
     add_definitions(-DSQY_TRACE=1)
-    ADD_DEFINITIONS(-D_SQY_DEBUG_=1)
+    add_definitions(-D_SQY_DEBUG_=1)
   else()
     add_definitions(/DSQY_TRACE=1)
-    ADD_DEFINITIONS(/D_SQY_DEBUG_=1)
+    add_definitions(/D_SQY_DEBUG_=1)
   endif()
 endif()
+
 
 if(ALLCAPITAL_BUILD_TYPE STREQUAL RELWDBG)
   if(HAS_GGDB_COMPILERFLAG)
@@ -208,33 +222,10 @@ endif()
 if(ALLCAPITAL_BUILD_TYPE STREQUAL RELEASE)
   if(HAS_OFAST_COMPILERFLAG)
     add_definitions(-Ofast)
+    set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -Ofast")
   endif()
   add_definitions(-DNDEBUG)
 endif()
-
- #for clang
-# IF("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-#    SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -ggdb3 -Wno-overflow")
-#    SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -ggdb3 -Wno-overflow")
-
-#    SET(CMAKE_CXX_FLAGS_RELWDBG "${CMAKE_CXX_FLAGS_RELWDBG} -Wall -ggdb -O3 -Wno-overflow")
-#    SET(CMAKE_C_FLAGS_RELWDBG "${CMAKE_C_FLAGS_RELWDBG} -Wall -ggdb -O3 -Wno-overflow")
-
-#  ENDIF()
-
- #TODO: think about support parallel studio as well
- IF(WIN32)
-   MESSAGE(STATUS "[Win32] Compiler used C++ ${CMAKE_CXX_COMPILER_ID}")
-   MESSAGE(STATUS "[Win32] Compiler used C ${CMAKE_C_COMPILER_ID}")
-   MESSAGE(STATUS "[Win32] default HOST_COMPILER_RELEASE_FLAGS : ${HOST_COMPILER_RELEASE_FLAGS}")
-   MESSAGE(STATUS "[Win32] CMAKE_CXX_FLAGS          : ${CMAKE_CXX_FLAGS}")
-   MESSAGE(STATUS "[Win32] CMAKE_CXX_FLAGS_RELEASE  : ${CMAKE_CXX_FLAGS_RELEASE}")
-   MESSAGE(STATUS "[Win32] CMAKE_CXX_FLAGS_DEBUG    : ${CMAKE_CXX_FLAGS_DEBUG}")
-   MESSAGE(STATUS "[Win32] CMAKE_VS_PLATFORM_TOOLSET: ${CMAKE_VS_PLATFORM_TOOLSET}")
-   MESSAGE(STATUS "[Win32] CMAKE_VS_PLATFORM_TOOLSET: ${CMAKE_VS_PLATFORM_TOOLSET}")
-   MESSAGE(STATUS "[Win32] CMAKE_MODULE_LINKER_FLAGS: ${CMAKE_MODULE_LINKER_FLAGS}")
- ENDIF(WIN32)
-
 
 IF(HAS_CLANG_VECTORIZE_COMPILERFLAG)
   add_definitions(-fvectorize)
@@ -244,13 +235,14 @@ IF(HAS_GCC_TREE_VECTORIZE_COMPILERFLAG)
   add_definitions(-ftree-vectorize)
 ENDIF()
 
-
-
-IF(HAS_MARCH_NATIVE_COMPILERFLAG)
-  if(${WITH_MARCH_NATIVE})
+if(${WITH_MARCH_NATIVE})
+  IF(HAS_MARCH_NATIVE_COMPILERFLAG)
     add_definitions(-march=native)
     MESSAGE(STATUS "allowing compiler to choose x86 architecture, using -march=native")
-  else()
+  ELSE()
+    MESSAGE(WARNING "Compiler does not support -march=native!")
+  ENDIF()
+else()
     #check https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html for details
     set(MY_RELEASE_FLAG "")
     if(HAS_MARCH_GENERIC_COMPILERFLAG)
@@ -268,10 +260,11 @@ IF(HAS_MARCH_NATIVE_COMPILERFLAG)
     endforeach()
     add_definitions(${MY_RELEASE_FLAG})
     MESSAGE(STATUS "using ${MY_RELEASE_FLAG} as build flag")
-  endif()
-ELSE()
-  MESSAGE(WARNING "Compiler does not support -march=native!")
-ENDIF()
+endif()
+
+if(${HAS_ARCH_AVX_COMPILERFLAG})
+add_definitions(/arch:AVX)
+endif()
 
 #TODO: look into preference of libc++ over other std libraries
 IF( CMAKE_GENERATOR STREQUAL Xcode )
@@ -279,9 +272,9 @@ IF( CMAKE_GENERATOR STREQUAL Xcode )
     SET( CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++" )
 ENDIF()
 
-if(SQY_VERBOSE)
+if(${WITH_VERBOSE} OR ${WITH_TRACE_MSG})
   ADD_DEFINITIONS(-D_SQY_VERBOSE_=1)
-endif(SQY_VERBOSE)
+endif()
 
 
 IF(HAS_FAST_MATH_COMPILERFLAG)
@@ -291,12 +284,12 @@ ENDIF()
 
 
 
-IF(SQY_EXPERIMENTAL)
+IF(WITH_EXPERIMENTAL)
   add_definitions(-D_SQY_X_=1)
   MESSAGE(STATUS "[sqy] appended experimental flags: -D_SQY_X_=1")
-else(SQY_EXPERIMENTAL)
+else(WITH_EXPERIMENTAL)
   add_definitions(-D_SQY_X_=0)
-endif(SQY_EXPERIMENTAL)
+endif(WITH_EXPERIMENTAL)
 
 #the following shouldn't be needed due to CMAKE_CXX_STANDARD variable
 #check_cxx_compiler_flag(-std=c++11 HAS_CPP11_COMPILERFLAG)
@@ -318,6 +311,18 @@ if(${BUNDLE_SQEAZY})
   set(OpenMP_LINK_STATIC ON)
   set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
 endif()
+
+MESSAGE(STATUS "============== FLAG SUMMARY FOR ${CMAKE_BUILD_TYPE} ===============")
+MESSAGE(STATUS "Compiler used C ${CMAKE_C_COMPILER_ID}")
+MESSAGE(STATUS "default HOST_COMPILER_RELEASE_FLAGS : ${HOST_COMPILER_RELEASE_FLAGS}")
+MESSAGE(STATUS "CMAKE_CXX_FLAGS          : ${CMAKE_CXX_FLAGS}")
+MESSAGE(STATUS "CMAKE_CXX_FLAGS_RELEASE  : ${CMAKE_CXX_FLAGS_RELEASE}")
+MESSAGE(STATUS "CMAKE_CXX_FLAGS_DEBUG    : ${CMAKE_CXX_FLAGS_DEBUG}")
+MESSAGE(STATUS "CMAKE_VS_PLATFORM_TOOLSET: ${CMAKE_VS_PLATFORM_TOOLSET}")
+MESSAGE(STATUS "CMAKE_VS_PLATFORM_TOOLSET: ${CMAKE_VS_PLATFORM_TOOLSET}")
+MESSAGE(STATUS "CMAKE_MODULE_LINKER_FLAGS: ${CMAKE_MODULE_LINKER_FLAGS}")
+get_directory_property( DirDefs DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS )
+MESSAGE(STATUS "COMPILE_DEFINITIONS      : ${DirDefs}")
 
 ################################# DEPENDENCIES #################################
 #-------------------------------- OpenMP          ---------------------------------

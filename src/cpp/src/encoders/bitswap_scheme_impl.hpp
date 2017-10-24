@@ -120,7 +120,14 @@ namespace sqeazy {
       }
       else{
 #ifdef _SQY_VERBOSE_
-        std::cout << "[bitswap_scheme::encode]\tusing scalar method\n";
+        std::cout << "[bitswap_scheme::encode]\tusing scalar method, why ? "
+                  << "sqeazy::platform::use_vectorisation::value = "<< sqeazy::platform::use_vectorisation::value << ", "
+                  << "compass::runtime::has(compass::feature::sse4()) = " << compass::runtime::has(compass::feature::sse4())<< ","
+                  << "num_bits_per_plane==1 " << num_bits_per_plane << " ==1 ,"
+                  << "sizeof(raw_type)=" << sizeof(raw_type) << ">1, "
+                  << "sqeazy::detail::sse_valid_length<static_num_bits_per_plane,raw_type>(_length) " <<
+                  sqeazy::detail::sse_valid_length << static_num_bits_per_plane,raw_type>(_length)
+                  << "\n";
 #endif
         err = sqeazy::detail::scalar_bitplane_reorder_encode<static_num_bits_per_plane>(_input,
                                                                                         _output,
