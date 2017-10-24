@@ -57,11 +57,10 @@ def jnaerator_platform = {
 
 def build_cmake_args = {
 
-
-
-
     def native_build_type = project.hasProperty("sqy_build_type") ? sqy_build_type : "Release"
     def sqy_x = project.hasProperty("sqy_experimental") ? sqy_experimental : "0"
+    def sqy_v = project.hasProperty("sqy_verbose") ? sqy_verbose : "0"
+    def sqy_trace = project.hasProperty("sqy_trace_msg") ? sqy_trave_msg : "0"
     def path_to_lz4 = project.hasProperty("lz4_path") ? lz4_path : ""
     def path_to_ffmpeg = project.hasProperty("ffmpeg_path") ? ffmpeg_path : ""
     def path_to_hdf5 = project.hasProperty("hdf5_path") ? hdf5_path : ""
@@ -77,7 +76,13 @@ def build_cmake_args = {
         local_args << "-DSQY_EXPERIMENTAL=ON"
     }
 
+    if(sqy_trace != "0"){
+        local_args << "-DWITH_TRACE_MSG=ON"
+    }
 
+    if(sqy_v != "0"){
+        local_args << "-DWITH_VERBOSE=ON"
+    }
 
     if(path_to_lz4){
 
