@@ -335,7 +335,9 @@ int main(int argc, char *argv[])
 
     if(sqy_vm.count("version")) {
       //FIXME: introduce versioing infrastructure
-      std::cout << "sqy 0.0-alpha\n";
+      std::cout << "sqy "
+                << sqeazy_global_version << " ("
+                << sqeazy_global_refhash <<")\n";
       return 1;
     }
 
