@@ -84,14 +84,21 @@ namespace sqeazy {
 
         if(!_no_header){
 
-          std::cout << (!_as_csv ? std::setw(name_.size()+2   ) : std::setw(0)) << "filename"       << delim
-                    << (!_as_csv ? std::setw(14               ) : std::setw(0)) << "sizeof_pixel"   << delim
-                    << (!_as_csv ? std::setw(15               ) : std::setw(0)) << "shape"          << delim
-                    << (!_as_csv ? std::setw(15               ) : std::setw(0)) << "n_elements"     << delim
-                    << (!_as_csv ? std::setw(15               ) : std::setw(0)) << "time_mus"       << delim
-                    << (!_as_csv ? std::setw(15               ) : std::setw(0)) << "final_bytes"    << delim
-                    << (!_as_csv ? std::setw(5                ) : std::setw(0)) << "id"             << delim
-                    << (!_as_csv ? std::setw(_comment.size()+2) : std::setw(0)) << "comment"        << "\n";
+          std::cout << (!_as_csv ? std::setw(2 ) : std::setw(0)) << "id"             << delim
+                    << (!_as_csv ? std::setw(15) : std::setw(0)) << "shape"          << delim
+                    << (!_as_csv ? std::setw(15) : std::setw(0)) << "time_mus"       << delim
+                    << (!_as_csv ? std::setw(15) : std::setw(0)) << "final_bytes"    << delim
+                    << (!_as_csv ? std::setw(18) : std::setw(0)) << "ingest_bw_mbps" << delim
+                    << (!_as_csv ? std::setw(15) : std::setw(0)) << "sizeof_pixel"   << delim
+                    << (!_as_csv ? std::setw(15) : std::setw(0)) << "n_elements"     << delim;
+          if(_as_csv){
+            std::cout << (!_as_csv ? std::setw(20) : std::setw(0)) << "filename"       << delim
+                      << (!_as_csv ? std::setw(10) : std::setw(0)) << "comment";
+          }
+          else {
+            std::cout << " filename+comment";
+          }
+                         std::cout << "\n";
 
         }
         std::stringstream shape_str;
@@ -101,18 +108,24 @@ namespace sqeazy {
         auto tmp = shape_str.str();
         const std::string shape_string(tmp.begin(), tmp.size()>0 ? tmp.end()-1 : tmp.end());
         const std::size_t len = std::accumulate(shape_.begin(), shape_.end(),1,std::multiplies<std::size_t>());
+        float ingest_bw = 0.f;
+        constexpr float in_mb = 1.f/(1024*1024);
+        const float ingest_size_in_mb = float(len*sizeof_pixel_)*in_mb;
 
-        for(int i = 0;i < times_.size();++i)
-          std::cout << (!_as_csv ? std::setw(name_.size()+2   ) : std::setw(0))  << "\"" << name_ << "\"" << delim
-                    << (!_as_csv ? std::setw(14               ) : std::setw(0))  << sizeof_pixel_     << delim
+        for(std::size_t i = 0;i < times_.size();++i){
+          std::chrono::duration<double> time_in_sec = times_[i];
+          ingest_bw = ingest_size_in_mb/( time_in_sec.count() );
+          std::cout << (!_as_csv ? std::setw( 2               ) : std::setw(0))  << i                 << delim
                     << (!_as_csv ? std::setw(15               ) : std::setw(0))  << shape_string      << delim
-                    << (!_as_csv ? std::setw(15               ) : std::setw(0))  << len               << delim
                     << (!_as_csv ? std::setw(15               ) : std::setw(0))  << times_[i].count() << delim
                     << (!_as_csv ? std::setw(15               ) : std::setw(0))  << bytes_written_[i] << delim
-                    << (!_as_csv ? std::setw( 5               ) : std::setw(0))  << i                 << delim
-                    << (!_as_csv ? std::setw(_comment.size()+2) : std::setw(0))  << "\"" << _comment << "\""
+                    << (!_as_csv ? std::setw(18               ) : std::setw(0))  << ingest_bw         << delim
+                    << (!_as_csv ? std::setw(15               ) : std::setw(0))  << sizeof_pixel_     << delim
+                    << (!_as_csv ? std::setw(15               ) : std::setw(0))  << len               << delim
+                    << (_as_csv ? "\"" : " ") << name_ << (_as_csv ? "\"" : ",") << delim
+                    << (_as_csv ? "\"" : " ") << _comment << (_as_csv ? "\"" : "")
                     << "\n";
-
+        }
 
       }
     };
