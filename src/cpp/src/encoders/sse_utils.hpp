@@ -798,7 +798,7 @@ namespace sqeazy {
         static const value_type num_bits = (sizeof(value_type) * CHAR_BIT) - shift;
 
 
-        static const shift_left_m128i<value_type> left_shifter{};
+        static const shift_left_m128i<value_type> left_shifter{};//TODO: replacing this by method which uses bitmask for _mm_sll_epi16 breaks test_rotate_by_intrinsics
         static const shift_right_m128i<value_type> right_shifter= {};
 
         // type shifted = _in << shift;
