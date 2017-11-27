@@ -60,7 +60,6 @@ namespace sqeazy {
                               it2_type _rbegin){
 
     double dsum = 0;
-    const auto size = std::distance(_lbegin,_lend);
 
     for(;_lbegin!=_lend;++_lbegin,++_rbegin){
       double diff = *_lbegin - *_rbegin;
