@@ -798,16 +798,13 @@ namespace sqeazy {
         static const value_type num_bits = (sizeof(value_type) * CHAR_BIT) - shift;
 
 
-        static const shift_left_m128i<value_type> left_shifter = {};
-        static const shift_right_m128i<value_type> right_shifter = {};
+        static const shift_left_m128i<value_type> left_shifter{};
+        static const shift_right_m128i<value_type> right_shifter= {};
 
         // type shifted = _in << shift;
         __m128i value = *_in;
 
-
-
-        // value = _mm_slli_epi16(value, shift);
-        value = left_shifter(value, shift);
+        value = left_shifter(value,shift);
 
         static const value_type mask = ~(~0 << shift);
         static const __m128i vec_mask = _mm_set1_epi8(mask);
@@ -1088,7 +1085,7 @@ namespace sqeazy {
 
 
       sqeazy::detail::gather_msb<in_value_t>        collect;
-      sqeazy::detail::shift_left_m128i<in_value_t>  shift_left;
+      sqeazy::detail::shift_left_m128i<in_value_t>  shift_left{_bitplane_offset_from_msb};
 
       auto output = _dst;
       auto input = _begin;
@@ -1106,7 +1103,7 @@ namespace sqeazy {
 
           __m128i input_block = _mm_load_si128(reinterpret_cast<const __m128i*>(&*input));
 
-          input_block = shift_left(input_block,_bitplane_offset_from_msb);//TODO: this uses integer based left shift and forces a load into a xmm register every time it is called
+          input_block = shift_left(input_block);//TODO: this uses integer based left shift and forces a load into a xmm register every time it is called
 
           in_value_t temp = collect(input_block) << (n_bits_in_value_t - 16);
 
@@ -1175,7 +1172,7 @@ namespace sqeazy {
       const        std::size_t len                  = std::distance(_begin,_end);
 
       sqeazy::detail::gather_msb<in_value_t>        collect;
-      sqeazy::detail::shift_left_m128i<in_value_t>  shift_left;
+      sqeazy::detail::shift_left_m128i<in_value_t>  shift_left{_bitplane_offset_from_msb};
 
       auto output = _dst;
       std::uint32_t pos = 0;
@@ -1187,7 +1184,7 @@ namespace sqeazy {
 
         __m128i input_block = _mm_load_si128(reinterpret_cast<const __m128i*>(&*(_begin + i)));
 
-        input_block = shift_left(input_block,_bitplane_offset_from_msb);
+        input_block = shift_left(input_block);
         std::uint16_t temp = collect(input_block);
 
         output_block = sse_scalar<std::uint16_t>::insert(output_block,temp,pos);
