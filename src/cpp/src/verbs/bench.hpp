@@ -162,7 +162,7 @@ namespace sqeazy {
       std::vector<size_t>	input_shape;
       std::vector<char>	output;
       size_t		expected_size_byte = _pipeline.max_encoded_size(_input.size_in_byte());
-      size_t                output_file_size = bfs::exists(_output_file) ? bfs::file_size(_output_file) : 0;
+      // size_t                output_file_size = bfs::exists(_output_file) ? bfs::file_size(_output_file) : 0;
 
       //create clean output buffer
       if(expected_size_byte!=output.size())
@@ -324,7 +324,7 @@ namespace sqeazy {
 
       std::vector<size_t>	input_shape;
       std::vector<char>	output;
-      size_t		bytes_written =0;
+
 
       //retrieve the size of the loaded buffer
       _input.dimensions(input_shape);
@@ -359,8 +359,6 @@ namespace sqeazy {
 
       if(rvalue)
         return series();
-
-      bytes_written = bfs::file_size(_output_file);//applies if created from scratch or appended
 
       return timings;
     }
