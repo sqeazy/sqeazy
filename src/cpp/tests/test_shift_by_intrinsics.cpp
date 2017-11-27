@@ -78,6 +78,18 @@ BOOST_AUTO_TEST_CASE( shift_left_by_constant ){
   BOOST_REQUIRE(output[0] == (2 << 1));
 }
 
+BOOST_AUTO_TEST_CASE( unary_shift_left_by_constant ){
+
+  static const __m128i v_const = _mm_set1_epi16(2);
+
+  sqeazy::detail::shift_left_m128i<unsigned short> shifter{1};
+  __m128i result = shifter(v_const);
+  _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);
+
+  BOOST_REQUIRE(output[0] == (2 << 1));
+}
+
+
 BOOST_AUTO_TEST_CASE( shift_msb_left_by_constant ){
 
   static const __m128i v_msb = _mm_set1_epi16(0x8000);
@@ -89,6 +101,16 @@ BOOST_AUTO_TEST_CASE( shift_msb_left_by_constant ){
   BOOST_REQUIRE(output[0] == 0);
 }
 
+BOOST_AUTO_TEST_CASE( unary_shift_msb_left_by_constant ){
+
+  static const __m128i v_msb = _mm_set1_epi16(0x8000);
+
+  sqeazy::detail::shift_left_m128i<unsigned short> shifter{1};
+  __m128i result = shifter(v_msb);
+  _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);
+
+  BOOST_REQUIRE(output[0] == 0);
+}
 
 BOOST_AUTO_TEST_CASE( shift_right_by_constant ){
 
