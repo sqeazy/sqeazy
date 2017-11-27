@@ -62,7 +62,7 @@ struct info
     float max = (*std::max_element(_payload.begin(), _payload.end()));
 
     std::ostringstream shape_str;
-    int cnt = 0;
+    std::uint32_t cnt = 0;
     for( const S& el : _shape ){
       cnt++;
       shape_str << el;
