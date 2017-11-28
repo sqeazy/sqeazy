@@ -11,13 +11,13 @@ namespace sqeazy {
       input = 0001 0111
       rotate_left<1>(input): 0010 1110
       rotate_left<2>(input): 0101 1100
-  
+
     */
     template <unsigned shift,typename T >
     T rotate_left(const T& _in)  {
       typedef typename sqeazy::add_unsigned<T>::type type;
       static const unsigned num_bits = (sizeof(type) * CHAR_BIT) - shift;
-    
+
       type shifted = _in << shift;
       static const type mask = ~(~0 << shift);
       type left_over = (_in >> num_bits) & mask;
@@ -51,8 +51,8 @@ namespace sqeazy {
 
        \param[in] _in number to XOR
 
-       \return 
-       \retval 
+       \return
+       \retval
 
     */
     template <typename T>
@@ -60,9 +60,9 @@ namespace sqeazy {
       //signed version
       static const T mask = ~(T(1 << ((sizeof(T)*CHAR_BIT) - 1)));
       if ( _in & ~mask )
-	return _in ^ mask;
+    return _in ^ mask;
       else
-	return _in;
+    return _in;
     }
 
     template <typename T>
@@ -70,7 +70,7 @@ namespace sqeazy {
       //unsigned version
       return _in;
     }
-  
+
 
     template < typename T>
     T setbits_of_integertype(const T& destination, const T& source, unsigned at, unsigned numbits)
