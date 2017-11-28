@@ -166,10 +166,7 @@ namespace sqeazy {
 
         const int result = _mm_movemask_epi8(temp);//result contains collapsed MSBs
 
-        std::uint16_t value = result;
-        value <<= 8;
-
-        return value;
+        return (static_cast<std::uint16_t>(result) << 8);
 
       }
 
@@ -210,25 +207,33 @@ namespace sqeazy {
     };
 
     ////////////////////////////////////////////////// SHIFT LEFT     //////////////////////////////////////////////////
+    template<typename daughter_t, typename value_t>
+    struct shift_base {
 
+      const int n_bits;
+      const __m128i n_bits_block;
+
+      shift_base(int _nbits = 1):
+        n_bits(_nbits),
+        n_bits_block(_mm_set1_epi64(_mm_set_pi32(0,_nbits)))
+        {
+        }
+
+
+      template <typename size_type>
+      __m128i operator()(const __m128i& _block, size_type num_bits) const {return daughter_t::operator()(_block, num_bits);}
+
+      __m128i operator()(const __m128i& _block) const {return daughter_t::operator()(_block);}
+
+    };
 
     template<typename T>
-    struct shift_left_m128i {
+    struct shift_left_m128i : public shift_base<shift_left_m128i<T>, T> {
 
-      int n_bits;
-      __m128i n_bits_block;
+      typedef shift_base<shift_left_m128i<T>, T> base_t;
 
-      shift_left_m128i(int _nbits = 1):
-        n_bits(_nbits){
-
-        reset(_nbits);
-
-      }
-
-      void reset(int _nbits){
-        __m64 temp = _mm_set_pi32(0,_nbits);
-        n_bits_block = _mm_set1_epi64(temp);
-      }
+      shift_left_m128i(int nbits = 1):
+        base_t(nbits){}
 
       template <typename size_type>
       __m128i operator()(const __m128i& _block, size_type num_bits) const {return _block;}
@@ -238,21 +243,12 @@ namespace sqeazy {
     };
 
     template<>
-    struct shift_left_m128i<unsigned short> {
-      int n_bits;
-      __m128i n_bits_block;
+    struct shift_left_m128i<std::uint16_t> : public shift_base<shift_left_m128i<std::uint16_t>, std::uint16_t> {
 
-      shift_left_m128i(int _nbits = 1):
-        n_bits(_nbits){
+      typedef shift_base<shift_left_m128i<std::uint16_t>, std::uint16_t> base_t;
 
-        reset(_nbits);
-
-      }
-
-      void reset(int _nbits){
-        __m64 temp = _mm_set_pi32(0,_nbits);
-        n_bits_block = _mm_set1_epi64(temp);
-      }
+      shift_left_m128i(int nbits = 1):
+        base_t(nbits){}
 
       template <typename size_type>
       __m128i operator()(const __m128i& _block, size_type num_bits) const {
@@ -265,22 +261,12 @@ namespace sqeazy {
     };
 
     template<>
-    struct shift_left_m128i<short> {
-      int n_bits;
-      __m128i n_bits_block;
+    struct shift_left_m128i<std::int16_t> : public shift_base<shift_left_m128i<std::int16_t>, std::int16_t> {
 
-      shift_left_m128i(int _nbits = 1):
-        n_bits(_nbits){
+      typedef shift_base<shift_left_m128i<std::int16_t>, std::int16_t> base_t;
 
-        reset(_nbits);
-
-      }
-
-      void reset(int _nbits){
-        __m64 temp = _mm_set_pi32(0,_nbits);
-        n_bits_block = _mm_set1_epi64(temp);
-      }
-
+      shift_left_m128i(int nbits = 1):
+        base_t(nbits){}
 
       template <typename size_type>
       __m128i operator()(const __m128i& _block, size_type num_bits) const {
@@ -293,22 +279,12 @@ namespace sqeazy {
     };
 
     template<>
-    struct shift_left_m128i<unsigned int> {
+    struct shift_left_m128i<std::uint32_t> : public shift_base<shift_left_m128i<std::uint32_t>, std::uint32_t> {
 
-      int n_bits;
-      __m128i n_bits_block;
+      typedef shift_base<shift_left_m128i<std::uint32_t>, std::uint32_t> base_t;
 
-      shift_left_m128i(int _nbits = 1):
-        n_bits(_nbits){
-
-        reset(_nbits);
-
-      }
-
-      void reset(int _nbits){
-        __m64 temp = _mm_set_pi32(0,_nbits);
-        n_bits_block = _mm_set1_epi64(temp);
-      }
+      shift_left_m128i(int nbits = 1):
+        base_t(nbits){}
 
       template <typename size_type>
       __m128i operator()(const __m128i& _block, size_type num_bits) const {
@@ -321,23 +297,13 @@ namespace sqeazy {
     };
 
     template<>
-    struct shift_left_m128i<int> {
+    struct shift_left_m128i<std::int32_t> : public shift_base<shift_left_m128i<std::int32_t>, std::int32_t>{
 
-      int n_bits;
-      __m128i n_bits_block;
 
-      shift_left_m128i(int _nbits = 1):
-        n_bits(_nbits){
+      typedef shift_base<shift_left_m128i<std::int32_t>, std::int32_t> base_t;
 
-        reset(_nbits);
-
-      }
-
-      void reset(int _nbits){
-        __m64 temp = _mm_set_pi32(0,_nbits);
-        n_bits_block = _mm_set1_epi64(temp);
-      }
-
+      shift_left_m128i(uint nbits = 1):
+        base_t(nbits){}
 
       template <typename size_type>
       __m128i operator()(const __m128i& _block, size_type num_bits) const {
@@ -350,22 +316,12 @@ namespace sqeazy {
     };
 
     template<>
-    struct shift_left_m128i<unsigned long> {
+    struct shift_left_m128i<std::uint64_t> : public shift_base<shift_left_m128i<std::uint64_t>, std::uint64_t> {
 
-      int n_bits;
-      __m128i n_bits_block;
+      typedef shift_base<shift_left_m128i<std::uint64_t>, std::uint64_t> base_t;
 
-      shift_left_m128i(int _nbits = 1):
-        n_bits(_nbits){
-
-        reset(_nbits);
-
-      }
-
-      void reset(int _nbits){
-        __m64 temp = _mm_set_pi32(0,_nbits);
-        n_bits_block = _mm_set1_epi64(temp);
-      }
+      shift_left_m128i(uint nbits = 1):
+        base_t(nbits){}
 
       template <typename size_type>
       __m128i operator()(const __m128i& _block, size_type num_bits) const {
@@ -379,21 +335,13 @@ namespace sqeazy {
     };
 
     template<>
-    struct shift_left_m128i<long> {
-      int n_bits;
-      __m128i n_bits_block;
+    struct shift_left_m128i<std::int64_t> : public shift_base<shift_left_m128i<std::int64_t>, std::int64_t> {
 
-      shift_left_m128i(int _nbits = 1):
-        n_bits(_nbits){
+      typedef shift_base<shift_left_m128i<std::int64_t>, std::int64_t> base_t;
 
-        reset(_nbits);
+      shift_left_m128i(int nbits = 1):
+        base_t(nbits){}
 
-      }
-
-      void reset(int _nbits){
-        __m64 temp = _mm_set_pi32(0,_nbits);
-        n_bits_block = _mm_set1_epi64(temp);
-      }
 
       template <typename size_type>
       __m128i operator()(const __m128i& _block, size_type num_bits) const {
@@ -407,22 +355,13 @@ namespace sqeazy {
 
 
     template<>
-    struct shift_left_m128i<unsigned char> {
+    struct shift_left_m128i<std::uint8_t> : public shift_base<shift_left_m128i<std::uint8_t>, std::uint8_t> {
 
-      int n_bits;
-      __m128i n_bits_block;
+      typedef shift_base<shift_left_m128i<std::uint8_t>, std::uint8_t> base_t;
 
-      shift_left_m128i(int _nbits = 1):
-        n_bits(_nbits){
+      shift_left_m128i(int nbits = 1):
+        base_t(nbits){}
 
-        reset(_nbits);
-
-      }
-
-      void reset(int _nbits){
-        __m64 temp = _mm_set_pi32(0,_nbits);
-        n_bits_block = _mm_set1_epi64(temp);
-      }
 
       template <typename size_type>
       __m128i operator()(const __m128i& _block, size_type num_bits) const {
@@ -486,90 +425,163 @@ namespace sqeazy {
     };
 
     template<>
-    struct shift_left_m128i<char> {
+    struct shift_left_m128i<std::int8_t> : public shift_base<shift_left_m128i<std::int8_t>, std::int8_t> {
 
-      int n_bits;
-      __m128i n_bits_block;
+      typedef shift_base<shift_left_m128i<std::int8_t>, std::int8_t> base_t;
 
-      shift_left_m128i(int _nbits = 1):
-        n_bits(_nbits){
-
-        reset(_nbits);
-
-      }
-
-      void reset(int _nbits){
-        __m64 temp = _mm_set_pi32(0,_nbits);
-        n_bits_block = _mm_set1_epi64(temp);
-      }
+      shift_left_m128i(int nbits = 1):
+        base_t(nbits){}
 
       template <typename size_type>
       __m128i operator()(const __m128i& _block, size_type num_bits) const {
 
-        shift_left_m128i<unsigned char> left_shifter = {};
-        return left_shifter(_block,num_bits);
+        shift_left_m128i<std::uint8_t> shifter = {};
+        return shifter(_block,num_bits);
 
       }
 
       __m128i operator()(const __m128i& _block) const {
 
-        shift_left_m128i<unsigned char> left_shifter{n_bits};
-        return left_shifter(_block);
+        shift_left_m128i<std::uint8_t> shifter(base_t::n_bits);
+        return shifter(_block);
 
       }
     };
+
+    template<>
+    struct shift_left_m128i<char> : public shift_base<shift_left_m128i<char>, char> {
+
+      typedef shift_base<shift_left_m128i<char>, char> base_t;
+
+      shift_left_m128i(int nbits = 1):
+        base_t(nbits){}
+
+      template <typename size_type>
+      __m128i operator()(const __m128i& _block, size_type num_bits) const {
+
+        shift_left_m128i<std::int8_t> shifter = {};
+        return shifter(_block,num_bits);
+
+      }
+
+      __m128i operator()(const __m128i& _block) const {
+
+        shift_left_m128i<std::int8_t> shifter(base_t::n_bits);
+        return shifter(_block);
+
+      }
+    };
+
+
 
 
     template<typename T>
-    struct shift_right_m128i {
+    struct shift_right_m128i : public shift_base<shift_right_m128i<T>,T> {
+
+      typedef shift_base<shift_right_m128i<T>,T> base_t;
+      shift_right_m128i(int nbits = 1): base_t(nbits){};
+
       __m128i operator()(const __m128i& _block, int num_bits) const {return _block;}
+
     };
 
     template<>
-    struct shift_right_m128i<unsigned short> {
+    struct shift_right_m128i<std::uint16_t> : shift_base<shift_right_m128i<std::uint16_t>,std::uint16_t> {
+
+      typedef shift_base<shift_right_m128i<std::uint16_t>,std::uint16_t> base_t;
+      shift_right_m128i(int nbits = 1): base_t(nbits){};
+
       __m128i operator()(const __m128i& _block, int num_bits) const {
         return  _mm_srli_epi16(_block, num_bits);
       }
+
+      __m128i operator()(const __m128i& _block) const {
+        return  _mm_srl_epi16(_block, n_bits_block);
+      }
     };
 
     template<>
-    struct shift_right_m128i<short> {
+    struct shift_right_m128i<std::int16_t> : shift_base<shift_right_m128i<std::int16_t>,std::int16_t> {
+
+        typedef shift_base<shift_right_m128i<std::int16_t>,std::int16_t> base_t;
+        shift_right_m128i(int nbits = 1): base_t(nbits){};
+
       __m128i operator()(const __m128i& _block, int num_bits) const {
         return  _mm_srli_epi16(_block, num_bits);
       }
+
+      __m128i operator()(const __m128i& _block) const {
+        return  _mm_srl_epi16(_block, n_bits_block);
+      }
     };
 
     template<>
-    struct shift_right_m128i<unsigned int> {
+    struct shift_right_m128i<std::uint32_t> : shift_base<shift_right_m128i<std::uint32_t>,std::uint32_t> {
+
+      typedef shift_base<shift_right_m128i<std::uint32_t>,std::uint32_t> base_t;
+      shift_right_m128i(int nbits = 1): base_t(nbits){};
+
       __m128i operator()(const __m128i& _block, int num_bits) const {
         return  _mm_srli_epi32(_block, num_bits);
       }
+
+      __m128i operator()(const __m128i& _block) const {
+        return  _mm_srl_epi32(_block, n_bits_block);
+      }
     };
 
     template<>
-    struct shift_right_m128i<int> {
+    struct shift_right_m128i<std::int32_t> : shift_base<shift_right_m128i<std::int32_t>,std::int32_t> {
+
+        typedef shift_base<shift_right_m128i<std::int32_t>,std::int32_t> base_t;
+        shift_right_m128i(int nbits = 1): base_t(nbits){};
+
       __m128i operator()(const __m128i& _block, int num_bits) const {
         return  _mm_srli_epi32(_block, num_bits);
       }
-    };
 
-    template<>
-    struct shift_right_m128i<unsigned long> {
-      __m128i operator()(const __m128i& _block, long num_bits) const {
-        return  _mm_srli_epi64(_block, num_bits);
+      __m128i operator()(const __m128i& _block) const {
+        return  _mm_srl_epi32(_block, n_bits_block);
       }
     };
 
     template<>
-    struct shift_right_m128i<long> {
+    struct shift_right_m128i<std::uint64_t> : shift_base<shift_right_m128i<std::uint64_t>,std::uint64_t> {
+
+      typedef shift_base<shift_right_m128i<std::uint64_t>,std::uint64_t> base_t;
+      shift_right_m128i(int nbits = 1): base_t(nbits){};
+
       __m128i operator()(const __m128i& _block, long num_bits) const {
         return  _mm_srli_epi64(_block, num_bits);
+      }
+
+      __m128i operator()(const __m128i& _block) const {
+        return  _mm_srl_epi64(_block, n_bits_block);
+      }
+    };
+
+    template<>
+    struct shift_right_m128i<std::int64_t> : shift_base<shift_right_m128i<std::int64_t>,std::int64_t> {
+
+      typedef shift_base<shift_right_m128i<std::int64_t>,std::int64_t> base_t;
+      shift_right_m128i(int nbits = 1): base_t(nbits){};
+
+      __m128i operator()(const __m128i& _block, long num_bits) const {
+        return  _mm_srli_epi64(_block, num_bits);
+      }
+
+      __m128i operator()(const __m128i& _block) const {
+        return  _mm_srl_epi64(_block, n_bits_block);
       }
     };
 
 
     template<>
-    struct shift_right_m128i<unsigned char> {
+    struct shift_right_m128i<std::uint8_t> : shift_base<shift_right_m128i<std::uint8_t>,std::uint8_t> {
+
+      typedef shift_base<shift_right_m128i<std::uint8_t>,std::uint8_t> base_t;
+      shift_right_m128i(int nbits = 1): base_t(nbits){};
+
       __m128i operator()(const __m128i& _block, int num_bits) const {
 
         //treat upper half
@@ -597,17 +609,83 @@ namespace sqeazy {
 #endif
         return value;
       }
+
+      __m128i operator()(const __m128i& _block) const {
+
+        //treat upper half
+        __m128i first = _mm_cvtepu8_epi16(_block);
+        first = _mm_srl_epi16(first, n_bits_block);
+        //corlapse to first half
+        first = _mm_shuffle_epi8(first, _mm_set_epi8(15,13,11,9,7,5,3,1,14,12,10,8,6,4,2,0) );
+
+        //treat lower half
+#ifdef WIN32
+        __m128 casted_block = _mm_castsi128_ps(_block);
+        __m128i second = _mm_castps_si128(_mm_movehl_ps(casted_block, casted_block));
+#else
+        __m128 casted_block = reinterpret_cast<__m128>(_block);
+        __m128i second = reinterpret_cast<__m128i>(_mm_movehl_ps(casted_block,casted_block));
+#endif
+        second = _mm_cvtepu8_epi16(second);
+        second = _mm_srl_epi16(second, n_bits_block);
+        second = _mm_shuffle_epi8(second,  _mm_set_epi8(14,12,10,8,6,4,2,0,15,13,11,9,7,5,3,1) );
+
+#ifdef WIN32
+        __m128i value = _mm_castpd_si128(_mm_move_sd(_mm_castsi128_pd(second), _mm_castsi128_pd(first)));
+#else
+        __m128i value = reinterpret_cast<__m128i>(_mm_move_sd(reinterpret_cast<__m128d>(second), reinterpret_cast<__m128d>(first)));
+#endif
+        return value;
+      }
+
     };
 
+
     template<>
-    struct shift_right_m128i<char> {
+    struct shift_right_m128i<std::int8_t> : shift_base<shift_right_m128i<std::int8_t>,std::int8_t> {
+
+      typedef shift_base<shift_right_m128i<std::int8_t>,std::int8_t> base_t;
+      shift_right_m128i(int nbits = 1): base_t(nbits){};
+
       __m128i operator()(const __m128i& _block, int num_bits) const {
 
-        shift_right_m128i<unsigned char> shifter;
+        shift_right_m128i<std::uint8_t> shifter;
         return shifter(_block,num_bits);
 
       }
+
+      __m128i operator()(const __m128i& _block) const {
+
+        shift_right_m128i<std::uint8_t> shifter(n_bits);
+        return shifter(_block);
+
+      }
     };
+
+
+    template<>
+    struct shift_right_m128i<char> : shift_base<shift_right_m128i<char>,char> {
+
+      typedef shift_base<shift_right_m128i<char>,char> base_t;
+      shift_right_m128i(int nbits = 1): base_t(nbits){};
+
+      __m128i operator()(const __m128i& _block, int num_bits) const {
+
+        shift_right_m128i<std::uint8_t> shifter;
+        return shifter(_block,num_bits);
+
+      }
+
+      __m128i operator()(const __m128i& _block) const {
+
+        shift_right_m128i<std::uint8_t> shifter(n_bits);
+        return shifter(_block);
+
+      }
+    };
+
+
+    ////////////////////////////////////////////////// XOR     //////////////////////////////////////////////////
 
     template <typename T>
     struct vec_xor {
@@ -689,6 +767,8 @@ namespace sqeazy {
       }
 
     };
+
+    ////////////////////////////////////////////////// ROTATE LEFT //////////////////////////////////////////////////
 
     template <typename T>
     struct vec_rotate_left
@@ -1075,6 +1155,7 @@ namespace sqeazy {
       static const std::size_t n_bits_per_simd      = sizeof(__m128i)*CHAR_BIT;
       static const std::size_t n_bits_in_value_t	= sizeof(in_value_t)*CHAR_BIT;
       static const std::size_t n_elements_per_simd	= n_bits_per_simd/(n_bits_in_value_t);
+      static const std::size_t n_pos_leftshift  	= n_bits_in_value_t - 16;
 
       const        std::size_t len                  = std::distance(_begin,_end);
       const        std::size_t n_iterations         = len/n_elements_per_simd;
@@ -1083,10 +1164,8 @@ namespace sqeazy {
       /* will be .5 for uint8, 2 for uint16 and 4 for uint32 */
       const        std::size_t n_inner_loops        = n_bits_in_value_t / n_collected_bits_per_simd;
 
-
-
-      sqeazy::detail::gather_msb<in_value_t>        collect;
-      sqeazy::detail::shift_left_m128i<in_value_t>  shift_left{_bitplane_offset_from_msb};
+      const sqeazy::detail::gather_msb<in_value_t>        collect;
+      const sqeazy::detail::shift_left_m128i<in_value_t>  shift_left{_bitplane_offset_from_msb};
 
       auto output = _dst;
       auto input = _begin;
@@ -1100,22 +1179,20 @@ namespace sqeazy {
 
         for(std::size_t l = 0;
             l<n_inner_loops;
-            ++l){
+            ++l,input += n_elements_per_simd){
 
           __m128i input_block = _mm_load_si128(reinterpret_cast<const __m128i*>(&*input));
 
-          input_block = shift_left(input_block);//TODO: this uses integer based left shift and forces a load into a xmm register every time it is called
+          input_block = shift_left(input_block);
 
-          in_value_t temp = collect(input_block) << (n_bits_in_value_t - 16);
+          in_value_t temp = collect(input_block) << n_pos_leftshift;
 
           result |= (temp >> (l*n_collected_bits_per_simd));
 
-          input += n_elements_per_simd;
+          // input += n_elements_per_simd;
 
         }// l filled_segments
 
-
-        // output_block = sse_insert_epi16(output_block,result,pos);
         output_block = sse_scalar<in_value_t>::insert(output_block,result,pos);
         pos++;
 
@@ -1172,8 +1249,8 @@ namespace sqeazy {
 
       const        std::size_t len                  = std::distance(_begin,_end);
 
-      sqeazy::detail::gather_msb<in_value_t>        collect;
-      sqeazy::detail::shift_left_m128i<in_value_t>  shift_left{_bitplane_offset_from_msb};
+      const sqeazy::detail::gather_msb<in_value_t>        collect;
+      const sqeazy::detail::shift_left_m128i<in_value_t>  shift_left{_bitplane_offset_from_msb};
 
       auto output = _dst;
       std::uint32_t pos = 0;

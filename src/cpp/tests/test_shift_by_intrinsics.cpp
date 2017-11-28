@@ -317,7 +317,7 @@ BOOST_AUTO_TEST_CASE( unary_shift_left_by_constant ){
 
   __m128i v_input = _mm_load_si128(reinterpret_cast<__m128i*>(&input[0]));
 
-  sqeazy::detail::shift_left_m128i<char> shifter{1};
+  sqeazy::detail::shift_left_m128i<char> shifter(1);
   __m128i result = shifter(v_input);
   _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);
 
