@@ -789,22 +789,23 @@ namespace sqeazy {
     {
       typedef unsigned char value_type;
       int shift;
+      const shift_left_m128i<value_type> left_shifter;
+
       vec_rotate_left(int _shift = 1):
-        shift(_shift)
+        shift(_shift),
+        left_shifter(_shift)
       {};
 
       __m128i operator()(const __m128i* _in){
 
         static const value_type num_bits = (sizeof(value_type) * CHAR_BIT) - shift;
 
-
-        static const shift_left_m128i<value_type> left_shifter{};//TODO: replacing this by method which uses bitmask for _mm_sll_epi16 breaks test_rotate_by_intrinsics
         static const shift_right_m128i<value_type> right_shifter= {};
 
         // type shifted = _in << shift;
         __m128i value = *_in;
 
-        value = left_shifter(value,shift);
+        value = left_shifter(value);
 
         static const value_type mask = ~(~0 << shift);
         static const __m128i vec_mask = _mm_set1_epi8(mask);
