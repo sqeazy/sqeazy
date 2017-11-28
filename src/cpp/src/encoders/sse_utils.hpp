@@ -603,8 +603,8 @@ namespace sqeazy {
     struct shift_right_m128i<char> {
       __m128i operator()(const __m128i& _block, int num_bits) const {
 
-        shift_right_m128i<unsigned char> left_shifter;
-        return left_shifter(_block,num_bits);
+        shift_right_m128i<unsigned char> shifter;
+        return shifter(_block,num_bits);
 
       }
     };
