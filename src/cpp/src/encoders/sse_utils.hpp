@@ -109,9 +109,7 @@ namespace sqeazy {
         __m128i input = _mm_shuffle_epi8(_block, reverse_bytes);
         const int result = _mm_movemask_epi8(input);
 
-        std::uint16_t value = result;
-
-        return value;
+        return static_cast<std::uint16_t>(result);
 
       }
 
@@ -166,7 +164,7 @@ namespace sqeazy {
 
         const int result = _mm_movemask_epi8(temp);//result contains collapsed MSBs
 
-        return (static_cast<std::uint16_t>(result) << 8);
+        return static_cast<std::uint16_t>(result);
 
       }
 
@@ -192,9 +190,7 @@ namespace sqeazy {
           (1 << 4);
 
         auto input = _mm_castsi128_ps(_mm_shuffle_epi32(_block, reverse_mask));
-        std::uint16_t value =  _mm_movemask_ps(input);
-        value <<= 12;
-        return value;
+        return static_cast<std::uint16_t>(_mm_movemask_ps(input));
       }
     };
 
@@ -1155,7 +1151,8 @@ namespace sqeazy {
       static const std::size_t n_bits_per_simd      = sizeof(__m128i)*CHAR_BIT;
       static const std::size_t n_bits_in_value_t	= sizeof(in_value_t)*CHAR_BIT;
       static const std::size_t n_elements_per_simd	= n_bits_per_simd/(n_bits_in_value_t);
-      static const std::size_t n_pos_leftshift  	= n_bits_in_value_t - 16;
+
+      std::array<out_value_t, n_elements_per_simd> buffer;buffer.fill(0);
 
       const        std::size_t len                  = std::distance(_begin,_end);
       const        std::size_t n_iterations         = len/n_elements_per_simd;
@@ -1170,7 +1167,7 @@ namespace sqeazy {
       auto output = _dst;
       auto input = _begin;
       std::uint32_t pos = 0;
-      __m128i output_block = _mm_set1_epi8(0);
+      // __m128i output_block = _mm_set1_epi8(0);
 
       for(std::size_t i = 0;i<n_iterations;i+=n_inner_loops)//loop through memory
       {
@@ -1185,20 +1182,17 @@ namespace sqeazy {
 
           input_block = shift_left(input_block);
 
-          in_value_t temp = collect(input_block) << n_pos_leftshift;
+          in_value_t temp = collect(input_block);
 
-          result |= (temp >> (l*n_collected_bits_per_simd));
-
-          // input += n_elements_per_simd;
+          result |= (temp << (l*n_collected_bits_per_simd));
 
         }// l filled_segments
 
-        output_block = sse_scalar<in_value_t>::insert(output_block,result,pos);
+        buffer[pos] = result;
         pos++;
 
         if(pos > (n_elements_per_simd-1)){//flush to output memory
-          _mm_store_si128(reinterpret_cast<__m128i*>(&*output),output_block);
-          output_block = _mm_set1_epi8(0);
+          std::copy(buffer.begin(),buffer.end(),output);
           output += n_elements_per_simd;
           pos = 0;
         }
@@ -1246,6 +1240,9 @@ namespace sqeazy {
       static const std::size_t n_bits_per_simd      = sizeof(__m128i)*CHAR_BIT;
       static const std::size_t n_bits_in_value_t	= sizeof(in_value_t)*CHAR_BIT;
       static const std::size_t n_elements_per_simd	= n_bits_per_simd/(n_bits_in_value_t);
+      static const std::size_t n_uint16_per_simd	= sizeof(__m128i)/sizeof(std::uint16_t);
+
+      std::array<std::uint16_t, n_uint16_per_simd> buffer;buffer.fill(0);
 
       const        std::size_t len                  = std::distance(_begin,_end);
 
@@ -1254,7 +1251,7 @@ namespace sqeazy {
 
       auto output = _dst;
       std::uint32_t pos = 0;
-      __m128i output_block = _mm_set1_epi8(0);
+//      __m128i output_block = _mm_set1_epi8(0);
 
       for(std::size_t i = 0;i<len;i+=n_elements_per_simd)//loop through memory
       {
@@ -1265,12 +1262,15 @@ namespace sqeazy {
         input_block = shift_left(input_block);
         std::uint16_t temp = collect(input_block);
 
-        output_block = sse_scalar<std::uint16_t>::insert(output_block,temp,pos);
+        buffer[pos] = temp;
+        //output_block = sse_scalar<std::uint16_t>::insert(output_block,temp,pos);
         pos++;
 
         if(pos > 7){//flush to output memory
-          _mm_store_si128(reinterpret_cast<__m128i*>(&*output),output_block);
-          output_block = _mm_set1_epi8(0);
+          //_mm_store_si128(reinterpret_cast<__m128i*>(&*output),output_block);
+          //output_block = _mm_set1_epi8(0);
+          std::copy(buffer.begin(),buffer.end(),reinterpret_cast<std::uint16_t*>(&*output));
+          buffer.fill(0);
           output += n_elements_per_simd;
           pos = 0;
         }
@@ -1374,14 +1374,14 @@ namespace sqeazy {
       //TODO: the segments are the bitplane chunks that are to be extracted from each value_type
       //      we here assume n_bits_per_plane = 1
       const std::size_t n_segments		= n_bits_in_value_t;
-      if(_nthreads > n_segments){
+      const omp_size_type n_segments_signed		= n_segments;
+
+      if(_nthreads > n_segments_signed){
         //TODO: this guard is required so that every thread gets one bitplane,
         //      more threads can be supported, but then one would have to partition
         //      the input/output data accordingly; let's keep it simple for now
         _nthreads = n_segments;
       }
-
-      const omp_size_type n_segments_signed		= n_segments;
 
       const std::size_t len		= std::distance(_begin,_end);
       const std::size_t segment_offset	= len/n_segments;
