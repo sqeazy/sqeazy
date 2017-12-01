@@ -1152,7 +1152,7 @@ namespace sqeazy {
       static const std::size_t n_bits_in_value_t	= sizeof(in_value_t)*CHAR_BIT;
       static const std::size_t n_elements_per_simd	= n_bits_per_simd/(n_bits_in_value_t);
 
-      std::array<out_value_t, n_elements_per_simd> buffer;buffer.fill(0);
+      // std::array<out_value_t, n_elements_per_simd> buffer;buffer.fill(0);
 
       const        std::size_t len                  = std::distance(_begin,_end);
       const        std::size_t n_iterations         = len/n_elements_per_simd;
@@ -1167,7 +1167,7 @@ namespace sqeazy {
       auto output = _dst;
       auto input = _begin;
       std::uint32_t pos = 0;
-      // __m128i output_block = _mm_set1_epi8(0);
+      __m128i output_block = _mm_set1_epi8(0);
 
       for(std::size_t i = 0;i<n_iterations;i+=n_inner_loops)//loop through memory
       {
@@ -1188,11 +1188,15 @@ namespace sqeazy {
 
         }// l filled_segments
 
-        buffer[pos] = result;
+        // buffer[pos] = result;
+        output_block = sse_scalar<in_value_t>::insert(output_block,result,pos);
         pos++;
 
         if(pos > (n_elements_per_simd-1)){//flush to output memory
-          std::copy(buffer.begin(),buffer.end(),output);
+          //std::copy(buffer.begin(),buffer.end(),output);
+          //buffer.fill(0);
+          _mm_store_si128(reinterpret_cast<__m128i*>(&*output),output_block);
+          output_block = _mm_set1_epi8(0);
           output += n_elements_per_simd;
           pos = 0;
         }
@@ -1242,7 +1246,7 @@ namespace sqeazy {
       static const std::size_t n_elements_per_simd	= n_bits_per_simd/(n_bits_in_value_t);
       static const std::size_t n_uint16_per_simd	= sizeof(__m128i)/sizeof(std::uint16_t);
 
-      std::array<std::uint16_t, n_uint16_per_simd> buffer;buffer.fill(0);
+      //std::array<std::uint16_t, n_uint16_per_simd> buffer;buffer.fill(0);
 
       const        std::size_t len                  = std::distance(_begin,_end);
 
@@ -1251,7 +1255,7 @@ namespace sqeazy {
 
       auto output = _dst;
       std::uint32_t pos = 0;
-//      __m128i output_block = _mm_set1_epi8(0);
+     __m128i output_block = _mm_set1_epi8(0);
 
       for(std::size_t i = 0;i<len;i+=n_elements_per_simd)//loop through memory
       {
@@ -1262,15 +1266,15 @@ namespace sqeazy {
         input_block = shift_left(input_block);
         std::uint16_t temp = collect(input_block);
 
-        buffer[pos] = temp;
-        //output_block = sse_scalar<std::uint16_t>::insert(output_block,temp,pos);
+        //buffer[pos] = temp;
+        output_block = sse_scalar<std::uint16_t>::insert(output_block,temp,pos);
         pos++;
 
         if(pos > 7){//flush to output memory
-          //_mm_store_si128(reinterpret_cast<__m128i*>(&*output),output_block);
-          //output_block = _mm_set1_epi8(0);
-          std::copy(buffer.begin(),buffer.end(),reinterpret_cast<std::uint16_t*>(&*output));
-          buffer.fill(0);
+          _mm_store_si128(reinterpret_cast<__m128i*>(&*output),output_block);
+          output_block = _mm_set1_epi8(0);
+          //std::copy(buffer.begin(),buffer.end(),reinterpret_cast<std::uint16_t*>(&*output));
+          //buffer.fill(0);
           output += n_elements_per_simd;
           pos = 0;
         }
