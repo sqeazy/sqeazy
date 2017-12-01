@@ -1156,7 +1156,7 @@ namespace sqeazy {
 
       const        std::size_t len                  = std::distance(_begin,_end);
       const        std::size_t n_iterations         = len/n_elements_per_simd;
-      const        std::size_t n_collected_bits_per_simd        = n_elements_per_simd;
+      static const std::size_t n_collected_bits_per_simd        = n_elements_per_simd;
 
       /* will be .5 for uint8, 2 for uint16 and 4 for uint32 */
       const        std::size_t n_inner_loops        = n_bits_in_value_t / n_collected_bits_per_simd;
@@ -1184,7 +1184,7 @@ namespace sqeazy {
 
           in_value_t temp = collect(input_block);
 
-          result |= (temp << (l*n_collected_bits_per_simd));
+          result |= (temp << (n_bits_in_value_t - ((l+1)*n_collected_bits_per_simd)));
 
         }// l filled_segments
 
