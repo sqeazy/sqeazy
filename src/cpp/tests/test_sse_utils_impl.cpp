@@ -126,7 +126,7 @@ BOOST_AUTO_TEST_CASE( gather_msb_8 ){
 
 BOOST_AUTO_TEST_CASE( gather_msb_8_order_right ){
 
-  msb_is_1[msb_is_1.size()-1] = 0;
+  msb_is_1.back() = 0;
   __m128i input = _mm_load_si128(reinterpret_cast<const __m128i*>(msb_is_1.data()));
 
   sqeazy::detail::gather_msb<std::uint8_t> op;
@@ -160,18 +160,19 @@ BOOST_AUTO_TEST_CASE( gather_msb_16_order_right ){
 
   sqeazy::detail::gather_msb<std::uint16_t> op;
   auto res = op(input);
-  BOOST_CHECK_EQUAL(res,0xfe00 );
+  BOOST_CHECK_EQUAL(res,0xfe );
 
   std::bitset<16> received(res);
 
   BOOST_CHECK_EQUAL(received.count(),msb_is_1_16.size()-1);
 
   BOOST_CHECK_EQUAL(received.test(0),false);
-  BOOST_CHECK_EQUAL(received.test(7),false);
-  BOOST_CHECK_EQUAL(received.test(8),false);
-  BOOST_CHECK_EQUAL(received.test(9),true);
-  BOOST_CHECK_EQUAL(received.test(15),true);
 
+  for(int i = 1;i<(16-8);++i)
+    BOOST_CHECK_MESSAGE(received.test(i) ==true, "bit " << i << ": " << received.test(i) << ",expected " << true);
+
+  for(int i = 8;i<(16);++i)
+    BOOST_CHECK_MESSAGE(received.test(i) == false, "bit " << i << ": " << received.test(i) << ",expected " << false);
 }
 
 BOOST_AUTO_TEST_CASE( gather_msb_16_pattern_right ){
@@ -185,9 +186,10 @@ BOOST_AUTO_TEST_CASE( gather_msb_16_pattern_right ){
 
   BOOST_CHECK_EQUAL(received.count(),4u);
 
-  for(std::uint32_t i = 0;i<msb_is_1_16.size();++i)
-    BOOST_CHECK_MESSAGE(received.test(15-i) == (msb_is_1_16[i] > 0),
-            i << ": bit " << received.test(16-i-1) << " versus input " << msb_is_1_16[i] );
+  for(std::uint32_t i = 0;i<msb_is_1_16.size();++i){
+    BOOST_CHECK_MESSAGE(received.test(i) == (msb_is_1_16[7-i] > 0),
+                        i << ": bit " << received.test(i) << " versus input "<< 8-i <<":" << (msb_is_1_16[7-i] > 0) );
+  }
 }
 
 BOOST_AUTO_TEST_CASE( gather_msb_32 ){
@@ -210,15 +212,16 @@ BOOST_AUTO_TEST_CASE( gather_msb_32_order_right ){
   sqeazy::detail::gather_msb<std::uint32_t> op;
   auto res = op(input);
 
-  BOOST_CHECK_EQUAL(res,0xe000);
+  BOOST_CHECK_EQUAL(res,0xe);
 
   std::bitset<16> received(res);
 
   BOOST_CHECK_EQUAL(received.count(),msb_is_1_32.size()-1);
-  BOOST_CHECK_EQUAL(received.test(15),true);
-  BOOST_CHECK_EQUAL(received.test(14),true);
-  BOOST_CHECK_EQUAL(received.test(13),true);
-  for(int r = 12;r>-1;--r)
+  BOOST_CHECK_EQUAL(received.test(0),false);
+  BOOST_CHECK_EQUAL(received.test(1),true);
+  BOOST_CHECK_EQUAL(received.test(2),true);
+  BOOST_CHECK_EQUAL(received.test(3),true);
+  for(std::size_t r = 4;r<received.size();++r)
     BOOST_CHECK_EQUAL(received.test(r),false);
 
 }
@@ -513,6 +516,7 @@ BOOST_AUTO_TEST_CASE( creates_correct_full_item_range){
   const std::size_t n_items_filled = n_bits_filled/n_bits_in_value_t;
   const std::size_t n_bits_in_remainder = n_bits_filled % n_bits_in_value_t;
 
+  //collecting only one bitplane
   std::fill(expected.begin(), expected.begin()+n_items_filled,~0);
   if(n_bits_in_remainder)
     expected[n_items_filled] = ~0 << (n_bits_in_value_t - n_bits_in_remainder);
@@ -528,7 +532,7 @@ BOOST_AUTO_TEST_CASE( creates_correct_full_item_range){
   BOOST_CHECK_EQUAL(output.back(),expected.back());
 
   for(std::size_t i = 0;i<expected.size();++i){
-    BOOST_REQUIRE_MESSAGE(output[i] == expected[i], output[i] << " != " << expected[i]
+    BOOST_REQUIRE_MESSAGE(output[i] == expected[i], (int)output[i] << " != " << (int)expected[i]
                           << " at item at index " << i << ", size = " << output.size() );
   }
 }
@@ -563,7 +567,7 @@ BOOST_AUTO_TEST_CASE( creates_correct_half_item_range){
   BOOST_CHECK_EQUAL(output.back(),expected.back());
 
   for(std::size_t i = 0;i<expected.size();++i){
-    BOOST_REQUIRE_MESSAGE(output[i] == expected[i], output[i] << " != " << expected[i]
+    BOOST_REQUIRE_MESSAGE(output[i] == expected[i], (int)output[i] << " != " << (int)expected[i]
                           << " at item at index " << i << ", size = " << output.size() );
   }
 }
