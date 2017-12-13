@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
   verb_descriptions["decompress"]= std::string("decompress a .sqy/.h5 file to tiff");
   verb_descriptions["scan"]	= std::string("print statistics about the stack in a tiff file");
   verb_descriptions["diff"]	= std::string("print statistics on the difference a tiff file with any other tiffs");
-  verb_descriptions["convert"]  = std::string("convert a tiff file to another format (.yuv, .y4m)");
+  verb_descriptions["convert"]  = std::string("convert a tiff file to another format (.yuv, .y4m, .raw)");
   verb_descriptions["compare"]  = std::string("compare two tiff stacks and see if they are equal");
 
   const static std::string default_compression = "bitswap1->lz4";
@@ -266,10 +266,10 @@ int main(int argc, char *argv[])
 
 
   descriptions["convert"].add(general_po).add_options()
-    ("chroma_sampling,c", po::value<std::string>()->default_value("C420"),  "how to subsample chroma channels (possible values: C420, C444)")
-    ("quantiser,q", po::value<std::string>()->default_value("quantiser"), "method for conversion")
-    ("frame_shape,s", po::value<std::string>()->default_value(""), "WidthxHeight of each frame  to expect (only needed for .yuv input sources), e.g. 1920x1020")
-    ("lut_suffix,l", po::value<std::string>()->default_value(".lut"), "suffix for the LUT, i.e. stack_16bit.tif will generate stack_16bit.y4m and stack_16bit.lut) ")
+    ("chroma_sampling,c", po::value<std::string>()->default_value("C420"),  "how to subsample chroma channels (possible values: C420, C444, for yuv/y4m only)")
+    ("quantiser,q", po::value<std::string>()->default_value("quantiser"), "method for conversion (for yuv/y4m only)")
+    ("frame_shape,s", po::value<std::string>()->default_value(""), "WidthxHeight of each frame  to expect (only needed for .yuv input sources), e.g. 1920x1020 (for yuv/y4m only)")
+    ("lut_suffix,l", po::value<std::string>()->default_value(".lut"), "suffix for the LUT, i.e. stack_16bit.tif will generate stack_16bit.y4m and stack_16bit.lut (for yuv/y4m only)")
     ;
 
   descriptions["compare"].add(general_po);
