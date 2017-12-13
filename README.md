@@ -24,7 +24,7 @@ repositories
 
 dependencies {
 	//...
-    compile 'net.sqeazy:sqeazy:0.3.3'
+    compile 'net.sqeazy:sqeazy:0.5.2'
 }
 ```
 
