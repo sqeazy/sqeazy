@@ -7,19 +7,19 @@ Sqeazy is an app and a library at the same time. This Wiki for developers is int
 
 ## For C Developers
 
-In order to use sqeazy, use `sqeazy.h` and (depending on your OS) `libsqeazy.{so,dll,dyld}`.
+In order to use sqeazy, use `sqeazy.h` and (depending on your OS) `libsqeazy.{so,dll,dyld}`. As the API will vary until we reach 1.0, please consult the aforementioned header file for more details.
 
 
 ## For C++ Developers
 
-So far, there is no public API for sqeazy available. But as sqeazy internally is written using C++11, an exposure of for C++ is planned.
+So far, there is no public API for sqeazy available. But as sqeazy internally is written using C++11, a header-only exposure for C++ is planned.
 
 
 ## For Java Developers
 
-There is a BridJ wrapper around `libsqeazy.{so,dll,dyld}` available. It's use is documented in `./src/java/src/sqeazy/bindings/test/SqeazyLibraryTests.java`.
+There is a BridJ wrapper around `libsqeazy.{so,dll,dyld}` available. It's use is documented in `./src/java/src/sqeazy/bindings/test/SqeazyLibraryTests.java` and is based solely on the C interface.
 
 
 ## For Python Developers
 
-If you'd like to see python bindings for sqeazy, please submit an issue and state which python version and possibly which interface is required (numpy, no numpy).
+If you'd like to see python bindings for sqeazy, please submit an issue to show support for this idea. We are planning to add a python interface for (at least) python3 using [pybind11](http://pybind11.readthedocs.io/en/stable/) in the future.
