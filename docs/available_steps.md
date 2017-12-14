@@ -1,6 +1,6 @@
 # Available Encoders or Sinks
 
-A pipeline step we call a __sink__, generally refers to a processing step that transforms the stack in a way which changes the data type of the stack.
+A pipeline step we call a __sink__, generally refers to a processing step that transforms the stack in a way which changes the data type of the stack may also change the memory footprint of it so that the input stack cannot be represented by a euclidean cube anymore.
 
 ```
   pass_through	pass/copy content to next stage

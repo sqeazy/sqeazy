@@ -44,9 +44,9 @@ Note, the above numbers correspond to one single measurement. We plan to update 
 # What this Wiki can do for you
 
 1. [Installation](Installation.md)
-2. Sqeazy Capabilities
-    - filter pipeline
-    - available filters/encoders
+2. Sqeazy Features
+    - Overview
+    - [available filters/encoders](available_steps.md)
     - how to use the [sqeazy API](ForDevelopers.md)
     - [Command Line Examples](CLIExamples.md)
 4. [How to build a redistributable binary](distribution.md)
