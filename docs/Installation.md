@@ -34,3 +34,13 @@ where the above assumes all required libraries are installed under /usr/local. A
 For further information on building native sqeazy on the supported platforms, see the [FAQ](FAQ.md) or the [cmake documentation](src/cpp/README.md).
 
 
+## dependencies
+
+The shared memory version of sqeazy was tested on fedora 26, Ubuntu 16.04, macOS Sierra and Windows 7. Consult the respective package managers to install all dependencies:
+
+- on fedora `dnf` 
+- on Ubuntu `apt`/`apt-get` and friends
+- on macOS: use [homebrew](https://brew.sh/)
+- on Windows: use [vcpkg](https://github.com/Microsoft/vcpkg)
+
+If you encounter any problems, submit an issue, please!
