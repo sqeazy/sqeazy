@@ -44,7 +44,7 @@ dependencies {
 	<dependency>
 		<groupId>net.sqeazy</groupId>
 		<artifactId>sqeazy</artifactId>
-		<version>0.1</version>
+		<version>0.5.2</version>
 		<type>pom</type>
 	</dependency>
 </dependencies>
