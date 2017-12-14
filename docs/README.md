@@ -3,7 +3,7 @@
 **Sqeazy** - Fast and Flexible Volume Compression Library
 
 A fast and flexible compression library for 2D/3D/ND volume data (currently only 3D is supported).
-The core library is written in C++ with bindings for C, Java (to be implemented), and Python (to be implemented). Binaries are provided for Win (working for the native library), OSX (working for the native library, but not all tests pass), and Linux (works, native library and java bindings).
+The core library is written in C++ with bindings for C, Java, and Python (to be implemented). Binaries are provided for Win (working for the native library), OSX (working for the native library, but not all tests pass), and Linux (works, native library and java bindings).
 
 # Why yet another file format/codec?
 
@@ -50,7 +50,7 @@ Note, the above numbers correspond to one single measurement. We plan to update 
 
 1. [Installation](Installation.md)
 2. Sqeazy Features
-    - Overview
+    - [Overview](overview.md)
     - [available filters/encoders](available_steps.md)
     - how to use the [sqeazy API](ForDevelopers.md)
     - [Command Line Examples](CLIExamples.md)
