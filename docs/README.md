@@ -32,6 +32,7 @@ Several points have to be observed:
 The main goal of sqeazy is to push the encoding speed high while retaining a maximum compression ratio. We want to compress the data on the scope as fast as possible.
 
 | file                           | algorithm    | original size [MByte] | compressed size [MByte] | time_to_compress [s] | compression_bandwidth [MB/s] | comment     |
+| :---                           | :---         |                 :---: |                   :---: |                :---: |                        :---: | :---:       |
 | just-a-bunch-of-zeroes (16bit) | klb (master) |                    64 |                   0.004 |                 12.9 |                          4.9 | 4 threads   |
 | spim drosophila                | klb (master) |                   149 |                      31 |                 15.3 |                          9.7 | 4 threads   |
 | just-a-bunch-of-zeroes (16bit) | sqy (master) |                    64 |                   0.256 |                  0.2 |                          320 | 4+1 threads |
