@@ -93,6 +93,9 @@ target_link_libraries(benchmark_zcurve_reorder_scheme_impl ${OpenMP++_LIBRARIES}
 add_executable(benchmark_tile_shuffle_scheme_impl benchmark_tile_shuffle_scheme_impl.cpp)
 target_link_libraries(benchmark_tile_shuffle_scheme_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
+add_executable(benchmark_chunked_statistics benchmark_chunked_statistics.cpp)
+target_link_libraries(benchmark_chunked_statistics ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+
 
 IF(FFMPEG_FOUND)
   if(WIN32)
