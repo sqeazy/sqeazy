@@ -100,11 +100,6 @@ namespace sqeazy {
 
 		typedef typename std::iterator_traits<decltype(_shape.begin())>::value_type shape_value_type;
 		typedef typename std::remove_cv<shape_value_type>::type shape_value_t;
-		typedef typename bacc::accumulator_set<in_value_t,
-											   bacc::stats<bacc::tag::median>
-											   > median_acc_t ;
-		// 75% quanframe?
-		// typedef typename boost::accumulators::accumulator_set<double, stats<boost::accumulators::tag::pot_quanframe<boost::right>(.75)> > quanframe_acc_t;
 
 		const shape_container_t rem = remainder(_shape);
 		const std::size_t n_elements_per_frame = _shape[row_major::y]*_shape[row_major::x];
@@ -117,7 +112,8 @@ namespace sqeazy {
 		const omp_size_type n_chunks = std::accumulate(n_full_frames.begin(), n_full_frames.end(),1,std::multiplies<shape_value_t>());
 
 		// COLLECT STATISTICS /////////////////////////////////////////////////////////////////////////////////////////////////////
-		// median plus stddev around median or take 75% quanframe directly
+		// use plain mean as metric as our data is typically noise heavy (median would be localized always inside noise)
+		// a plain sum would do as well here as n_elements_per_frame_chunk is constant for all frames
 
 		std::vector<float> metric(n_chunks,0.f);
 		auto metric_itr = metric.data();
@@ -128,14 +124,12 @@ namespace sqeazy {
   num_threads(nthreads)
 		for(omp_size_type i = 0;i<n_chunks;++i){
 
-		  median_acc_t acc;
 		  auto voxel_itr = _begin + i*n_elements_per_frame_chunk;
 
-		  for(std::size_t p = 0;p<n_elements_per_frame_chunk;++p){
-			acc(*voxel_itr++);
-		  }
-
-		  *(metric_itr + i) = bacc::median(acc);
+		  float sum = std::accumulate(voxel_itr,voxel_itr+n_elements_per_frame_chunk,
+									  float(0),
+									  std::plus<float>());
+		  *(metric_itr + i) = sum / n_elements_per_frame_chunk;
 		}
 
 		// PERFORM SHUFFLE /////////////////////////////////////////////////////////////////////////////////////////////////////
