@@ -198,7 +198,7 @@ namespace sqeazy {
       value = std::accumulate(_begin, _end,value,std::plus<r_type>())/(len);
     else{
 
-#pragma omp parallel for schedule(static) reduction(+:value) private(_begin)
+#pragma omp parallel for schedule(static) reduction(+:value) private(_begin) num_threads(nthreads)
       for(omp_size_type i=0; i<len; i++){
         value += *(_begin+i);
       }
