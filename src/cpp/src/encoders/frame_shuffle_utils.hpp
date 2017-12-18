@@ -112,8 +112,8 @@ namespace sqeazy {
 		const omp_size_type n_chunks = std::accumulate(n_full_frames.begin(), n_full_frames.end(),1,std::multiplies<shape_value_t>());
 
 		// COLLECT STATISTICS /////////////////////////////////////////////////////////////////////////////////////////////////////
-		// use plain mean as metric as our data is typically noise heavy (median would be localized always inside noise)
-		// a plain sum would do as well here as n_elements_per_frame_chunk is constant for all frames
+		// - use plain mean as metric as this should only be an indicator for the signal activity inside the frame here
+		// - a plain sum would do as well as n_elements_per_frame_chunk is constant for all frames
 
 		std::vector<float> metric(n_chunks,0.f);
 		auto metric_itr = metric.data();

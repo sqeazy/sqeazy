@@ -165,7 +165,7 @@ namespace sqeazy {
 		}
 
 		// COLLECT STATISTICS /////////////////////////////////////////////////////////////////////////////////////////////////////
-		// median plus stddev around median or take 75% quantile directly
+		// use arithmetic mean for now, only the sum would do as well as this should only be an indicator for the signal activity inside the tile here
 
 		std::vector<in_value_t> metric(len_tiles,0.);
 		auto pmetric = metric.data();
