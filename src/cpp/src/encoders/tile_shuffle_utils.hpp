@@ -113,12 +113,6 @@ namespace sqeazy {
 
 		typedef typename std::iterator_traits<decltype(_shape.begin())>::value_type shape_value_type;
 		typedef typename std::remove_cv<shape_value_type>::type shape_value_t;
-		typedef typename bacc::accumulator_set<in_value_t,
-											   bacc::stats<bacc::tag::median>
-											   > median_acc_t ;
-
-		// 75% quantile?
-		// typedef typename boost::accumulators::accumulator_set<double, stats<boost::accumulators::tag::pot_quantile<boost::right>(.75)> > quantile_acc_t;
 
 		const shape_container_t rem = remainder(_shape);
 		const std::size_t n_elements          = std::distance(_begin,_end);
@@ -181,13 +175,14 @@ namespace sqeazy {
   firstprivate(ptiles)													\
   num_threads(_nthreads)
 		for(omp_size_type i = 0;i<len_tiles;++i){
-		  median_acc_t acc;
 
-		  for(std::size_t p = 0;p<n_elements_per_tile;++p){
-			acc(ptiles[i][p]);
-		  }
 
-		  pmetric[i] = std::round(bacc::median(acc));
+		  float sum = std::accumulate(ptiles[i].cbegin(),
+									  ptiles[i].cend(),
+									  float(0),
+									  std::plus<float>());
+
+		  pmetric[i] = sum / n_elements_per_tile;
 		}
 
 		// PERFORM SHUFFLE /////////////////////////////////////////////////////////////////////////////////////////////////////
