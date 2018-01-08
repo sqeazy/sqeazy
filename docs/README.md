@@ -10,7 +10,7 @@ The core library is written in C++ with bindings for C, Java, and Python (to be 
 Looking at the state of the art of 3D image compression in the life sciences, there are a number of packages that come to mind. 
 
 - [Keller Lab Block Filetype (klb)](https://bitbucket.org/fernandoamat/keller-lab-block-filetype)
-- [B3DB](https://git.embl.de/balazs/B3D)
+- [B3D](https://git.embl.de/balazs/B3D)
 
 Several points have to be observed:
 
@@ -21,7 +21,7 @@ Several points have to be observed:
     + yields very slow compression in terms of speed
     + build system is buggy
     
-- [B3DB](https://git.embl.de/balazs/B3D) 
+- [B3D](https://git.embl.de/balazs/B3D) 
 
     + does only build on windows at the moment ([linux port](https://github.com/openmicroscopy/B3D/pull/1) is work in progress)
     + no standard build system 
