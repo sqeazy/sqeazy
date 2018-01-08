@@ -565,3 +565,16 @@ BOOST_AUTO_TEST_CASE( roundtrip_quantiser2file_h264 ){
 
 }
 BOOST_AUTO_TEST_SUITE_END()
+
+static const std::string bug_github59_filter_name = "bitswap1->lz(accel=8)";//lz should be lz4
+
+BOOST_AUTO_TEST_SUITE( bugs )
+
+BOOST_AUTO_TEST_CASE( github59 ){
+
+  BOOST_REQUIRE(!sqeazy::dypeline<std::uint16_t>::can_be_built_from(bug_github59_filter_name));
+
+
+
+}
+BOOST_AUTO_TEST_SUITE_END()
