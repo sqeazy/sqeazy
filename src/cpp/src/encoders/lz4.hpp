@@ -49,6 +49,7 @@ namespace sqeazy {
       lz4_config(_payload),
       acceleration(1),
       blocksize_kb(256),
+      encodestep_kb(16),
       lz4_prefs(){
 
       pipeline_parser p;
