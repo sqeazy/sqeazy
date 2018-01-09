@@ -146,7 +146,10 @@ namespace sqeazy {
       const compressed_type* input = reinterpret_cast<const compressed_type*>(_in);
 
       const local_size_type max_payload_length_in_byte = max_encoded_size(total_length_in_byte);
-      const local_size_type encodestep_byte = encodestep_kb << 10;
+      local_size_type encodestep_byte = encodestep_kb << 10;
+      if(encodestep_byte >= total_length_in_byte){
+        encodestep_byte = total_length_in_byte;
+      }
       const local_size_type max_encodestep_in_byte = max_encoded_size(encodestep_byte);
 
       const int nthreads = this->n_threads();
@@ -174,7 +177,8 @@ namespace sqeazy {
           return value;
         }
 
-        const std::size_t n_steps = (total_length_in_byte + encodestep_byte - 1) / encodestep_byte;
+        std::size_t n_steps = (total_length_in_byte + encodestep_byte - 1) / encodestep_byte;
+
         auto dst = _out + num_written_bytes;
         auto src = input;
 
