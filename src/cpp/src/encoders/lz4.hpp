@@ -4,6 +4,8 @@
 #include <string>
 #include <typeinfo>
 #include <future>
+#include <algorithm>
+#include <cmath>
 
 #include "sqeazy_common.hpp"
 #include "traits.hpp"
@@ -20,6 +22,44 @@
 
 namespace sqeazy {
 
+  struct closest_blocksize {
+
+    typedef decltype(LZ4F_max64KB) lz4f_blocksize_t;
+
+    static constexpr std::array<std::size_t,4> sizes = {64 , 256 , 1024 , 4096 };
+    static constexpr std::array<lz4f_blocksize_t,4> vals = {LZ4F_max64KB , LZ4F_max256KB, LZ4F_max1MB, LZ4F_max4MB };
+
+    static lz4f_blocksize_t of(std::size_t _blocksize_in_kb){
+
+      auto itr = std::lower_bound(sizes.begin(),sizes.end(),_blocksize_in_kb);
+      if(itr == sizes.end())
+        return vals.back();
+      else{
+
+        if(itr == sizes.begin())
+          return vals.front();
+
+        std::size_t upper_idx = std::distance(sizes.begin(),itr);
+        std::size_t lower_idx = std::distance(sizes.begin(),itr)-1;
+
+        auto middle = sizes[lower_idx]+((sizes[upper_idx]-sizes[lower_idx])/2);
+
+        if(_blocksize_in_kb >= middle)
+          return vals[upper_idx];
+        else{
+          return vals[lower_idx];
+
+        }
+
+      }
+    }
+
+
+  };
+
+  constexpr std::array<std::size_t,4> sqeazy::closest_blocksize::sizes;
+  constexpr std::array<sqeazy::closest_blocksize::lz4f_blocksize_t,4> sqeazy::closest_blocksize::vals;
+
   //FIXME: lz4 can also be a filter for char->char conversions
   template <typename in_type>
   using lz4_scheme_base_type = typename binary_select_type<filter<in_type>,//true
@@ -35,12 +75,13 @@ namespace sqeazy {
     typedef typename sink_type::out_type compressed_type;
 
     static_assert(std::is_arithmetic<raw_type>::value==true,"[lz4_scheme] input type is non-arithmetic");
-    static const std::string description() { return std::string("compress input with lz4, <accel|default = 1> improves compression speed at the price of compression ratio, <blocksize_kb|default = 256> ... the lz4 blocksize (possible values: 64/265/1024/4048), <encodestep_kb|default = 32 > ... the atomic amount of input data to submit to lz4 compression "); };
+    static const std::string description() { return std::string("compress input with lz4, <accel|default = 1> improves compression speed at the price of compression ratio, <blocksize_kb|default = 256> ... the lz4 blocksize in kByte (possible values: 64/265/1024/4048), <encodestep_kb|default = 32 > ... the atomic amount of input data to submit to lz4 compression, <n_encode_chunks|default = 0 > ... divide input data into n_encode_chunks partitions (consider each parition independent of the other for encoding; this overrides encodestep_kb) "); };
 
     std::string lz4_config;
     int acceleration;
     std::uint32_t blocksize_kb;
     std::uint32_t encodestep_kb;
+    std::uint32_t n_encode_chunks;
 
     LZ4F_preferences_t lz4_prefs;
 
@@ -50,6 +91,7 @@ namespace sqeazy {
       acceleration(1),
       blocksize_kb(256),
       encodestep_kb(16),
+      n_encode_chunks(0),
       lz4_prefs(){
 
       pipeline_parser p;
@@ -68,10 +110,14 @@ namespace sqeazy {
         if(f_itr!=config_map.end())
           encodestep_kb = std::stof(f_itr->second);
 
+        f_itr = config_map.find("n_encode_chunks");
+        if(f_itr!=config_map.end())
+          n_encode_chunks = std::stof(f_itr->second);
+
       }
 
       lz4_prefs = {
-        { LZ4F_max256KB, //commonly L2 size on Intel platforms
+        { closest_blocksize::of(blocksize_kb), //commonly L2 size on Intel platforms
           LZ4F_blockLinked,
           LZ4F_noContentChecksum,
           LZ4F_frame,
@@ -153,11 +199,11 @@ namespace sqeazy {
       }
       const local_size_type max_encodestep_in_byte = max_encoded_size(encodestep_byte);
 
-      const int nthreads = this->n_threads();
+      //const int nthreads = this->n_threads();
       size_type num_written_bytes = 0;
       compressed_type* value = nullptr;
 
-      if(nthreads==1){
+      //if(nthreads==1){
 
         lz4_prefs.frameInfo.contentSize = total_length_in_byte;
 
@@ -182,6 +228,7 @@ namespace sqeazy {
 
         auto dst = _out + num_written_bytes;
         auto src = input;
+        auto srcEnd = input + total_length_in_byte;
 
         for( std::size_t s = 0;s<n_steps;++s){
 
@@ -189,7 +236,7 @@ namespace sqeazy {
                                        dst,
                                        max_payload_length_in_byte - std::distance(_out,dst),
                                        src,
-                                       encodestep_byte,
+                                       (local_size_type)std::distance(src,srcEnd) < encodestep_byte ? std::distance(src,srcEnd) : encodestep_byte,
                                        NULL);
 
           if (LZ4F_isError(n)) {
@@ -216,44 +263,8 @@ namespace sqeazy {
 
         value = dst;
         lz4_prefs.frameInfo.contentSize = 0;
-      }
-      // else{
+        //}
 
-      //   std::vector<std::future<size_type>> tasks;
-      //   tasks.reserve(nthreads);
-
-      //   const local_size_type blocksize_byte = (total_length_in_byte + nthreads - 1) / nthreads;//TODO: this chunk size could also be volume limited (think cache sizes from compass)
-      //   const local_size_type blocksize = blocksize_byte/sizeof(raw_type);
-      //   const local_size_type max_encoded_blocksize_in_byte = LZ4_compressBound(blocksize_byte);
-      //   const local_size_type max_payload_length_in_byte = nthreads*max_encoded_blocksize_in_byte;
-
-      //   for(int t = 0;t < nthreads;t++){
-      //     tasks.push_back(
-      //       std::async(
-      //         LZ4_compress_fast,
-      //         (const char*)input+t*blocksize,
-      //         (char*)_out + t*max_encoded_blocksize_in_byte,
-      //         max_encoded_blocksize_in_byte,
-      //         acceleration
-      //         )
-      //       );
-      //   }
-
-      //   //TODO: would love to have a uniform barrier here
-      //   std::size_t last_offset = 0;
-      //   for(int t = 0;t < nthreads;t++){
-      //     tasks[t].wait();
-      //     if(t>0){
-      //       std::copy(_out + t*max_encoded_blocksize_in_byte,
-      //                 _out + (t+1)*max_encoded_blocksize_in_byte,
-      //                 _out + last_offset
-      //         );
-      //     }
-      //     last_offset += tasks[t].get();
-      //   }
-
-
-      // }
       return value;
     }
 
@@ -289,39 +300,34 @@ namespace sqeazy {
 
       const std::size_t expected_bytes_decoded = _outlen*sizeof(raw_type);
 
-      if(this->n_threads()==1){
-        LZ4F_dctx *dctx = nullptr;
-        auto ret = LZ4F_createDecompressionContext(&dctx, 100);
-        if (LZ4F_isError(ret)) {
-          std::cerr << "[sqy::lz4] LZ4F_dctx creation error: " << LZ4F_getErrorName(ret) << "\n";
-          return value;
-        }
-
-        std::size_t srcSize = _inlen;
-        ret = 1;
-        while (src != srcEnd && ret != 0) {
-          /* INVARIANT: Any data left in dst has already been written */
-          std::size_t dstSize = std::distance(dst,dstEnd);
-          ret = LZ4F_decompress(dctx, dst, &dstSize,
-                                src, &srcSize,
-                                /* LZ4F_decompressOptions_t */ NULL);
-          if (LZ4F_isError(ret)) {
-            std::cerr << "[sqy::lz4] Decompression error: " << LZ4F_getErrorName(ret) << "\n";
-            break;
-          }
-
-          src += _inlen;
-          srcSize = srcEnd - src;
-          dst += dstSize;
-        }
-
-        // int num_bytes_decoded = LZ4_decompress_safe(_in,
-        //                                             output,
-        //                                             _inlen*sizeof(compressed_type),
-        //                                             expected_bytes_decoded);
-
+      //if(this->n_threads()==1){
+      LZ4F_dctx *dctx = nullptr;
+      auto ret = LZ4F_createDecompressionContext(&dctx, 100);
+      if (LZ4F_isError(ret)) {
+        std::cerr << "[sqy::lz4] LZ4F_dctx creation error: " << LZ4F_getErrorName(ret) << "\n";
+        return value;
       }
 
+      std::size_t srcSize = 4 << 10;
+      ret = 1;
+      while (src != srcEnd && ret != 0) {
+        /* INVARIANT: Any data left in dst has already been written */
+        std::size_t dstSize = std::distance(dst,dstEnd);
+        ret = LZ4F_decompress(dctx, dst, &dstSize,
+                              src, &srcSize,
+                              /* LZ4F_decompressOptions_t */ NULL);
+        if (LZ4F_isError(ret)) {
+          std::cerr << "[sqy::lz4] Decompression error: " << LZ4F_getErrorName(ret) << "\n";
+          break;
+        }
+
+        src += srcSize;
+        srcSize = srcEnd - src;
+        dst += dstSize;
+      }
+
+      //}
+      LZ4F_freeDecompressionContext(dctx);
       std::size_t num_bytes_decoded = std::distance(reinterpret_cast<compressed_type*>(_out),dst)*sizeof(raw_type);
       if(num_bytes_decoded > 0 && num_bytes_decoded<=expected_bytes_decoded)
         return 0;
