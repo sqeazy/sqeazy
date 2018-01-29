@@ -75,13 +75,14 @@ namespace sqeazy {
     typedef typename sink_type::out_type compressed_type;
 
     static_assert(std::is_arithmetic<raw_type>::value==true,"[lz4_scheme] input type is non-arithmetic");
-    static const std::string description() { return std::string("compress input with lz4, <accel|default = 1> improves compression speed at the price of compression ratio, <blocksize_kb|default = 256> ... the lz4 blocksize in kByte (possible values: 64/265/1024/4048), <encodestep_kb|default = 32 > ... the atomic amount of input data to submit to lz4 compression, <n_encode_chunks|default = 0 > ... divide input data into n_encode_chunks partitions (consider each parition independent of the other for encoding; this overrides encodestep_kb) "); };
+    static const std::string description() { return std::string("compress input with lz4, <accel|default = 1> improves compression speed at the price of compression ratio, <blocksize_kb|default = 256> ... the lz4 blocksize in kByte (possible values: 64/265/1024/4048), <framestep_kb|default = 32 > ... the atomic amount of input data to submit to lz4 compression, <n_chunks_of_input|default = 0 > ... divide input data into n_encode_chunks partitions (consider each parition independent of the other for encoding; this overrides framestep_kb), < serialized_framestep_offsets > ... for internal use only "); };
 
     std::string lz4_config;
     int acceleration;
     std::uint32_t blocksize_kb;
-    std::uint32_t encodestep_kb;
-    std::uint32_t n_encode_chunks;
+    std::uint32_t framestep_kb;
+    std::uint32_t n_chunks_of_input;
+    std::string serialized_framestep_offsets;
 
     LZ4F_preferences_t lz4_prefs;
 
@@ -90,8 +91,9 @@ namespace sqeazy {
       lz4_config(_payload),
       acceleration(1),
       blocksize_kb(256),
-      encodestep_kb(16),
-      n_encode_chunks(0),
+      framestep_kb(16),
+      n_chunks_of_input(0),
+      serialized_framestep_offsets(""),
       lz4_prefs(){
 
       pipeline_parser p;
@@ -106,14 +108,22 @@ namespace sqeazy {
         if(f_itr!=config_map.end())
           blocksize_kb = std::stof(f_itr->second);
 
-        f_itr = config_map.find("encodestep_kb");
+        f_itr = config_map.find("framestep_kb");
         if(f_itr!=config_map.end())
-          encodestep_kb = std::stof(f_itr->second);
+          framestep_kb = std::stof(f_itr->second);
 
-        f_itr = config_map.find("n_encode_chunks");
-        if(f_itr!=config_map.end())
-          n_encode_chunks = std::stof(f_itr->second);
+        f_itr = config_map.find("n_chunks_of_input");
+        if(f_itr!=config_map.end()){
+          n_chunks_of_input = std::stof(f_itr->second);
 
+          if(n_chunks_of_input!=0)
+            framestep_kb = 0;
+
+        }
+
+        f_itr = config_map.find("framestep_offsets");
+          if(f_itr!=config_map.end())
+            serialized_framestep_offsets = f_itr->second;
       }
 
       lz4_prefs = {
@@ -150,7 +160,14 @@ namespace sqeazy {
     */
     std::string config() const override {
 
-      return lz4_config;
+      std::ostringstream msg;
+      msg << "accel=" << std::to_string(acceleration) << ",";
+      msg << "blocksize_kb=" << blocksize_kb << ",";
+      msg << "framestep_kb=" << framestep_kb << ",";
+      msg << "n_chunks_of_input=" << n_chunks_of_input << ",";
+      msg << "framestep_offsets=" << framestep_offsets << ",";
+      return msg.str();
+
 
     }
 
@@ -183,6 +200,8 @@ namespace sqeazy {
      * @param _output output char buffer (not owned, not allocated)
      * @param _shape mutable std::vector<size_type>, contains the length of _input at [0] and the number of written bytes at [1]
      * @return pointer to end of payload
+     *
+     * frame footer and multithreading information https://github.com/lz4/lz4/issues/445
      */
     compressed_type* encode( const raw_type* _in, compressed_type* _out, const std::vector<std::size_t>& _shape) override final {
 
@@ -193,11 +212,12 @@ namespace sqeazy {
       const compressed_type* input = reinterpret_cast<const compressed_type*>(_in);
 
       const local_size_type max_payload_length_in_byte = max_encoded_size(total_length_in_byte);
-      local_size_type encodestep_byte = encodestep_kb << 10;
-      if(encodestep_byte >= total_length_in_byte){
-        encodestep_byte = total_length_in_byte;
+      local_size_type framestep_byte = framestep_kb ? framestep_kb << 10 : std::ceil(total_length_in_byte/n_chunks_of_input);
+      if(framestep_byte >= total_length_in_byte){
+        framestep_byte = total_length_in_byte;
       }
-      const local_size_type max_encodestep_in_byte = max_encoded_size(encodestep_byte);
+
+      const local_size_type max_framestep_in_byte = max_encoded_size(framestep_byte );
 
       //const int nthreads = this->n_threads();
       size_type num_written_bytes = 0;
@@ -205,65 +225,59 @@ namespace sqeazy {
 
       //if(nthreads==1){
 
-        lz4_prefs.frameInfo.contentSize = total_length_in_byte;
+      lz4_prefs.frameInfo.contentSize = total_length_in_byte;
 
-        LZ4F_compressionContext_t ctx;
-        auto rcode = LZ4F_createCompressionContext(&ctx, LZ4F_VERSION);
-        if (LZ4F_isError(rcode)) {
-          std::cerr << "[sqy::lz4] Failed to create context: error " << rcode << "\n";
-          return value;
-        } else {
-          rcode = 1;//don't ask me why, taken from https://github.com/lz4/lz4/blob/v1.8.0/examples/frameCompress.c#L34
-        }
+      LZ4F_compressionContext_t ctx;
+      auto rcode = LZ4F_createCompressionContext(&ctx, LZ4F_VERSION);
+      if (LZ4F_isError(rcode)) {
+        std::cerr << "[sqy::lz4] Failed to create context: error " << rcode << "\n";
+        return value;
+      } else {
+        rcode = 1;//don't ask me why, taken from https://github.com/lz4/lz4/blob/v1.8.0/examples/frameCompress.c#L34
+      }
 
-        rcode = num_written_bytes = LZ4F_compressBegin(ctx,
-                                                       _out, max_encodestep_in_byte ,
-                                                       &lz4_prefs);
-        if (LZ4F_isError(rcode)) {
-          std::cerr << "[sqy::lz4] Failed to start compression: error " << rcode << "\n";
-          return value;
-        }
+      rcode = num_written_bytes = LZ4F_compressBegin(ctx,
+                                                     _out, max_framestep_in_byte ,
+                                                     &lz4_prefs);
+      if (LZ4F_isError(rcode)) {
+        std::cerr << "[sqy::lz4] Failed to start compression: error " << rcode << "\n";
+        return value;
+      }
 
-        std::size_t n_steps = (total_length_in_byte + encodestep_byte - 1) / encodestep_byte;
+      std::size_t n_steps = (total_length_in_byte + framestep_byte - 1) / framestep_byte;
 
-        auto dst = _out + num_written_bytes;
-        auto src = input;
-        auto srcEnd = input + total_length_in_byte;
+      auto dst = _out + num_written_bytes;
+      auto src = input;
+      auto srcEnd = input + total_length_in_byte;
 
-        for( std::size_t s = 0;s<n_steps;++s){
+      for( std::size_t s = 0;s<n_steps;++s){
 
-          auto n = LZ4F_compressUpdate(ctx,
-                                       dst,
-                                       max_payload_length_in_byte - std::distance(_out,dst),
-                                       src,
-                                       (local_size_type)std::distance(src,srcEnd) < encodestep_byte ? std::distance(src,srcEnd) : encodestep_byte,
-                                       NULL);
+        auto n = LZ4F_compressUpdate(ctx,
+                                     dst,
+                                     max_payload_length_in_byte - std::distance(_out,dst),
+                                     src,
+                                     (local_size_type)std::distance(src,srcEnd) < framestep_byte ? std::distance(src,srcEnd) : framestep_byte, nullptr);
 
-          if (LZ4F_isError(n)) {
-            std::cerr << "[sqy::lz4] Failed to compress: error " << n << "\n";
-            break;
-          }
+        src += framestep_byte;
+        dst += n;
 
-          src += encodestep_byte;
-          dst += n;
+      }
 
-        }
+      rcode = LZ4F_compressEnd(ctx, dst, max_payload_length_in_byte - std::distance(_out,dst), NULL);
+      if (LZ4F_isError(rcode)) {
+        std::cerr << "[sqy::lz4] Failed to end compression: error " << rcode << "\n";
+        return value;
+      }
 
-        rcode = LZ4F_compressEnd(ctx, dst, max_payload_length_in_byte - std::distance(_out,dst), NULL);
-        if (LZ4F_isError(rcode)) {
-          std::cerr << "[sqy::lz4] Failed to end compression: error " << rcode << "\n";
-          return value;
-        }
-
-        dst += rcode;
+      dst += rcode;
 
 
-        if (ctx)
-          LZ4F_freeCompressionContext(ctx);
+      if (ctx)
+        LZ4F_freeCompressionContext(ctx);
 
-        value = dst;
-        lz4_prefs.frameInfo.contentSize = 0;
-        //}
+      value = dst;
+      lz4_prefs.frameInfo.contentSize = 0;
+      //}
 
       return value;
     }
