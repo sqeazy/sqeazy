@@ -165,7 +165,7 @@ namespace sqeazy {
       msg << "blocksize_kb=" << blocksize_kb << ",";
       msg << "framestep_kb=" << framestep_kb << ",";
       msg << "n_chunks_of_input=" << n_chunks_of_input << ",";
-      msg << "framestep_offsets=" << framestep_offsets << ",";
+      msg << "framestep_offsets=" << serialized_framestep_offsets << ",";
       return msg.str();
 
 
@@ -173,11 +173,21 @@ namespace sqeazy {
 
     std::intmax_t max_encoded_size(std::intmax_t _size_bytes) const override final {
 
-      std::intmax_t lz4_bound = LZ4F_compressBound(_size_bytes, &lz4_prefs)
+      std::size_t framestep_byte = framestep_kb ? framestep_kb << 10 : std::ceil(_size_bytes/n_chunks_of_input);
+      if(framestep_byte >= _size_bytes){
+        framestep_byte = _size_bytes;
+      }
+
+      std::intmax_t lz4_bound_per_chunk = LZ4F_compressBound(framestep_byte, &lz4_prefs)
         + 4 /*the mysterious lz4 frame footer, see https://github.com/lz4/lz4/issues/445 */
         + LZ4F_HEADER_SIZE_MAX ;
 
-      return lz4_bound;
+      if(framestep_byte == _size_bytes)
+        return lz4_bound_per_chunk;
+      else{
+        std::size_t n_steps = _size_bytes / framestep_byte;
+        return lz4_bound_per_chunk*n_steps;
+      }
     }
 
     /**
@@ -244,7 +254,7 @@ namespace sqeazy {
         return value;
       }
 
-      std::size_t n_steps = (total_length_in_byte + framestep_byte - 1) / framestep_byte;
+      std::size_t n_steps = total_length_in_byte / framestep_byte;
 
       auto dst = _out + num_written_bytes;
       auto src = input;
