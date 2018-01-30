@@ -115,11 +115,11 @@ namespace sqeazy {
         if(f_itr!=config_map.end()){
           n_chunks_of_input = std::stof(f_itr->second);
 
-          if(n_chunks_of_input!=0)
-            framestep_kb = 0;
-
         }
       }
+
+      if(n_chunks_of_input!=0)
+        framestep_kb = 0;
 
       lz4_prefs = {
         { closest_blocksize::of(blocksize_kb), //commonly L2 size on Intel platforms
@@ -167,8 +167,9 @@ namespace sqeazy {
 
     std::intmax_t max_encoded_size(std::intmax_t _size_bytes) const override final {
 
+
       std::intmax_t framestep_byte = framestep_kb ? framestep_kb << 10 : std::ceil(_size_bytes/n_chunks_of_input);
-      if(framestep_byte >= _size_bytes){
+      if(framestep_byte >= _size_bytes || n_chunks_of_input >= _size_bytes){
         framestep_byte = _size_bytes;
       }
 
@@ -179,7 +180,7 @@ namespace sqeazy {
       if(framestep_byte == _size_bytes)
         return lz4_bound_per_chunk;
       else{
-        std::size_t n_steps = _size_bytes / framestep_byte;
+        std::size_t n_steps = (_size_bytes + framestep_byte - 1 )/ framestep_byte;
         return lz4_bound_per_chunk*n_steps;
       }
     }
@@ -217,7 +218,7 @@ namespace sqeazy {
 
       const local_size_type max_payload_length_in_byte = max_encoded_size(total_length_in_byte);
       local_size_type framestep_byte = framestep_kb ? framestep_kb << 10 : std::ceil(total_length_in_byte/n_chunks_of_input);
-      if(framestep_byte >= total_length_in_byte){
+      if(framestep_byte >= total_length_in_byte || n_chunks_of_input >= total_length_in_byte){
         framestep_byte = total_length_in_byte;
       }
 
@@ -249,7 +250,7 @@ namespace sqeazy {
         return value;
       }
 
-      std::size_t n_steps = total_length_in_byte / framestep_byte;
+      std::size_t n_steps = (total_length_in_byte + framestep_byte - 1) / framestep_byte;
 
       auto dst = _out + num_written_bytes;
       auto src = input;

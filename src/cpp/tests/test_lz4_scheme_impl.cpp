@@ -241,6 +241,70 @@ BOOST_AUTO_TEST_CASE( roundtrip_nchunks_17 )
     to_play_with.end()
     );
 }
+
+BOOST_AUTO_TEST_CASE( roundtrip_nchunks_17_enforced )
+{
+  std::vector<std::size_t> shape(dims.begin(), dims.end());
+
+  sqeazy::lz4_scheme<value_type> local("framestep_kb=1,n_chunks_of_input=17");
+
+  BOOST_REQUIRE_NE(local.framestep_kb,1);
+  BOOST_REQUIRE_EQUAL(local.framestep_kb,0);
+
+  auto expected_encoded_bytes = local.max_encoded_size(size_in_byte);
+  std::vector<char> encoded(expected_encoded_bytes);
+
+  auto res = local.encode(&incrementing_cube[0],
+                          encoded.data(),
+                          shape);
+
+  BOOST_REQUIRE_NE(res,(char*)nullptr);
+
+  auto rcode = local.decode(encoded.data(),
+                            to_play_with.data(),
+                            encoded.size(),
+                            size_in_byte);
+
+  BOOST_REQUIRE_NE(rcode,1);
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(
+    incrementing_cube.begin(),
+    incrementing_cube.end(),
+    to_play_with.begin(),
+    to_play_with.end()
+    );
+}
+
+BOOST_AUTO_TEST_CASE( roundtrip_too_many_chunks )
+{
+  std::vector<std::size_t> shape(dims.begin(), dims.end());
+
+  sqeazy::lz4_scheme<value_type> local("n_chunks_of_input=1024");
+
+  BOOST_REQUIRE_NE(local.framestep_kb,1);
+  BOOST_REQUIRE_EQUAL(local.framestep_kb,0);
+
+  auto expected_encoded_bytes = local.max_encoded_size(size_in_byte);
+  std::vector<char> encoded(expected_encoded_bytes);
+
+  auto res = local.encode(&incrementing_cube[0],
+                          encoded.data(),
+                          shape);
+
+  BOOST_REQUIRE_NE(res,(char*)nullptr);
+
+  auto rcode = local.decode(encoded.data(),
+                            to_play_with.data(),
+                            encoded.size(),
+                            size_in_byte);
+
+  BOOST_REQUIRE_NE(rcode,1);
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(
+    incrementing_cube.begin(),
+    incrementing_cube.end(),
+    to_play_with.begin(),
+    to_play_with.end()
+    );
+}
 BOOST_AUTO_TEST_SUITE_END()
 
 
