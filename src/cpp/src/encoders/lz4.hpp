@@ -321,27 +321,51 @@ namespace sqeazy {
 
       //if(this->n_threads()==1){
       LZ4F_dctx *dctx = nullptr;
+      LZ4F_frameInfo_t info;
+
       auto ret = LZ4F_createDecompressionContext(&dctx, 100);
       if (LZ4F_isError(ret)) {
-        std::cerr << "[sqy::lz4] LZ4F_dctx creation error: " << LZ4F_getErrorName(ret) << "\n";
+        std::cerr << "[sqy::lz4::decode] LZ4F_dctx creation error: " << LZ4F_getErrorName(ret) << "\n";
         return value;
       }
 
-      std::size_t srcSize = 4 << 10;
+
+      std::size_t dstSize = std::distance(dst,dstEnd);
+      std::size_t srcSize = std::distance(src,srcEnd);
       ret = 1;
-      while (src != srcEnd && ret != 0) {
+      while (src < srcEnd && ret != 0) {
         /* INVARIANT: Any data left in dst has already been written */
-        std::size_t dstSize = std::distance(dst,dstEnd);
-        ret = LZ4F_decompress(dctx, dst, &dstSize,
-                              src, &srcSize,
-                              /* LZ4F_decompressOptions_t */ NULL);
+        dstSize = std::distance(dst,dstEnd);
+
+        ret = LZ4F_getFrameInfo(dctx, &info, src, &srcSize);
         if (LZ4F_isError(ret)) {
-          std::cerr << "[sqy::lz4] Decompression error: " << LZ4F_getErrorName(ret) << "\n";
+          std::cerr << "[sqy::lz4::decode] this data does comply to the lz4 frame format\n";
+
+          dst = reinterpret_cast<compressed_type*>(_out);
           break;
         }
 
         src += srcSize;
-        srcSize = srcEnd - src;
+        srcSize = std::distance(src,srcEnd);
+
+        if (info.contentSize > std::distance(dst,dstEnd)) {
+          std::cerr << "[sqy::lz4::decode] decompressed input yields " << info.contentSize
+                  << " Bytes, only "<< std::distance(dst,dstEnd) << " Bytes left in destination\n";
+          dst = reinterpret_cast<compressed_type*>(_out);
+          break;
+        }
+
+        ret = LZ4F_decompress(dctx, dst, &dstSize,
+                              src, &srcSize,
+                              /* LZ4F_decompressOptions_t */ NULL);
+        if (LZ4F_isError(ret)) {
+          std::cerr << "[sqy::lz4::decode] Decompression error: " << LZ4F_getErrorName(ret) << "\n";
+          dst = reinterpret_cast<compressed_type*>(_out);
+          break;
+        }
+
+        src += srcSize;
+        srcSize = std::distance(src,srcEnd);
         dst += dstSize;
       }
 

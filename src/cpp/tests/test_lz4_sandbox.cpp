@@ -126,6 +126,7 @@ namespace lz4sandbox {
     }
     LZ4F_freeDecompressionContext(dctx);
     return decoded+dstSize;
+
   }
 
   char* decompress_until_done(const char* encoded, const char* encoded_end,
