@@ -141,6 +141,9 @@ target_link_libraries(test_dynamic_pipeline_impl ${OpenMP++_LIBRARIES} ${Boost_L
 add_executable(test_lz4_scheme_impl test_lz4_scheme_impl.cpp)
 target_link_libraries(test_lz4_scheme_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${LZ4_LIBRARY})
 
+add_executable(test_lz4_sandbox test_lz4_sandbox.cpp)
+target_link_libraries(test_lz4_sandbox ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${LZ4_LIBRARY})
+
 add_executable(test_dynamic_stage_impl test_dynamic_stage_impl.cpp)
 target_link_libraries(test_dynamic_stage_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES})
 
