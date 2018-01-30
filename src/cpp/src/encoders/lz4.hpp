@@ -75,14 +75,14 @@ namespace sqeazy {
     typedef typename sink_type::out_type compressed_type;
 
     static_assert(std::is_arithmetic<raw_type>::value==true,"[lz4_scheme] input type is non-arithmetic");
-    static const std::string description() { return std::string("compress input with lz4, <accel|default = 1> improves compression speed at the price of compression ratio, <blocksize_kb|default = 256> ... the lz4 blocksize in kByte (possible values: 64/265/1024/4048), <framestep_kb|default = 32 > ... the atomic amount of input data to submit to lz4 compression, <n_chunks_of_input|default = 0 > ... divide input data into n_encode_chunks partitions (consider each parition independent of the other for encoding; this overrides framestep_kb), < serialized_framestep_offsets > ... for internal use only "); };
+    static const std::string description() { return std::string("compress input with lz4, <accel|default = 1> improves compression speed at the price of compression ratio, <blocksize_kb|default = 256> ... the lz4 blocksize in kByte (possible values: 64/265/1024/4048), <framestep_kb|default = 32 > ... the atomic amount of input data to submit to lz4 compression, <n_chunks_of_input|default = 0 > ... divide input data into n_encode_chunks partitions (consider each parition independent of the other for encoding; this overrides framestep_kb)"); };
 
     std::string lz4_config;
     int acceleration;
     std::uint32_t blocksize_kb;
     std::uint32_t framestep_kb;
     std::uint32_t n_chunks_of_input;
-    std::string serialized_framestep_offsets;
+
 
     LZ4F_preferences_t lz4_prefs;
 
@@ -93,7 +93,6 @@ namespace sqeazy {
       blocksize_kb(256),
       framestep_kb(16),
       n_chunks_of_input(0),
-      serialized_framestep_offsets(""),
       lz4_prefs(){
 
       pipeline_parser p;
@@ -120,10 +119,6 @@ namespace sqeazy {
             framestep_kb = 0;
 
         }
-
-        f_itr = config_map.find("framestep_offsets");
-          if(f_itr!=config_map.end())
-            serialized_framestep_offsets = f_itr->second;
       }
 
       lz4_prefs = {
@@ -164,8 +159,7 @@ namespace sqeazy {
       msg << "accel=" << std::to_string(acceleration) << ",";
       msg << "blocksize_kb=" << blocksize_kb << ",";
       msg << "framestep_kb=" << framestep_kb << ",";
-      msg << "n_chunks_of_input=" << n_chunks_of_input << ",";
-      msg << "framestep_offsets=" << serialized_framestep_offsets << ",";
+      msg << "n_chunks_of_input=" << n_chunks_of_input ;
       return msg.str();
 
 
@@ -173,7 +167,7 @@ namespace sqeazy {
 
     std::intmax_t max_encoded_size(std::intmax_t _size_bytes) const override final {
 
-      std::size_t framestep_byte = framestep_kb ? framestep_kb << 10 : std::ceil(_size_bytes/n_chunks_of_input);
+      std::intmax_t framestep_byte = framestep_kb ? framestep_kb << 10 : std::ceil(_size_bytes/n_chunks_of_input);
       if(framestep_byte >= _size_bytes){
         framestep_byte = _size_bytes;
       }
@@ -247,7 +241,8 @@ namespace sqeazy {
       }
 
       rcode = num_written_bytes = LZ4F_compressBegin(ctx,
-                                                     _out, max_framestep_in_byte ,
+                                                     _out,
+                                                     max_framestep_in_byte ,
                                                      &lz4_prefs);
       if (LZ4F_isError(rcode)) {
         std::cerr << "[sqy::lz4] Failed to start compression: error " << rcode << "\n";
