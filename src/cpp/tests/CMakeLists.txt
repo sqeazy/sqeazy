@@ -207,13 +207,6 @@ IF(FFMPEG_FOUND)
   add_executable(test_avcodec_sandbox test_avcodec_sandbox.cpp)
   target_link_libraries(test_avcodec_sandbox ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries})
 
-  add_executable(deprecated_pipeline_select_impl deprecated_pipeline_select_impl.cpp)
-  target_link_libraries(deprecated_pipeline_select_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${LZ4_LIBRARY} ${SQY_FFMPEG_Libraries})
-
-
-  add_executable(deprecated_pipeline_impl deprecated_pipeline_impl.cpp)
-  target_link_libraries(deprecated_pipeline_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${LZ4_LIBRARY} ${SQY_FFMPEG_Libraries})
-
   add_executable(test_hevc_scheme_impl test_hevc_scheme_impl.cpp)
   target_link_libraries(test_hevc_scheme_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries})
 
