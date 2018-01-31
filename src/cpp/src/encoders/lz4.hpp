@@ -372,7 +372,7 @@ namespace sqeazy {
 
       //}
       LZ4F_freeDecompressionContext(dctx);
-      std::size_t num_bytes_decoded = std::distance(reinterpret_cast<compressed_type*>(_out),dst)*sizeof(raw_type);
+      std::size_t num_bytes_decoded = std::distance(reinterpret_cast<compressed_type*>(_out),dst)*sizeof(compressed_type);
       if(num_bytes_decoded > 0 && num_bytes_decoded<=expected_bytes_decoded)
         return 0;
       else
