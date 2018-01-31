@@ -34,12 +34,6 @@ addons:
     - pkg-config
     - software-properties-common
     - binutils
-    # - cpp
-    # - cpp-4.8
-    # - g++
-    # - g++-4.8
-    # - gcc
-    # - gcc-4.8
     - libasan0
     - libatomic1
     - libcloog-isl4
@@ -166,7 +160,7 @@ before_install:
   #############################################################################
   # - sudo add-apt-repository -y ppa:cwchien/gradle
   # - sudo apt-get -qq update
-  # - sudo apt-get install gradle-3.0
+  # - sudo apt-get install gradle-4.0
   # - gradle --version
 
   #############################################################################
@@ -197,7 +191,7 @@ script:
        export CMAKE_PREFIX_PATH=/home/travis/sw/:${CMAKE_PREFIX_PATH} &&
        env && 
        find /usr -name "libomp*" -or -name "libgomp*" &&
-       gradle -Pcxx_compiler=`which g++-5` clean test && ldd build/cpp/src/libsqeazy.so && exit $?;
+       gradle -Pcxx_compiler=`which g++-7` clean test && ldd build/cpp/src/libsqeazy.so && exit $?;
     fi
 
     

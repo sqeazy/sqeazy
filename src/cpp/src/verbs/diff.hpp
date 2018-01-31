@@ -11,7 +11,6 @@
 #include <boost/program_options.hpp>
 
 #include "tiff_utils.hpp"
-#include "deprecated/static_pipeline_select.hpp"
 #include "sqeazy_algorithms.hpp"
 
 #include "yuv_utils.hpp"
