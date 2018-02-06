@@ -30,6 +30,7 @@ BOOST_AUTO_TEST_CASE( encodes )
 
 }
 
+
 BOOST_AUTO_TEST_CASE( decodes )
 {
     std::vector<std::size_t> shape(dims.begin(), dims.end());
@@ -84,6 +85,7 @@ BOOST_AUTO_TEST_CASE( roundtrip )
 
 
 BOOST_AUTO_TEST_SUITE_END()
+
 
 BOOST_FIXTURE_TEST_SUITE( eight_bit, uint8_cube_of_8 )
 
@@ -338,6 +340,30 @@ BOOST_AUTO_TEST_CASE( inbetween )
   BOOST_CHECK_EQUAL( sqeazy::closest_blocksize::of(65),sqeazy::closest_blocksize::vals[0] );
   BOOST_CHECK_EQUAL( sqeazy::closest_blocksize::of(255),sqeazy::closest_blocksize::vals[1] );
   BOOST_CHECK_EQUAL( sqeazy::closest_blocksize::of(257),sqeazy::closest_blocksize::vals[1] );
+
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+
+BOOST_FIXTURE_TEST_SUITE( sixteen_bit_in_parallel, uint16_cube_of_8 )
+
+BOOST_AUTO_TEST_CASE( encodes )
+{
+  std::vector<std::size_t> shape(dims.begin(), dims.end());
+
+  sqeazy::lz4_scheme<value_type> local;
+  local.set_n_threads(2);
+  auto expected_encoded_bytes = local.max_encoded_size(size_in_byte);
+  std::vector<char> encoded(expected_encoded_bytes);
+
+  auto res = local.encode(&incrementing_cube[0],
+                          encoded.data(),
+                          shape);
+
+  BOOST_REQUIRE_NE(res,(char*)nullptr);
+  BOOST_CHECK_NE(res,encoded.data());
+  BOOST_CHECK_LT(std::distance(encoded.data(),res),expected_encoded_bytes);
 
 }
 
