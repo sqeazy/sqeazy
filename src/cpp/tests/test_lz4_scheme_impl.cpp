@@ -70,6 +70,30 @@ BOOST_AUTO_TEST_CASE( encodes_1M_framestep_4M )
 
 }
 
+BOOST_AUTO_TEST_CASE( encodes_tiny )
+{
+  sqeazy::lz4_scheme<std::uint16_t> no_chunks;
+  auto fs16kb = no_chunks.max_encoded_size(1 << 4);
+
+  sqeazy::lz4_scheme<std::uint16_t> local("framestep_kb=4096");
+  auto fs4M = local.max_encoded_size(1 << 4);
+  BOOST_REQUIRE_GT(fs4M,0);
+  BOOST_REQUIRE_EQUAL(fs4M,fs16kb);//if framstep_kb is larger than payload, we only have the overhead once
+
+}
+
+BOOST_AUTO_TEST_CASE( encodes_tiny_4chunks )
+{
+  sqeazy::lz4_scheme<std::uint16_t> no_chunks;
+  auto fs16kb = no_chunks.max_encoded_size(1 << 4);
+
+  sqeazy::lz4_scheme<std::uint16_t> local("n_chunks_of_input=4");
+  auto nc4 = local.max_encoded_size(1 << 4);
+  BOOST_REQUIRE_GT(nc4,0);
+  BOOST_REQUIRE_GT(nc4,fs16kb);//if framstep_kb is larger than payload, we only have the overhead once
+
+}
+
 BOOST_AUTO_TEST_CASE( prefs_contentSize )
 {
 
