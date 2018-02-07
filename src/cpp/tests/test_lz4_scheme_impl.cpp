@@ -314,32 +314,32 @@ BOOST_FIXTURE_TEST_SUITE( blocksizes, uint16_cube_of_8 )
 
 BOOST_AUTO_TEST_CASE( less_than )
 {
-  BOOST_CHECK_EQUAL( sqeazy::closest_blocksize::of(32),sqeazy::closest_blocksize::vals[0] );
-  BOOST_CHECK_EQUAL( sqeazy::closest_blocksize::of(0),sqeazy::closest_blocksize::vals[0] );
+  BOOST_CHECK_EQUAL( sqeazy::lz4::closest_blocksize::of(32),sqeazy::lz4::closest_blocksize::vals[0] );
+  BOOST_CHECK_EQUAL( sqeazy::lz4::closest_blocksize::of(0),sqeazy::lz4::closest_blocksize::vals[0] );
 }
 
 BOOST_AUTO_TEST_CASE( greater_than )
 {
-  BOOST_CHECK_EQUAL( sqeazy::closest_blocksize::of(16 << 10),sqeazy::closest_blocksize::vals.back() );
-  BOOST_CHECK_EQUAL( sqeazy::closest_blocksize::of(~0),sqeazy::closest_blocksize::vals.back() );
+  BOOST_CHECK_EQUAL( sqeazy::lz4::closest_blocksize::of(16 << 10),sqeazy::lz4::closest_blocksize::vals.back() );
+  BOOST_CHECK_EQUAL( sqeazy::lz4::closest_blocksize::of(~0),sqeazy::lz4::closest_blocksize::vals.back() );
 }
 
 BOOST_AUTO_TEST_CASE( equal )
 {
 
-  BOOST_CHECK_EQUAL( sqeazy::closest_blocksize::of(64),sqeazy::closest_blocksize::vals[0] );
-  BOOST_CHECK_EQUAL( sqeazy::closest_blocksize::of(256),sqeazy::closest_blocksize::vals[1] );
-  BOOST_CHECK_EQUAL( sqeazy::closest_blocksize::of(1024),sqeazy::closest_blocksize::vals[2] );
-  BOOST_CHECK_EQUAL( sqeazy::closest_blocksize::of(4096),sqeazy::closest_blocksize::vals[3] );
+  BOOST_CHECK_EQUAL( sqeazy::lz4::closest_blocksize::of(64),sqeazy::lz4::closest_blocksize::vals[0] );
+  BOOST_CHECK_EQUAL( sqeazy::lz4::closest_blocksize::of(256),sqeazy::lz4::closest_blocksize::vals[1] );
+  BOOST_CHECK_EQUAL( sqeazy::lz4::closest_blocksize::of(1024),sqeazy::lz4::closest_blocksize::vals[2] );
+  BOOST_CHECK_EQUAL( sqeazy::lz4::closest_blocksize::of(4096),sqeazy::lz4::closest_blocksize::vals[3] );
 
 }
 
 BOOST_AUTO_TEST_CASE( inbetween )
 {
 
-  BOOST_CHECK_EQUAL( sqeazy::closest_blocksize::of(65),sqeazy::closest_blocksize::vals[0] );
-  BOOST_CHECK_EQUAL( sqeazy::closest_blocksize::of(255),sqeazy::closest_blocksize::vals[1] );
-  BOOST_CHECK_EQUAL( sqeazy::closest_blocksize::of(257),sqeazy::closest_blocksize::vals[1] );
+  BOOST_CHECK_EQUAL( sqeazy::lz4::closest_blocksize::of(65),sqeazy::lz4::closest_blocksize::vals[0] );
+  BOOST_CHECK_EQUAL( sqeazy::lz4::closest_blocksize::of(255),sqeazy::lz4::closest_blocksize::vals[1] );
+  BOOST_CHECK_EQUAL( sqeazy::lz4::closest_blocksize::of(257),sqeazy::lz4::closest_blocksize::vals[1] );
 
 }
 
