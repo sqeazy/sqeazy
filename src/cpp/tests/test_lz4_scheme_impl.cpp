@@ -197,8 +197,10 @@ BOOST_AUTO_TEST_CASE( one_step_encode_parallel )
         { 0, 0, 0, 0 },  /* reserved, must be set to 0 */
       };
 
-  auto exp_bytes = LZ4F_compressBound(size_in_byte, &lz4_prefs);
-  std::vector<char> encoded(exp_bytes);
+  auto exp_bytes = LZ4F_compressBound(size_in_byte/2, &lz4_prefs);
+  BOOST_REQUIRE_GT(2*exp_bytes,LZ4F_compressBound(size_in_byte, &lz4_prefs));
+
+  std::vector<char> encoded(2*exp_bytes);
 
   const char* in =  reinterpret_cast<char*>(incrementing_cube.data());
   const char* in_end = in + size_in_byte;
@@ -206,6 +208,41 @@ BOOST_AUTO_TEST_CASE( one_step_encode_parallel )
   auto res = sqeazy::lz4::encode_parallel(in,in_end,
                                           encoded.data(),encoded.data()+encoded.size(),
                                           size_in_byte/2,
+                                          lz4_prefs,
+                                          2);
+
+  BOOST_REQUIRE_NE(res,(char*)nullptr);
+  BOOST_REQUIRE_LT(res,encoded.data()+encoded.size());
+
+}
+
+BOOST_AUTO_TEST_CASE( two_step_encode_parallel )
+{
+
+  LZ4F_preferences_t lz4_prefs = {
+    { sqeazy::lz4::closest_blocksize::of(64), //commonly L2 size on Intel platforms
+          LZ4F_blockLinked,
+          LZ4F_noContentChecksum,
+          LZ4F_frame,
+          0 /* content size unknown */,
+          0 /* no dictID */ ,
+          LZ4F_noBlockChecksum },
+        9,   /* compression level */
+        0,   /* autoflush */
+        { 0, 0, 0, 0 },  /* reserved, must be set to 0 */
+      };
+
+  auto exp_bytes = LZ4F_compressBound(size_in_byte/4, &lz4_prefs);
+  BOOST_REQUIRE_GT(4*exp_bytes,LZ4F_compressBound(size_in_byte, &lz4_prefs));
+
+  std::vector<char> encoded(4*exp_bytes);
+
+  const char* in =  reinterpret_cast<char*>(incrementing_cube.data());
+  const char* in_end = in + size_in_byte;
+
+  auto res = sqeazy::lz4::encode_parallel(in,in_end,
+                                          encoded.data(),encoded.data()+encoded.size(),
+                                          size_in_byte/4,
                                           lz4_prefs,
                                           2);
 
@@ -233,7 +270,7 @@ BOOST_AUTO_TEST_CASE( encodes )
                           shape);
 
   BOOST_REQUIRE_NE(res,(char*)nullptr);
-  BOOST_CHECK_NE(res,encoded.data());
+  BOOST_CHECK_LE(res,encoded.data());
   BOOST_CHECK_LT(std::distance(encoded.data(),res),expected_encoded_bytes);
 
 }

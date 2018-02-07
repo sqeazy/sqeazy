@@ -75,7 +75,7 @@ namespace sqeazy {
             const std::size_t len = std::distance(_in,_in_end);
             const std::size_t bytes = len*sizeof(compressed_type);
             const local_size_type out_bytes = std::distance(_out, _out_end);
-            const local_size_type max_framestep_in_byte = LZ4F_compressBound( _framestep_byte, &_lz4prefs );
+
 
             compressed_type* value = nullptr;
 
@@ -90,7 +90,7 @@ namespace sqeazy {
 
             rcode = num_written_bytes = LZ4F_compressBegin(ctx,
                                                            _out,
-                                                           max_framestep_in_byte ,
+                                                           out_bytes ,
                                                            &_lz4prefs);
             if (LZ4F_isError(rcode)) {
                 std::cerr << "[sqy::lz4] Failed to start compression: error " << rcode << "\n";
@@ -99,36 +99,34 @@ namespace sqeazy {
 
             std::size_t n_steps = (bytes + _framestep_byte - 1) / _framestep_byte;
 
-            auto dst = _out + num_written_bytes;
             auto src = _in;
             auto srcEnd = _in_end;
 
             for( std::size_t s = 0;s<n_steps;++s){
 
+                auto src_size = (local_size_type)std::distance(src,srcEnd) < _framestep_byte ? std::distance(src,srcEnd) : _framestep_byte;
                 auto n = LZ4F_compressUpdate(ctx,
-                                             dst,
-                                             out_bytes - std::distance(_out,dst),
+                                             _out,
+                                             out_bytes,
                                              src,
-                                             (local_size_type)std::distance(src,srcEnd) < _framestep_byte ? std::distance(src,srcEnd) : _framestep_byte, nullptr);
+                                             src_size,
+                                             nullptr);
 
-                src += _framestep_byte;
-                dst += n;
+                src += src_size;
+                num_written_bytes += n;
 
             }
 
-            rcode = LZ4F_compressEnd(ctx, dst, out_bytes - std::distance(_out,dst), NULL);
+            rcode = LZ4F_compressEnd(ctx, _out, out_bytes, NULL);
             if (LZ4F_isError(rcode)) {
                 std::cerr << "[sqy::lz4] Failed to end compression: error " << rcode << "\n";
                 return value;
             }
 
-            dst += rcode;
+            num_written_bytes += rcode;
+            value = _out + num_written_bytes;
 
-
-            if (ctx)
-                LZ4F_freeCompressionContext(ctx);
-
-            value = dst;
+            LZ4F_freeCompressionContext(ctx);
 
             return value;
         }
@@ -146,7 +144,7 @@ namespace sqeazy {
             const std::size_t bytes = len*sizeof(compressed_type);
 
             compressed_type* value = nullptr;
-            _lz4prefs.frameInfo.contentSize = bytes;
+            //_lz4prefs.frameInfo.contentSize = 0;
 
             const std::size_t maxbytes_encoded_chunk = LZ4F_compressBound(_nbytes_inputchunk, &_lz4prefs);
             const std::size_t nchunks = (bytes + _nbytes_inputchunk - 1) / _nbytes_inputchunk;
@@ -168,21 +166,25 @@ namespace sqeazy {
             auto nbytes_ptr = nbytes_written.data();
             auto pref_ptr = &_lz4prefs;
 
-#pragma omp parallel num_threads(nthreads) firstprivate(nbytes_ptr,pref_ptr,_in,_in_end,nthreads)
+#pragma omp parallel num_threads(nthreads) firstprivate(nbytes_ptr,pref_ptr,_in,_in_end,nthreads,maxbytes_encoded_chunk,_out,_out_end)
             {
                 int thread_id = omp_get_thread_num();
                 LZ4F_preferences_t local_prefs = *pref_ptr;
-
                 const compressed_type* t_in = nullptr;
                 const compressed_type* t_in_end = nullptr;
                 compressed_type* t_out = nullptr;
+                const std::size_t nrounds = (nchunks + nthreads - 1 )/nthreads;
 
-                for(std::size_t cnt = 0;t_in < _in_end;++cnt){
+                for(std::size_t cnt = 0;cnt < nrounds;++cnt){
 
                     t_in = _in + (thread_id + (cnt*nthreads))*_nbytes_inputchunk;
-                    t_in_end = t_in + _nbytes_inputchunk;
+                    t_in_end = (t_in + _nbytes_inputchunk) > _in_end ? _in_end : t_in + _nbytes_inputchunk;
+
+                    if(t_in>=_in_end)
+                        break;
+
                     t_out = _out + (thread_id + (cnt*nthreads))*maxbytes_encoded_chunk;
-                    auto t_out_end = t_out + maxbytes_encoded_chunk;
+                    auto t_out_end = (t_out + maxbytes_encoded_chunk) > _out_end ? _out_end : t_out + maxbytes_encoded_chunk;
 
                     auto val = encode_serial(t_in,
                                              t_in_end,
@@ -192,12 +194,12 @@ namespace sqeazy {
                                              local_prefs
                         );
 
-                    nbytes_ptr[thread_id + (cnt*nthreads)] = std::distance(t_out,val);
+                    nbytes_ptr[thread_id + (cnt*nthreads)] = val != nullptr ? std::distance(t_out,val) : 0;
                 }
             }
 
             //shrink the output buffer to discard the bytes that have not been filled with encoded data
-             value = _out + nbytes_written.front();
+            value = _out + nbytes_written.front();
             compressed_type* src_out = _out + maxbytes_encoded_chunk;
 
             for(std::size_t i = 1;i < nbytes_written.size();++i){
@@ -207,7 +209,7 @@ namespace sqeazy {
 
             }
 
-            return value;
+            return value != _out ? value : nullptr;
         }
 
 
