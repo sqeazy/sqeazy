@@ -112,12 +112,113 @@ BOOST_AUTO_TEST_CASE( prefs_contentSize )
 
 }
 
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE( isolated_util_encode16, uint16_cube_of_8 )
+
+BOOST_AUTO_TEST_CASE( one_step_serial_encode )
+{
+
+  LZ4F_preferences_t lz4_prefs = {
+    { sqeazy::lz4::closest_blocksize::of(64), //commonly L2 size on Intel platforms
+          LZ4F_blockLinked,
+          LZ4F_noContentChecksum,
+          LZ4F_frame,
+          0 /* content size unknown */,
+          0 /* no dictID */ ,
+          LZ4F_noBlockChecksum },
+        9,   /* compression level */
+        0,   /* autoflush */
+        { 0, 0, 0, 0 },  /* reserved, must be set to 0 */
+      };
+
+  auto exp_bytes = LZ4F_compressBound(size_in_byte, &lz4_prefs);
+  std::vector<char> encoded(exp_bytes);
+
+  const char* in =  reinterpret_cast<char*>(incrementing_cube.data());
+  const char* in_end = in + size_in_byte;
+
+  auto res = sqeazy::lz4::encode_serial(in,in_end,
+                                        encoded.data(),encoded.data()+encoded.size(),
+                                        size_in_byte,
+                                         lz4_prefs);
+
+  BOOST_REQUIRE_NE(res,(char*)nullptr);
+  BOOST_REQUIRE_LT(res,encoded.data()+encoded.size());
+
+}
+
+BOOST_AUTO_TEST_CASE( two_step_serial_encode )
+{
+
+  LZ4F_preferences_t lz4_prefs = {
+    { sqeazy::lz4::closest_blocksize::of(64), //commonly L2 size on Intel platforms
+      LZ4F_blockLinked,
+      LZ4F_noContentChecksum,
+      LZ4F_frame,
+      0 /* content size unknown */,
+      0 /* no dictID */ ,
+      LZ4F_noBlockChecksum },
+    9,   /* compression level */
+    0,   /* autoflush */
+    { 0, 0, 0, 0 },  /* reserved, must be set to 0 */
+  };
+
+  auto exp_bytes = LZ4F_compressBound(size_in_byte, &lz4_prefs);
+  std::vector<char> encoded(exp_bytes);
+
+  const char* in =  reinterpret_cast<char*>(incrementing_cube.data());
+  const char* in_end = in + size_in_byte;
+
+  auto res = sqeazy::lz4::encode_serial(in,in_end,
+                                        encoded.data(),encoded.data()+encoded.size(),
+                                        size_in_byte/2,
+                                        lz4_prefs);
+
+  BOOST_REQUIRE_NE(res,(char*)nullptr);
+
+  BOOST_REQUIRE_LT(res,encoded.data()+encoded.size());
+}
+
+
+BOOST_AUTO_TEST_CASE( one_step_encode_parallel )
+{
+
+  LZ4F_preferences_t lz4_prefs = {
+    { sqeazy::lz4::closest_blocksize::of(64), //commonly L2 size on Intel platforms
+          LZ4F_blockLinked,
+          LZ4F_noContentChecksum,
+          LZ4F_frame,
+          0 /* content size unknown */,
+          0 /* no dictID */ ,
+          LZ4F_noBlockChecksum },
+        9,   /* compression level */
+        0,   /* autoflush */
+        { 0, 0, 0, 0 },  /* reserved, must be set to 0 */
+      };
+
+  auto exp_bytes = LZ4F_compressBound(size_in_byte, &lz4_prefs);
+  std::vector<char> encoded(exp_bytes);
+
+  const char* in =  reinterpret_cast<char*>(incrementing_cube.data());
+  const char* in_end = in + size_in_byte;
+
+  auto res = sqeazy::lz4::encode_parallel(in,in_end,
+                                          encoded.data(),encoded.data()+encoded.size(),
+                                          size_in_byte/2,
+                                          lz4_prefs,
+                                          2);
+
+  BOOST_REQUIRE_NE(res,(char*)nullptr);
+  BOOST_REQUIRE_LT(res,encoded.data()+encoded.size());
+
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 
 
-
 BOOST_FIXTURE_TEST_SUITE( sixteen_bit, uint16_cube_of_8 )
+
 
 BOOST_AUTO_TEST_CASE( encodes )
 {
