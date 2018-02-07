@@ -10,6 +10,89 @@
 typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 typedef sqeazy::array_fixture<unsigned char> uint8_cube_of_8;
 
+BOOST_AUTO_TEST_SUITE( max_encoded_size )
+
+BOOST_AUTO_TEST_CASE( encodes_1M )
+{
+
+  sqeazy::lz4_scheme<std::uint16_t> local;
+  auto res = local.max_encoded_size(1 << 20);
+  BOOST_REQUIRE_GT(res,0);
+
+}
+
+BOOST_AUTO_TEST_CASE( encodes_1M_1chunk )
+{
+  sqeazy::lz4_scheme<std::uint16_t> no_chunks;
+  auto ref = no_chunks.max_encoded_size(1 << 20);
+
+  sqeazy::lz4_scheme<std::uint16_t> local("n_chunks_of_input=1");
+  auto res_chunked = local.max_encoded_size(1 << 20);
+  BOOST_REQUIRE_GT(res_chunked,0);
+  BOOST_REQUIRE_LT(res_chunked,ref);
+
+}
+
+BOOST_AUTO_TEST_CASE( encodes_1M_0chunk )
+{
+  sqeazy::lz4_scheme<std::uint16_t> no_chunks;
+  auto ref = no_chunks.max_encoded_size(1 << 20);
+
+  sqeazy::lz4_scheme<std::uint16_t> local("n_chunks_of_input=0");
+  auto res_chunked = local.max_encoded_size(1 << 20);
+  BOOST_REQUIRE_GT(res_chunked,0);
+  BOOST_REQUIRE_EQUAL(res_chunked,ref);
+
+}
+
+
+BOOST_AUTO_TEST_CASE( encodes_1M_20chunks )
+{
+  sqeazy::lz4_scheme<std::uint16_t> no_chunks;
+  auto ref = no_chunks.max_encoded_size(1 << 20);
+
+  sqeazy::lz4_scheme<std::uint16_t> local("n_chunks_of_input=64");
+  auto res64 = local.max_encoded_size(1 << 20);
+  BOOST_REQUIRE_GT(res64,0);
+  BOOST_REQUIRE_GE(res64,ref);
+
+}
+
+BOOST_AUTO_TEST_CASE( encodes_1M_framestep_4M )
+{
+  sqeazy::lz4_scheme<std::uint16_t> no_chunks;
+  auto fs16kb = no_chunks.max_encoded_size(1 << 20);
+
+  sqeazy::lz4_scheme<std::uint16_t> local("framestep_kb=4096");
+  auto fs4M = local.max_encoded_size(1 << 20);
+  BOOST_REQUIRE_GT(fs4M,0);
+  BOOST_REQUIRE_LT(fs4M,fs16kb);//if framstep_kb is larger than payload, we only have the overhead once
+
+}
+
+BOOST_AUTO_TEST_CASE( prefs_contentSize )
+{
+
+  sqeazy::lz4_scheme<std::uint16_t> local("n_chunks_of_input=64");
+  local.lz4_prefs.frameInfo.contentSize = 1 << 20;
+  auto res = local.max_encoded_size(1 << 20);
+
+  local.lz4_prefs.frameInfo.contentSize = 0;
+  auto res0 = local.max_encoded_size(1 << 20);
+  BOOST_REQUIRE_EQUAL(res,res0);
+
+  local.lz4_prefs.frameInfo.blockSizeID = LZ4F_max64KB;
+  auto res64 = local.max_encoded_size(1 << 20);
+  BOOST_REQUIRE_LT(res64,res0);
+
+
+}
+
+
+BOOST_AUTO_TEST_SUITE_END()
+
+
+
 BOOST_FIXTURE_TEST_SUITE( sixteen_bit, uint16_cube_of_8 )
 
 BOOST_AUTO_TEST_CASE( encodes )
@@ -348,7 +431,7 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_FIXTURE_TEST_SUITE( sixteen_bit_in_parallel, uint16_cube_of_8 )
 
-BOOST_AUTO_TEST_CASE( encodes )
+BOOST_AUTO_TEST_CASE( default_args )
 {
   std::vector<std::size_t> shape(dims.begin(), dims.end());
 
@@ -367,4 +450,22 @@ BOOST_AUTO_TEST_CASE( encodes )
 
 }
 
+BOOST_AUTO_TEST_CASE( two_chunks )
+{
+  std::vector<std::size_t> shape(dims.begin(), dims.end());
+
+  sqeazy::lz4_scheme<value_type> local("n_chunks_of_input=2");
+  local.set_n_threads(2);
+  auto expected_encoded_bytes = local.max_encoded_size(size_in_byte);
+  std::vector<char> encoded(expected_encoded_bytes);
+
+  auto res = local.encode(&incrementing_cube[0],
+                          encoded.data(),
+                          shape);
+
+  BOOST_REQUIRE_NE(res,(char*)nullptr);
+  BOOST_CHECK_NE(res,encoded.data());
+  BOOST_CHECK_LT(std::distance(encoded.data(),res),expected_encoded_bytes);
+
+}
 BOOST_AUTO_TEST_SUITE_END()
