@@ -15,50 +15,12 @@
 
 //TODO: what if lz4 is not available??
 #ifndef LZ4_VERSION_MAJOR
-//#include "lz4.h"
-#include <lz4frame.h>
-
+#include "lz4frame.h"
+#include "lz4_utils.hpp"
 #endif
 
 namespace sqeazy {
 
-  struct closest_blocksize {
-
-    typedef decltype(LZ4F_max64KB) lz4f_blocksize_t;
-
-    static constexpr std::array<std::size_t,4> sizes = {64 , 256 , 1024 , 4096 };
-    static constexpr std::array<lz4f_blocksize_t,4> vals = {LZ4F_max64KB , LZ4F_max256KB, LZ4F_max1MB, LZ4F_max4MB };
-
-    static lz4f_blocksize_t of(std::size_t _blocksize_in_kb){
-
-      auto itr = std::lower_bound(sizes.begin(),sizes.end(),_blocksize_in_kb);
-      if(itr == sizes.end())
-        return vals.back();
-      else{
-
-        if(itr == sizes.begin())
-          return vals.front();
-
-        std::size_t upper_idx = std::distance(sizes.begin(),itr);
-        std::size_t lower_idx = std::distance(sizes.begin(),itr)-1;
-
-        auto middle = sizes[lower_idx]+((sizes[upper_idx]-sizes[lower_idx])/2);
-
-        if(_blocksize_in_kb >= middle)
-          return vals[upper_idx];
-        else{
-          return vals[lower_idx];
-
-        }
-
-      }
-    }
-
-
-  };
-
-  constexpr std::array<std::size_t,4> sqeazy::closest_blocksize::sizes;
-  constexpr std::array<sqeazy::closest_blocksize::lz4f_blocksize_t,4> sqeazy::closest_blocksize::vals;
 
   //FIXME: lz4 can also be a filter for char->char conversions
   template <typename in_type>
@@ -122,7 +84,7 @@ namespace sqeazy {
         framestep_kb = 0;
 
       lz4_prefs = {
-        { closest_blocksize::of(blocksize_kb), //commonly L2 size on Intel platforms
+        { lz4::closest_blocksize::of(blocksize_kb), //commonly L2 size on Intel platforms
           LZ4F_blockLinked,
           LZ4F_noContentChecksum,
           LZ4F_frame,
@@ -165,36 +127,46 @@ namespace sqeazy {
 
     }
 
+
+/**
+       \brief calculate the maximum size in bytes of the encoded buffer given an input of size _size_bytes
+
+       \return
+       \retval intmax_t .. maximum size in bytes of the encoded buffer given an input of size _size_bytes
+
+    */
     std::intmax_t max_encoded_size(std::intmax_t _size_bytes) const override final {
 
+      static std::size_t max_n_threads = std::thread::hardware_concurrency();
+      const std::size_t bytes_per_thread = (_size_bytes + max_n_threads - 1 )/max_n_threads;
 
-      std::intmax_t framestep_byte = framestep_kb ? framestep_kb << 10 : std::ceil(_size_bytes/n_chunks_of_input);
-      if(framestep_byte >= _size_bytes || n_chunks_of_input >= _size_bytes){
-        framestep_byte = _size_bytes;
+      //if framestep_kb is set, use it; divide the payload into chunks otherwise
+      std::intmax_t input_chunk_bytes = framestep_kb ? framestep_kb << 10 : std::ceil(_size_bytes/n_chunks_of_input);
+      if(input_chunk_bytes >= _size_bytes || n_chunks_of_input >= _size_bytes){
+        input_chunk_bytes = _size_bytes;
       }
 
-      std::intmax_t lz4_bound_per_chunk = LZ4F_compressBound(framestep_byte, &lz4_prefs)
-        + 4 /*the mysterious lz4 frame footer, see https://github.com/lz4/lz4/issues/445 */
-        + LZ4F_HEADER_SIZE_MAX ;
+      std::intmax_t lz4_bound_per_chunk = LZ4F_compressBound(input_chunk_bytes, &lz4_prefs);
 
-      if(framestep_byte == _size_bytes)
+      if(input_chunk_bytes >= _size_bytes)
         return lz4_bound_per_chunk;
       else{
-        std::size_t n_steps = (_size_bytes + framestep_byte - 1 )/ framestep_byte;
+        std::size_t n_steps = (_size_bytes + input_chunk_bytes - 1 )/ input_chunk_bytes;
+
         return lz4_bound_per_chunk*n_steps;
       }
     }
 
-    /**
+/**
      * @brief encode input raw_type buffer and write to output (not owned, not allocated)
      *
      * @param _input input raw_type buffer
      * @param _output output char buffer (not owned, not allocated)
      * @param _length number of char items in _in
-     * @return sqeazy::error_code
+     * @return pointer to last_element_written+1 in _out
      */
     compressed_type* encode( const raw_type* _in, compressed_type* _out, std::size_t _length) override final {
-      std::vector<std::size_t> shape = {_length};
+      std::vector<std::size_t> shape{1,_length};
       return encode(_in,_out,shape);
     }
 
@@ -215,75 +187,30 @@ namespace sqeazy {
       const local_size_type total_length = std::accumulate(_shape.begin(), _shape.end(), 1, std::multiplies<size_t>());
       const local_size_type total_length_in_byte = total_length*sizeof(raw_type);
       const compressed_type* input = reinterpret_cast<const compressed_type*>(_in);
+      const compressed_type* input_end = input + total_length_in_byte;
 
-      const local_size_type max_payload_length_in_byte = max_encoded_size(total_length_in_byte);
       local_size_type framestep_byte = framestep_kb ? framestep_kb << 10 : std::ceil(total_length_in_byte/n_chunks_of_input);
       if(framestep_byte >= total_length_in_byte || n_chunks_of_input >= total_length_in_byte){
         framestep_byte = total_length_in_byte;
       }
 
-      const local_size_type max_framestep_in_byte = max_encoded_size(framestep_byte );
 
-      //const int nthreads = this->n_threads();
-      size_type num_written_bytes = 0;
+      const int nthreads = this->n_threads();
+
       compressed_type* value = nullptr;
 
-      //if(nthreads==1){
+      if(nthreads==1){
+        lz4_prefs.frameInfo.contentSize = total_length_in_byte;
+        value = lz4::encode_serial(input,input_end,
+                                   _out,
+                                   framestep_byte,
+                                   lz4_prefs
+          );
+        lz4_prefs.frameInfo.contentSize = 0;
 
-      lz4_prefs.frameInfo.contentSize = total_length_in_byte;
-
-      LZ4F_compressionContext_t ctx;
-      auto rcode = LZ4F_createCompressionContext(&ctx, LZ4F_VERSION);
-      if (LZ4F_isError(rcode)) {
-        std::cerr << "[sqy::lz4] Failed to create context: error " << rcode << "\n";
-        return value;
       } else {
-        rcode = 1;//don't ask me why, taken from https://github.com/lz4/lz4/blob/v1.8.0/examples/frameCompress.c#L34
+        value = lz4::encode_parallel(input,input_end,_out,framestep_byte,nthreads);
       }
-
-      rcode = num_written_bytes = LZ4F_compressBegin(ctx,
-                                                     _out,
-                                                     max_framestep_in_byte ,
-                                                     &lz4_prefs);
-      if (LZ4F_isError(rcode)) {
-        std::cerr << "[sqy::lz4] Failed to start compression: error " << rcode << "\n";
-        return value;
-      }
-
-      std::size_t n_steps = (total_length_in_byte + framestep_byte - 1) / framestep_byte;
-
-      auto dst = _out + num_written_bytes;
-      auto src = input;
-      auto srcEnd = input + total_length_in_byte;
-
-      for( std::size_t s = 0;s<n_steps;++s){
-
-        auto n = LZ4F_compressUpdate(ctx,
-                                     dst,
-                                     max_payload_length_in_byte - std::distance(_out,dst),
-                                     src,
-                                     (local_size_type)std::distance(src,srcEnd) < framestep_byte ? std::distance(src,srcEnd) : framestep_byte, nullptr);
-
-        src += framestep_byte;
-        dst += n;
-
-      }
-
-      rcode = LZ4F_compressEnd(ctx, dst, max_payload_length_in_byte - std::distance(_out,dst), NULL);
-      if (LZ4F_isError(rcode)) {
-        std::cerr << "[sqy::lz4] Failed to end compression: error " << rcode << "\n";
-        return value;
-      }
-
-      dst += rcode;
-
-
-      if (ctx)
-        LZ4F_freeCompressionContext(ctx);
-
-      value = dst;
-      lz4_prefs.frameInfo.contentSize = 0;
-      //}
 
       return value;
     }
