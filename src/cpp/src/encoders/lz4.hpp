@@ -137,9 +137,6 @@ namespace sqeazy {
     */
     std::intmax_t max_encoded_size(std::intmax_t _size_bytes) const override final {
 
-      static std::size_t max_n_threads = std::thread::hardware_concurrency();
-      const std::size_t bytes_per_thread = (_size_bytes + max_n_threads - 1 )/max_n_threads;
-
       //if framestep_kb is set, use it; divide the payload into chunks otherwise
       std::intmax_t input_chunk_bytes = framestep_kb ? framestep_kb << 10 : std::ceil(_size_bytes/n_chunks_of_input);
       if(input_chunk_bytes >= _size_bytes || n_chunks_of_input >= _size_bytes){
@@ -189,6 +186,8 @@ namespace sqeazy {
       const compressed_type* input = reinterpret_cast<const compressed_type*>(_in);
       const compressed_type* input_end = input + total_length_in_byte;
 
+      compressed_type* _out_end = _out + max_encoded_size(total_length_in_byte);
+
       local_size_type framestep_byte = framestep_kb ? framestep_kb << 10 : std::ceil(total_length_in_byte/n_chunks_of_input);
       if(framestep_byte >= total_length_in_byte || n_chunks_of_input >= total_length_in_byte){
         framestep_byte = total_length_in_byte;
@@ -202,14 +201,18 @@ namespace sqeazy {
       if(nthreads==1){
         lz4_prefs.frameInfo.contentSize = total_length_in_byte;
         value = lz4::encode_serial(input,input_end,
-                                   _out,
+                                   _out,_out_end,
                                    framestep_byte,
                                    lz4_prefs
           );
         lz4_prefs.frameInfo.contentSize = 0;
 
       } else {
-        value = lz4::encode_parallel(input,input_end,_out,framestep_byte,nthreads);
+        value = lz4::encode_parallel(input,input_end,
+                                     _out,_out_end,
+                                     framestep_byte,
+                                     lz4_prefs,
+                                     nthreads);
       }
 
       return value;
@@ -276,7 +279,7 @@ namespace sqeazy {
         src += srcSize;
         srcSize = std::distance(src,srcEnd);
 
-        if (info.contentSize > std::distance(dst,dstEnd)) {
+        if (std::ptrdiff_t(info.contentSize) > std::distance(dst,dstEnd)) {
           std::cerr << "[sqy::lz4::decode] decompressed input yields " << info.contentSize
                   << " Bytes, only "<< std::distance(dst,dstEnd) << " Bytes left in destination\n";
           dst = reinterpret_cast<compressed_type*>(_out);
