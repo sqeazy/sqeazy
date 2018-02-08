@@ -76,7 +76,7 @@ namespace sqeazy {
             const std::size_t bytes = len*sizeof(compressed_type);
             const local_size_type out_bytes = std::distance(_out, _out_end);
 
-
+            compressed_type* dst = _out;
             compressed_type* value = nullptr;
 
             LZ4F_compressionContext_t ctx;
@@ -89,7 +89,7 @@ namespace sqeazy {
             }
 
             rcode = num_written_bytes = LZ4F_compressBegin(ctx,
-                                                           _out,
+                                                           dst,
                                                            out_bytes ,
                                                            &_lz4prefs);
             if (LZ4F_isError(rcode)) {
@@ -101,23 +101,25 @@ namespace sqeazy {
 
             auto src = _in;
             auto srcEnd = _in_end;
+            dst += num_written_bytes;
 
             for( std::size_t s = 0;s<n_steps;++s){
 
                 auto src_size = (local_size_type)std::distance(src,srcEnd) < _framestep_byte ? std::distance(src,srcEnd) : _framestep_byte;
                 auto n = LZ4F_compressUpdate(ctx,
-                                             _out,
-                                             out_bytes,
+                                             dst,
+                                             out_bytes-num_written_bytes,
                                              src,
                                              src_size,
                                              nullptr);
 
                 src += src_size;
                 num_written_bytes += n;
+                dst += n;
 
             }
 
-            rcode = LZ4F_compressEnd(ctx, _out, out_bytes, NULL);
+            rcode = LZ4F_compressEnd(ctx, dst, out_bytes- num_written_bytes, NULL);
             if (LZ4F_isError(rcode)) {
                 std::cerr << "[sqy::lz4] Failed to end compression: error " << rcode << "\n";
                 return value;

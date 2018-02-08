@@ -290,10 +290,14 @@ BOOST_AUTO_TEST_CASE( decodes )
                             shape);
 
     BOOST_REQUIRE_NE(res,(char*)nullptr);
+    BOOST_REQUIRE_GT(res,encoded.data());
+    BOOST_REQUIRE_LE(res,encoded.data()+encoded.size());
+
+    std::size_t encoded_size = std::distance(encoded.data(),res);
 
     auto rcode = local.decode(encoded.data(),
                               to_play_with.data(),
-                              encoded.size(),
+                              encoded_size,
                               size_in_byte);
 
     BOOST_REQUIRE_NE(rcode,1);
@@ -314,10 +318,11 @@ BOOST_AUTO_TEST_CASE( roundtrip )
                             shape);
 
     BOOST_REQUIRE_NE(res,(char*)nullptr);
+    std::size_t encoded_size = std::distance(encoded.data(),res);
 
     auto rcode = local.decode(encoded.data(),
                               to_play_with.data(),
-                              encoded.size(),
+                              encoded_size,
                               size_in_byte);
 
     BOOST_REQUIRE_NE(rcode,1);

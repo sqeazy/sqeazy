@@ -205,7 +205,7 @@ namespace sqeazy {
                                    framestep_byte,
                                    lz4_prefs
           );
-        lz4_prefs.frameInfo.contentSize = 0;
+        //lz4_prefs.frameInfo.contentSize = 0;
 
       } else {
         value = lz4::encode_parallel(input,input_end,
@@ -270,7 +270,8 @@ namespace sqeazy {
 
         ret = LZ4F_getFrameInfo(dctx, &info, src, &srcSize);
         if (LZ4F_isError(ret)) {
-          std::cerr << "[sqy::lz4::decode] this data does comply to the lz4 frame format\n";
+          std::cerr << "[sqy::lz4::decode] this data does comply to the lz4 frame format "
+                    << LZ4F_getErrorName(ret) <<"\n";
 
           dst = reinterpret_cast<compressed_type*>(_out);
           break;
