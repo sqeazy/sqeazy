@@ -270,7 +270,8 @@ BOOST_AUTO_TEST_CASE( encodes )
                           shape);
 
   BOOST_REQUIRE_NE(res,(char*)nullptr);
-  BOOST_CHECK_LE(res,encoded.data());
+  BOOST_CHECK_GT(res,encoded.data());
+  BOOST_CHECK_LE(res,encoded.data()+encoded.size());
   BOOST_CHECK_LT(std::distance(encoded.data(),res),expected_encoded_bytes);
 
 }
