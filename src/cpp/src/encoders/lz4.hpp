@@ -199,7 +199,7 @@ namespace sqeazy {
       compressed_type* value = nullptr;
 
       if(nthreads==1){
-        lz4_prefs.frameInfo.contentSize = total_length_in_byte;
+        //lz4_prefs.frameInfo.contentSize = total_length_in_byte;
         value = lz4::encode_serial(input,input_end,
                                    _out,_out_end,
                                    framestep_byte,
