@@ -187,7 +187,7 @@ namespace sqeazy {
             auto nbytes_ptr = nbytes_written.data();
             auto pref_ptr = &_lz4prefs;
 
-#pragma omp parallel num_threads(nthreads) firstprivate(nbytes_ptr,pref_ptr,_in,_in_end,nthreads,maxbytes_encoded_chunk,_out,_out_end)
+#pragma omp parallel num_threads(nthreads) shared(nbytes_ptr,_out) firstprivate(pref_ptr,_in,_in_end,nthreads,maxbytes_encoded_chunk,_out_end)
             {
                 int thread_id = omp_get_thread_num();
                 LZ4F_preferences_t local_prefs = *pref_ptr;
@@ -215,23 +215,19 @@ namespace sqeazy {
                                              local_prefs
                         );
 
-                    nbytes_ptr[thread_id + (cnt*nthreads)] = val != nullptr ? std::distance(t_out,val) : 0;
+                    if(val == nullptr){
+                        std::cerr << "[sqy::lz4_utils::encode_parallel] compression failed in "<<thread_id<<" chunk " << cnt << "\n";
+                        nbytes_ptr[thread_id + (cnt*nthreads)] = 0;
+                    }
+                    else{
+                        nbytes_ptr[thread_id + (cnt*nthreads)] = std::distance(t_out,val);
+                    }
                 }
             }
 
             //shrink the output buffer to discard the bytes that have not been filled with encoded data
-
             std::size_t total_bytes_written = std::accumulate(nbytes_written.begin(), nbytes_written.end(), 0);
             value = remove_blanks(_out,nbytes_written,maxbytes_encoded_chunk);
-            // value = _out + nbytes_written.front();
-            // compressed_type* src_out = _out + maxbytes_encoded_chunk;
-
-            // for(std::size_t i = 1;i < nbytes_written.size();++i){
-
-            //     value = std::copy(src_out,src_out+nbytes_written[i],value);
-            //     src_out += maxbytes_encoded_chunk;
-
-            // }
 
             return (value == (_out+total_bytes_written)) ? value : nullptr;
         }

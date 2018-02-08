@@ -254,26 +254,23 @@ namespace sqeazy {
       LZ4F_dctx *dctx = nullptr;
       LZ4F_frameInfo_t info;
 
-      auto ret = LZ4F_createDecompressionContext(&dctx, 100);
-      if (LZ4F_isError(ret)) {
-        std::cerr << "[sqy::lz4::decode] LZ4F_dctx creation error: " << LZ4F_getErrorName(ret) << "\n";
-        return value;
-      }
-
-
       std::size_t dstSize = std::distance(dst,dstEnd);
       std::size_t srcSize = std::distance(src,srcEnd);
-      ret = 1;
-      while (src < srcEnd && ret != 0) {
+      std::size_t ret = 1;
+      while (src < srcEnd ) {
         /* INVARIANT: Any data left in dst has already been written */
         dstSize = std::distance(dst,dstEnd);
 
+        if(dctx == nullptr){
+          ret = LZ4F_createDecompressionContext(&dctx, 100);
+          if (LZ4F_isError(ret)) {
+            std::cerr << "[sqy::lz4::decode] LZ4F_dctx creation error: " << LZ4F_getErrorName(ret) << "\n";
+            return value;
+          }
+        }
+
         ret = LZ4F_getFrameInfo(dctx, &info, src, &srcSize);
         if (LZ4F_isError(ret)) {
-          std::cerr << "[sqy::lz4::decode] this data does comply to the lz4 frame format "
-                    << LZ4F_getErrorName(ret) <<"\n";
-
-          dst = reinterpret_cast<compressed_type*>(_out);
           break;
         }
 
@@ -299,10 +296,17 @@ namespace sqeazy {
         src += srcSize;
         srcSize = std::distance(src,srcEnd);
         dst += dstSize;
+
+        //lz4 frame API thinks the decompression is over
+        if(ret == 0){
+          LZ4F_freeDecompressionContext(dctx);
+          dctx = nullptr;
+        }
+
       }
 
       //}
-      LZ4F_freeDecompressionContext(dctx);
+
       std::size_t num_bytes_decoded = std::distance(reinterpret_cast<compressed_type*>(_out),dst)*sizeof(compressed_type);
       if(num_bytes_decoded > 0 && num_bytes_decoded<=expected_bytes_decoded)
         return 0;

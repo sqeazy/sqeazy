@@ -232,9 +232,11 @@ BOOST_AUTO_TEST_CASE( decodes )
 
     BOOST_REQUIRE_NE(res,(char*)nullptr);
 
+    auto encoded_size = std::distance(encoded.data(),res);
+
     auto rcode = local.decode(encoded.data(),
                               to_play_with.data(),
-                              encoded.size(),
+                              encoded_size,
                               size_in_byte);
 
     BOOST_REQUIRE_NE(rcode,1);
@@ -258,7 +260,7 @@ BOOST_AUTO_TEST_CASE( roundtrip )
 
     auto rcode = local.decode(encoded.data(),
                               to_play_with.data(),
-                              encoded.size(),
+                              std::distance(encoded.data(),res),
                               size_in_byte);
 
     BOOST_REQUIRE_NE(rcode,1);
