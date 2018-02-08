@@ -184,22 +184,6 @@ BOOST_AUTO_TEST_CASE( inbetween )
 
 BOOST_AUTO_TEST_SUITE_END()
 
-template <typename T, typename size_type>
-T* remove_blanks(T* _payload, const std::vector<size_type> items_written, size_type chunk_len){
-
-  auto value = _payload + items_written.front();
-  T* src_out = _payload + chunk_len;
-
-  for(std::size_t i = 1;i < items_written.size();++i){
-
-    value = std::copy(src_out,src_out+items_written[i],value);
-    src_out += chunk_len;
-
-  }
-
-  return value;
-
-}
 
 BOOST_AUTO_TEST_SUITE( blanks )
 
@@ -216,7 +200,7 @@ BOOST_AUTO_TEST_CASE( two_blocks )
 
   const std::size_t chunk_stride = 16;
 
-  auto res = remove_blanks(with_blanks.data(),
+  auto res = sqeazy::lz4::remove_blanks(with_blanks.data(),
                            n_bytes,
                            chunk_stride);
 
@@ -250,9 +234,9 @@ BOOST_AUTO_TEST_CASE( four_blocks )
     written += n_bytes[i];
   }
 
-  auto res = remove_blanks(with_blanks.data(),
-                           n_bytes,
-                           chunk_stride);
+  auto res = sqeazy::lz4::remove_blanks(with_blanks.data(),
+                                        n_bytes,
+                                        chunk_stride);
 
   auto size = std::distance(with_blanks.data(),res);
   BOOST_CHECK_EQUAL(size,exp.size());

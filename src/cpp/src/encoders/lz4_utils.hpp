@@ -134,6 +134,24 @@ namespace sqeazy {
             return value;
         }
 
+        template <typename T, typename size_type>
+        T* remove_blanks(T* _payload, const std::vector<size_type> items_written, size_type chunk_len){
+
+            auto value = _payload + items_written.front();
+            T* src_out = _payload + chunk_len;
+
+            for(std::size_t i = 1;i < items_written.size();++i){
+
+                value = std::copy(src_out,src_out+items_written[i],value);
+                src_out += chunk_len;
+
+            }
+
+            return value;
+
+        }
+
+
         template <typename compressed_type>
         compressed_type* encode_parallel(const compressed_type* _in,
                                          const compressed_type* _in_end,
@@ -202,17 +220,20 @@ namespace sqeazy {
             }
 
             //shrink the output buffer to discard the bytes that have not been filled with encoded data
-            value = _out + nbytes_written.front();
-            compressed_type* src_out = _out + maxbytes_encoded_chunk;
 
-            for(std::size_t i = 1;i < nbytes_written.size();++i){
+            std::size_t total_bytes_written = std::accumulate(nbytes_written.begin(), nbytes_written.end(), 0);
+            value = remove_blanks(_out,nbytes_written,maxbytes_encoded_chunk);
+            // value = _out + nbytes_written.front();
+            // compressed_type* src_out = _out + maxbytes_encoded_chunk;
 
-                value = std::copy(src_out,src_out+nbytes_written[i],value);
-                src_out += maxbytes_encoded_chunk;
+            // for(std::size_t i = 1;i < nbytes_written.size();++i){
 
-            }
+            //     value = std::copy(src_out,src_out+nbytes_written[i],value);
+            //     src_out += maxbytes_encoded_chunk;
 
-            return value != _out ? value : nullptr;
+            // }
+
+            return (value == (_out+total_bytes_written)) ? value : nullptr;
         }
 
 
