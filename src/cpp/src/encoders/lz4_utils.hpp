@@ -1,6 +1,7 @@
 #ifndef LZ4_UTILS_H
 #define LZ4_UTILS_H
 
+#include "sqeazy_common.hpp"
 #include "traits.hpp"
 
 #ifndef LZ4_VERSION_MAJOR
