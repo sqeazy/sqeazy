@@ -618,6 +618,41 @@ BOOST_AUTO_TEST_CASE( default_args )
 
 }
 
+BOOST_AUTO_TEST_CASE( default_args_roundtrip )
+{
+  std::vector<std::size_t> shape(dims.begin(), dims.end());
+
+  sqeazy::lz4_scheme<value_type> local;
+  local.set_n_threads(2);
+  auto expected_encoded_bytes = local.max_encoded_size(size_in_byte);
+  std::vector<char> encoded(expected_encoded_bytes);
+
+  auto res = local.encode(&incrementing_cube[0],
+                          encoded.data(),
+                          shape);
+
+  BOOST_REQUIRE_NE(res,(char*)nullptr);
+  BOOST_CHECK_NE(res,encoded.data());
+  BOOST_CHECK_LT(std::distance(encoded.data(),res),expected_encoded_bytes);
+
+  auto encoded_size = std::distance(encoded.data(),res);
+
+  auto rcode = local.decode(encoded.data(),
+                            to_play_with.data(),
+                            encoded_size,
+                            size_in_byte);
+
+  BOOST_REQUIRE_NE(rcode,1);
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(
+    incrementing_cube.begin(),
+    incrementing_cube.end(),
+    to_play_with.begin(),
+    to_play_with.end()
+    );
+
+}
+
+
 BOOST_AUTO_TEST_CASE( two_chunks )
 {
   std::vector<std::size_t> shape(dims.begin(), dims.end());
@@ -636,4 +671,43 @@ BOOST_AUTO_TEST_CASE( two_chunks )
   BOOST_CHECK_LT(std::distance(encoded.data(),res),expected_encoded_bytes);
 
 }
+
+
+BOOST_AUTO_TEST_CASE( two_chunks_roundtrip )
+{
+  std::vector<std::size_t> shape(dims.begin(), dims.end());
+
+  sqeazy::lz4_scheme<value_type> local("n_chunks_of_input=2");
+  local.set_n_threads(2);
+  auto expected_encoded_bytes = local.max_encoded_size(size_in_byte);
+  std::vector<char> encoded(expected_encoded_bytes);
+
+  auto res = local.encode(&incrementing_cube[0],
+                          encoded.data(),
+                          shape);
+
+  BOOST_REQUIRE_NE(res,(char*)nullptr);
+  BOOST_CHECK_NE(res,encoded.data());
+  BOOST_CHECK_LT(std::distance(encoded.data(),res),expected_encoded_bytes);
+
+
+  auto encoded_size = std::distance(encoded.data(),res);
+
+  auto rcode = local.decode(encoded.data(),
+                            to_play_with.data(),
+                            encoded_size,
+                            size_in_byte);
+
+  BOOST_REQUIRE_NE(rcode,1);
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(
+    incrementing_cube.begin(),
+    incrementing_cube.end(),
+    to_play_with.begin(),
+    to_play_with.end()
+    );
+
+
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()
