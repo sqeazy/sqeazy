@@ -16,9 +16,9 @@ BENCHMARK_DEFINE_F(static_default_fixture, one_thread)(benchmark::State& state) 
   std::size_t max_outbytes = local.max_encoded_size(size_in_bytes());
   output_data.resize(max_outbytes/sizeof(std::uint16_t));
 
-  local.encode(sin_data.data(),
+  benchmark::DoNotOptimize(local.encode(sin_data.data(),
                (char*)output_data.data(),
-               shape);
+               shape));
 
   while (state.KeepRunning()) {
 
@@ -26,9 +26,9 @@ BENCHMARK_DEFINE_F(static_default_fixture, one_thread)(benchmark::State& state) 
     std::fill(output_data.begin(), output_data.end(),0);
     state.ResumeTiming();
 
-    local.encode(sin_data.data(),
+    benchmark::DoNotOptimize(local.encode(sin_data.data(),
                  (char*)output_data.data(),
-                 shape);
+                 shape));
   }
 
   state.SetBytesProcessed(int64_t(state.iterations()) *size_in_bytes());
@@ -44,9 +44,9 @@ BENCHMARK_DEFINE_F(static_default_fixture, scalar_two_threads)(benchmark::State&
   std::size_t max_outbytes = local.max_encoded_size(size_in_bytes());
   output_data.resize(max_outbytes/sizeof(std::uint16_t));
 
-  local.encode(sin_data.data(),
+  benchmark::DoNotOptimize(local.encode(sin_data.data(),
                (char*)output_data.data(),
-               shape);
+               shape));
 
 
   while (state.KeepRunning()) {
@@ -54,9 +54,9 @@ BENCHMARK_DEFINE_F(static_default_fixture, scalar_two_threads)(benchmark::State&
     std::fill(output_data.begin(), output_data.end(),0);
     state.ResumeTiming();
 
-    local.encode(sin_data.data(),
+    benchmark::DoNotOptimize(local.encode(sin_data.data(),
                  (char*)output_data.data(),
-                 shape);
+                 shape));
   }
 
   state.SetBytesProcessed(int64_t(state.iterations()) *size_in_bytes());
@@ -77,18 +77,18 @@ BENCHMARK_DEFINE_F(dynamic_default_fixture, single_thread)(benchmark::State& sta
   std::size_t max_outbytes = local.max_encoded_size(size_in_bytes());
   output_.resize(max_outbytes/sizeof(std::uint16_t));
 
-  local.encode(sinus_.data(),
+  benchmark::DoNotOptimize(local.encode(sinus_.data(),
                (char*)output_.data(),
-               shape_);
+               shape_));
 
   while (state.KeepRunning()) {
     state.PauseTiming();
     std::fill(output_.begin(), output_.end(),0);
     state.ResumeTiming();
 
-    local.encode(sinus_.data(),
+    benchmark::DoNotOptimize(local.encode(sinus_.data(),
                (char*)output_.data(),
-               shape_);
+               shape_));
   }
 
   state.SetBytesProcessed(int64_t(state.iterations()) *
@@ -110,18 +110,18 @@ BENCHMARK_DEFINE_F(dynamic_default_fixture, two_threads)(benchmark::State& state
   std::size_t max_outbytes = local.max_encoded_size(size_in_bytes());
   output_.resize(max_outbytes/sizeof(std::uint16_t));
 
-  local.encode(sinus_.data(),
+  benchmark::DoNotOptimize(local.encode(sinus_.data(),
                (char*)output_.data(),
-               shape_);
+               shape_));
 
   while (state.KeepRunning()) {
     state.PauseTiming();
     std::fill(output_.begin(), output_.end(),0);
     state.ResumeTiming();
 
-    local.encode(sinus_.data(),
+    benchmark::DoNotOptimize(local.encode(sinus_.data(),
                (char*)output_.data(),
-               shape_);
+               shape_));
   }
 
   state.SetBytesProcessed(int64_t(state.iterations()) *
@@ -144,18 +144,18 @@ BENCHMARK_DEFINE_F(dynamic_default_fixture, max_threads)(benchmark::State& state
   std::size_t max_outbytes = local.max_encoded_size(size_in_bytes());
   output_.resize(max_outbytes/sizeof(std::uint16_t));
 
-  local.encode(sinus_.data(),
+  benchmark::DoNotOptimize(local.encode(sinus_.data(),
                (char*)output_.data(),
-               shape_);
+               shape_));
 
   while (state.KeepRunning()) {
     state.PauseTiming();
     std::fill(output_.begin(), output_.end(),0);
     state.ResumeTiming();
 
-    local.encode(sinus_.data(),
+    benchmark::DoNotOptimize(local.encode(sinus_.data(),
                (char*)output_.data(),
-               shape_);
+               shape_));
   }
 
   state.SetBytesProcessed(int64_t(state.iterations()) *
@@ -178,18 +178,18 @@ BENCHMARK_DEFINE_F(dynamic_default_fixture, single_thread_1mb)(benchmark::State&
   std::size_t max_outbytes = local.max_encoded_size(size_in_bytes());
   output_.resize(max_outbytes/sizeof(std::uint16_t));
 
-  local.encode(sinus_.data(),
+  benchmark::DoNotOptimize(local.encode(sinus_.data(),
                (char*)output_.data(),
-               shape_);
+               shape_));
 
   while (state.KeepRunning()) {
     state.PauseTiming();
     std::fill(output_.begin(), output_.end(),0);
     state.ResumeTiming();
 
-    local.encode(sinus_.data(),
+    benchmark::DoNotOptimize(local.encode(sinus_.data(),
                  (char*)output_.data(),
-                 shape_);
+                 shape_));
   }
 
   state.SetBytesProcessed(int64_t(state.iterations()) *
@@ -211,18 +211,18 @@ BENCHMARK_DEFINE_F(dynamic_default_fixture, two_threads_1mb)(benchmark::State& s
 std::size_t max_outbytes = local.max_encoded_size(size_in_bytes());
   output_.resize(max_outbytes/sizeof(std::uint16_t));
 
-  local.encode(sinus_.data(),
+  benchmark::DoNotOptimize(local.encode(sinus_.data(),
                (char*)output_.data(),
-               shape_);
+               shape_));
 
   while (state.KeepRunning()) {
     state.PauseTiming();
     std::fill(output_.begin(), output_.end(),0);
     state.ResumeTiming();
 
-    local.encode(sinus_.data(),
+    benchmark::DoNotOptimize(local.encode(sinus_.data(),
                (char*)output_.data(),
-               shape_);
+               shape_));
   }
 
   state.SetBytesProcessed(int64_t(state.iterations()) *
@@ -245,18 +245,18 @@ BENCHMARK_DEFINE_F(dynamic_default_fixture, max_threads_1mb)(benchmark::State& s
 std::size_t max_outbytes = local.max_encoded_size(size_in_bytes());
   output_.resize(max_outbytes/sizeof(std::uint16_t));
 
-  local.encode(sinus_.data(),
+  benchmark::DoNotOptimize(local.encode(sinus_.data(),
                (char*)output_.data(),
-               shape_);
+               shape_));
 
   while (state.KeepRunning()) {
     state.PauseTiming();
     std::fill(output_.begin(), output_.end(),0);
     state.ResumeTiming();
 
-    local.encode(sinus_.data(),
+    benchmark::DoNotOptimize(local.encode(sinus_.data(),
                (char*)output_.data(),
-               shape_);
+               shape_));
   }
 
   state.SetBytesProcessed(int64_t(state.iterations()) *
