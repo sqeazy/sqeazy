@@ -53,7 +53,7 @@ namespace sqeazy {
       lz4_config(_payload),
       acceleration(1),
       blocksize_kb(256),
-      framestep_kb(16),
+      framestep_kb(256),
       n_chunks_of_input(0),
       lz4_prefs(){
 
@@ -143,15 +143,18 @@ namespace sqeazy {
         input_chunk_bytes = _size_bytes;
       }
 
+      std::intmax_t value = LZ4F_HEADER_SIZE_MAX;
       std::intmax_t lz4_bound_per_chunk = LZ4F_compressBound(input_chunk_bytes, &lz4_prefs);
 
       if(input_chunk_bytes >= _size_bytes)
-        return lz4_bound_per_chunk;
+        value += lz4_bound_per_chunk;
       else{
         std::size_t n_steps = (_size_bytes + input_chunk_bytes - 1 )/ input_chunk_bytes;
 
-        return lz4_bound_per_chunk*n_steps;
+        value += lz4_bound_per_chunk*n_steps;
       }
+
+      return value;
     }
 
 /**
