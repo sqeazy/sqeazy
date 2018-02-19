@@ -2,4 +2,4 @@ theme: jekyll-theme-slate
 
 title: sqeazy
 
-tagline: A modern modular high-bandwidth compression engine for on-the-microscope data reduction
+description: A modern and modular high-bandwidth compression engine for on-the-microscope data reduction
