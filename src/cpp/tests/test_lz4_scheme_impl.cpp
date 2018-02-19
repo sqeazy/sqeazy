@@ -112,6 +112,23 @@ BOOST_AUTO_TEST_CASE( prefs_contentSize )
 
 }
 
+BOOST_AUTO_TEST_CASE( max_encoded_size_404MB )
+{
+
+  const auto input_bytes = 423624704; //taken from a test sample
+  sqeazy::lz4_scheme<std::uint16_t> no_chunks;
+  auto no_chunks_size = no_chunks.max_encoded_size(input_bytes);
+  BOOST_REQUIRE_GT(no_chunks_size,input_bytes);
+  BOOST_REQUIRE_LT(no_chunks_size,2*input_bytes);
+
+  // sqeazy::lz4_scheme<std::uint16_t> local("n_chunks_of_input=4");
+  // auto nc4 = local.max_encoded_size(1 << 4);
+  // BOOST_REQUIRE_GT(nc4,0);
+  // BOOST_REQUIRE_GT(nc4,fs16kb);//if framstep_kb is larger than payload, we only have the overhead once
+
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()
 
 

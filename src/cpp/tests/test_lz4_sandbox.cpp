@@ -373,3 +373,35 @@ BOOST_AUTO_TEST_CASE( rt_two_in_one_guess_next )
 }
 BOOST_AUTO_TEST_SUITE_END()
 
+BOOST_AUTO_TEST_SUITE( max_encoded_size )
+BOOST_AUTO_TEST_CASE( null_prefs )
+{
+
+
+  const int nbytes = 64 << 10;
+  auto res = LZ4F_compressBound( nbytes, nullptr);
+  BOOST_CHECK_NE(res,0);
+  BOOST_CHECK_GT(res,0);
+  BOOST_CHECK_LT(res,2*nbytes);
+
+}
+
+BOOST_AUTO_TEST_CASE( prefs_256kB )
+{
+  const LZ4F_preferences_t kPrefs = {
+    { LZ4F_max256KB, LZ4F_blockLinked, LZ4F_noContentChecksum, LZ4F_frame,
+      0 /* unknown content size */, 0 /* no dictID */ , LZ4F_noBlockChecksum },
+    0,   /* compression level; 0 == default */
+    0,   /* autoflush */
+    { 0, 0, 0, 0 },  /* reserved, must be set to 0 */
+};
+
+  const int nbytes = 64 << 10;
+
+  auto res = LZ4F_compressBound(nbytes , &kPrefs);
+  BOOST_CHECK_NE(res,0);
+  BOOST_CHECK_GT(res,0);
+  BOOST_CHECK_LT(res,2*nbytes);//this fails as res is always around 256kB!
+
+}
+BOOST_AUTO_TEST_SUITE_END()
