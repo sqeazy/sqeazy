@@ -383,6 +383,22 @@ BOOST_AUTO_TEST_CASE( null_prefs )
   BOOST_CHECK_NE(res,0);
   BOOST_CHECK_GT(res,0);
   BOOST_CHECK_LT(res,2*nbytes);
+  BOOST_CHECK_NE(res,nbytes);
+  BOOST_TEST_MESSAGE(" lz4f_compressbound with no preferences " << res << " for 64 kB input");
+  BOOST_CHECK_LE(res-nbytes,LZ4F_HEADER_SIZE_MAX);
+}
+
+
+BOOST_AUTO_TEST_CASE( null_prefs_5Bytes )
+{
+
+
+  const int nbytes = 5;
+  auto res = LZ4F_compressBound( nbytes, nullptr);
+  BOOST_CHECK_NE(res,0);
+  BOOST_CHECK_GT(res,0);
+  BOOST_CHECK_LT(res,1.05*(64 << 10));
+  BOOST_TEST_MESSAGE(" lz4f_compressbound with no preferences " << res << " for 5 B input");
 
 }
 
@@ -401,7 +417,7 @@ BOOST_AUTO_TEST_CASE( prefs_256kB )
   auto res = LZ4F_compressBound(nbytes , &kPrefs);
   BOOST_CHECK_NE(res,0);
   BOOST_CHECK_GT(res,0);
-  BOOST_CHECK_LT(res,2*nbytes);//this fails as res is always around 256kB!
-
+  BOOST_CHECK_GT(res,2*nbytes);//this fails as of https://groups.google.com/d/msg/lz4c/TwleHVKldtI/FxdHCdnsCgAJ
+  BOOST_TEST_MESSAGE(" lz4f_compressbound with preferences (256kB block size) " << res << " for 64 kB input");
 }
 BOOST_AUTO_TEST_SUITE_END()

@@ -37,7 +37,7 @@ namespace sqeazy {
     typedef typename sink_type::out_type compressed_type;
 
     static_assert(std::is_arithmetic<raw_type>::value==true,"[lz4_scheme] input type is non-arithmetic");
-    static const std::string description() { return std::string("compress input with lz4, <accel|default = 1> improves compression speed at the price of compression ratio, <blocksize_kb|default = 256> ... the lz4 blocksize in kByte (possible values: 64/265/1024/4048), <framestep_kb|default = 32 > ... the atomic amount of input data to submit to lz4 compression, <n_chunks_of_input|default = 0 > ... divide input data into n_encode_chunks partitions (consider each parition independent of the other for encoding; this overrides framestep_kb)"); };
+    static const std::string description() { return std::string("compress input with lz4, <accel|default = 1> improves compression speed at the price of compression ratio, <blocksize_kb|default = 256> ... the lz4 blocksize in kByte (possible values: 64/265/1024/4048), <framestep_kb|default = 256 > ... the atomic amount of input data to submit to lz4 compression (required to be a multiple of the blocksize), <n_chunks_of_input|default = 0 > ... divide input data into n_encode_chunks partitions (consider each parition independent of the other for encoding; this overrides framestep_kb)"); };
 
     std::string lz4_config;
     int acceleration;
@@ -80,8 +80,15 @@ namespace sqeazy {
         }
       }
 
+      if(framestep_kb < blocksize_kb){
+        framestep_kb = blocksize_kb;
+      } else {
+        framestep_kb = std::round(framestep_kb / float( blocksize_kb) )*blocksize_kb;
+      }
+
       if(n_chunks_of_input!=0)
         framestep_kb = 0;
+
 
       lz4_prefs = {
         { lz4::closest_blocksize::of(blocksize_kb), //commonly L2 size on Intel platforms
@@ -143,7 +150,7 @@ namespace sqeazy {
         input_chunk_bytes = _size_bytes;
       }
 
-      std::intmax_t value = LZ4F_HEADER_SIZE_MAX;
+      std::intmax_t value = LZ4F_HEADER_SIZE_MAX;//for 1.8.0, test_lz4_sandbox.cpp:max_encoded_size/null_prefs
       std::intmax_t lz4_bound_per_chunk = LZ4F_compressBound(input_chunk_bytes, &lz4_prefs);
 
       if(input_chunk_bytes >= _size_bytes)
