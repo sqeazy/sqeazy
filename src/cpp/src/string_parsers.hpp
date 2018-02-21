@@ -7,6 +7,8 @@
 
 #include <boost/utility/string_ref.hpp>
 
+#include <boost/algorithm/string.hpp>
+
 #include "sqeazy_common.hpp"
 
 #include "base64.hpp"
@@ -19,12 +21,134 @@ namespace sqeazy {
   typedef std::vector<std::pair<std::string, std::string> > vec_of_pairs_t;
   typedef std::map<std::string, std::string> parsed_map_t;
 
+  // typedef boost::algorithm::split_iterator<boost::string::iterator> b_split_iter_t;
+  // typedef boost::algorithm::find_iterator<boost::string::iterator> b_find_iter_t;
+
+  typedef boost::algorithm::split_iterator<boost::string_ref::iterator> b_split_refiter_t;
+  typedef boost::algorithm::find_iterator<boost::string_ref::iterator> b_find_refiter_t;
+
+
   static const std::pair<boost::string_ref, boost::string_ref> ignore_this_delimiters_ref = std::make_pair(boost::string_ref(ignore_this_delimiters.first),
                                                                                                            boost::string_ref(ignore_this_delimiters.second));
 
+  template <typename string_t>
+  vec_of_string_refs_t simple_split(const boost::string_ref &_data, const string_t &_sep = ",")
+  {
+    vec_of_string_refs_t value;
+
+    if(_sep.empty() || _data.empty())
+      return value;
+
+
+    auto it = make_split_iterator(_data, boost::first_finder(_sep, boost::is_iequal()));
+    auto end = b_split_refiter_t();
+
+    for(;it!=end;++it)
+    {
+      value.emplace_back(boost::string_ref{it->begin(),(std::size_t)std::distance(it->begin(),it->end())});
+    }
+
+    return value;
+  }
 
   template <typename string_t>
-  vec_of_string_refs_t split_string_ref_to_ref(const boost::string_ref &_data, const string_t &_sep = ",")
+  vec_of_string_refs_t informed_split_impl(const boost::string_ref &_data, const string_t &_sep = ",")
+  {
+    vec_of_string_refs_t value;
+
+    if(_sep.empty() || _data.empty())
+      return value;
+
+    auto start_verbatim_itr = make_find_iterator(_data, boost::first_finder(ignore_this_delimiters.first, boost::is_iequal()));
+    auto stop_verbatim_itr = make_find_iterator(_data, boost::first_finder(ignore_this_delimiters.second, boost::is_iequal()));
+    auto fend = b_find_refiter_t();
+
+    auto last_begin = _data.begin();
+
+    boost::string_ref search_string{last_begin,(std::size_t)std::distance(last_begin, start_verbatim_itr->begin())};
+    auto sep_finder = boost::first_finder(_sep, boost::is_iequal());
+    vec_of_string_refs_t temp;
+
+    for(;stop_verbatim_itr!=fend;
+        ++start_verbatim_itr,++stop_verbatim_itr)
+    {
+
+      search_string = boost::string_ref{last_begin,(std::size_t)std::distance(last_begin, start_verbatim_itr->begin())};
+      temp = simple_split(search_string,_sep);
+
+      for( std::size_t i = 0;i<temp.size()-1;++i)
+        value.emplace_back(temp[i]);
+
+      auto end_of_stop = stop_verbatim_itr->begin()+ignore_this_delimiters.second.size();
+      boost::string_ref remainder{end_of_stop,(std::size_t)std::distance(end_of_stop,_data.end())};
+
+      auto last_begin_itr = make_find_iterator(remainder,sep_finder);
+      while(last_begin_itr!=fend){
+        auto next_start = make_find_iterator(remainder,boost::first_finder(ignore_this_delimiters.first, boost::is_iequal()));
+        auto next_stop = make_find_iterator(remainder,boost::first_finder(ignore_this_delimiters.second, boost::is_iequal()));
+
+
+        if(last_begin_itr->begin() < next_start->begin() && last_begin_itr->begin() < next_stop->begin())
+          break;
+        end_of_stop = next_stop->begin()+ignore_this_delimiters.second.size();
+        remainder = boost::string_ref{end_of_stop,(std::size_t)std::distance(end_of_stop,_data.end())};
+        last_begin_itr = make_find_iterator(remainder,sep_finder);
+      }
+
+      if(last_begin_itr==fend)
+        last_begin = _data.end();
+      else
+        last_begin = last_begin_itr->begin();
+
+      value.emplace_back(
+        boost::string_ref{temp.back().begin(),
+            (std::size_t)std::distance(temp.back().begin(),last_begin)
+            }
+        );
+      last_begin += _sep.size();
+    }
+
+    if(last_begin < _data.end()){
+      search_string = boost::string_ref{last_begin,(std::size_t)std::distance(last_begin, _data.end())};
+      temp = simple_split(search_string,_sep);
+      for( std::size_t i = 0;i<temp.size();++i)
+        value.emplace_back(temp[i]);
+
+    }
+
+    return value;
+
+  }
+
+
+  template <typename string_t>
+  vec_of_string_refs_t informed_split(const boost::string_ref &_data, const string_t &_sep = ",")
+  {
+
+    vec_of_string_refs_t value;
+
+    if(_sep.empty() || _data.empty())
+      return value;
+
+    auto ignore_fitr = make_find_iterator(_data, boost::first_finder(ignore_this_delimiters.first, boost::is_iequal()));
+    auto ignore_sitr = make_find_iterator(_data, boost::first_finder(ignore_this_delimiters.second, boost::is_iequal()));
+    auto fend = b_find_refiter_t();
+
+    if(ignore_fitr==fend && ignore_sitr==fend)
+      return simple_split(_data,_sep);
+
+    if(ignore_fitr!=fend && ignore_sitr!=fend)
+      return informed_split_impl(_data,_sep);
+
+    std::cerr << "[sqy::string_parsers::informed_split] unable to split malformed string " << _data
+              << " (found only 1 verbatim delimeter, expected 2)\n";
+
+    return value;
+  }
+
+
+  template <typename string_t>
+  vec_of_string_refs_t manual_split_string_ref_to_ref(const boost::string_ref &_data, const string_t &_sep = ",")
   {
     vec_of_string_refs_t value;
 
@@ -57,7 +181,7 @@ namespace sqeazy {
       }
 
       auto end_itr = first != boost::string_ref::npos ? to_search.begin() + first : to_search.end();
-      std::size_t len = std::distance(to_search.begin(), end_itr);
+      std::size_t len = (std::size_t)std::distance(to_search.begin(), end_itr);
       boost::string_ref result(&*to_search.begin(), len);
 
       value.push_back(result);
@@ -83,9 +207,9 @@ namespace sqeazy {
 					const string_t& _sep = ","
 					){
 
-    const std::size_t len = std::distance(_begin,_end);
+    const std::size_t len = (std::size_t)std::distance(_begin,_end);
     boost::string_ref ref(&*_begin,len);
-    return split_string_ref_to_ref(ref,_sep);
+    return informed_split(ref,_sep);
 
   }
 
@@ -95,7 +219,7 @@ namespace sqeazy {
 				       ){
 
 
-    auto tmp = split_string_ref_to_ref(_data,_sep);
+    auto tmp = informed_split(_data,_sep);
     vec_of_strings_t value;
     value.reserve(tmp.size());
 
@@ -179,7 +303,7 @@ namespace sqeazy {
     std::map<std::string, parsed_map_t> operator()(iter_t _begin, iter_t _end){
 
       std::map<std::string, parsed_map_t> value;
-      const std::size_t len = std::distance(_begin,_end);
+      const std::size_t len = (std::size_t)std::distance(_begin,_end);
 
       if(!len)
         return value;
@@ -190,7 +314,7 @@ namespace sqeazy {
 
       boost::string_ref msg(&*_begin,len);
 
-      vec_of_string_refs_t major_keys = split_string_ref_to_ref(msg,
+      vec_of_string_refs_t major_keys = informed_split(msg,
                                                                 seperators_.front());
 
       for(const boost::string_ref& maj_key : major_keys ){
@@ -209,7 +333,7 @@ namespace sqeazy {
           boost::string_ref in_brackets(maj_key.begin()+dist+1,
                                         maj_key.size()-1-(dist+1));
 
-          vec_of_string_refs_t options = split_string_ref_to_ref(in_brackets,
+          vec_of_string_refs_t options = informed_split(in_brackets,
                                                                  seperators_[1]);
           for( const boost::string_ref& opt : options ){
             vec_of_strings_t key_value = split_string_ref_by(opt,
@@ -231,7 +355,7 @@ namespace sqeazy {
     vec_of_pairs_t to_pairs(iter_t _begin, iter_t _end){
 
       vec_of_pairs_t value;
-      const std::size_t len = std::distance(_begin,_end);
+      const std::size_t len = (std::size_t)std::distance(_begin,_end);
 
       if(!len)
         return value;
@@ -242,7 +366,7 @@ namespace sqeazy {
 
       boost::string_ref msg(&*_begin,len);
 
-      vec_of_string_refs_t major_keys = split_string_ref_to_ref(msg,
+      vec_of_string_refs_t major_keys = informed_split(msg,
                                                                 seperators_.front());
 
       value.reserve(major_keys.size());
@@ -274,7 +398,7 @@ namespace sqeazy {
     vec_of_strings_t major_keys(iter_t _begin, iter_t _end){
 
       vec_of_strings_t value;
-      const std::size_t len = std::distance(_begin,_end);
+      const std::size_t len = (std::size_t)std::distance(_begin,_end);
 
       if(!len)
         return value;
@@ -285,7 +409,7 @@ namespace sqeazy {
 
       boost::string_ref msg(&*_begin,len);
 
-      vec_of_string_refs_t major_keys = split_string_ref_to_ref(msg,
+      vec_of_string_refs_t major_keys = informed_split(msg,
                                                                 seperators_.front());
 
       value.reserve(major_keys.size());
@@ -310,7 +434,7 @@ namespace sqeazy {
     parsed_map_t minors(iter_t _begin, iter_t _end){
 
       parsed_map_t value;
-      const std::size_t len = std::distance(_begin,_end);
+      const std::size_t len = (std::size_t)std::distance(_begin,_end);
 
       if(!len)
         return value;
@@ -321,8 +445,7 @@ namespace sqeazy {
 
       boost::string_ref msg(&*_begin,len);
 
-      vec_of_string_refs_t major_keys = split_string_ref_to_ref(msg,
-                                                                seperators_[1]);
+      vec_of_string_refs_t major_keys = informed_split(msg,seperators_[1]);
 
       for(const boost::string_ref& maj_key : major_keys ){
 
@@ -360,7 +483,7 @@ namespace sqeazy {
 
       typedef typename std::iterator_traits<iter_t>::value_type value_t;
 
-      const std::size_t len = std::distance(_begin, _end);
+      const std::size_t len = (std::size_t)std::distance(_begin, _end);
       const std::size_t bytes = len*sizeof(value_t);
 
       const std::size_t exp_size = base64::encoded_bytes(bytes)+ignore_this_delimiters.first.size()+ignore_this_delimiters.second.size();
@@ -386,7 +509,7 @@ namespace sqeazy {
 
       typedef typename std::iterator_traits<iter_t>::value_type value_t;
 
-      const std::size_t len = std::distance(_begin, _end);
+      const std::size_t len = (std::size_t)std::distance(_begin, _end);
       const std::size_t bytes = len*sizeof(value_t);
       std::size_t exp_size = verbatim_bytes(_begin,_end);
 
@@ -429,7 +552,7 @@ namespace sqeazy {
 
       typedef typename std::iterator_traits<iter_t>::value_type value_t;
 
-      const std::size_t len = std::distance(_begin, _end);
+      const std::size_t len = (std::size_t)std::distance(_begin, _end);
       const std::size_t bytes = len*sizeof(value_t);
 
 
@@ -452,7 +575,7 @@ namespace sqeazy {
       char* dst = reinterpret_cast<char*>(&*_begin);
       auto dst_end = base64::decode_impl(src,src+src_end_pos,dst);//std::copy(src,src+src_end_pos,dst);
 
-      std::size_t decoded_elements = std::distance(dst,dst_end);
+      std::size_t decoded_elements = (std::size_t)std::distance(dst,dst_end);
       value += (decoded_elements/sizeof(value_t));
 
       return value;
