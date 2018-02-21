@@ -9,7 +9,7 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/include)
 #boost unit test framework has some defects if we wanna bind against shared and/or static libs
 ##that's why we bind against the dynamic loaded libraries primarily
 SET(Boost_USE_STATIC_LIBS OFF)
-FIND_PACKAGE (Boost 1.55 COMPONENTS regex filesystem serialization REQUIRED QUIET)
+FIND_PACKAGE (Boost 1.55 COMPONENTS regex filesystem serialization program_options REQUIRED QUIET)
 if(Boost_FOUND)
     MESSAGE("++ [tests] Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES} : ${Boost_LIBRARIES}")
     INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
@@ -99,6 +99,10 @@ target_link_libraries(benchmark_tile_shuffle_scheme_impl ${OpenMP++_LIBRARIES} $
 add_executable(benchmark_chunked_statistics benchmark_chunked_statistics.cpp)
 target_link_libraries(benchmark_chunked_statistics ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
+IF(TIFF_FOUND)
+add_executable(dump_benchmark_datasets dump_benchmark_datasets.cpp)
+target_link_libraries(dump_benchmark_datasets ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+ENDIF()
 
 IF(FFMPEG_FOUND)
   if(WIN32)
