@@ -610,7 +610,6 @@ namespace sqeazy
                               std::size_t available_output_bytes)  {
 
       std::size_t len = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
-      // std::vector<incoming_t> temp_in(_in, _in+len);
 
       const size_t temp_size = (std::max)(std::ceil(available_output_bytes/sizeof(incoming_t)),
                                         double(len)
