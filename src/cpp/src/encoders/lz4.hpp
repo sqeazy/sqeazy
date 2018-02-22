@@ -32,6 +32,7 @@ namespace sqeazy {
   template < typename T , typename S = std::size_t>
   struct lz4_scheme :  public lz4_scheme_base_type<T> {
 
+    typedef S size_type;
     typedef lz4_scheme_base_type<T> sink_type;
     typedef T raw_type;
     typedef typename sink_type::out_type compressed_type;
@@ -134,9 +135,21 @@ namespace sqeazy {
 
     }
 
+    /**
+     * helper function to calculate the size of a chunk of work
+     */
+    std::size_t bytes_per_chunk(std::intmax_t _size_bytes) const {
+
+      std::intmax_t value = framestep_kb ? framestep_kb << 10 : std::ceil(_size_bytes/n_chunks_of_input);
+      if(value >= _size_bytes || n_chunks_of_input >= _size_bytes){
+        value = _size_bytes;
+      }
+
+      return value;
+    }
 
 /**
-       \brief calculate the maximum size in bytes of the encoded buffer given an input of size _size_bytes
+       \brief calculate the maximum size in bytes of the encoded buffer given an input of size _size_bytes; this function depends on the current state of this object with respect to framestep_kb, blocksize_kb and n_chunks_of_input. it over estimates the expected size of the encoded stream given the assumption of data that is incrompressible
 
        \return
        \retval intmax_t .. maximum size in bytes of the encoded buffer given an input of size _size_bytes
@@ -145,20 +158,20 @@ namespace sqeazy {
     std::intmax_t max_encoded_size(std::intmax_t _size_bytes) const override final {
 
       //if framestep_kb is set, use it; divide the payload into chunks otherwise
-      std::intmax_t input_chunk_bytes = framestep_kb ? framestep_kb << 10 : std::ceil(_size_bytes/n_chunks_of_input);
-      if(input_chunk_bytes >= _size_bytes || n_chunks_of_input >= _size_bytes){
-        input_chunk_bytes = _size_bytes;
-      }
+      std::intmax_t nbytes_per_chunk = bytes_per_chunk(_size_bytes);
 
       std::intmax_t value = LZ4F_HEADER_SIZE_MAX;//for 1.8.0, test_lz4_sandbox.cpp:max_encoded_size/null_prefs
-      std::intmax_t lz4_bound_per_chunk = LZ4F_compressBound(input_chunk_bytes, &lz4_prefs);
 
-      if(input_chunk_bytes >= _size_bytes)
-        value += lz4_bound_per_chunk;
+      if(nbytes_per_chunk >= _size_bytes)
+        value += LZ4F_compressBound(nbytes_per_chunk, &lz4_prefs);
       else{
-        std::size_t n_steps = (_size_bytes + input_chunk_bytes - 1 )/ input_chunk_bytes;
 
-        value += lz4_bound_per_chunk*n_steps;
+        std::size_t nchunks = (_size_bytes + nbytes_per_chunk - 1 )/ nbytes_per_chunk;
+        std::size_t nchunks_per_thread = (nchunks + this->n_threads() - 1 )/ this->n_threads();//overestimation on purpose
+
+        std::size_t maxoutbytes_per_thread = nchunks_per_thread*(LZ4F_compressBound(nbytes_per_chunk, &lz4_prefs)+ LZ4F_HEADER_SIZE_MAX);
+
+        value = maxoutbytes_per_thread*this->n_threads() ;
       }
 
       return value;
@@ -191,32 +204,25 @@ namespace sqeazy {
 
       typedef typename sqeazy::twice_as_wide<size_t>::type local_size_type;
 
-      const local_size_type total_length = std::accumulate(_shape.begin(), _shape.end(), 1, std::multiplies<size_t>());
-      const local_size_type total_length_in_byte = total_length*sizeof(raw_type);
+      const local_size_type len = std::accumulate(_shape.begin(), _shape.end(), 1, std::multiplies<size_t>());
+      const local_size_type bytes = len*sizeof(raw_type);
+
       const compressed_type* input = reinterpret_cast<const compressed_type*>(_in);
-      const compressed_type* input_end = input + total_length_in_byte;
+      const compressed_type* input_end = input + bytes;
 
-      compressed_type* _out_end = _out + max_encoded_size(total_length_in_byte);
+      compressed_type* _out_end = _out + max_encoded_size(bytes);
 
-      local_size_type framestep_byte = framestep_kb ? framestep_kb << 10 : std::ceil(total_length_in_byte/n_chunks_of_input);
-      if(framestep_byte >= total_length_in_byte || n_chunks_of_input >= total_length_in_byte){
-        framestep_byte = total_length_in_byte;
-      }
-
-
+      const local_size_type framestep_byte = bytes_per_chunk(bytes);
       const int nthreads = this->n_threads();
 
       compressed_type* value = nullptr;
 
       if(nthreads==1){
-        //lz4_prefs.frameInfo.contentSize = total_length_in_byte;
         value = lz4::encode_serial(input,input_end,
                                    _out,_out_end,
                                    framestep_byte,
                                    lz4_prefs
           );
-        //lz4_prefs.frameInfo.contentSize = 0;
-
       } else {
         value = lz4::encode_parallel(input,input_end,
                                      _out,_out_end,
@@ -342,132 +348,8 @@ namespace sqeazy {
     }
 
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // DEPRECATED API
-    typedef S size_type;
-
-    static S last_num_encoded_bytes;
-
-    static const bool is_sink = true;
-
-    static const std::string static_name() {
-
-      return std::string("lz4");
-
-    }
-
-
-    /**
-     * @brief encode input raw_type buffer and write to output (not owned, not allocated)
-     *
-     * @param _input input raw_type buffer
-     * @param _output output char buffer (not owned, not allocated)
-     * @param _length mutable std::vector<size_type>, contains the length of _input at [0] and the number of written bytes at [1]
-     * @return sqeazy::error_code
-     */
-    template <typename SizeType>
-    static const error_code static_encode(const raw_type* _input,
-                                          compressed_type* _output,
-                                          std::vector<SizeType>& _dims,//size of _input
-                                          size_type& _bytes_written = last_num_encoded_bytes
-      ) {
-
-      typedef typename sqeazy::twice_as_wide<SizeType>::type local_size_type;
-      local_size_type total_length = std::accumulate(_dims.begin(), _dims.end(), 1, std::multiplies<SizeType>());
-      local_size_type total_length_in_byte = total_length*sizeof(raw_type);
-      local_size_type max_payload_length_in_byte = LZ4_compressBound(total_length_in_byte);
-
-      const compressed_type* input = reinterpret_cast<const compressed_type*>(_input);
-
-#if LZ4_VERSION_NUMBER > 10701
-      size_type num_written_bytes = LZ4_compress_default(input,
-                                                         _output,
-                                                         total_length_in_byte,
-                                                         max_payload_length_in_byte);
-#else
-      size_type num_written_bytes = LZ4_compress_limitedOutput(input,
-                                                               _output,
-                                                               total_length_in_byte,
-                                                               max_payload_length_in_byte);
-#endif
-      if(num_written_bytes > 0) {
-        _bytes_written = num_written_bytes;
-        last_num_encoded_bytes = _bytes_written;
-        return SUCCESS;
-      }
-      else {
-        _bytes_written = 0;
-        last_num_encoded_bytes = 0;
-        return FAILURE;
-      }
-
-    }
-
-
-    /**
-     * @brief encode _input using the lz4 library, the output contains the number of input elements encoded as 64bit signed integer (long) and the encoded data
-     *
-     * @param _input array/buffer that contains data of raw_type
-     * @param _output the char buffer that contains the compressed data (not truncated, not owned)
-     * @param _length size of _input (unmutable)
-     * @param _bytes_written number of bytes/elements in _output that actually contain data
-     * @return sqeazy::error_code SUCCESS if non-zero number of bytes have been encoded by lz4
-     */
-    static const error_code static_encode(const raw_type* _input,
-                                          compressed_type* _output,
-                                          const size_type& _length,//size of _input
-                                          size_type& _bytes_written = last_num_encoded_bytes
-      ) {
-
-      std::vector<size_type> artificial_dims(1);
-      artificial_dims.front() = _length;
-
-      return static_encode(_input, _output, artificial_dims, _bytes_written);
-
-    }
-
-    /**
-     * @brief decode the input data stream _input with lz4 (the number of output elements is extracted from the first 64
-     * bit of the input stream)
-     *
-     * @param _input input buffer as char
-     * @param _output output buffer (needs to be allocated outside this function)
-     * @param _length number of elements in _input
-     * @return sqeazy::error_code
-     */
-    static const error_code static_decode(const compressed_type* _input,
-                                          raw_type* _output,
-                                          const size_type& _len_in,
-                                          const size_type& _len_out
-      ) {
-
-      char* output = reinterpret_cast<char*>(_output);
-      const char* input = reinterpret_cast<const char*>(_input);
-
-      size_type num_bytes_decoded = LZ4_decompress_safe(input,output,_len_in, _len_out);
-
-      return ( num_bytes_decoded > 0 && num_bytes_decoded == _len_out ) ? SUCCESS : FAILURE;
-
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //TODO: the following functions are actually not very compressor specific
-    //      -> refactor to policy!
-
-    template <typename U>
-    static const unsigned long static_max_encoded_size(U _src_length_in_bytes) {
-
-      unsigned long lz4_bound = LZ4_compressBound(_src_length_in_bytes);
-
-      return lz4_bound;
-
-    }
-
 
   };
-
-  template < typename T , typename S>
-  S lz4_scheme<T,S>::last_num_encoded_bytes = 0;
 
 
 };//sqy namespace
