@@ -121,11 +121,11 @@ namespace sqeazy {
   schedule(static,chunk)									\
   firstprivate(shape,full_tiles)							\
   num_threads(_nthreads)
-		for(omp_size_type z = 0;z<shape[row_major::z];++z){
+		for(omp_size_type z = 0;z<(omp_size_type)shape[row_major::z];++z){
 		  std::size_t ztile = z / tile_size;
 		  std::size_t z_intile_row_offset = z % tile_size;
 
-		  for(shape_value_t y = 0;y<shape[row_major::y];++y){
+		  for(omp_size_type y = 0;y<(omp_size_type)shape[row_major::y];++y){
 			std::size_t ytile = y / tile_size;
 			std::size_t y_intile_row_offset = y % tile_size;
 
@@ -135,7 +135,7 @@ namespace sqeazy {
 			std::size_t out_tile_offset = (ztile*full_tiles[row_major::x]*full_tiles[row_major::y] + ytile*full_tiles[row_major::x]);
 			std::size_t intile_row_offset = z_intile_row_offset*n_elements_per_tile_frame + y_intile_row_offset*tile_size;
 
-			for(shape_value_t x = 0;x<shape[row_major::x];x+=tile_size){
+			for(omp_size_type x = 0;x<(omp_size_type)shape[row_major::x];x+=tile_size){
 
 			  xtile = x / tile_size;
 			  in_iterator_t  src = _begin + in_row + x;
@@ -205,11 +205,11 @@ namespace sqeazy {
   firstprivate(shape,full_tiles)							\
   schedule(static,chunk)									\
   num_threads(_nthreads)
-		for(omp_size_type z = 0;z<shape[row_major::z];++z){
+		for(omp_size_type z = 0;z<(omp_size_type)shape[row_major::z];++z){
 		  std::size_t ztile = z / tile_size;
 		  std::size_t z_intile_row_offset = z % tile_size;
 
-		  for(shape_value_t y = 0;y<shape[row_major::y];++y){
+		  for(omp_size_type y = 0;y<(omp_size_type)shape[row_major::y];++y){
 			std::size_t ytile = y / tile_size;
 			std::size_t y_intile_row_offset = y % tile_size;
 
@@ -220,7 +220,7 @@ namespace sqeazy {
 
 			std::size_t intile_row_offset = z_intile_row_offset*n_elements_per_tile_frame + y_intile_row_offset*tile_size;
 
-			for(shape_value_t x = 0;x<shape[row_major::x];x+=n_elements_per_simd_block){
+			for(omp_size_type x = 0;x<(omp_size_type)shape[row_major::x];x+=n_elements_per_simd_block){
 
 			  xtile = x / tile_size;
 
@@ -329,12 +329,12 @@ namespace sqeazy {
   schedule(static,chunk)									\
   firstprivate(shape,ptiles_per_dim, ptile_shapes)			\
   num_threads(_nthreads)
-		for(omp_size_type z = 0;z<shape[row_major::z];++z){
+		for(omp_size_type z = 0;z<(omp_size_type)shape[row_major::z];++z){
 
 		  std::size_t ztile = z / tile_size;
 		  std::size_t z_intile_row_offset = z % tile_size;
 
-		  for(shape_value_t y = 0;y<shape[row_major::y];++y){
+		  for(omp_size_type y = 0;y<(omp_size_type)shape[row_major::y];++y){
 
 			std::size_t ytile = y / tile_size;
 			std::size_t y_intile_row_offset = y % tile_size;
@@ -345,7 +345,7 @@ namespace sqeazy {
 			std::size_t tile_index = (ztile*ptiles_per_dim[row_major::x]*ptiles_per_dim[row_major::y] + ytile*ptiles_per_dim[row_major::x]);
 
 
-			for(shape_value_t x = 0;x<shape[row_major::x];x+=tile_size,++xtile,++tile_index){
+			for(omp_size_type x = 0;x<(omp_size_type)shape[row_major::x];x+=tile_size,++xtile,++tile_index){
 
 			  std::size_t intile_row_offset = (z_intile_row_offset*ptile_shapes[tile_index][row_major::x]*ptile_shapes[tile_index][row_major::y]) + y_intile_row_offset*ptile_shapes[tile_index][row_major::x];
 			  std::size_t tile_output_offset = ptile_output_offsets[tile_index];
@@ -511,7 +511,7 @@ namespace sqeazy {
   shared( _begin, _out, write_count )									\
   firstprivate(pshape,ptile_shapes,  ptile_size_sums, pbuffer_row_per_thread) \
   num_threads(_nthreads)
-		for(omp_size_type row_in_output = 0;row_in_output<n_rows_in_output;++row_in_output)
+		for(omp_size_type row_in_output = 0;row_in_output<(omp_size_type)n_rows_in_output;++row_in_output)
 		{
 
 		  int tid = omp_get_thread_num();

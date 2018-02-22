@@ -111,11 +111,6 @@ namespace sqeazy {
         }
       }
 
-// #pragma omp parallel for shared(_input, _output)    \
-//   num_threads(num_threads)
-//       for(loop_size_type index = 0; index < len; ++index) {
-//         _output[index] = xor_if_signed(rotate_right<1>(_output[index]));
-//       }
 
       return SUCCESS;
     }

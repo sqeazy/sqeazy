@@ -172,13 +172,13 @@ namespace sqeazy {
 		  shared (_out) \
 		  firstprivate ( _begin, pshape, pshape_in_tiles ) \
 		  schedule (static, chunk)
-		for(omp_size_type z = 0;z<pshape[row_major::z];++z){
+		for(omp_size_type z = 0;z<(omp_size_type)pshape[row_major::z];++z){
 		  std::uint32_t tile_offset_in_z = z / tile_size;
 
-		  for(shape_value_t y = 0;y<pshape[row_major::y];++y){
+		  for(omp_size_type y = 0;y<(omp_size_type)pshape[row_major::y];++y){
 			std::uint32_t tile_offset_in_y = y / tile_size;
 
-			for(shape_value_t x = 0;x<pshape[row_major::x];++x){
+			for(omp_size_type x = 0;x<(omp_size_type)pshape[row_major::x];++x){
 
 			  std::uint32_t tile_offset_in_x = x / tile_size;
 			  std::uint32_t tile_index = tile_offset_in_z*pshape_in_tiles[row_major::x]*pshape_in_tiles[row_major::y] + tile_offset_in_y*pshape_in_tiles[row_major::x] + tile_offset_in_x;
@@ -297,12 +297,12 @@ namespace sqeazy {
 		  shared (_out) \
 		  firstprivate ( _begin, pshape, cptile_output_offsets, ptiles_per_dim )	\
 		  schedule (static)
-		for(omp_size_type z = 0;z<pshape[row_major::z];++z){
+		for(omp_size_type z = 0;z<(omp_size_type)pshape[row_major::z];++z){
 
 		  const std::size_t   ztile = z / tile_size;
 		  const std::uint32_t z_intile = z % tile_size;
 
-		  for(shape_value_t y = 0;y<pshape[row_major::y];++y){
+		  for(omp_size_type y = 0;y<(omp_size_type)pshape[row_major::y];++y){
 
 			const std::size_t   ytile = y / tile_size;
 			const std::uint32_t y_intile = y % tile_size;
@@ -310,7 +310,7 @@ namespace sqeazy {
 			std::size_t xtile = 0;
 			const std::size_t tile_index = (ztile*ptiles_per_dim[row_major::x]*ptiles_per_dim[row_major::y] + ytile*ptiles_per_dim[row_major::x]);
 
-			for(shape_value_t x = 0;x<pshape[row_major::x];++x){
+			for(omp_size_type x = 0;x<(omp_size_type)pshape[row_major::x];++x){
 
 			  xtile = x / tile_size;
 			  const std::uint32_t x_intile = x % tile_size;
@@ -425,19 +425,19 @@ namespace sqeazy {
 		  shared (_out) \
 		  firstprivate ( _begin, pshape, cptile_output_offsets,pshape_in_tiles )	\
 		  schedule (static)
-		for(omp_size_type z = 0;z<pshape[row_major::z];++z){
+		for(omp_size_type z = 0;z<(omp_size_type)pshape[row_major::z];++z){
 
 		  std::size_t ztile = z / tile_size;
 		  std::size_t z_intile = z % tile_size;
 
-		  for(shape_value_t y = 0;y<pshape[row_major::y];++y){
+		  for(omp_size_type y = 0;y<(omp_size_type)pshape[row_major::y];++y){
 
 			std::size_t ytile = y / tile_size;
 			std::size_t y_intile = y % tile_size;
 
 			std::size_t tile_index = (ztile*pshape_in_tiles[row_major::x]*pshape_in_tiles[row_major::y] + ytile*pshape_in_tiles[row_major::x]);
 
-			for(shape_value_t x = 0;x<pshape[row_major::x];++x){
+			for(omp_size_type x = 0;x<(omp_size_type)pshape[row_major::x];++x){
 			  std::size_t xtile = x / tile_size;
 			  std::size_t x_intile = x % tile_size;
 

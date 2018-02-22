@@ -75,11 +75,11 @@ namespace sqeazy {
     compressed_type* encode( const raw_type* _input, compressed_type* _output, std::size_t _input_size) override final {
 
       compressed_type* end_itr = nullptr;
-     
+
       const omp_size_type nthreads  = this->n_threads();
       const omp_size_type chunk_size = (_input_size + nthreads -1)/nthreads;
       const omp_size_type len = _input_size;
-	  const auto local_threshold = this->threshold;
+      const auto local_threshold = this->threshold;
 
 #pragma omp parallel for                        \
   shared(_output)                               \
@@ -91,7 +91,7 @@ namespace sqeazy {
         }
 
       end_itr = _output + len;
-      
+
       return end_itr;
 
     }

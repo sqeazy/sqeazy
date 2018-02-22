@@ -95,8 +95,8 @@ namespace sqeazy {
 								 const shape_container_t& _shape,
 								 int nthreads=  1) {
 
-		typedef typename std::iterator_traits<in_iterator_t>::value_type in_value_type;
-		typedef typename std::remove_cv<in_value_type>::type in_value_t;
+		//typedef typename std::iterator_traits<in_iterator_t>::value_type in_value_type;
+		//typedef typename std::remove_cv<in_value_type>::type in_value_t;
 
 		typedef typename std::iterator_traits<decltype(_shape.begin())>::value_type shape_value_type;
 		typedef typename std::remove_cv<shape_value_type>::type shape_value_t;
