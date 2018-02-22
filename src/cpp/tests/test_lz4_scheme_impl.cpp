@@ -77,9 +77,9 @@ BOOST_AUTO_TEST_CASE( encodes_1M_1chunk )
   auto ref = no_chunks.max_encoded_size(1 << 20);
 
   sqeazy::lz4_scheme<std::uint16_t> local("n_chunks_of_input=1");
-  auto res_chunked = local.max_encoded_size(1 << 20);
-  BOOST_REQUIRE_GT(res_chunked,0);
-  BOOST_REQUIRE_LT(res_chunked,ref);
+  auto res = local.max_encoded_size(1 << 20);
+  BOOST_REQUIRE_GT(res,0);
+  BOOST_REQUIRE_LE(res,ref);
 
 }
 
@@ -111,12 +111,12 @@ BOOST_AUTO_TEST_CASE( encodes_1M_20chunks )
 BOOST_AUTO_TEST_CASE( encodes_1M_framestep_4M )
 {
   sqeazy::lz4_scheme<std::uint16_t> no_chunks;
-  auto fs16kb = no_chunks.max_encoded_size(1 << 20);
+  auto fs256kb = no_chunks.max_encoded_size(1 << 20);
 
   sqeazy::lz4_scheme<std::uint16_t> local("framestep_kb=4096");
   auto fs4M = local.max_encoded_size(1 << 20);
   BOOST_REQUIRE_GT(fs4M,0);
-  BOOST_REQUIRE_LT(fs4M,fs16kb);//if framstep_kb is larger than payload, we only have the overhead once
+  BOOST_REQUIRE_LE(fs4M,fs256kb);//if framstep_kb is larger than payload, we only have the overhead once
 
 }
 
@@ -135,12 +135,12 @@ BOOST_AUTO_TEST_CASE( encodes_tiny )
 BOOST_AUTO_TEST_CASE( encodes_tiny_4chunks )
 {
   sqeazy::lz4_scheme<std::uint16_t> no_chunks;
-  auto fs16kb = no_chunks.max_encoded_size(1 << 4);
+  auto fs256kb = no_chunks.max_encoded_size(1 << 4);
 
   sqeazy::lz4_scheme<std::uint16_t> local("n_chunks_of_input=4");
   auto nc4 = local.max_encoded_size(1 << 4);
   BOOST_REQUIRE_GT(nc4,0);
-  BOOST_REQUIRE_GT(nc4,fs16kb);//if framstep_kb is larger than payload, we only have the overhead once
+  BOOST_REQUIRE_GE(nc4,fs256kb);//if framstep_kb is larger than payload, we only have the overhead once
 
 }
 
@@ -154,10 +154,6 @@ BOOST_AUTO_TEST_CASE( prefs_contentSize )
   local.lz4_prefs.frameInfo.contentSize = 0;
   auto res0 = local.max_encoded_size(1 << 20);
   BOOST_REQUIRE_EQUAL(res,res0);
-
-  local.lz4_prefs.frameInfo.blockSizeID = LZ4F_max64KB;
-  auto res64 = local.max_encoded_size(1 << 20);
-  BOOST_REQUIRE_LT(res64,res0);
 
 
 }
@@ -190,7 +186,33 @@ BOOST_AUTO_TEST_CASE( max_encoded_size_404MB )
 
 }
 
+BOOST_AUTO_TEST_CASE( serial_vs_parallel_404MB )
+{
+  const auto nbytes = 423624704;
+  sqeazy::lz4_scheme<std::uint16_t> alldefaults_serial;
+  auto serial = alldefaults_serial.max_encoded_size(nbytes);
 
+  sqeazy::lz4_scheme<std::uint16_t> alldefaults_parallel;
+  alldefaults_parallel.set_n_threads(4);
+  auto parallel = alldefaults_parallel.max_encoded_size(nbytes);
+
+  BOOST_REQUIRE_GE(parallel,serial);
+
+}
+
+BOOST_AUTO_TEST_CASE( serial_vs_parallel_3MB )
+{
+  const auto nbytes = 3 << 20;
+  sqeazy::lz4_scheme<std::uint16_t> alldefaults_serial;
+  auto serial = alldefaults_serial.max_encoded_size(nbytes);
+
+  sqeazy::lz4_scheme<std::uint16_t> alldefaults_parallel;
+  alldefaults_parallel.set_n_threads(4);
+  auto parallel = alldefaults_parallel.max_encoded_size(nbytes);
+
+  BOOST_REQUIRE_GE(parallel,serial);
+
+}
 BOOST_AUTO_TEST_SUITE_END()
 
 
@@ -523,6 +545,47 @@ BOOST_AUTO_TEST_CASE( default_args )
   BOOST_CHECK_NE(res,encoded.data());
   BOOST_CHECK_LT(std::distance(encoded.data(),res),expected_encoded_bytes);
 
+}
+
+BOOST_AUTO_TEST_CASE( encoded_size_similar )
+{
+
+  const auto len = 4 << 19;// want a 4MB test image
+  incrementing_cube.resize(len);
+
+  std::vector<std::size_t> shape(dims.begin(), dims.end());
+  shape.back() = (len) / frame;
+
+  sqeazy::lz4_scheme<value_type> parallel;
+  parallel.set_n_threads(2);
+  auto expected_encoded_bytes = parallel.max_encoded_size(len*sizeof(value_type));
+  std::vector<char> encoded(expected_encoded_bytes);
+
+  auto parallelo = parallel.encode(incrementing_cube.data(),
+                                   encoded.data(),
+                                   shape);
+
+  BOOST_REQUIRE_NE(parallelo,(char*)nullptr);
+  BOOST_REQUIRE_NE(parallelo,encoded.data());
+  auto encode_size_parallel = std::distance(encoded.data(),parallelo);
+  BOOST_REQUIRE_GT(encode_size_parallel,0);
+  BOOST_CHECK_LT(encode_size_parallel,expected_encoded_bytes);
+  BOOST_CHECK_GT(encode_size_parallel,LZ4F_HEADER_SIZE_MAX);
+
+  sqeazy::lz4_scheme<value_type> serial;
+  expected_encoded_bytes = serial.max_encoded_size(len*sizeof(value_type));
+  std::vector<char> serial_encoded(expected_encoded_bytes);
+
+  auto serialo = serial.encode(&incrementing_cube[0],
+                               serial_encoded.data(),
+                               shape);
+
+
+  BOOST_REQUIRE_NE(serialo,(char*)nullptr);
+  BOOST_CHECK_NE(serialo,encoded.data());
+  auto encode_size_serial = std::distance(serial_encoded.data(),serialo);
+  BOOST_CHECK_LE(encode_size_serial,expected_encoded_bytes);//!
+  BOOST_CHECK_GT(encode_size_serial,LZ4F_HEADER_SIZE_MAX);
 }
 
 BOOST_AUTO_TEST_CASE( default_args_roundtrip )

@@ -83,7 +83,7 @@ namespace sqeazy {
             LZ4F_compressionContext_t ctx;
             auto rcode = LZ4F_createCompressionContext(&ctx, LZ4F_VERSION);
             if (LZ4F_isError(rcode)) {
-                std::cerr << "[sqy::lz4] Failed to create context: error " << rcode << "\n";
+                std::cerr << "[sqy::lz4] Failed to create context: error " << LZ4F_getErrorName(rcode) << "\n";
                 return value;
             } else {
                 rcode = 1;//don't ask me why, taken from https://github.com/lz4/lz4/blob/v1.8.0/examples/frameCompress.c#L34
@@ -94,7 +94,7 @@ namespace sqeazy {
                                                            out_bytes ,
                                                            &_lz4prefs);
             if (LZ4F_isError(rcode)) {
-                std::cerr << "[sqy::lz4] Failed to start compression: error " << rcode << "\n";
+                std::cerr << "[sqy::lz4] Failed to start compression: error " << LZ4F_getErrorName(rcode) << "\n";
                 return value;
             }
 
@@ -113,7 +113,10 @@ namespace sqeazy {
                                              src,
                                              src_size,
                                              nullptr);
-
+                if (LZ4F_isError(n)) {
+                    std::cerr << "[sqy::lz4] Failed to run lz4 compressUpdate: error " << LZ4F_getErrorName(n) << "\n";
+                    return value;
+                }
                 src += src_size;
                 num_written_bytes += n;
                 dst += n;
@@ -122,7 +125,7 @@ namespace sqeazy {
 
             rcode = LZ4F_compressEnd(ctx, dst, out_bytes- num_written_bytes, NULL);
             if (LZ4F_isError(rcode)) {
-                std::cerr << "[sqy::lz4] Failed to end compression: error " << rcode << "\n";
+                std::cerr << "[sqy::lz4] Failed to end compression: error " << LZ4F_getErrorName(rcode) << "\n";
                 return value;
             }
 
@@ -164,7 +167,6 @@ namespace sqeazy {
             const std::size_t len = std::distance(_in,_in_end);
             const std::size_t bytes = len*sizeof(compressed_type);
 
-            const std::size_t maxbytes_encoded_chunk = LZ4F_compressBound(_nbytes_inputchunk, &_lz4prefs);
             const std::size_t nchunks = (bytes + _nbytes_inputchunk - 1) / _nbytes_inputchunk;
 
             if(nchunks==1){
@@ -182,6 +184,7 @@ namespace sqeazy {
                 nthreads = nchunks;
 
             const std::size_t nchunks_per_thread = (nchunks + nthreads - 1) / nthreads;
+            const std::size_t maxbytes_encoded_chunk = (LZ4F_compressBound(_nbytes_inputchunk, &_lz4prefs)+ LZ4F_HEADER_SIZE_MAX);
 
             auto nbytes_ptr = nbytes_written.data();
             auto pref_ptr = &_lz4prefs;
@@ -215,7 +218,8 @@ namespace sqeazy {
                         );
 
                     if(val == nullptr){
-                        std::cerr << "[sqy::lz4_utils::encode_parallel] compression failed in "<<thread_id<<" chunk " << cnt << "\n";
+                        std::cerr << "[sqy::lz4_utils::encode_parallel] compression failed in "<<thread_id
+                                  <<" chunk " << cnt << "/"<< nchunks_per_thread<<"\n";
                         nbytes_ptr[thread_offset + cnt] = 0;
                     }
                     else{
@@ -226,6 +230,9 @@ namespace sqeazy {
 
             //shrink the output buffer to discard the bytes that have not been filled with encoded data
             std::size_t total_bytes_written = std::accumulate(nbytes_written.begin(), nbytes_written.end(), 0);
+            if(!total_bytes_written)
+                return nullptr;
+
             compressed_type* value = remove_blanks(_out,nbytes_written,maxbytes_encoded_chunk);
 
             return (value == (_out+total_bytes_written)) ? value : nullptr;
