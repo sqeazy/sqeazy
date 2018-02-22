@@ -4,8 +4,11 @@
 #include <iostream>
 #include <utility>
 #include <string>
+#include <vector>
 
 #include "compass.hpp"
+
+#include "boost/align/aligned_allocator.hpp"
 
 
 #ifdef _OPENMP
@@ -18,6 +21,7 @@ typedef std::size_t omp_size_type;//boiler plate required for MS VS 14 2015 Open
 
 namespace sqeazy {
 
+  //return codes, TODO: are enum classes useful here?
   enum error_code {
 
     SUCCESS = 0,
@@ -26,7 +30,17 @@ namespace sqeazy {
 
   };
 
+  //tag class
   struct unknown {};
+
+  //aligned vector classes
+  //AVX
+  template <typename value_type>
+  using vec_32algn_t = std::vector<value_type, boost::alignment::aligned_allocator<value_type,32> >;
+
+  //SSE
+  template <typename value_type>
+  using vec_16algn_t = std::vector<value_type, boost::alignment::aligned_allocator<value_type,16> >;
 
   /**
      \brief this namespace is meant for helpers related to the platform sqeazy was compiled on
@@ -62,7 +76,6 @@ namespace sqeazy {
   };
 
   static const std::pair<std::string, std::string> ignore_this_delimiters = std::make_pair("<verbatim>","</verbatim>");
-
 
 
 };//sqeazy
