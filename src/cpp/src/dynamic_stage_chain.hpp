@@ -1,7 +1,10 @@
 #ifndef DYNAMIC_STAGE_CHAIN_H
 #define DYNAMIC_STAGE_CHAIN_H
 
+#include <vector>
+
 #include "dynamic_stage.hpp"
+#include "sqeazy_common.hpp"
 
 namespace sqeazy {
 
@@ -223,38 +226,43 @@ namespace sqeazy {
 
             const std::intmax_t max_output_bytes = this->max_encoded_size(bytes);
 
-            std::vector<incoming_t> temp_in(std::ceil(float(max_output_bytes)/sizeof(incoming_t)));
+            //TODO: Ouch, this can be a quite large allocation
+            //(may cost a lot of cycles, more than 50% of the cycles consumed by this method with 400MB of input)
+            sqeazy::vec_32algn_t<incoming_t> temp_in(std::ceil(float(max_output_bytes)/sizeof(incoming_t)));
             std::copy(_in, _in+len,temp_in.data());
 
-            std::vector<outgoing_t> temp_out(std::ceil(float(max_output_bytes)/sizeof(outgoing_t)));
+            outgoing_t * out_ptr = _out;
+            incoming_t * in_ptr = temp_in.data();
+
             std::size_t compressed_items = 0;
 
             for( std::size_t fidx = 0;fidx<chain_.size();++fidx )
             {
 
-                auto encoded_end = chain_[fidx]->encode( temp_in.data(),
-                                                         temp_out.data(),
-                                                         _shape);
+                value = chain_[fidx]->encode( in_ptr,
+                                              out_ptr,
+                                              _shape);
 
-                if(encoded_end)
-                    compressed_items = encoded_end - temp_out.data();
+                if(value)
+                    compressed_items = std::distance(out_ptr,value);
                 else
                     compressed_items = 0;
 
-                if(compressed_items>temp_out.size() || compressed_items == 0){
+                if(compressed_items>temp_in.size() || compressed_items == 0){
                     std::ostringstream msg;
                     msg << __FILE__ << ":" << __LINE__ << "\t encode wrote past the end of temporary buffers\n";
                     throw std::runtime_error(msg.str());
                 }
 
-                value = reinterpret_cast<decltype(value)>(encoded_end);
-                std::copy(temp_out.data(),value,temp_in.begin());
+                // std::copy(temp_out.data(),value,temp_in.begin());
+                std::swap(in_ptr,out_ptr);
             }
 
-            std::size_t outgoing_size = value-((decltype(value))&temp_out[0]);
-            std::copy(temp_out.data(),value,
-                      _out);
-            value = _out + outgoing_size;
+            if(chain_.size() % 2 == 0){
+                value = std::copy(reinterpret_cast<outgoing_t*>(temp_in.data()),value,
+                                  _out);
+            }
+
             return value;
 
         }
@@ -289,8 +297,9 @@ namespace sqeazy {
                 _oshape = _ishape;
 
             std::size_t len = std::accumulate(_ishape.begin(), _ishape.end(),1,std::multiplies<std::size_t>());
-            std::vector<incoming_t> temp(len,0);
-            std::copy(_in,_in+len,temp.begin());
+
+            //TODO: Ouch, this can be a quite large allocation
+            sqeazy::vec_32algn_t<incoming_t> temp(_in,_in+len);
 
             auto rev_begin = chain_.rbegin();
             auto rev_end   = chain_.rend();

@@ -614,7 +614,11 @@ namespace sqeazy
       const size_t temp_size = (std::max)(std::ceil(available_output_bytes/sizeof(incoming_t)),
                                         double(len)
                                         );
-      std::vector<incoming_t> temp(temp_size,0);
+
+      //TODO: Ouch, this can be a quite large allocation
+      //(may cost a lot of cycles, more than 50% of the cycles consumed by this method with 400MB of input)
+
+      sqeazy::vec_32algn_t<incoming_t> temp(temp_size);
 
       incoming_t* head_filters_end = nullptr;
       if(head_filters_.size()){

@@ -22,6 +22,7 @@
 #include "encoders/quantiser_scheme_impl.hpp"
 #include "sqeazy_algorithms.hpp"
 #include "hdf5_utils.hpp"
+#include "sqeazy_common.hpp"
 
 namespace po = boost::program_options;
 namespace bfs = boost::filesystem;
@@ -159,8 +160,8 @@ namespace sqeazy {
 
       typedef typename pipe_t::incoming_t raw_t;
 
-      std::vector<size_t>	input_shape;
-      std::vector<char>	output;
+      std::vector<size_t> input_shape;
+      sqeazy::vec_32algn_t<char>	output;
       size_t		expected_size_byte = _pipeline.max_encoded_size(_input.size_in_byte());
       // size_t                output_file_size = bfs::exists(_output_file) ? bfs::file_size(_output_file) : 0;
 
@@ -231,7 +232,7 @@ namespace sqeazy {
       typedef typename pipe_t::incoming_t raw_t;
 
       std::vector<size_t>	input_shape;
-      std::vector<char>	output;
+      sqeazy::vec_32algn_t<char>	output;
       std::size_t		expected_size_byte = _pipeline.max_encoded_size(_input.size_in_byte());
       // size_t                output_file_size = bfs::exists(_output_file) ? bfs::file_size(_output_file) : 0;
 
@@ -323,7 +324,7 @@ namespace sqeazy {
       typedef typename pipe_t::incoming_t raw_t;
 
       std::vector<size_t>	input_shape;
-      std::vector<char>	output;
+      sqeazy::vec_32algn_t<char>	output;
 
 
       //retrieve the size of the loaded buffer
@@ -386,7 +387,7 @@ int bench_files(const std::vector<std::string>& _files,
   sqy::dypeline<std::uint16_t>	pipe16;
   sqy::dypeline_from_uint8	pipe8;
 
-  std::vector<char>		output;
+  sqeazy::vec_32algn_t<char>		output;
 
 
   const std::string pipeline_string = _config["pipeline"].as<std::string>();
