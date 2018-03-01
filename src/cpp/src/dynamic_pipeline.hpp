@@ -1,16 +1,5 @@
 #ifndef _DYNAMIC_PIPELINE_H_
 #define _DYNAMIC_PIPELINE_H_
-#include <utility>
-#include <cmath>
-#include <iostream>
-#include <vector>
-#include <string>
-#include <initializer_list>
-#include <cstdint>
-#include <typeinfo>
-#include <stdexcept>
-#include <type_traits>
-#include <memory>
 
 #include "string_parsers.hpp"
 #include "sqeazy_utils.hpp"
@@ -22,6 +11,22 @@
 #include "sqeazy_header.hpp"
 #include "sqeazy_algorithms.hpp"
 
+#include <boost/align/aligned_alloc.hpp>
+#include <boost/align/aligned_delete.hpp>
+
+#include <utility>
+#include <cmath>
+#include <iostream>
+#include <vector>
+#include <string>
+#include <initializer_list>
+#include <cstdint>
+#include <typeinfo>
+#include <stdexcept>
+#include <type_traits>
+#include <memory>
+#include <future>
+
 namespace sqeazy
 {
 
@@ -31,7 +36,15 @@ namespace sqeazy
   template <typename T>
   using default_sink_factory = stage_factory<blank_sink<T> >;
 
+  template <typename T>
+  using unique_array = std::unique_ptr<T[], boost::alignment::aligned_delete>;
 
+  template <typename T>
+  unique_array<T> make_aligned(std::size_t align, std::size_t nbytes){
+
+    unique_array<T> value(reinterpret_cast<T*>(boost::alignment::aligned_alloc(align,nbytes)));
+    return value;
+  }
 
   template <
     typename raw_t,
@@ -248,6 +261,7 @@ namespace sqeazy
       std::swap(_lhs.tail_filters_, _rhs.tail_filters_);
       std::swap(_lhs.sink_, _rhs.sink_);
       //_lhs.set_n_threads(_rhs.n_threads());
+
     }
 
     /**
@@ -284,10 +298,7 @@ namespace sqeazy
       n_threads_(1)
     {
 
-      // for(const head_filter_ptr_t& step : _stages)
-      // {
-      //    head_filters_.push_back(step);
-      // }
+
     };
 
     /**
@@ -543,6 +554,9 @@ namespace sqeazy
 
     }
 
+
+
+
     /**
        \brief encode one-dimensional array _in and write results to _out
 
@@ -562,7 +576,12 @@ namespace sqeazy
       outgoing_t* value = nullptr;
       std::size_t len = std::accumulate(_in_shape.begin(), _in_shape.end(),1,std::multiplies<std::size_t>());
       const std::size_t max_available_output_size = max_encoded_size(len*sizeof(incoming_t));
-      // std::size_t max_len_byte = len*sizeof(incoming_t);
+      const size_t temp_size = (std::max)(std::ceil(max_available_output_size/sizeof(incoming_t)),
+                                        double(len)
+                                        );
+
+      //create scratchpad here asynchronously as it can consume quite a long time
+      std::future<unique_array<incoming_t>> scratchpad = std::async(make_aligned<incoming_t>,std::size_t(32),temp_size);
 
       ////////////////////// HEADER RELATED //////////////////
       //insert header
@@ -581,7 +600,8 @@ namespace sqeazy
       value = detail_encode(_in,
                             first_output,
                             _in_shape,
-                            available_bytes_out_buffer);
+                            available_bytes_out_buffer,
+                            scratchpad);
 
       ////////////////////// HEADER RELATED //////////////////
       //update header
@@ -604,10 +624,12 @@ namespace sqeazy
 
     }
 
+    template <typename future_t>
     outgoing_t* detail_encode(const incoming_t *_in,
                               outgoing_t *_out,
                               std::vector<std::size_t> _shape,
-                              std::size_t available_output_bytes)  {
+                              std::size_t available_output_bytes,
+                              std::future<future_t>& scratchpad)  {
 
       std::size_t len = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
 
@@ -615,15 +637,12 @@ namespace sqeazy
                                         double(len)
                                         );
 
-      //TODO: Ouch, this can be a quite large allocation
-      //(may cost a lot of cycles, more than 50% of the cycles consumed by this method with 400MB of input)
 
-      sqeazy::vec_32algn_t<incoming_t> temp(temp_size);
-
+      auto temp = scratchpad.get();
       incoming_t* head_filters_end = nullptr;
       if(head_filters_.size()){
         head_filters_end = head_filters_.encode(_in,
-                                                temp.data(),
+                                                temp.get(),
                                                 _shape);
 
         if(!head_filters_end){
@@ -636,13 +655,13 @@ namespace sqeazy
 
         std::copy(_in,
                   _in + len,
-                  temp.data());
+                  temp.get());
 
       }
 
       outgoing_t* encoded_end = nullptr;
       if(sink_){
-        encoded_end = sink_->encode(temp.data(),
+        encoded_end = sink_->encode(temp.get(),
                                     _out,
                                     _shape);
 
@@ -650,7 +669,7 @@ namespace sqeazy
         std::uintmax_t compressed_size = encoded_end-_out;
         if(tail_filters_.size()){
 
-          outgoing_t* casted_temp = reinterpret_cast<outgoing_t*>(temp.data());
+          outgoing_t* casted_temp = reinterpret_cast<outgoing_t*>(temp.get());
 
           std::copy(_out, _out+compressed_size,casted_temp);
 
@@ -673,11 +692,11 @@ namespace sqeazy
         if(head_filters_.size())
           temp_end = head_filters_end;
         else
-          temp_end = temp.data() + temp.size();
+          temp_end = temp.get() + temp_size;
 
-        std::copy(temp.data(), temp_end ,
+        std::copy(temp.get(), temp_end ,
                   out_as_incoming);
-        encoded_end = reinterpret_cast<outgoing_t*>(out_as_incoming+(temp_end-temp.data()));
+        encoded_end = reinterpret_cast<outgoing_t*>(out_as_incoming+(temp_end-(incoming_t*)temp.get()));
       }
 
       return encoded_end;
