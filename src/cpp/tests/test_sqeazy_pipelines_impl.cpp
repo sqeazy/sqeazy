@@ -304,7 +304,6 @@ BOOST_AUTO_TEST_CASE( roundtrip_lz4 ){
 BOOST_AUTO_TEST_CASE( roundtrip ){
 
   const unsigned long data_bytes = size_in_byte;
-  long length = data_bytes;
 
   std::vector<size_t> shape(dims.begin(), dims.end());
 
@@ -316,17 +315,11 @@ BOOST_AUTO_TEST_CASE( roundtrip ){
   char* encoded_end = pipe.encode(constant_cube.data(),
                   intermediate.data(),
                   shape);
-    // SQY_PipelineEncode_UI16(default_filter_name.c_str(),
-              //                  (const char*)&constant_cube[0],
-              //                  &ldims[0],
-              //                  dims.size(),
-              //                  (char*)&compressed[0],
-              //                  &length);
 
   BOOST_REQUIRE(encoded_end!=nullptr);
-  length = encoded_end - intermediate.data();
+  auto length = std::distance(intermediate.data(),encoded_end);
 
-  BOOST_CHECK_LT(length,max_encoded_size);
+  BOOST_CHECK_LE(length,max_encoded_size);
 
   int rvalue = pipe.decode(intermediate.data(),
                incrementing_cube.data(),
