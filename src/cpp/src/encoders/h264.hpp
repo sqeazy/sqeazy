@@ -231,9 +231,6 @@ namespace sqeazy {
 
   };
 
-  template < typename T , typename S>
-  S h264_scheme<T,S>::last_num_encoded_bytes = 0;
-
 
 };//sqy namespace
 

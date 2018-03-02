@@ -77,26 +77,6 @@ BOOST_AUTO_TEST_CASE( header_copies_and_assigns )
 }
 
 
-// BOOST_AUTO_TEST_CASE( encode_header_correct_typeid )
-// {
-
-//   std::string hdr = sqeazy::header::pack<value_type>(dims);
-//   int offset = sqeazy::header::header_end_delimeter().size();
-
-//   auto temp = hdr.substr(0,hdr.size()-offset);
-//   BOOST_CHECK_GT(temp.size(),0u);
-//   BOOST_CHECK_LT(temp.size(),hdr.size());
-
-//   sqeazy::header::tag tree = sqeazy::header::from_string(temp);
-//   std::string received = tree.raw_type_id_;
-//   #ifdef _WIN32
-//   if (received.find("_") != std::string::npos)
-//     received.replace(received.find("_"),1," ");
-// #endif
-//   BOOST_CHECK_EQUAL(received,typeid(value_type).name());
-// }
-
-
 BOOST_AUTO_TEST_CASE( encode_header_correct_typeid )
 {
 
@@ -154,7 +134,6 @@ BOOST_AUTO_TEST_CASE( encode_header_correct_num_dims )
   //header::tag tree;
   bpt::ptree tree;
 
-  // BOOST_CHECK_NO_THROW(tree = header::from_string(header_stream.str()));
   BOOST_CHECK_NO_THROW(bpt::read_json(header_stream,tree));
   BOOST_CHECK_EQUAL(tree.get<std::size_t>("raw.rank"),3u);
 
@@ -291,27 +270,6 @@ BOOST_AUTO_TEST_CASE( property_tree_conserves_whitespaces_in_json )
   BOOST_CHECK_EQUAL(received,msg);
 
 }
-
-// BOOST_AUTO_TEST_CASE( remove_whitespaces )
-// {
-
-//   std::string plain_pipeline = "step1(  junk=123  )  ";
-//   std::string plain_stripped = sqeazy::remove_whitespace(plain_pipeline);
-//   BOOST_CHECK_LT(plain_stripped.size(),plain_pipeline.size());
-//   BOOST_CHECK_EQUAL(plain_stripped.size(),plain_pipeline.size()-6);
-
-// }
-
-// BOOST_AUTO_TEST_CASE( remove_whitespaces_ignoring_verbatim )
-// {
-
-
-//   std::string pipeline = "step1(  junk=<verbatim>these whitespaces should stay</verbatim>  )  ";
-//   std::string stripped = sqeazy::remove_whitespace(pipeline);
-//   BOOST_CHECK_LT(stripped.size(),pipeline.size());
-//   BOOST_CHECK_EQUAL(stripped.size(),pipeline.size()-6);
-
-// }
 
 BOOST_AUTO_TEST_CASE( ends_with )
 {
