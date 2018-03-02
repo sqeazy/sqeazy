@@ -72,7 +72,7 @@ before_install:
   - tar xf v1.8.0.tar.gz
   - pwd
   - cd lz4-1.8.0
-  - if [[ ! -e /home/travis/sw/lib/liblz4.so ]]; then
+  - if [[ ! ( -e /home/travis/sw/lib/liblz4.so ) ]]; then
       pwd &&
       PREFIX=/home/travis/sw SHELL="/bin/bash -x" make install  &&
       echo "lz4 installed in /home/travis/sw" &&
