@@ -11,9 +11,6 @@
 #include "sqeazy_header.hpp"
 #include "sqeazy_algorithms.hpp"
 
-#include <boost/align/aligned_alloc.hpp>
-#include <boost/align/aligned_delete.hpp>
-
 #include <utility>
 #include <cmath>
 #include <iostream>
@@ -24,8 +21,8 @@
 #include <typeinfo>
 #include <stdexcept>
 #include <type_traits>
-#include <memory>
 #include <future>
+
 
 namespace sqeazy
 {
@@ -36,15 +33,7 @@ namespace sqeazy
   template <typename T>
   using default_sink_factory = stage_factory<blank_sink<T> >;
 
-  template <typename T>
-  using unique_array = std::unique_ptr<T[], boost::alignment::aligned_delete>;
 
-  template <typename T>
-  unique_array<T> make_aligned(std::size_t align, std::size_t nbytes){
-
-    unique_array<T> value(reinterpret_cast<T*>(boost::alignment::aligned_alloc(align,nbytes)));
-    return value;
-  }
 
   template <
     typename raw_t,
@@ -576,12 +565,12 @@ namespace sqeazy
       outgoing_t* value = nullptr;
       std::size_t len = std::accumulate(_in_shape.begin(), _in_shape.end(),1,std::multiplies<std::size_t>());
       const std::size_t max_available_output_size = max_encoded_size(len*sizeof(incoming_t));
-      const size_t temp_size = (std::max)(std::ceil(max_available_output_size/sizeof(incoming_t)),
-                                        double(len)
-                                        );
+      const size_t scratchpad_bytes = (std::max)(max_available_output_size,len*sizeof(incoming_t));
 
-      //create scratchpad here asynchronously as it can consume quite a long time
-      std::future<unique_array<incoming_t>> scratchpad = std::async(make_aligned<incoming_t>,std::size_t(32),temp_size);
+      //create scratchpad here asynchronously as the allocation it consumes quite a long time the larger the data gets
+      std::future<unique_array<incoming_t>> scratchpad = std::async(make_aligned<incoming_t>,
+                                                                    std::size_t(32),
+                                                                    scratchpad_bytes);
 
       ////////////////////// HEADER RELATED //////////////////
       //insert header
@@ -594,6 +583,9 @@ namespace sqeazy
       char* output_buffer = reinterpret_cast<char*>(_out);
       std::copy(hdr.begin(), hdr.end(), output_buffer);
       outgoing_t* first_output = reinterpret_cast<outgoing_t*>(output_buffer+hdr_shift);
+
+//TODO:check for alignment of first_output here!
+
       std::size_t available_bytes_out_buffer = max_available_output_size - hdr_shift;
 
       ////////////////////// ENCODING //////////////////
@@ -604,8 +596,8 @@ namespace sqeazy
                             scratchpad);
 
       ////////////////////// HEADER RELATED //////////////////
-      //update header
-      std::size_t compressed_bytes = value-first_output;
+      //update header as the encoding could have changed it
+      std::size_t compressed_bytes = std::distance(first_output,value);
       hdr.set_compressed_size_byte<incoming_t>(compressed_bytes*sizeof(outgoing_t));
       hdr.set_pipeline<incoming_t>(name());
 
@@ -633,70 +625,66 @@ namespace sqeazy
 
       std::size_t len = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
 
-      const size_t temp_size = (std::max)(std::ceil(available_output_bytes/sizeof(incoming_t)),
-                                        double(len)
-                                        );
-
-
       auto temp = scratchpad.get();
       incoming_t* head_filters_end = nullptr;
+      incoming_t* head_results = nullptr;
+
       if(head_filters_.size()){
         head_filters_end = head_filters_.encode(_in,
                                                 temp.get(),
-                                                _shape);
+                                                _shape,
+                                                reinterpret_cast<incoming_t*>(_out)
+                                                );
 
         if(!head_filters_end){
           std::cerr << "[dynamic_pipeline::detail_encode] unable to process data with head_filters\n";
           return nullptr;
         }
 
-      } else {
-
-
-        std::copy(_in,
-                  _in + len,
-                  temp.get());
-
+        head_results = temp.get();
       }
 
-      outgoing_t* encoded_end = nullptr;
+      outgoing_t* encoded_end = head_filters_end ? reinterpret_cast<outgoing_t*>(head_filters_end) : nullptr;
       if(sink_){
-        encoded_end = sink_->encode(temp.get(),
+        encoded_end = sink_->encode( head_results ? head_results : _in,
                                     _out,
                                     _shape);
 
+        if(!encoded_end){
+          std::cerr << "[dynamic_pipeline::detail_encode] unable to process data with sink\n";
+          return nullptr;
+        }
 
-        std::uintmax_t compressed_size = encoded_end-_out;
+        auto compressed_size = std::distance(_out,encoded_end);
         if(tail_filters_.size()){
 
           outgoing_t* casted_temp = reinterpret_cast<outgoing_t*>(temp.get());
 
-          std::copy(_out, _out+compressed_size,casted_temp);
 
-          std::vector<std::size_t> casted_shape(_shape);
+          std::vector<std::size_t> sinked_shape(_shape);
 
           if(compressed_size!=(len*sizeof(outgoing_t))){
-            casted_shape.resize(_shape.size());
-            std::fill(casted_shape.begin(), casted_shape.end(),1);
-            casted_shape[row_major::x] = compressed_size;
+            std::fill(sinked_shape.begin(), sinked_shape.end(),1);
+            sinked_shape[row_major::x] = compressed_size;
           }
 
-          encoded_end = tail_filters_.encode(casted_temp,
-                                             _out,
-                                             casted_shape);
-        }
-      }
-      else{
-        incoming_t* out_as_incoming = reinterpret_cast<incoming_t*>(_out);
-        incoming_t* temp_end = nullptr;
-        if(head_filters_.size())
-          temp_end = head_filters_end;
-        else
-          temp_end = temp.get() + temp_size;
+          encoded_end = tail_filters_.encode(_out,
+                                             casted_temp,
+                                             sinked_shape);
+          if(!encoded_end){
+            std::cerr << "[dynamic_pipeline::detail_encode] unable to process data with tail_filters\n";
+            return nullptr;
+          }
+          encoded_end = std::copy(casted_temp,encoded_end,_out);
 
-        std::copy(temp.get(), temp_end ,
-                  out_as_incoming);
-        encoded_end = reinterpret_cast<outgoing_t*>(out_as_incoming+(temp_end-(incoming_t*)temp.get()));
+        }
+      } else {
+
+        if(head_results)
+          encoded_end = std::copy(reinterpret_cast<outgoing_t*>(head_results),
+                                  reinterpret_cast<outgoing_t*>(head_filters_end),
+                                  _out);
+
       }
 
       return encoded_end;

@@ -259,7 +259,72 @@ namespace sqeazy {
             }
 
             if(chain_.size() % 2 == 0){
-                value = std::copy(reinterpret_cast<outgoing_t*>(temp_in.data()),value,
+                value = std::copy(reinterpret_cast<outgoing_t*>(temp_in.data()),
+                                  value,
+                                  _out);
+            }
+
+            return value;
+
+        }
+
+
+        /**
+           \brief encode one-dimensional array _in and write results to _out
+
+           \param[in] _in input buffer
+           \param[in] _shape shape in input buffer in nDim
+           \param[out] _out output buffer must be at least of size max_encoded_size
+           \param[in] _scratchpad temporary memory used for iterating the chain (can be nullptr)
+
+
+           \return
+           \retval
+
+        */
+        outgoing_t* encode(const incoming_t *_in,
+                           outgoing_t *_out,
+                           const std::vector<std::size_t>& _shape,
+                           outgoing_t *_scratchpad
+            ){
+
+            outgoing_t* value = nullptr;
+            const std::size_t len = std::accumulate(_shape.begin(), _shape.end(),1,std::multiplies<std::size_t>());
+
+            const std::size_t max_output_bytes = this->max_encoded_size(len*sizeof(incoming_t));
+
+            outgoing_t * out_ptr = _out;
+            incoming_t * in_ptr = nullptr;
+
+            std::size_t compressed_items = 0;
+
+            for( std::size_t fidx = 0;fidx<chain_.size();++fidx )
+            {
+
+                value = chain_[fidx]->encode( in_ptr ?  in_ptr : _in,
+                                              out_ptr,
+                                              _shape);
+
+                if(value)
+                    compressed_items = std::distance(out_ptr,value);
+                else
+                    compressed_items = 0;
+
+                if(compressed_items>max_output_bytes || compressed_items == 0){
+                    std::ostringstream msg;
+                    msg << __FILE__ << ":" << __LINE__ << "\t encode wrote past the end of temporary buffers\n";
+                    throw std::runtime_error(msg.str());
+                }
+
+                if(!in_ptr && _scratchpad)
+                    in_ptr = _scratchpad;
+
+                std::swap(in_ptr,out_ptr);
+            }
+
+            if(chain_.size() % 2 == 0){
+                value = std::copy(reinterpret_cast<outgoing_t*>(in_ptr),
+                                  value,
                                   _out);
             }
 
