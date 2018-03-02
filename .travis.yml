@@ -8,7 +8,7 @@ services:
 before_install:
 - docker pull psteinb/sqy-on-trusty
 - docker ps -a
-- docker run psteinb/sqy-on-trusty /bin/sh -c "cd /scratch; gradle test"
+- docker run psteinb/sqy-on-trusty /bin/sh -c "cd /root/sqeazy; gradle test"
 
 script:
   - gradle test
