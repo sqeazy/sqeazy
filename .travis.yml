@@ -1,4 +1,4 @@
-sudo: required
+sudo: false
 dist: trusty
 
 cache:
@@ -64,10 +64,7 @@ before_install:
   - export PATH=/home/travis/sw/bin:${PATH}
   - export LD_LIBRARY_PATH=/home/travis/sw/lib:${LD_LIBRARY_PATH}
   - export PKG_CONFIG_PATH=/home/travis/sw/lib/pkgconfig:${PKG_CONFIG_PATH}
-  - sudo apt-get -qq update
-  #- sudo apt-get install -y --no-install-recommends yasm nasm 
-#  - sudo apt-get install -y --no-install-recommends git mercurial wget bzip2 libbz2-dev make curl cpuid pkg-config software-properties-common binutils cpp cpp-4.8 g++ g++-4.8 gcc gcc-4.8 libasan0 libatomic1 libcloog-isl4 libgcc-4.8-dev libgmp10 libgomp1 libisl10 libitm1 libmpc3 libmpfr4 libquadmath0 libstdc++-4.8-dev libtimedate-perl libtsan0 patch libtiff-dev zlib1g-dev libc6-dev
-        
+          
   #############################################################################
   # LZ4                                                                       #
   #############################################################################
@@ -77,29 +74,25 @@ before_install:
   - cd lz4-1.8.0
   - if [[ ! -e /home/travis/sw/lib/liblz4.so ]]; then
       pwd &&
-      sudo PREFIX=/home/travis/sw SHELL="/bin/bash -x" make install  &&
+      PREFIX=/home/travis/sw SHELL="/bin/bash -x" make install  &&
       echo "lz4 installed in /home/travis/sw" &&
       find /home/travis/sw/ -name "*lz4*";
     else
       echo "lz4 found in /home/travis/sw";
     fi
-  - cd ../.. && sudo rm -vrf lz4-1.8.0
-#  - nm /home/travis/sw/lib/liblz4.so
+   - rm -vrf lz4-1.8.0
 
   #############################################################################
   # FFMPEG                                                                    #
   #############################################################################
-#  - sudo add-apt-repository -y 
-#  - sudo apt-get -qq update
-#  - sudo apt-get install -y libx264-dev x264  libx265-dev x265 libtiff5-dev 
   - if [[ -e /home/travis/sw/lib/libavcodec.so ]]; then
       echo "ffmpeg found in /home/travis/sw" && find /home/travis/sw/lib/ -name "libav*so";
     else
       git clone https://git.ffmpeg.org/ffmpeg.git ffmpeg_repo && cd ffmpeg_repo && git checkout n3.0.2 &&
       ./configure --prefix=/home/travis/sw --enable-libx265 --enable-libx264 --enable-gpl --enable-shared --disable-indevs --disable-outdevs &&
       make -j2 &&
-      sudo make install &&
-      echo "ffmpeg installed in /home/travis/sw" && cd .. && sudo rm -rf ffmpeg_repo;
+      make install &&
+      echo "ffmpeg installed in /home/travis/sw" && cd .. && rm -rf ffmpeg_repo;
     fi
   - if [[ -e `which ffmpeg` ]]; then
         which ffmpeg && 
@@ -118,13 +111,13 @@ before_install:
   - if [[ ! -e /home/travis/sw/lib/libhdf5_hl.so || ! -e /home/travis/sw/lib/libhdf5_hl_cpp.so ]]; then
       ./configure --enable-cxx --enable-hl --prefix=/home/travis/sw &&
       make -j2 &&
-      sudo make install &&
+      make install &&
       echo "hdf5 installed in /home/travis/sw" &&
       find /home/travis/sw/lib/ -name "libhdf*so";
     else
       echo "hdf5 found in /home/travis/sw" && find /home/travis/sw/lib/ -name "libhdf*so";
     fi
-  - cd .. && sudo rm -rf hdf5-1.8.16/
+  - cd .. && rm -rf hdf5-1.8.16/
   - h5ls --version
 
   #############################################################################
@@ -133,7 +126,7 @@ before_install:
   # - travis_retry wget --no-check-certificate https://cmake.org/files/v3.9/cmake-3.9.0.tar.gz &&
   #     tar xf cmake-3.9.0.tar.gz &&
   #     cd cmake-3.9.0 &&
-  #     ./configure --prefix=/home/travis/sw/ && make -j2 && sudo make install &&
+  #     ./configure --prefix=/home/travis/sw/ && make -j2 && make install &&
   #     cd ..;
   # - cmake --version
   
@@ -145,24 +138,15 @@ before_install:
   - cd boost_1_*/
   - if [[ ! -e /home/travis/sw/lib/libboost_date_time.so ]]; then
       ./bootstrap.sh --with-toolset=gcc --with-libraries=date_time,system,filesystem,test,thread,program_options,regex,serialization --prefix=/home/travis/sw &&
-      ./b2 --build-type=minimal variant=release toolset=gcc threading=multi -j2 &&
-      sudo ./b2 --build-type=minimal variant=release toolset=gcc threading=multi install &&
+      ./b2 -d0 --build-type=minimal variant=release toolset=gcc threading=multi -j2 &&
+      ./b2 -d0 --build-type=minimal variant=release toolset=gcc threading=multi install &&
       echo "boost installed in /home/travis/sw" &&
       find /home/travis/sw/lib/ -name "libboost_*so";
     else
       echo "boost found in /home/travis/sw" && find /home/travis/sw/lib/ -name "libboost_*so";
     fi
-  - cd .. && sudo rm -rf boost_1_*/
+  - cd .. && rm -rf boost_1_*/
   
-
-  #############################################################################
-  # GRADLE                                                                     #
-  #############################################################################
-  # - sudo add-apt-repository -y ppa:cwchien/gradle
-  # - sudo apt-get -qq update
-  # - sudo apt-get install gradle-4.0
-  # - gradle --version
-
   #############################################################################
   # GENERAL CHECKS                                                            #
   #############################################################################
