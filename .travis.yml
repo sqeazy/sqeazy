@@ -1,15 +1,15 @@
 sudo: required
 
-language: c++
+language: ruby
 
 services:
   - docker
 
 before_install:
-- docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
-- docker pull psteinb/sqy-on-trusty
+- docker pull carlad/sinatra
+- docker run -d -p 127.0.0.1:80:4567 carlad/sinatra /bin/sh -c "cd /root/sinatra; bundle exec foreman start;"
 - docker ps -a
-- docker run psteinb/sqy-on-trusty /bin/sh -c "cd /root/sqeazy; gradle test"
+- docker run carlad/sinatra /bin/sh -c "cd /root/sinatra; bundle exec rake test"
 
 script:
-  - gradle test
+- bundle exec rake test
