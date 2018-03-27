@@ -14,5 +14,4 @@ before_install:
 # - docker run carlad/sinatra /bin/sh -c "cd /root/sinatra; bundle exec rake test"
 
 script:
-- uname -a
-- uptime
+- docker run psteinb/sqy-on-trusty uname -a
