@@ -15,4 +15,4 @@ before_install:
 
 script:
 - docker run psteinb/sqy-on-trusty uname -a
-- docker run psteinb/sqy-on-trusty gradle test
+- docker run psteinb/sqy-on-trusty gradle -b /build/build.gradle test
