@@ -12,4 +12,4 @@ before_install:
 - docker run carlad/sinatra /bin/sh -c "cd /root/sinatra; bundle exec rake test"
 
 script:
-- bundle exec rake test
+- bundle exec uptime
