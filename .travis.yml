@@ -11,13 +11,10 @@ before_install:
 - docker ps -a
 
 script:
-- pwd
+- pwd #/home/travis/build/sqeazy/sqeazy
 - ls -lrth
 - docker run psteinb/sqy-on-trusty uname -a
-- docker run psteinb/sqy-on-trusty pwd
-- docker run psteinb/sqy-on-trusty ls /
-- docker run psteinb/sqy-on-trusty ls /build
-- docker run psteinb/sqy-on-trusty gcc --version
-- docker run psteinb/sqy-on-trusty gradle --version
+- docker run -v /home/travis/build/sqeazy/sqeazy:/sqy ls /sqy
 #pointing gradle to the right
-- docker run psteinb/sqy-on-trusty gradle -b /build/sqeazy/build.gradle test
+#- docker run psteinb/sqy-on-trusty gradle -b /build/sqeazy/build.gradle test
+- docker run -v /home/travis/build/sqeazy/sqeazy:/sqy gradle -b /sqy/build.gradle test
