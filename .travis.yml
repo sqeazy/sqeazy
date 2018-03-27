@@ -19,4 +19,4 @@ script:
 - docker run psteinb/sqy-on-trusty gcc --version
 - docker run psteinb/sqy-on-trusty gradle --version
 #pointing gradle to the right
-- docker run psteinb/sqy-on-trusty gradle -b /build/build.gradle test
+- docker run psteinb/sqy-on-trusty gradle -b /build/sqeazy/build.gradle test
