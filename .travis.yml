@@ -8,11 +8,15 @@ services:
 before_install:
 - uname -a
 - docker pull psteinb/sqy-on-trusty
-# - docker pull carlad/sinatra 
-# - docker run -d -p 127.0.0.1:80:4567 carlad/sinatra /bin/sh -c "cd /root/sinatra; bundle exec foreman start;"
 - docker ps -a
-# - docker run carlad/sinatra /bin/sh -c "cd /root/sinatra; bundle exec rake test"
 
 script:
+- pwd
 - docker run psteinb/sqy-on-trusty uname -a
+- docker run psteinb/sqy-on-trusty pwd
+- docker run psteinb/sqy-on-trusty ls /
+- docker run psteinb/sqy-on-trusty ls /build
+- docker run psteinb/sqy-on-trusty gcc --version
+- docker run psteinb/sqy-on-trusty gradle --version
+#pointing gradle to the right
 - docker run psteinb/sqy-on-trusty gradle -b /build/build.gradle test
