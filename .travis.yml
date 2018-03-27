@@ -12,6 +12,7 @@ before_install:
 
 script:
 - pwd
+- ls -lrth
 - docker run psteinb/sqy-on-trusty uname -a
 - docker run psteinb/sqy-on-trusty pwd
 - docker run psteinb/sqy-on-trusty ls /
