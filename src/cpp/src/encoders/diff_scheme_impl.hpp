@@ -21,7 +21,7 @@ namespace sqeazy {
     typedef filter<in_type> base_type;
     typedef in_type raw_type;
     typedef typename base_type::out_type compressed_type;
-
+    typedef typename add_unsigned<typename twice_as_wide<in_type>::type >::type sum_type;
 
     static_assert(std::is_arithmetic<raw_type>::value==true,"[diff_scheme] input type is non-arithmetic");
     static const std::string description() { return std::string("store difference to mean of neighboring items"); };
@@ -103,7 +103,7 @@ namespace sqeazy {
       }
 
 
-      const sum_type n_traversed_pixels = sqeazy::num_traversed_pixels<Neighborhood>();
+      const auto n_traversed_pixels = sqeazy::num_traversed_pixels<Neighborhood>();
 
       out_type* signed_compressed = reinterpret_cast<out_type*>(_compressed);
 
@@ -209,171 +209,6 @@ namespace sqeazy {
 
     }
 
-
-
-
-
-
-
-
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // DEPRECATED API
-
-
-    typedef typename add_unsigned<typename twice_as_wide<in_type>::type >::type sum_type;
-    static const bool is_sink = false;
-
-    /**
-     * @brief producing the name of this scheme and return it as a string
-     *
-     * @return const std::string
-     */
-    static const std::string static_name() {
-
-      //TODO: add name of Neighborhood
-      std::ostringstream msg;
-      msg << "diff"
-          << Neighborhood::x_offset_end - Neighborhood::x_offset_begin << "x"
-          << Neighborhood::y_offset_end - Neighborhood::y_offset_begin << "x"
-          << Neighborhood::z_offset_end - Neighborhood::z_offset_begin ;
-      return msg.str();
-
-    }
-
-
-    template <typename size_type>
-    /**
-     * @brief encoding the diff scheme, i.e. the output value for input intensity I is equal to the sum
-     * of the neighborhood divided by the number of pixels traversed in the neighborhood
-     *
-     * @param _width width of input stack
-     * @param _height height of the input stack
-     * @param _depth depth of the input stack
-     * @param _input input stack of type raw_type
-     * @param _output output stack of type compressed_type but same extent than the input
-     * @return sqeazy::error_code
-     */
-    static const error_code static_encode(const size_type& _width,
-                                          const size_type& _height,
-                                          const size_type& _depth,
-                                          const raw_type* _input,
-                                          compressed_type* _output)
-      {
-
-        unsigned long length = _width*_height*_depth;
-        std::copy(_input, _input + length, _output);//crossing fingers due to possible type mismatch
-
-        std::vector<size_type> offsets;
-        sqeazy::halo<Neighborhood, size_type> geometry(_width,_height,_depth);
-        geometry.compute_offsets_in_x(offsets);
-
-
-        size_type halo_size_x = geometry.non_halo_end(0)-geometry.non_halo_begin(0);
-        if(offsets.size()==1)//no offsets in other dimensions than x
-        {
-          halo_size_x = length - offsets.front();
-        }
-        sum_type local_sum = 0;
-        size_type local_index = 0;
-        const sum_type n_traversed_pixels = sqeazy::num_traversed_pixels<Neighborhood>();
-
-        typename std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
-        for(; offsetsItr!=offsets.end(); ++offsetsItr) {
-          for(unsigned long index = 0; index < (unsigned long)halo_size_x; ++index) {
-
-            local_index = index + *offsetsItr;
-            local_sum = naive_sum<Neighborhood>(_input,local_index,_width, _height,_depth);
-            _output[local_index] = _input[local_index] - local_sum/n_traversed_pixels;
-
-          }
-        }
-
-        return SUCCESS;
-      }
-
-
-    template <typename size_type>
-    static const error_code static_encode(const raw_type* _input,
-                                          compressed_type* _output,
-                                          size_type& _dim
-      )
-      {
-
-        return static_encode(_dim, 1, 1, _input, _output);
-      }
-
-    template <typename size_type>
-    static const error_code static_encode(const raw_type* _input,
-                                          compressed_type* _output,
-                                          std::vector<size_type>& _dims
-      )
-      {
-        return static_encode(_dims.at(0), _dims.at(1), _dims.at(2), _input, _output);
-      }
-
-    template <typename size_type>
-    /**
-     * @brief reconstructing data that was encoded by this diff scheme
-     *
-     * @return sqeazy::error_code
-     */
-    static const error_code static_decode(const size_type& _width,
-                                          const size_type& _height,
-                                          const size_type& _depth,
-                                          const compressed_type* _input,
-                                          raw_type* _output)
-      {
-        unsigned long length = _width*_height*_depth;
-        std::copy(_input,_input + length, _output);
-
-        std::vector<size_type> offsets;
-        sqeazy::halo<Neighborhood, size_type> geometry(_width,_height,_depth);
-        geometry.compute_offsets_in_x(offsets);
-        typename std::vector<size_type>::const_iterator offsetsItr = offsets.begin();
-
-        size_type halo_size_x = geometry.non_halo_end(0)-geometry.non_halo_begin(0);
-        if(offsets.size()==1)//no offsets in other dimensions than x
-        {
-          halo_size_x = length - offsets.front();
-        }
-        sum_type local_sum = 0;
-        const sum_type n_traversed_pixels = sqeazy::num_traversed_pixels<Neighborhood>();
-
-        for(; offsetsItr!=offsets.end(); ++offsetsItr) {
-          for(unsigned long index = 0; index < (unsigned long)halo_size_x; ++index) {
-
-            const size_type local_index = index + *offsetsItr;
-            local_sum = naive_sum<Neighborhood>(_output,local_index,_width, _height,_depth);
-            _output[local_index] = _input[local_index] + local_sum/n_traversed_pixels;
-
-          }
-        }
-
-        return SUCCESS;
-      }
-
-
-    template <typename size_type>
-    static const error_code static_decode(const compressed_type* _input,
-                                          raw_type* _output,
-                                          std::vector<size_type>& _dims
-      ) {
-
-      return static_decode(_dims.at(0), _dims.at(1), _dims.at(2), _input, _output);
-
-    }
-
-    template <typename size_type>
-    static const error_code static_decode(const compressed_type* _input,
-                                          raw_type* _output,
-                                          size_type& _dim
-      ) {
-
-      const size_type one = 1;
-      return static_decode(_dim, one, one, _input, _output);
-
-    }
 
   };
 
