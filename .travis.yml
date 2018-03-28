@@ -14,7 +14,7 @@ script:
 - pwd #/home/travis/build/sqeazy/sqeazy
 - ls -lrth
 - docker run psteinb/sqy-on-trusty uname -a
-- docker run -v /home/travis/build/sqeazy/sqeazy:/sqy ls /sqy
+- docker run -v /home/travis/build/sqeazy/sqeazy:/sqy psteinb/sqy-on-trusty ls /sqy
 #pointing gradle to the right
 #- docker run psteinb/sqy-on-trusty gradle -b /build/sqeazy/build.gradle test
-- docker run -v /home/travis/build/sqeazy/sqeazy:/sqy gradle -b /sqy/build.gradle test
+- docker run -v /home/travis/build/sqeazy/sqeazy:/sqy gradle -b /sqy/build.gradle psteinb/sqy-on-trusty test
