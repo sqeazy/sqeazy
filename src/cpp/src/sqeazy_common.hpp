@@ -5,10 +5,13 @@
 #include <utility>
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "compass.hpp"
 
 #include "boost/align/aligned_allocator.hpp"
+#include <boost/align/aligned_alloc.hpp>
+#include <boost/align/aligned_delete.hpp>
 
 
 #ifdef _OPENMP
@@ -42,6 +45,15 @@ namespace sqeazy {
   template <typename value_type>
   using vec_16algn_t = std::vector<value_type, boost::alignment::aligned_allocator<value_type,16> >;
 
+  template <typename T>
+  using unique_array = std::unique_ptr<T[], boost::alignment::aligned_delete>;
+
+  template <typename T>
+  unique_array<T> make_aligned(std::size_t align, std::size_t nbytes){
+
+    unique_array<T> value(reinterpret_cast<T*>(boost::alignment::aligned_alloc(align,nbytes)));
+    return value;
+  }
   /**
      \brief this namespace is meant for helpers related to the platform sqeazy was compiled on
 

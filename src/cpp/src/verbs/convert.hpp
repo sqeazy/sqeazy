@@ -6,6 +6,7 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
+#include <future>
 
 #include "boost/filesystem.hpp"
 #include <boost/program_options.hpp>
@@ -250,6 +251,10 @@ int forward_conversion(const bfs::path& _src,
 
     auto pipe16 = sqy::dypeline<std::uint16_t>::from_string(quantiser_definition);
 
+    auto scratchpad= std::async(sqeazy::make_aligned<std::uint16_t>,32,
+                                converted_stack.num_elements()*sizeof(std::uint8_t));
+
+
     if(_config["chroma_sampling"].as<std::string>() == sqeazy::yuv420formatter::y4m_code()){
 
       sqeazy::uint16_image_stack_cref loaded_stack(reinterpret_cast<const uint16_t*>(input.data()),c_storage_order_shape);
@@ -257,7 +262,8 @@ int forward_conversion(const bfs::path& _src,
       pipe16.detail_encode(loaded_stack.data(),
                           (char*)converted_stack.data(),
                           c_storage_order_shape,
-                          converted_stack.num_elements()*sizeof(std::uint8_t));
+                           converted_stack.num_elements()*sizeof(std::uint8_t),
+                           scratchpad);
 
     }
 
