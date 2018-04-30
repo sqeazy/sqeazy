@@ -13,7 +13,7 @@
 #include "omp.h"
 #endif
 
-#ifdef COMPASS_HAS_SSE4
+#ifdef COMPASS_CT_HAS_SSE4
 #include "bitplane_reorder_sse.hpp"
 #endif
 
