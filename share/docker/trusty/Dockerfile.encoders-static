@@ -5,39 +5,13 @@ FROM sqy/trusty/base:${SQY_VERSION}
 # Set the working directory to /app
 WORKDIR /build
 
+
 # Install lz4
 RUN git clone https://github.com/lz4/lz4.git && \
     cd lz4 && \
 #    git checkout v1.8.0 && \
     CFLAGS="-O3 -DNDEBUG -fPIC" PREFIX=/usr/ SHELL="/bin/bash -x" make -j8 install && \
     cd .. && rm -rf lz4;
-
-# Install x264
-RUN git clone http://git.videolan.org/git/x264.git && \
-    cd x264 && \
-    ./configure --prefix=/usr/ --disable-opencl --enable-pic --enable-static --disable-cli && \
-    make -j8 && \
-    make install && \
-    cd .. && rm -rf x264;
-
-# Install x265
-RUN hg clone https://bitbucket.org/multicoreware/x265 && \
-    cd x265 && \
-    hg up 2.5 && \
-    cd ./build/linux && \
-    cmake -G "Unix Makefiles" -DENABLE_SHARED=OFF -DENABLE_PIC=ON -DENABLE_CLI=OFF -DSTATIC_LINK_CRT=ON -DCMAKE_INSTALL_PREFIX=/usr/ ../../source && \
-    make -j8 && \
-    make install && \
-    cd .. && rm -rf x265;
-
-# Install ffmpeg
-RUN git clone git://source.ffmpeg.org/ffmpeg.git && \
-    cd ffmpeg && \
-    git checkout n3.0.9 && \
-    ./configure --pkg-config-flags=--static --extra-ldflags='/usr/lib/libx264.a /usr/lib/libx265.a' --disable-doc --enable-small --disable-shared --disable-encoders --disable-decoders --enable-encoder=libx264,libx264rgb,libx265 --enable-decoder=h264,h264_vda,hevc --enable-pic --enable-static --enable-libx264 --enable-libx265 --enable-gpl  --disable-sdl --disable-libxcb --disable-zlib --disable-bzlib --disable-xlib --disable-lzma --disable-indevs --disable-outdevs  --disable-protocols --disable-muxers --disable-demuxers --enable-muxer=h264,hevc --enable-demuxer=h264,hevc --disable-filters --disable-parsers --enable-parser=h264,hevc --prefix=/usr/ && \
-    make -j8 && \
-    make -j8 install && \
-    cd .. && rm -rf ffmpeg;
 
 RUN apt remove -y libtiff5;
 
@@ -49,6 +23,36 @@ RUN curl ftp://download.osgeo.org/libtiff/tiff-4.0.8.tar.gz -o tiff.tgz && \
     make -j8 && \
     make -j8 install && \
     cd ../.. && rm -rf tiff*;
+
+# Install x264
+RUN git clone http://git.videolan.org/git/x264.git && \
+    cd x264 && \
+    git checkout 2451a7282463f68e532f2eee090a70ab139bb3e7 && \
+    ./configure --prefix=/usr/ --disable-opencl --enable-pic --enable-static --disable-cli --enable-strip --enable-lto && \
+    make -j8 && \
+    make install && \
+    cd .. && rm -rf x264;
+
+# Install x265
+RUN hg clone https://bitbucket.org/multicoreware/x265 && \
+    cd x265 && \
+    hg up 2.5 && \
+    cd ./build/linux && \
+    cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DENABLE_SHARED=OFF -DENABLE_PIC=ON -DENABLE_CLI=OFF -DSTATIC_LINK_CRT=ON -DCMAKE_INSTALL_PREFIX=/usr/ ../../source && \
+    make -j8 && \
+    make install && \
+    cd .. && rm -rf x265;
+
+# Install ffmpeg
+RUN git clone git://source.ffmpeg.org/ffmpeg.git && \
+    cd ffmpeg && \
+    git checkout n3.0.11 && \
+    ./configure --pkg-config-flags=--static --extra-ldflags='/usr/lib/libx264.a /usr/lib/libx265.a' --disable-doc --enable-small --disable-shared --disable-encoders --disable-decoders --enable-encoder=libx264,libx264rgb,libx265 --enable-decoder=h264,h264_vda,hevc --enable-pic --enable-static --enable-libx264 --enable-libx265 --enable-gpl  --disable-sdl --disable-libxcb --disable-zlib --disable-bzlib --disable-xlib --disable-lzma --disable-indevs --disable-outdevs  --disable-protocols --disable-muxers --disable-demuxers --enable-muxer=h264,hevc --enable-demuxer=h264,hevc --disable-filters --disable-parsers --enable-parser=h264,hevc --prefix=/usr/ --disable-debug && \
+    make -j8 && \
+    make -j8 install && \
+    cd .. && rm -rf ffmpeg;
+
+
 
 RUN rm -rf /build/*
 # Run app.py when the container launches
