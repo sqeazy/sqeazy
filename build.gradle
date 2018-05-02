@@ -418,7 +418,10 @@ task fetch_version {
     }
     outputs.dir(download_dir)
 
-    def version_to_fetch = project.hasProperty("version_to_fetch") ? version_to_fetch : "0.5.2"
+    def last_valid_version = "0.5.2"     //TODO: this should be project.version at best; add a check which one is available online
+
+    def version_to_fetch = project.hasProperty("version_to_fetch") ? version_to_fetch : last_valid_version
+    
     supported_platforms.each {
         String plat ->
 
