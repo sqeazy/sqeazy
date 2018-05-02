@@ -418,7 +418,7 @@ task fetch_version {
     }
     outputs.dir(download_dir)
 
-    def version_to_fetch = project.hasProperty("version_to_fetch") ? version_to_fetch : project.version
+    def version_to_fetch = project.hasProperty("version_to_fetch") ? version_to_fetch : "0.5.2"
     supported_platforms.each {
         String plat ->
 
