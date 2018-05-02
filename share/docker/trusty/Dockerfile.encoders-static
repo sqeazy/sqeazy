@@ -27,7 +27,7 @@ RUN curl ftp://download.osgeo.org/libtiff/tiff-4.0.8.tar.gz -o tiff.tgz && \
 # Install x264
 RUN git clone http://git.videolan.org/git/x264.git && \
     cd x264 && \
-    git checkout 12ca9a69e855c4d4b9000894f478bce665e4e02c && \
+    git checkout 2451a7282463f68e532f2eee090a70ab139bb3e7 && \
     ./configure --prefix=/usr/ --disable-opencl --enable-pic --enable-static --disable-cli --enable-strip --enable-lto && \
     make -j8 && \
     make install && \
