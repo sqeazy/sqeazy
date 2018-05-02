@@ -15,4 +15,4 @@ script:
 - ls -lrth
 - docker run psteinb/sqy-on-trusty lsb_release -a
 - docker run -v /home/travis/build/sqeazy/sqeazy:/build psteinb/sqy-on-trusty ls /build
-- docker run -v /home/travis/build/sqeazy/sqeazy:/build psteinb/sqy-on-trusty 
+- docker run -v /home/travis/build/sqeazy/sqeazy:/build psteinb/sqy-on-trusty gradle clean test

@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE( vendor_right  ){
 
 BOOST_AUTO_TEST_CASE( ncores_right  ){
 
-  auto value = compass::runtime::ncores();
+  auto value = compass::runtime::threads();
 
   BOOST_CHECK_NE(value,0);
   BOOST_CHECK_EQUAL(value,expected_ncores);
