@@ -44,7 +44,7 @@ run-static: build-static
 run: build-shared
 	docker run -e ORG_GRADLE_PROJECT_bintray_user=psteinb -e ORG_GRADLE_PROJECT_bintray_key=${MY_BINTRAY_KEY} -it --rm sqy/trusty/shared:$(SQY_VERSION)
 
-push2dockerhub : build-shared
+to_dockerhub : build-shared
 	docker tag sqy/trusty/shared:$(SQY_VERSION) psteinb/sqy-on-trusty:$(SQY_VERSION)
 	docker tag sqy/trusty/shared:$(SQY_VERSION) psteinb/sqy-on-trusty:latest
 	docker push psteinb/sqy-on-trusty
