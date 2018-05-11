@@ -157,7 +157,7 @@ public class SqeazyLibraryTests
     @Test
     public void testpipeline_RoundTRIP() throws IOException
     {
-	final String lPipeline = "quantiser->h264";
+		final String lPipeline = "quantiser->lz4";//TODO find a way to configure this = "quantiser->h264";
 	final Pointer<Byte> bPipelineName = Pointer.pointerToCString(lPipeline);
 	    
 	final int lWidth  = 128;
