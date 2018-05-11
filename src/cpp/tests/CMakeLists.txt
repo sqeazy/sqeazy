@@ -188,6 +188,8 @@ target_link_libraries(test_huffman_utils_impl ${OpenMP++_LIBRARIES} ${Boost_LIBR
 add_executable(test_volume_fixtures test_volume_fixtures.cpp)
 target_link_libraries(test_volume_fixtures ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${TIFF_LIBRARY})
 
+add_executable(test_sqeazy_pipelines_impl test_sqeazy_pipelines_impl.cpp)
+add_executable(test_hdf5_impl test_hdf5_impl.cpp)
 
 IF((${WITH_FFMPEG} EQUAL "ON") AND (DEFINED ${FFMPEG_FOUND}))
   if(WIN32)
@@ -206,6 +208,7 @@ IF((${WITH_FFMPEG} EQUAL "ON") AND (DEFINED ${FFMPEG_FOUND}))
     set(SQY_FFMPEG_Libraries ${SQY_FFMPEG_Libraries} ${FFMPEG_EXTRA_LINK_FLAGS})
   endif()
 
+  target_link_libraries(test_sqeazy_pipelines_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries} ${LZ4_LIBRARY})
 
   add_executable(test_avcodec_sandbox test_avcodec_sandbox.cpp)
   target_link_libraries(test_avcodec_sandbox ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries})
@@ -225,15 +228,17 @@ IF((${WITH_FFMPEG} EQUAL "ON") AND (DEFINED ${FFMPEG_FOUND}))
   target_link_libraries(test_hevc_scheme_utils ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries})
 
 
-  add_executable(test_sqeazy_pipelines_impl test_sqeazy_pipelines_impl.cpp)
-  target_link_libraries(test_sqeazy_pipelines_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries} ${LZ4_LIBRARY})
 
-  add_executable(test_hdf5_impl test_hdf5_impl.cpp)
+
+
   target_link_libraries(test_hdf5_impl ${HDF5_LIBRARIES} ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${LZ4_LIBRARY} ${SQY_FFMPEG_Libraries})
 
 ELSE()
   MESSAGE(">> [tests] ffmpeg switched off or libavcodec not found not found. skipping test_avcodec_sandbox ...")
+  target_link_libraries(test_sqeazy_pipelines_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${LZ4_LIBRARY})
+  target_link_libraries(test_hdf5_impl ${HDF5_LIBRARIES} ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${LZ4_LIBRARY})
 ENDIF()
+
 
 
 #target_link_libraries(test_bench_utils_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${TIFF_LIBRARY})

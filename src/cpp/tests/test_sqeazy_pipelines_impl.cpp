@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_CASE( roundtrip ){
 
 }
 
-
+#ifdef SQY_WITH_FFMPEG
 BOOST_AUTO_TEST_CASE( flybrain_roundtrip_video_lz4 ){
 
   const std::string filter_name = "h264->lz4";
@@ -186,6 +186,7 @@ BOOST_AUTO_TEST_CASE( flybrain_roundtrip_video_lz4 ){
 
 
 }
+#endif
 
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -345,7 +346,7 @@ BOOST_AUTO_TEST_SUITE( tricky_pipelines )
 
 BOOST_AUTO_TEST_CASE( roundtrip_quantiser ){
 
-  av_register_all();
+
 
   std::vector<size_t> shape(3,128);
   shape.front() *= 2;
@@ -398,7 +399,7 @@ BOOST_AUTO_TEST_CASE( roundtrip_quantiser ){
 
 BOOST_AUTO_TEST_CASE( roundtrip_quantiser2file ){
 
-  av_register_all();
+
 
   std::vector<size_t> shape(3,128);
   shape.front() *= 2;
@@ -449,6 +450,7 @@ BOOST_AUTO_TEST_CASE( roundtrip_quantiser2file ){
 
 }
 
+#ifdef SQY_WITH_FFMPEG
 BOOST_AUTO_TEST_CASE( roundtrip_quantiser_h264 ){
 
   av_register_all();
@@ -557,7 +559,14 @@ BOOST_AUTO_TEST_CASE( roundtrip_quantiser2file_h264 ){
                   outputdata.data(), outputdata.data()+len);
 
 }
+
+#endif
+
 BOOST_AUTO_TEST_SUITE_END()
+
+
+
+
 
 static const std::string bug_github59_filter_name = "bitswap1->lz(accel=8)";//lz should be lz4
 
