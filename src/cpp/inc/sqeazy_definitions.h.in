@@ -1,6 +1,8 @@
 #ifndef _SQEAZY_DEFINITIONS_H_
 #define _SQEAZY_DEFINITIONS_H_
 
+#cmakedefine SQY_WITH_FFMPEG
+
 #ifdef _WIN32
 #define SQY_FUNCTION_PREFIX extern "C" __declspec(dllexport)
 #else

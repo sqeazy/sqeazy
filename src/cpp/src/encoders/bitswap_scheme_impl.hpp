@@ -13,7 +13,8 @@
 #include "omp.h"
 #endif
 
-#ifdef COMPASS_CT_HAS_SSE4
+
+#if defined(__AVX__) || (defined(COMPASS_CT_HAS_SSE4) && COMPASS_CT_HAS_SSE4 > 0)
 #include "bitplane_reorder_sse.hpp"
 #endif
 
@@ -106,7 +107,8 @@ namespace sqeazy {
          compass::runtime::has(compass::feature::sse4()) &&
          num_bits_per_plane==1 &&
          sizeof(raw_type)>1 &&
-         sqeazy::detail::sse_valid_length<static_num_bits_per_plane,raw_type>(_length))
+         sqeazy::detail::sse_valid_length<static_num_bits_per_plane,raw_type>(_length)
+		  )
       {
 
 #ifdef _SQY_VERBOSE_

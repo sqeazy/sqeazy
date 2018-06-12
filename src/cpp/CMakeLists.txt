@@ -50,8 +50,14 @@ option(USE_CXX11_ABI "enable _GLIBCXX_USE_CXX11_ABI in GCC 5.0+" ON)
 option(WITH_EXPERIMENTAL "enable experimental code paths in sqeazy" OFF)
 option(WITH_TRACE_MSG "enable trace messages for debugging sqeazy (enables verbose messages)" OFF)
 option(WITH_VERBOSE "enable verbose messages for debugging sqeazy" OFF)
+option(WITH_FFMPEG "link to ffmpeg to support video encoding" OFF)
+
 if(${WITH_TRACE_MSG})
   set(WITH_VERBOSE ON)
+endif()
+
+if(${WITH_FFMPEG})
+  set(SQY_WITH_FFMPEG 1)
 endif()
 
 # trying to setup paths so this package can be picked up
@@ -529,7 +535,7 @@ ELSE()
 ENDIF()
 
 #-------------------------------- FFMPEG       ---------------------------------
-
+if(WITH_FFMPEG)
 find_package(FFMPEG REQUIRED COMPONENTS avformat avcodec avutil swscale)
 IF(FFMPEG_FOUND)
   INCLUDE_DIRECTORIES(${FFMPEG_INCLUDE_DIRS})
@@ -542,7 +548,7 @@ IF(FFMPEG_FOUND)
 ELSE()
   MESSAGE(WARNING "++ FFMPEG not found!")
 ENDIF()
-
+endif(WITH_FFMPEG)
 
 #-------------------------------- TIFF       ---------------------------------
 
@@ -599,7 +605,7 @@ ENDIF(TIFF_FOUND)
 
 ################################## add source ##################################
 
-IF(Boost_FOUND AND HDF5_FOUND AND LZ4_FOUND AND FFMPEG_FOUND AND TIFF_FOUND)
+IF(Boost_FOUND AND HDF5_FOUND AND LZ4_FOUND AND TIFF_FOUND)
 
   #setup headers
   if(NOT IS_DIRECTORY ${PROJECT_BINARY_DIR}/inc)
