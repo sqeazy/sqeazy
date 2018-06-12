@@ -12,7 +12,7 @@ apply plugin: 'maven'
 apply plugin: 'maven-publish'
 
 
-version versionDetails().lastTag
+version project.hasProperty("force_version") ? force_version : versionDetails().lastTag
 
 def native_group = 'native'
 def bundle_group = 'bundle'
@@ -420,7 +420,7 @@ task fetch_version {
 
     def last_valid_version = "0.6.0"     //TODO: this should be project.version at best; add a check which one is available online
 
-    def version_to_fetch = project.hasProperty("version_to_fetch") ? version_to_fetch : last_valid_version
+    def version_to_fetch = project.hasProperty("force_version") ? force_version : last_valid_version
     
     supported_platforms.each {
         String plat ->
@@ -548,7 +548,7 @@ task finish_pie(type: Jar) {
   include "**"
   exclude "*.zip"
   baseName 'sqeazy'
-  version project.version
+  version project.hasProperty("force_version") ? force_version : versionDetails().lastTag
 }
 
 
