@@ -26,7 +26,7 @@ namespace sqeazy {
       dircount = 1;
 
       while (TIFFReadDirectory(_tiff_handle)) {
-	dircount++;
+    dircount++;
       }
       TIFFSetDirectory(_tiff_handle,tdir_t(0));
     }
@@ -36,7 +36,7 @@ namespace sqeazy {
 
   int get_tiff_bits_per_sample(TIFF* _tiff_handle){
     int value = 0;
-    
+
     if(_tiff_handle)
       TIFFGetField(_tiff_handle, TIFFTAG_BITSPERSAMPLE, &value);
 
@@ -45,7 +45,7 @@ namespace sqeazy {
 
   int get_tiff_width(TIFF* _tiff_handle){
     int value = 0;
-    
+
     if(_tiff_handle)
       TIFFGetField(_tiff_handle, TIFFTAG_IMAGEWIDTH, &value);
 
@@ -55,7 +55,7 @@ namespace sqeazy {
 
   int get_tiff_height(TIFF* _tiff_handle){
     int value = 0;
-    
+
     if(_tiff_handle)
       TIFFGetField(_tiff_handle, TIFFTAG_IMAGELENGTH, &value);
 
@@ -74,7 +74,7 @@ namespace sqeazy {
 
 
       while (TIFFReadDirectory(_tiff_handle)) {
-	_value.push_back(TIFFCurrentDirectory(_tiff_handle));
+    _value.push_back(TIFFCurrentDirectory(_tiff_handle));
 
 
       }
@@ -85,13 +85,13 @@ namespace sqeazy {
 
   /**
      \brief extract dimensions of image stack from tiff_handle
-     
+
      \param[in] _tiff_handle TIFF pointer to open Tiff file (not error checking imposed)
      \param[in] _tiff_dirs opened tiff directories
 
      \return shape vector complying to c_storage_order _dims[] = {z-shape,y-shape,x-shape}
-     \retval 
-     
+     \retval
+
   */
   template <typename ExtentT>
   std::vector<ExtentT> extract_max_extents(TIFF* _tiff_handle, const std::vector< tdir_t >& _tiff_dirs ) {
@@ -120,25 +120,25 @@ namespace sqeazy {
 
   /**
      \brief extract pixels from tiff handle
-     
+
      \param[in] _tiff_handle TIFF pointer to open Tiff file (not error checking imposed, needed to check encoding)
      \param[in] _tiff_dirs TIFF directories in open file
      \param[in] _container containter to put the pixels in
-     
+
      \return shape vector complying to c_storage_order _dims[] = {z-shape,y-shape,x-shape}
-     \retval 
-     
+     \retval
+
   */
   template <typename ValueT>
   std::vector<unsigned> extract_tiff_to_vector(TIFF* _tiff_handle,
-					       const std::vector<tdir_t>& _tiff_dirs ,
-					       std::vector<ValueT>& _container) {
+                           const std::vector<tdir_t>& _tiff_dirs ,
+                           std::vector<ValueT>& _container) {
 
     int bits_per_sample = 0;
     TIFFGetField(_tiff_handle, TIFFTAG_BITSPERSAMPLE, &bits_per_sample);
     if(bits_per_sample!=(sizeof(ValueT)*CHAR_BIT)){
       std::string fname(TIFFFileName(_tiff_handle));
-      std::ostringstream msg; 
+      std::ostringstream msg;
       msg << "[SQY] ERROR: expected " << sizeof(ValueT)*CHAR_BIT << ", but received " << bits_per_sample << " from " << fname << "\n";
       throw std::runtime_error(msg.str());
     }
@@ -158,8 +158,8 @@ namespace sqeazy {
         TIFFGetField(_tiff_handle, TIFFTAG_IMAGEWIDTH, &w);
         TIFFGetField(_tiff_handle, TIFFTAG_IMAGELENGTH, &h);
         for (unsigned y=0; y<h; ++y) {
-	  index = frame*frame_offset+y*w;
-	  TIFFReadScanline(_tiff_handle,&_container[index], y);
+      index = frame*frame_offset+y*w;
+      TIFFReadScanline(_tiff_handle,&_container[index], y);
         }
       }
 
@@ -168,23 +168,23 @@ namespace sqeazy {
 
   /**
      \brief extract pixels from tiff handle
-     
+
      \param[in] _tiff_handle TIFF pointer to open Tiff file (not error checking imposed, needed to check encoding)
      \param[in] _tiff_dirs TIFF directories in open file
      \param[in] _container stack complying to boost::multi_array concept
-          
-     \return 
-     \retval 
-     
+
+     \return
+     \retval
+
   */
   template <typename stack_type>
   void extract_tiff_to_image_stack(TIFF* _tiff_handle,
-				   const std::vector<tdir_t>& _tiff_dirs ,
-				   stack_type& _container){
-    
+                   const std::vector<tdir_t>& _tiff_dirs ,
+                   stack_type& _container){
+
     std::vector<unsigned> extents = extract_max_extents<unsigned>(_tiff_handle, _tiff_dirs );
 
-    
+
     unsigned w,h;
     unsigned frame_offset = extents[row_major::w]*extents[row_major::h];
     unsigned total = frame_offset*extents[row_major::z];
@@ -194,12 +194,12 @@ namespace sqeazy {
 
     for(unsigned frame = 0;frame<extents[row_major::z];++frame)
       {
-  	TIFFSetDirectory(_tiff_handle,_tiff_dirs[frame]);
-  	TIFFGetField(_tiff_handle, TIFFTAG_IMAGEWIDTH, &w);
-  	TIFFGetField(_tiff_handle, TIFFTAG_IMAGELENGTH, &h);
-  	for (unsigned y=0;y<h;++y) {
-  	  TIFFReadScanline(_tiff_handle,&local_pixels[frame*frame_offset+y*w], y);
-  	}
+    TIFFSetDirectory(_tiff_handle,_tiff_dirs[frame]);
+    TIFFGetField(_tiff_handle, TIFFTAG_IMAGEWIDTH, &w);
+    TIFFGetField(_tiff_handle, TIFFTAG_IMAGELENGTH, &h);
+    for (unsigned y=0;y<h;++y) {
+      TIFFReadScanline(_tiff_handle,&local_pixels[frame*frame_offset+y*w], y);
+    }
       }
 
     _container.resize(extents);
@@ -217,7 +217,7 @@ namespace sqeazy {
     _container = local_stack;
   }
 
-  
+
   template <typename T>
   struct tiff_type_equivalent {
     enum { value = 0 };
@@ -257,19 +257,19 @@ namespace sqeazy {
 
   /**
      \brief write image stack (assumed to be 3D)
-     
+
      \param[in] _stack in c_storage_order
      \param[in] _dims complying to c_storage_order _dims[] = {z-shape,y-shape,x-shape}
      \param[in] _dest filename to write to
 
-     \return 
-     \retval 
-     
+     \return
+     \retval
+
   */
   template <typename im_vec_type, typename ext_type>
   void write_tiff_from_array(const im_vec_type* _stack,
-			      const ext_type& _dims,
-			      const std::string& _dest) {
+                  const ext_type& _dims,
+                  const std::string& _dest) {
 
 
     TIFF *output_image = TIFFOpen(_dest.c_str(), "w");
@@ -285,7 +285,7 @@ namespace sqeazy {
     unsigned w = _dims[_dims.size()-1];
     unsigned h = _dims[_dims.size()-2];
     unsigned z = _dims.size() > 2 ? _dims[row_major::z] : 1;
-    
+
     const unsigned long long frame_size = w*h;
     unsigned long long index = 0;
     for(unsigned frame = 0; frame<z; ++frame) {
@@ -294,17 +294,17 @@ namespace sqeazy {
       TIFFSetField(output_image, TIFFTAG_PAGENUMBER,		frame, z);
       TIFFSetField(output_image, TIFFTAG_BITSPERSAMPLE,		sizeof(im_vec_type)*CHAR_BIT);
       TIFFSetField(output_image, TIFFTAG_SAMPLESPERPIXEL,	1);
-      TIFFSetField(output_image, TIFFTAG_PLANARCONFIG, 		PLANARCONFIG_CONTIG);
-      TIFFSetField(output_image, TIFFTAG_PHOTOMETRIC,  		PHOTOMETRIC_MINISBLACK);
-      TIFFSetField(output_image, TIFFTAG_COMPRESSION,  		COMPRESSION_NONE);
-      TIFFSetField(output_image, TIFFTAG_SAMPLEFORMAT, 		tiff_type_equivalent<im_vec_type>::value);
+      TIFFSetField(output_image, TIFFTAG_PLANARCONFIG,      PLANARCONFIG_CONTIG);
+      TIFFSetField(output_image, TIFFTAG_PHOTOMETRIC,       PHOTOMETRIC_MINISBLACK);
+      TIFFSetField(output_image, TIFFTAG_COMPRESSION,       COMPRESSION_NONE);
+      TIFFSetField(output_image, TIFFTAG_SAMPLEFORMAT,      tiff_type_equivalent<im_vec_type>::value);
       TIFFSetField(output_image, TIFFTAG_SUBFILETYPE,		FILETYPE_PAGE);
-      TIFFSetField(output_image, TIFFTAG_ROWSPERSTRIP, 		TIFFDefaultStripSize(output_image, 0));
-	
-        
+      TIFFSetField(output_image, TIFFTAG_ROWSPERSTRIP,      TIFFDefaultStripSize(output_image, 0));
+
+
       for (unsigned y=0; y<h; ++y) {
-	index = frame*frame_size + y*w;
-	TIFFWriteScanline(output_image,(void*)&_stack[index],y,0);
+    index = frame*frame_size + y*w;
+    TIFFWriteScanline(output_image,(void*)&_stack[index],y,0);
 
       }
 
@@ -316,8 +316,8 @@ namespace sqeazy {
 
     template <typename im_vec_type, typename ext_type>
   void write_tiff_from_vector(const im_vec_type& _stack,
-			      const ext_type& _dims,
-			      const std::string& _dest) {
+                  const ext_type& _dims,
+                  const std::string& _dest) {
       return write_tiff_from_array(_stack.data(), _dims, _dest);
     }
 
@@ -326,12 +326,12 @@ namespace sqeazy {
    \brief write stack to tiff, we assert that c_storage_order is setup within _stack and the stack shape is set accordingly
    for c_storage_order that would imply shape = {z-dim,y-dim,x-dim}
 
-   \param[in] 
-   
-   \return 
-   \retval 
-   
-  */  
+   \param[in]
+
+   \return
+   \retval
+
+  */
   template <typename stack_type>
   void write_image_stack(const stack_type& _stack, const std::string& _dest){
 
@@ -351,32 +351,32 @@ namespace sqeazy {
       std::cerr << "inconsistent ordering found! Nothing saved.\n";
       return;
     }
-    
+
     unsigned w = _stack.shape()[row_major::w];
     unsigned h = _stack.shape()[row_major::h];
     unsigned z = _stack.shape()[row_major::d];
-    
+
     for(unsigned frame = 0;frame<z;++frame){
       TIFFSetField(output_image, TIFFTAG_IMAGEWIDTH,		w);
       TIFFSetField(output_image, TIFFTAG_IMAGELENGTH,		h);
       TIFFSetField(output_image, TIFFTAG_BITSPERSAMPLE,		sizeof(value_type)*CHAR_BIT);
       TIFFSetField(output_image, TIFFTAG_SAMPLESPERPIXEL,	1);
-      TIFFSetField(output_image, TIFFTAG_PLANARCONFIG, 		PLANARCONFIG_CONTIG);
-      TIFFSetField(output_image, TIFFTAG_ROWSPERSTRIP, 		TIFFDefaultStripSize(output_image, 0));
-      TIFFSetField(output_image, TIFFTAG_PHOTOMETRIC,  		PHOTOMETRIC_MINISBLACK);
-      TIFFSetField(output_image, TIFFTAG_COMPRESSION,  		COMPRESSION_NONE);
+      TIFFSetField(output_image, TIFFTAG_PLANARCONFIG,      PLANARCONFIG_CONTIG);
+      TIFFSetField(output_image, TIFFTAG_ROWSPERSTRIP,      TIFFDefaultStripSize(output_image, 0));
+      TIFFSetField(output_image, TIFFTAG_PHOTOMETRIC,       PHOTOMETRIC_MINISBLACK);
+      TIFFSetField(output_image, TIFFTAG_COMPRESSION,       COMPRESSION_NONE);
       TIFFSetField(output_image, TIFFTAG_SUBFILETYPE,		FILETYPE_PAGE);
-      TIFFSetField(output_image, TIFFTAG_SAMPLEFORMAT, 		tiff_type_equivalent<value_type>::value);
-      TIFFSetField(output_image, TIFFTAG_PAGENUMBER,		frame, z); 
+      TIFFSetField(output_image, TIFFTAG_SAMPLEFORMAT,      tiff_type_equivalent<value_type>::value);
+      TIFFSetField(output_image, TIFFTAG_PAGENUMBER,		frame, z);
       TIFFSetField(output_image, TIFFTAG_ORIENTATION,		(int)ORIENTATION_TOPLEFT);
-      
+
       std::vector<value_type> temp_row(w);
-      
+
       for (unsigned y=0;y<h;++y) {
 
-	stack_line_t temp = _stack[ boost::indices[frame][y][range_t(0,w)] ];
-	std::copy(temp.begin(), temp.end(), temp_row.begin());
-	TIFFWriteScanline(output_image,temp_row.data(),y,0);
+    stack_line_t temp = _stack[ boost::indices[frame][y][range_t(0,w)] ];
+    std::copy(temp.begin(), temp.end(), temp_row.begin());
+    TIFFWriteScanline(output_image,temp_row.data(),y,0);
 
       }
 
@@ -385,15 +385,15 @@ namespace sqeazy {
     TIFFClose(output_image);
   }
 
-  
+
   struct tiff_facet {
-    
+
     boost::filesystem::path location_;
     TIFF* handle_;
     unsigned long n_pixels_;
     std::vector<size_t> shape_;
     std::vector<char> buffer_;
-    
+
     tiff_facet(const std::string& _path = "", bool _all_errors = false):
       location_(_path),
       handle_(0),
@@ -401,14 +401,14 @@ namespace sqeazy {
       shape_(),
       buffer_()
     {
-      
-      
+
+
       if(!_path.empty())
-	load(_path, _all_errors);
+    load(_path, _all_errors);
     }
-    
-    
-    
+
+
+
 
     template <typename T, typename U>
     tiff_facet(T* _begin, T* _end, const std::vector<U>& _shape):
@@ -418,7 +418,7 @@ namespace sqeazy {
       shape_(_shape.begin(),_shape.end()),
       buffer_()
     {
-      
+
       unsigned long long bytes = n_pixels_*sizeof(T);
       buffer_.resize(bytes);
       T* dest_begin = reinterpret_cast<T*>(buffer_.data());
@@ -429,13 +429,13 @@ namespace sqeazy {
       return !handle_;
     }
 
-    
-    
+
+
     ~tiff_facet(){
-      
+
       if(handle_)
-	TIFFClose(handle_);
-      
+    TIFFClose(handle_);
+
     }
 
     void rewind(){
@@ -443,11 +443,11 @@ namespace sqeazy {
     }
 
     int bits_per_sample() const {
-      
+
       return empty() ? 0 : get_tiff_bits_per_sample(handle_);
-      
+
     }
-    
+
     unsigned long size_in_byte() const {
       return (this->n_pixels_)*bits_per_sample()/CHAR_BIT;
     }
@@ -458,12 +458,12 @@ namespace sqeazy {
 
     /**
        \brief insert width, height, n_tiff_dirs into _dims vector
-       
-       \param[out] _dims 
-       
-       \return 
-       \retval 
-       
+
+       \param[out] _dims
+
+       \return
+       \retval
+
     */
     template <typename T>
     void dimensions(std::vector<T>& _shape) const {
@@ -471,84 +471,84 @@ namespace sqeazy {
 
       if(!empty()){
 
-	
 
-	T n_frames = get_num_tiff_dirs(handle_);
-	T width = get_tiff_width(handle_);
-	T height = get_tiff_height(handle_);
 
-	if(n_frames){
-	  _shape.resize(3);
-	  _shape[row_major::z] = n_frames;
-	} else {
-	  _shape.resize(2);
-	}
-	
-	if(width){
-	  _shape[_shape.size()-1] = width;
-	} else {
-	  return;
-	}
+    T n_frames = get_num_tiff_dirs(handle_);
+    T width = get_tiff_width(handle_);
+    T height = get_tiff_height(handle_);
 
-	if(height)
-	  _shape[_shape.size()-2] = height;
-	else
-	  return;
-	
-	
+    if(n_frames){
+      _shape.resize(3);
+      _shape[row_major::z] = n_frames;
+    } else {
+      _shape.resize(2);
+    }
+
+    if(width){
+      _shape[_shape.size()-1] = width;
+    } else {
+      return;
+    }
+
+    if(height)
+      _shape[_shape.size()-2] = height;
+    else
+      return;
+
+
       }
     }
 
-    
+
 
     void load(const std::string& _path = "", bool _all_errors = false){
 
       if(!_all_errors)
-	TIFFSetWarningHandler(NULL);
-      
+    TIFFSetWarningHandler(NULL);
+
       if(!empty()){
-	TIFFClose(handle_);
-	handle_ = 0;
-	shape_.clear();
-	n_pixels_ = 0;
-	buffer_.clear();
+    TIFFClose(handle_);
+    handle_ = 0;
+    shape_.clear();
+    n_pixels_ = 0;
+    buffer_.clear();
       }
 
       location_ = _path;
 
       if(boost::filesystem::exists(location_) && boost::filesystem::is_regular_file(location_)){
-	handle_ = TIFFOpen(_path.c_str(), "r");
-	dimensions(shape_);
-	rewind();
-	n_pixels_ = std::accumulate(shape_.begin(), shape_.end(), 1, std::multiplies<unsigned long>());
-	load_to_buffer();
+    handle_ = TIFFOpen(_path.c_str(), "r");
+    dimensions(shape_);
+    rewind();
+    n_pixels_ = std::accumulate(shape_.begin(), shape_.end(), 1, std::multiplies<unsigned long>());
+    load_to_buffer();
       } else {
-	if(!_path.empty())
-	  std::cerr << "[sqeazy_bench::tiff_facet] \t unable to open " << _path << " does not exist or is not a file\n";
+    if(!_path.empty())
+      std::cerr << "[sqeazy_bench::tiff_facet] \t unable to open " << _path << " does not exist or is not a file\n";
       }
     }
 
     void write(const std::string& _path = "unknown", unsigned _bits_per_sample=8){
-      
+
       if(_path.empty()){
-	std::cerr << "[sqeazy_bench::tiff_facet::write] \t unable to open " << _path << " does not exist\n";
-	return;
+    std::cerr << "[sqeazy_bench::tiff_facet::write] \t unable to open " << _path << " does not exist\n";
+    return;
       }
-      
+
       switch(_bits_per_sample){
       case 8:
-	write_tiff_from_array(reinterpret_cast<const unsigned char*>(buffer_.data()), 
-			      shape_,
-			      _path);
-	break;
+    write_tiff_from_array(reinterpret_cast<const unsigned char*>(buffer_.data()),
+                  shape_,
+                  _path);
+    break;
       case 16:
-	write_tiff_from_array(reinterpret_cast<const unsigned short*>(buffer_.data()), 
-			      shape_,
-			      _path);
-	break;
+    write_tiff_from_array(reinterpret_cast<const unsigned short*>(buffer_.data()),
+                  shape_,
+                  _path);
+    break;
       default:
-	std::cerr << "[sqeazy_bench::tiff_facet::write] \t unknown number bits per sample " << _bits_per_sample << ", nothing to write to " <<  _path << "\n";
-	
+    std::cerr << "[sqeazy_bench::tiff_facet::write] \t unknown number bits per sample " << _bits_per_sample << ", nothing to write to " <<  _path << "\n";
+
       }
 
       return;
@@ -558,9 +558,9 @@ namespace sqeazy {
       return handle_;
     }
 
-    
+
     void load_to_buffer(){
-      
+
       buffer_.resize(size_in_byte());
 
       unsigned w,h;
@@ -569,16 +569,16 @@ namespace sqeazy {
       unsigned long index = 0;
 
       for(unsigned frame = 0; frame<shape_[row_major::d]; ++frame)
-	{
+    {
 
-	  TIFFGetField(handle_, TIFFTAG_IMAGEWIDTH, &w);
-	  TIFFGetField(handle_, TIFFTAG_IMAGELENGTH, &h);
-	  for (unsigned y=0; y<h; ++y) {
-	    index = frame*frame_offset+y*w;
-	    TIFFReadScanline(handle_,&buffer_[index*bits_per_sample()/CHAR_BIT], y);
-	  }
-	  TIFFReadDirectory(handle_);
-	}
+      TIFFGetField(handle_, TIFFTAG_IMAGEWIDTH, &w);
+      TIFFGetField(handle_, TIFFTAG_IMAGELENGTH, &h);
+      for (unsigned y=0; y<h; ++y) {
+        index = frame*frame_offset+y*w;
+        TIFFReadScanline(handle_,&buffer_[index*bits_per_sample()/CHAR_BIT], y);
+      }
+      TIFFReadDirectory(handle_);
+    }
     }
 
     char const * data() const {

@@ -22,6 +22,7 @@
 #include "encoders/quantiser_scheme_impl.hpp"
 #include "sqeazy_algorithms.hpp"
 #include "hdf5_utils.hpp"
+#include "sqeazy_common.hpp"
 
 namespace po = boost::program_options;
 namespace bfs = boost::filesystem;
@@ -84,14 +85,21 @@ namespace sqeazy {
 
         if(!_no_header){
 
-          std::cout << (!_as_csv ? std::setw(name_.size()+2   ) : std::setw(0)) << "filename"       << delim
-                    << (!_as_csv ? std::setw(14               ) : std::setw(0)) << "sizeof_pixel"   << delim
-                    << (!_as_csv ? std::setw(15               ) : std::setw(0)) << "shape"          << delim
-                    << (!_as_csv ? std::setw(15               ) : std::setw(0)) << "n_elements"     << delim
-                    << (!_as_csv ? std::setw(15               ) : std::setw(0)) << "time_mus"       << delim
-                    << (!_as_csv ? std::setw(15               ) : std::setw(0)) << "final_bytes"    << delim
-                    << (!_as_csv ? std::setw(5                ) : std::setw(0)) << "id"             << delim
-                    << (!_as_csv ? std::setw(_comment.size()+2) : std::setw(0)) << "comment"        << "\n";
+          std::cout << (!_as_csv ? std::setw(2 ) : std::setw(0)) << "id"             << delim
+                    << (!_as_csv ? std::setw(15) : std::setw(0)) << "shape"          << delim
+                    << (!_as_csv ? std::setw(15) : std::setw(0)) << "time_mus"       << delim
+                    << (!_as_csv ? std::setw(15) : std::setw(0)) << "final_bytes"    << delim
+                    << (!_as_csv ? std::setw(18) : std::setw(0)) << "ingest_bw_mbps" << delim
+                    << (!_as_csv ? std::setw(15) : std::setw(0)) << "sizeof_pixel"   << delim
+                    << (!_as_csv ? std::setw(15) : std::setw(0)) << "n_elements"     << delim;
+          if(_as_csv){
+            std::cout << (!_as_csv ? std::setw(20) : std::setw(0)) << "filename"       << delim
+                      << (!_as_csv ? std::setw(10) : std::setw(0)) << "comment";
+          }
+          else {
+            std::cout << " filename+comment";
+          }
+                         std::cout << "\n";
 
         }
         std::stringstream shape_str;
@@ -101,18 +109,24 @@ namespace sqeazy {
         auto tmp = shape_str.str();
         const std::string shape_string(tmp.begin(), tmp.size()>0 ? tmp.end()-1 : tmp.end());
         const std::size_t len = std::accumulate(shape_.begin(), shape_.end(),1,std::multiplies<std::size_t>());
+        float ingest_bw = 0.f;
+        constexpr float in_mb = 1.f/(1024*1024);
+        const float ingest_size_in_mb = float(len*sizeof_pixel_)*in_mb;
 
-        for(int i = 0;i < times_.size();++i)
-          std::cout << (!_as_csv ? std::setw(name_.size()+2   ) : std::setw(0))  << "\"" << name_ << "\"" << delim
-                    << (!_as_csv ? std::setw(14               ) : std::setw(0))  << sizeof_pixel_     << delim
+        for(std::size_t i = 0;i < times_.size();++i){
+          std::chrono::duration<double> time_in_sec = times_[i];
+          ingest_bw = ingest_size_in_mb/( time_in_sec.count() );
+          std::cout << (!_as_csv ? std::setw( 2               ) : std::setw(0))  << i                 << delim
                     << (!_as_csv ? std::setw(15               ) : std::setw(0))  << shape_string      << delim
-                    << (!_as_csv ? std::setw(15               ) : std::setw(0))  << len               << delim
                     << (!_as_csv ? std::setw(15               ) : std::setw(0))  << times_[i].count() << delim
                     << (!_as_csv ? std::setw(15               ) : std::setw(0))  << bytes_written_[i] << delim
-                    << (!_as_csv ? std::setw( 5               ) : std::setw(0))  << i                 << delim
-                    << (!_as_csv ? std::setw(_comment.size()+2) : std::setw(0))  << "\"" << _comment << "\""
+                    << (!_as_csv ? std::setw(18               ) : std::setw(0))  << ingest_bw         << delim
+                    << (!_as_csv ? std::setw(15               ) : std::setw(0))  << sizeof_pixel_     << delim
+                    << (!_as_csv ? std::setw(15               ) : std::setw(0))  << len               << delim
+                    << (_as_csv ? "\"" : " ") << name_ << (_as_csv ? "\"" : ",") << delim
+                    << (_as_csv ? "\"" : " ") << _comment << (_as_csv ? "\"" : "")
                     << "\n";
-
+        }
 
       }
     };
@@ -146,10 +160,10 @@ namespace sqeazy {
 
       typedef typename pipe_t::incoming_t raw_t;
 
-      std::vector<size_t>	input_shape;
-      std::vector<char>	output;
+      std::vector<size_t> input_shape;
+      sqeazy::vec_32algn_t<char>	output;
       size_t		expected_size_byte = _pipeline.max_encoded_size(_input.size_in_byte());
-      size_t                output_file_size = bfs::exists(_output_file) ? bfs::file_size(_output_file) : 0;
+      // size_t                output_file_size = bfs::exists(_output_file) ? bfs::file_size(_output_file) : 0;
 
       //create clean output buffer
       if(expected_size_byte!=output.size())
@@ -218,7 +232,7 @@ namespace sqeazy {
       typedef typename pipe_t::incoming_t raw_t;
 
       std::vector<size_t>	input_shape;
-      std::vector<char>	output;
+      sqeazy::vec_32algn_t<char>	output;
       std::size_t		expected_size_byte = _pipeline.max_encoded_size(_input.size_in_byte());
       // size_t                output_file_size = bfs::exists(_output_file) ? bfs::file_size(_output_file) : 0;
 
@@ -310,8 +324,8 @@ namespace sqeazy {
       typedef typename pipe_t::incoming_t raw_t;
 
       std::vector<size_t>	input_shape;
-      std::vector<char>	output;
-      size_t		bytes_written =0;
+      sqeazy::vec_32algn_t<char>	output;
+
 
       //retrieve the size of the loaded buffer
       _input.dimensions(input_shape);
@@ -347,8 +361,6 @@ namespace sqeazy {
       if(rvalue)
         return series();
 
-      bytes_written = bfs::file_size(_output_file);//applies if created from scratch or appended
-
       return timings;
     }
 
@@ -375,7 +387,7 @@ int bench_files(const std::vector<std::string>& _files,
   sqy::dypeline<std::uint16_t>	pipe16;
   sqy::dypeline_from_uint8	pipe8;
 
-  std::vector<char>		output;
+  sqeazy::vec_32algn_t<char>		output;
 
 
   const std::string pipeline_string = _config["pipeline"].as<std::string>();

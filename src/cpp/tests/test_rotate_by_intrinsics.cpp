@@ -48,20 +48,32 @@ BOOST_AUTO_TEST_CASE( rotate_left_by_one ){
 BOOST_AUTO_TEST_CASE( rotate_left_by_two_and_cycle ){
 
 
-  __m128i v_in = _mm_load_si128(reinterpret_cast<const __m128i*>(&input[0]));
+  __m128i v_in = _mm_load_si128(reinterpret_cast<const __m128i*>(input.data()));
+  auto expected = output;
 
-  sqeazy::detail::vec_rotate_left<unsigned char> rotate(2);
+  sqeazy::detail::vec_rotate_left<unsigned char> rotate{2};
   v_in = rotate(&v_in);
 
   _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]), v_in);
-  BOOST_REQUIRE(output[0]!=input[0]);
+  for(std::size_t i = 0;i < input.size();++i){
+    BOOST_REQUIRE(output[0]!=input[0]);
+    expected[i] = sqeazy::detail::rotate_left<2>(input[i]);
+  }
 
   try{
-    BOOST_REQUIRE(output[0]==sqeazy::detail::rotate_left<2>(input[0]));
+    for(std::size_t i = 0;i < input.size();++i){
+      BOOST_REQUIRE_MESSAGE(output[i]==expected[i], "rotate vectorized " << (int)output[i] << " != " << (int)expected[i]);
+    }
     BOOST_REQUIRE(std::accumulate(output.begin(), output.end(),(unsigned char)0)==sqeazy::detail::rotate_left<2>(input[0])*output.size());
   }
   catch(...){
-    std::copy(output.begin(), output.end(), std::ostream_iterator<unsigned char>(std::cout, " "));
+    std::cout << "input   : ";
+    std::copy(input.begin(), input.end(), std::ostream_iterator<unsigned int>(std::cout, " "));    std::cout << "\n";
+    std::cout << "received: ";
+    std::copy(output.begin(), output.end(), std::ostream_iterator<unsigned int>(std::cout, " "));  std::cout << "\n";
+    std::cout << "expected: ";
+    std::copy(expected.begin(), expected.end(), std::ostream_iterator<unsigned int>(std::cout, " "));std::cout << "\n";
+
   }
 }
 

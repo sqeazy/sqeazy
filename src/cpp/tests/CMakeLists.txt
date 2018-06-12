@@ -25,12 +25,9 @@ else(Boost_FOUND)
 endif(Boost_FOUND)
 
 
-# if(DEFINED FFMPEG_EXTRA_LINK_FLAGS)
-#   set(SQY_LIB ${SQY_LIB} ${FFMPEG_EXTRA_LINK_FLAGS})
-# endif()
 set(SQY_LIB ${PROJECT_NAME})
 
-if(DEFINED READY_4_BUNDLE)
+if((${WITH_FFMPEG} EQUAL ON) AND (DEFINED READY_4_BUNDLE))
   set(SQY_LIB ${SQY_LIB} ${FFMPEG_LIBRARIES} )
 endif()
 
@@ -123,9 +120,12 @@ if(EXISTS ${LZ4_STATIC_LIB})
     target_link_libraries(test_hdf5_interface ${PROJECT_NAME}_static ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES})
     target_link_libraries(test_pipeline_interface ${PROJECT_NAME}_static ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES})
   else()
-#REDO tests with pipeline C API:    target_link_libraries(test_lz4_encoding ${PROJECT_NAME}_static ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES})
+    #REDO tests with pipeline C API:    target_link_libraries(test_lz4_encoding ${PROJECT_NAME}_static ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES})
+    if(WITH_FFMPEG)
     target_link_libraries(test_hdf5_interface ${PROJECT_NAME}_static ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES})
     target_link_libraries(test_pipeline_interface ${PROJECT_NAME}_static ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${FFMPEG_LIBRARIES})
+  endif()
+
   endif()
 else()
 #REDO tests with pipeline C API: target_link_libraries(test_lz4_encoding ${SQY_LIB} ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${LZ4_LIBRARY})
@@ -138,6 +138,14 @@ endif()
 add_executable(test_dynamic_pipeline_impl test_dynamic_pipeline_impl.cpp)
 target_link_libraries(test_dynamic_pipeline_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${LZ4_LIBRARY})
 
+add_executable(test_lz4_scheme_impl test_lz4_scheme_impl.cpp)
+target_link_libraries(test_lz4_scheme_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${LZ4_LIBRARY})
+
+add_executable(test_lz4_utils_impl test_lz4_utils_impl.cpp)
+target_link_libraries(test_lz4_utils_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${LZ4_LIBRARY})
+
+add_executable(test_lz4_sandbox test_lz4_sandbox.cpp)
+target_link_libraries(test_lz4_sandbox ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${LZ4_LIBRARY})
 
 add_executable(test_dynamic_stage_impl test_dynamic_stage_impl.cpp)
 target_link_libraries(test_dynamic_stage_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES})
@@ -180,8 +188,10 @@ target_link_libraries(test_huffman_utils_impl ${OpenMP++_LIBRARIES} ${Boost_LIBR
 add_executable(test_volume_fixtures test_volume_fixtures.cpp)
 target_link_libraries(test_volume_fixtures ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${TIFF_LIBRARY})
 
+add_executable(test_sqeazy_pipelines_impl test_sqeazy_pipelines_impl.cpp)
+add_executable(test_hdf5_impl test_hdf5_impl.cpp)
 
-IF(FFMPEG_FOUND)
+IF((${WITH_FFMPEG} EQUAL "ON") AND (DEFINED ${FFMPEG_FOUND}))
   if(WIN32)
     LINK_DIRECTORIES(${FFMPEG_ROOT_DIR}\\lib)
     else()
@@ -198,16 +208,10 @@ IF(FFMPEG_FOUND)
     set(SQY_FFMPEG_Libraries ${SQY_FFMPEG_Libraries} ${FFMPEG_EXTRA_LINK_FLAGS})
   endif()
 
+  target_link_libraries(test_sqeazy_pipelines_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries} ${LZ4_LIBRARY})
 
   add_executable(test_avcodec_sandbox test_avcodec_sandbox.cpp)
   target_link_libraries(test_avcodec_sandbox ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries})
-
-  add_executable(deprecated_pipeline_select_impl deprecated_pipeline_select_impl.cpp)
-  target_link_libraries(deprecated_pipeline_select_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${LZ4_LIBRARY} ${SQY_FFMPEG_Libraries})
-
-
-  add_executable(deprecated_pipeline_impl deprecated_pipeline_impl.cpp)
-  target_link_libraries(deprecated_pipeline_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${LZ4_LIBRARY} ${SQY_FFMPEG_Libraries})
 
   add_executable(test_hevc_scheme_impl test_hevc_scheme_impl.cpp)
   target_link_libraries(test_hevc_scheme_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries})
@@ -224,15 +228,17 @@ IF(FFMPEG_FOUND)
   target_link_libraries(test_hevc_scheme_utils ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries})
 
 
-  add_executable(test_sqeazy_pipelines_impl test_sqeazy_pipelines_impl.cpp)
-  target_link_libraries(test_sqeazy_pipelines_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${SQY_FFMPEG_Libraries} ${LZ4_LIBRARY})
 
-  add_executable(test_hdf5_impl test_hdf5_impl.cpp)
+
+
   target_link_libraries(test_hdf5_impl ${HDF5_LIBRARIES} ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${LZ4_LIBRARY} ${SQY_FFMPEG_Libraries})
 
-ELSE(FFMPEG_FOUND)
-  MESSAGE(">> [tests] libavcodec not found. skipping test_avcodec_sandbox ...")
-ENDIF(FFMPEG_FOUND)
+ELSE()
+  MESSAGE(">> [tests] ffmpeg switched off or libavcodec not found not found. skipping test_avcodec_sandbox ...")
+  target_link_libraries(test_sqeazy_pipelines_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${LZ4_LIBRARY})
+  target_link_libraries(test_hdf5_impl ${HDF5_LIBRARIES} ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${LZ4_LIBRARY})
+ENDIF()
+
 
 
 #target_link_libraries(test_bench_utils_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${TIFF_LIBRARY})

@@ -11,7 +11,6 @@
 #include <boost/program_options.hpp>
 
 #include "tiff_utils.hpp"
-#include "deprecated/static_pipeline_select.hpp"
 #include "sqeazy_algorithms.hpp"
 
 #include "yuv_utils.hpp"
@@ -62,7 +61,7 @@ struct info
     float max = (*std::max_element(_payload.begin(), _payload.end()));
 
     std::ostringstream shape_str;
-    int cnt = 0;
+    std::uint32_t cnt = 0;
     for( const S& el : _shape ){
       cnt++;
       shape_str << el;

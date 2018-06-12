@@ -28,6 +28,7 @@ struct string_fixture
   std::vector<std::string> four_values ;
   std::string four_keywords ;
 
+
   std::string multiple_args ;
   std::map<std::string,std::string> multiple_kv = {
     {"value", "42"},
@@ -37,6 +38,8 @@ struct string_fixture
 
   std::string one_key ;
   std::string one_value ;
+  std::string one_minus ;
+
   std::string one_command ;
   std::string quantiser_bug_20160520 ;
   std::string anything_goes_in_literals ;
@@ -62,10 +65,11 @@ struct string_fixture
       }),
     one_key("ls"),
     one_value("test=0"),
+    one_minus("test=-2"),
     one_command("ls(test=0)"),
     quantiser_bug_20160520("quantiser(decode_lut_string=254:766:1278:1790:2302:2814:3326:3838:4350:4862:5374)->h264(option=1)"),
-    anything_goes_in_literals("step1->step2(option=1)->step3(junk=<verbatim>),->,'.==/[],./</verbatim>)->step4(option1=true,option2=false)" ),
-    verbatim_literal_last("step_i->step_ii(option=1)->step_iii(option1=true,option2=false)->step_iv(junk=<verbatim>),->,'./[],./</verbatim>)"),
+    anything_goes_in_literals("step1->step2(option=1)->step3(junk=<verbatim>),->,'.==/[],->./</verbatim>)->step4(option1=true,option2=false)" ),
+    verbatim_literal_last("step_i->step_ii(option=1)->step_iii(option1=true,option2=false)->step_iv(junk=<verbatim>),->,'./[],->./</verbatim>)"),
     parsing_0_githubissue_2("remove_background(threshold=0"),
 
     //difficult, string literals contain null character (hence are chopped off at assignment)
@@ -222,7 +226,7 @@ BOOST_AUTO_TEST_CASE (anything_goes_test) {
   BOOST_CHECK_EQUAL(value.front().second, "");
   BOOST_CHECK_EQUAL(value[1].second, "option=1");
 
-  std::string expected("junk=<verbatim>),->,'.==/[],./</verbatim>");
+  std::string expected("junk=<verbatim>),->,'.==/[],->./</verbatim>");
   BOOST_CHECK_EQUAL(value[2].second.size(), expected.size());
   BOOST_CHECK_EQUAL(value[2].second, expected);
   BOOST_CHECK_EQUAL(value.back().second, "option1=true,option2=false");
@@ -375,6 +379,28 @@ BOOST_AUTO_TEST_CASE (serialized_longs_test) {
   BOOST_CHECK_EQUAL(step3_junk.ends_with("</verbatim>"), true);
 
   BOOST_REQUIRE_EQUAL(parsed_map["step4"].size(), 2);
+}
+
+
+
+BOOST_AUTO_TEST_CASE (minus_inside) {
+
+  const std::string sep = "->";
+  std::string cmd = "ls(test=0)->cp(test=-2)";
+
+  auto bsplitted = sqy::informed_split(cmd,sep);
+  BOOST_CHECK_EQUAL(bsplitted.size(),2);
+
+  auto splitted = sqy::split_string_ref_by(cmd,
+                       sep);
+
+  BOOST_CHECK_EQUAL(splitted.size(),2);
+
+  // sqy::pipeline_parser parser;
+
+  // auto parsed_map = parser(cmd.begin(),cmd.end());
+  // BOOST_REQUIRE_EQUAL(parsed_map.size(),2);
+
 }
 
 

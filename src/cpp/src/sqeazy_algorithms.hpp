@@ -3,7 +3,8 @@
 
 #include "sqeazy_common.hpp"
 
-
+#include <vector>
+#include <algorithm>
 #include <cmath>
 #include <iterator>
 #include <numeric>
@@ -60,7 +61,6 @@ namespace sqeazy {
                               it2_type _rbegin){
 
     double dsum = 0;
-    const auto size = std::distance(_lbegin,_lend);
 
     for(;_lbegin!=_lend;++_lbegin,++_rbegin){
       double diff = *_lbegin - *_rbegin;
@@ -184,14 +184,27 @@ namespace sqeazy {
 
 
 
-  template <typename it_type>
-  static inline double mean(it_type _begin, it_type _end){
-
-
+  template <typename r_type, typename it_type>
+  static inline r_type mean(it_type _begin, it_type _end, int nthreads = 1){
 
     const auto len = std::distance(_begin,_end);
 
-    double value = std::accumulate(_begin, _end,std::size_t(0),std::plus<std::size_t>())/double(len);
+    if(nthreads < 1)
+      nthreads = std::thread::hardware_concurrency();
+
+    r_type value = 0;
+
+    if(nthreads == 1)
+      value = std::accumulate(_begin, _end,value,std::plus<r_type>())/(len);
+    else{
+
+#pragma omp parallel for schedule(static) reduction(+:value) private(_begin) num_threads(nthreads)
+      for(omp_size_type i=0; i<len; i++){
+        value += *(_begin+i);
+      }
+
+      value /= len;
+    }
 
     return value;
   }
@@ -249,7 +262,7 @@ namespace sqeazy {
                                                 0.));
     rnmse /= (left_size);
 
-    const double mn = mean(_lbegin,_lend);
+    const double mn = mean<double>(_lbegin,_lend);
     rnmse = std::sqrt(rnmse)/mn;
 
     return rnmse;

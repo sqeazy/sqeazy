@@ -10,11 +10,6 @@
 #include "sqeazy_hdf5_impl.hpp"
 #include "hdf5_utils.hpp"
 
-//to be deprecated
-//#include "pipeline.hpp"
-//#include "deprecated/static_pipeline_select.hpp"
-
-
 namespace sqy = sqeazy;
 namespace bfs = boost::filesystem;
 

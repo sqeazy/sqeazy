@@ -78,6 +78,18 @@ BOOST_AUTO_TEST_CASE( shift_left_by_constant ){
   BOOST_REQUIRE(output[0] == (2 << 1));
 }
 
+BOOST_AUTO_TEST_CASE( unary_shift_left_by_constant ){
+
+  static const __m128i v_const = _mm_set1_epi16(2);
+
+  sqeazy::detail::shift_left_m128i<unsigned short> shifter{1};
+  __m128i result = shifter(v_const);
+  _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);
+
+  BOOST_REQUIRE(output[0] == (2 << 1));
+}
+
+
 BOOST_AUTO_TEST_CASE( shift_msb_left_by_constant ){
 
   static const __m128i v_msb = _mm_set1_epi16(0x8000);
@@ -89,6 +101,16 @@ BOOST_AUTO_TEST_CASE( shift_msb_left_by_constant ){
   BOOST_REQUIRE(output[0] == 0);
 }
 
+BOOST_AUTO_TEST_CASE( unary_shift_msb_left_by_constant ){
+
+  static const __m128i v_msb = _mm_set1_epi16(0x8000);
+
+  sqeazy::detail::shift_left_m128i<unsigned short> shifter{1};
+  __m128i result = shifter(v_msb);
+  _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);
+
+  BOOST_REQUIRE(output[0] == 0);
+}
 
 BOOST_AUTO_TEST_CASE( shift_right_by_constant ){
 
@@ -144,6 +166,34 @@ BOOST_AUTO_TEST_CASE( shift_left_by_constant ){
 
 }
 
+BOOST_AUTO_TEST_CASE( unary_shift_left_by_constant ){
+
+
+  for (unsigned i = 0; i < input.size(); ++i)
+  {
+    input[i] = i;
+  }
+
+  __m128i v_input = _mm_load_si128(reinterpret_cast<__m128i*>(&input[0]));
+
+  sqeazy::detail::shift_left_m128i<unsigned char> shifter{1};
+  __m128i result = shifter(v_input);
+  _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);
+  for (unsigned i = 0; i < input.size()/2; ++i)
+  {
+    try{
+
+      BOOST_REQUIRE(output[i] == i << 1);
+
+    }catch(...){
+      BOOST_TEST_MESSAGE("[shift-left-m128i-uchar] item " << i << " malformed");
+      throw;
+    }
+  }
+
+}
+
+
 BOOST_AUTO_TEST_CASE( shift_left_msb_by_constant ){
 
   sqeazy::detail::shift_left_m128i<unsigned char> shifter;
@@ -159,6 +209,25 @@ BOOST_AUTO_TEST_CASE( shift_left_msb_by_constant ){
     throw;
       }
     }
+
+}
+
+
+BOOST_AUTO_TEST_CASE( unary_shift_left_msb_by_constant ){
+
+  sqeazy::detail::shift_left_m128i<unsigned char> shifter{1};
+  static const __m128i v_msb = _mm_set1_epi8(0x80);
+  __m128i result = shifter(v_msb);
+  _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);
+  for (unsigned i = 0; i < input.size(); ++i)
+  {
+    try{
+      BOOST_REQUIRE(output[i] == (unsigned char)0);
+    }catch(...){
+      BOOST_TEST_MESSAGE("[shift-left-m128i-uchar] item " << i << " malformed");
+      throw;
+    }
+  }
 
 }
 
@@ -239,6 +308,34 @@ BOOST_AUTO_TEST_CASE( shift_left_by_constant ){
 
 }
 
+BOOST_AUTO_TEST_CASE( unary_shift_left_by_constant ){
+
+  for (unsigned i = 0; i < input.size(); ++i)
+  {
+    input[i] = i;
+  }
+
+  __m128i v_input = _mm_load_si128(reinterpret_cast<__m128i*>(&input[0]));
+
+  sqeazy::detail::shift_left_m128i<char> shifter(1);
+  __m128i result = shifter(v_input);
+  _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);
+
+  for (unsigned i = 0; i < input.size()/2; ++i)
+  {
+    try{
+
+      BOOST_REQUIRE(output[i] == char(i << 1));
+
+    }catch(...){
+      BOOST_TEST_MESSAGE("[shift-left-m128i-char] item " << i << " malformed");
+      throw;
+    }
+  }
+
+}
+
+
 BOOST_AUTO_TEST_CASE( shift_left_msb_by_constant ){
 
     static const __m128i v_msb = _mm_set1_epi8(0x80);
@@ -258,6 +355,27 @@ BOOST_AUTO_TEST_CASE( shift_left_msb_by_constant ){
       }
 
 }
+
+BOOST_AUTO_TEST_CASE( unary_shift_left_msb_by_constant ){
+
+  static const __m128i v_msb = _mm_set1_epi8(0x80);
+
+  sqeazy::detail::shift_left_m128i<char> shifter{1};
+
+  __m128i result = shifter(v_msb);
+  _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);
+  for (unsigned i = 0; i < input.size(); ++i)
+  {
+    try{
+      BOOST_REQUIRE(output[i] == (char)0);
+    }catch(...){
+      BOOST_TEST_MESSAGE("[shift-left-m128i-char] item " << i << " malformed");
+      throw;
+    }
+  }
+
+}
+
 
 BOOST_AUTO_TEST_CASE( shift_right_msb_by_constant ){
 
@@ -336,6 +454,34 @@ BOOST_AUTO_TEST_CASE( shift_left_by_constant ){
 
 }
 
+BOOST_AUTO_TEST_CASE( unary_shift_left_by_constant ){
+
+  for (unsigned i = 0; i < input.size(); ++i)
+  {
+    input[i] = i;
+  }
+
+  __m128i v_input = _mm_load_si128(reinterpret_cast<__m128i*>(&input[0]));
+
+  sqeazy::detail::shift_left_m128i<unsigned> shifter{1};
+  __m128i result = shifter(v_input);
+  _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);
+
+  for (unsigned i = 0; i < input.size()/2; ++i)
+  {
+    try{
+
+      BOOST_REQUIRE(output[i] == i << 1);
+
+    }catch(...){
+      BOOST_TEST_MESSAGE("[shift-left-m128i-unsigned] item " << i << " malformed");
+      throw;
+    }
+  }
+
+}
+
+
 BOOST_AUTO_TEST_CASE( shift_left_msb_by_constant ){
 
     static const __m128i v_msb = _mm_set1_epi8(0x8000);
@@ -355,6 +501,28 @@ BOOST_AUTO_TEST_CASE( shift_left_msb_by_constant ){
       }
 
 }
+
+
+BOOST_AUTO_TEST_CASE( unary_shift_left_msb_by_constant ){
+
+  static const __m128i v_msb = _mm_set1_epi8(0x8000);
+
+  sqeazy::detail::shift_left_m128i<unsigned> shifter{1};
+
+  __m128i result = shifter(v_msb);
+  _mm_store_si128(reinterpret_cast<__m128i*>(&output[0]),result);
+  for (unsigned i = 0; i < input.size(); ++i)
+  {
+    try{
+      BOOST_REQUIRE(output[i] == (unsigned)0);
+    }catch(...){
+      BOOST_TEST_MESSAGE("[shift-left-m128i-unsigned] item " << i << " malformed");
+      throw;
+    }
+  }
+
+}
+
 
 BOOST_AUTO_TEST_CASE( shift_right_msb_by_constant ){
 

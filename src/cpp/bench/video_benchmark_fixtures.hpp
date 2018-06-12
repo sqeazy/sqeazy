@@ -8,17 +8,12 @@
 #include <sstream>
 #include <random>
 
+#include "sqeazy_common.hpp"
 #include "traits.hpp"
+
 #include "benchmark/benchmark.h"
 
-#include "boost/align/aligned_allocator.hpp"
-
-//boost::alignment::aligned_allocator<uint16_t, 32>
-
 namespace sqeazy {
-
-  template <typename value_type>
-  using aligned_vector = std::vector<value_type, boost::alignment::aligned_allocator<value_type,32> >;
 
   namespace benchmark {
 
@@ -28,10 +23,10 @@ namespace sqeazy {
     struct dynamic_synthetic_data : public ::benchmark::Fixture
     {
 
-      aligned_vector<T> sinus_;
-      aligned_vector<T> embryo_;
-      aligned_vector<T> noisy_embryo_;
-      aligned_vector<T> output_;
+      sqeazy::vec_32algn_t<T> sinus_;
+      sqeazy::vec_32algn_t<T> embryo_;
+      sqeazy::vec_32algn_t<T> noisy_embryo_;
+      sqeazy::vec_32algn_t<T> output_;
 
       std::vector<std::size_t> shape_;
       std::size_t size_;
@@ -165,8 +160,8 @@ namespace sqeazy {
       static const unsigned long size = (1 << (cache_size_in_byte_as_exponent+1))/sizeof(T);
       static const unsigned long size_in_byte = sizeof(T)*size;
 
-      aligned_vector<T> sin_data;
-      aligned_vector<T> output_data;
+      sqeazy::vec_32algn_t<T> sin_data;
+      sqeazy::vec_32algn_t<T> output_data;
       std::vector<std::size_t> shape;
 
       std::size_t axis_length(int index = sqeazy::row_major::x ) const {

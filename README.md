@@ -7,6 +7,8 @@
 A fast and flexible compression library for 3D volume data (ND potentially planned).
 The core library is written in C++ with bindings for C, Java (through BridJ), and Python (to be implemented). Binaries are provided for Win (working for the native library), OSX (working for the native library, but not all tests pass), and Linux (works, native library and java bindings).
 
+If you want to learn more about sqeazy, check out our [documentation](docs/README.md) or dial over to the [projects web-page](http://sqeazy.github.io/sqeazy/).
+
 ## Using Sqeazy Java interface from binary distribution (experimental)
 
 Sqeazy is hosted on bintray. In order to use it, do:
@@ -24,7 +26,7 @@ repositories
 
 dependencies {
 	//...
-    compile 'net.sqeazy:sqeazy:0.3.3'
+    compile 'net.sqeazy:sqeazy:0.5.2'
 }
 ```
 
@@ -44,7 +46,7 @@ dependencies {
 	<dependency>
 		<groupId>net.sqeazy</groupId>
 		<artifactId>sqeazy</artifactId>
-		<version>0.1</version>
+		<version>0.5.2</version>
 		<type>pom</type>
 	</dependency>
 </dependencies>

@@ -113,12 +113,6 @@ namespace sqeazy {
 
 		typedef typename std::iterator_traits<decltype(_shape.begin())>::value_type shape_value_type;
 		typedef typename std::remove_cv<shape_value_type>::type shape_value_t;
-		typedef typename bacc::accumulator_set<in_value_t,
-											   bacc::stats<bacc::tag::median>
-											   > median_acc_t ;
-
-		// 75% quantile?
-		// typedef typename boost::accumulators::accumulator_set<double, stats<boost::accumulators::tag::pot_quantile<boost::right>(.75)> > quantile_acc_t;
 
 		const shape_container_t rem = remainder(_shape);
 		const std::size_t n_elements          = std::distance(_begin,_end);
@@ -143,11 +137,11 @@ namespace sqeazy {
   shared( _begin, ptiles)												\
   firstprivate(pshape, pn_full_tiles)													\
   num_threads(_nthreads)
-		for(omp_size_type z = 0;z<pshape[row_major::z];++z){
+		for(omp_size_type z = 0;z<(omp_size_type)pshape[row_major::z];++z){
 		  std::size_t ztile = z / tile_size;
 		  std::size_t z_intile = z % tile_size;
 
-		  for(shape_value_t y = 0;y<pshape[row_major::y];++y){
+		  for(omp_size_type y = 0;y<(omp_size_type)pshape[row_major::y];++y){
 			std::size_t ytile = y / tile_size;
 			std::size_t y_intile = y % tile_size;
 
@@ -157,7 +151,7 @@ namespace sqeazy {
 
 			auto acc_iter = _begin + z*pshape[row_major::y]*pshape[row_major::x] + y*pshape[row_major::x];
 
-			for(shape_value_t x = 0;x<pshape[row_major::x];x+=tile_size,++linear_tile_id,acc_iter+=tile_size){
+			for(omp_size_type x = 0;x<(omp_size_type)pshape[row_major::x];x+=tile_size,++linear_tile_id,acc_iter+=tile_size){
 			  // xtile = x / tile_size;
 
 			  auto tiles_iter = tiles[linear_tile_id].begin();
@@ -171,7 +165,7 @@ namespace sqeazy {
 		}
 
 		// COLLECT STATISTICS /////////////////////////////////////////////////////////////////////////////////////////////////////
-		// median plus stddev around median or take 75% quantile directly
+		// use arithmetic mean for now, only the sum would do as well as this should only be an indicator for the signal activity inside the tile here
 
 		std::vector<in_value_t> metric(len_tiles,0.);
 		auto pmetric = metric.data();
@@ -180,14 +174,15 @@ namespace sqeazy {
   shared( pmetric)														\
   firstprivate(ptiles)													\
   num_threads(_nthreads)
-		for(omp_size_type i = 0;i<len_tiles;++i){
-		  median_acc_t acc;
+		for(omp_size_type i = 0;i<(omp_size_type)len_tiles;++i){
 
-		  for(std::size_t p = 0;p<n_elements_per_tile;++p){
-			acc(ptiles[i][p]);
-		  }
 
-		  pmetric[i] = std::round(bacc::median(acc));
+		  float sum = std::accumulate(ptiles[i].cbegin(),
+									  ptiles[i].cend(),
+									  float(0),
+									  std::plus<float>());
+
+		  pmetric[i] = sum / n_elements_per_tile;
 		}
 
 		// PERFORM SHUFFLE /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -204,7 +199,7 @@ namespace sqeazy {
   shared( pdecode_map, _out)					\
   firstprivate(ptiles,pmetric, psorted_metric)					\
   num_threads(_nthreads)
-		for(omp_size_type i =0;i<metric.size();++i){
+		for(omp_size_type i =0;i<(omp_size_type)metric.size();++i){
 		  auto original_index = std::find(pmetric, pmetric + len_tiles, psorted_metric[i]) - pmetric;
 
 		  pdecode_map[i] = original_index;
@@ -273,12 +268,12 @@ namespace sqeazy {
   shared( ptiles )														\
   firstprivate(pshape, _begin,pn_tiles)									\
   num_threads(_nthreads)
-		for(omp_size_type z = 0;z<pshape[row_major::z];++z){
+		for(omp_size_type z = 0;z<(omp_size_type)pshape[row_major::z];++z){
 		  std::size_t ztile = z / tile_size;
 		  std::size_t z_intile = z % tile_size;
 		  std::size_t ztile_shape = (ztile+1)*tile_size > pshape[row_major::z] ? (pshape[row_major::z]-(ztile*tile_size)) : tile_size;
 
-		  for(shape_value_t y = 0;y<pshape[row_major::y];++y){
+		  for(omp_size_type y = 0;y<(omp_size_type)pshape[row_major::y];++y){
 			std::size_t ytile = y / tile_size;
 			std::size_t y_intile = y % tile_size;
 			std::size_t ytile_shape = (ytile+1)*tile_size > pshape[row_major::y] ? (pshape[row_major::y]-(ytile*tile_size)) : tile_size;
@@ -288,7 +283,7 @@ namespace sqeazy {
 
 			auto acc_iter = _begin + z*pshape[row_major::y]*pshape[row_major::x] + y*pshape[row_major::x];
 
-			for(shape_value_t x = 0;x<pshape[row_major::x];x+=tile_size, ++tile_id){
+			for(omp_size_type x = 0;x<(omp_size_type)pshape[row_major::x];x+=tile_size, ++tile_id){
 			  std::size_t xtile = x / tile_size;
 			  std::size_t xtile_shape = (xtile+1)*tile_size > pshape[row_major::x] ? (pshape[row_major::x]-(xtile*tile_size)) : tile_size;
 			  #pragma omp critical
@@ -318,7 +313,7 @@ namespace sqeazy {
   shared( pmetric)														\
   firstprivate(ptiles)													\
   num_threads(_nthreads)
-		for(omp_size_type i = 0;i<len_tiles;++i){
+		for(omp_size_type i = 0;i<(omp_size_type)len_tiles;++i){
 		  median_acc_t acc;
 
 		  for(std::size_t p = 0;p<n_elements_per_tile;++p){
@@ -346,7 +341,7 @@ namespace sqeazy {
   shared( ptile_written,pdecode_map)										\
   firstprivate(pmetric, psorted_metric)												\
   num_threads(_nthreads)
-		for(omp_size_type i =0;i<metric.size();++i){
+		for(omp_size_type i =0;i<(omp_size_type)metric.size();++i){
 		  auto original_index = std::find(pmetric, pmetric+len_tiles, psorted_metric[i]) - pmetric;
 
 		  #pragma omp critical
@@ -376,7 +371,7 @@ namespace sqeazy {
 		  shared( _out)													\
 		  firstprivate(ptiles,pdecode_map,pprefix_sum)								\
 		  num_threads(_nthreads)
-		for(omp_size_type i =0;i<decode_map.size();++i){
+		for(omp_size_type i =0;i<(omp_size_type)decode_map.size();++i){
 
 		  std::copy(ptiles[pdecode_map[i]].begin(),
 					ptiles[pdecode_map[i]].end(),

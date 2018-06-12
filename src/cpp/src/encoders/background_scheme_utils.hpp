@@ -35,7 +35,7 @@ namespace sqeazy {
 #endif
       index_type input_index =0;
       const index_type frame_size = _dims[_dims.size()-2]*_dims[_dims.size()-1];
-      index_type face_index =0;
+
       sqeazy::histogram<raw_type> running_histo;
       float temp = 0;
 
@@ -85,7 +85,6 @@ namespace sqeazy {
       }
 
       //faces with y
-      face_index =0;
       std::vector<raw_type> face(_dims[2]*_dims[row_major::z]);
       for(size_type y_idx = 0; y_idx < _dims[1]; y_idx+=(_dims[1]-1)) {
 

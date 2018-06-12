@@ -9,6 +9,9 @@
 add_test(NAME diff_scheme_impl COMMAND test_diff_scheme_impl)
 #REDO tests with pipeline C API: add_test(NAME background_schemes COMMAND test_background_schemes)
 add_test(NAME background_scheme_impl COMMAND test_background_scheme_impl)
+add_test(NAME lz4_scheme_impl COMMAND test_lz4_scheme_impl)
+add_test(NAME lz4_utils_impl COMMAND test_lz4_utils_impl)
+add_test(NAME lz4_sandbox COMMAND test_lz4_sandbox)
 add_test(NAME string_parsers_impl COMMAND test_string_parsers_impl)
 
 #REDO tests with pipeline C API: add_test(NAME bitswap_schemes COMMAND test_bitswap_schemes)
@@ -58,11 +61,12 @@ set_tests_properties(hdf5_interface PROPERTIES ENVIRONMENT "HDF5_PLUGIN_PATH=${P
 #	https://trac.ffmpeg.org/ticket/4980
 
 #TODO: 8bit encoding broken, only test 16bit roundtrips
+if(${WITH_FFMPEG})
 #add_test(NAME hevc_scheme_impl COMMAND test_hevc_scheme_impl CONFIGURATION --run_test=avcodec_16bit/*)
 add_test(NAME hevc_scheme_impl COMMAND test_hevc_scheme_impl)
 add_test(NAME h264_scheme_impl COMMAND test_h264_scheme_impl)
 add_test(NAME hevc_scheme_utils COMMAND test_hevc_scheme_utils)
-
+endif()
 
 
 

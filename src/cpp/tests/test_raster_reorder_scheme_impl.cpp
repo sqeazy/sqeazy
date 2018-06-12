@@ -403,28 +403,6 @@ BOOST_AUTO_TEST_CASE( scheme_tile_of_4 )
 
 }
 
-// BOOST_AUTO_TEST_CASE( tile_of_3 )
-// {
-
-//   sqyd::reorder in_tiles_of(3);
-//   auto rem = in_tiles_of.encode(incrementing_cube.cbegin(), incrementing_cube.cend(),
-//              to_play_with.begin(),
-//              dims);
-//   BOOST_REQUIRE(rem == to_play_with.end());
-
-//   auto decoded = constant_cube;
-//   std::fill(decoded.begin(), decoded.end(),0);
-
-//   rem = in_tiles_of.decode(to_play_with.cbegin(),to_play_with.cend(),
-//             decoded.begin(),
-//             dims);
-//   BOOST_REQUIRE(rem == decoded.end());
-//   BOOST_CHECK_EQUAL_COLLECTIONS(incrementing_cube.begin(), incrementing_cube.end(),
-//              decoded.begin(), decoded.end());
-
-
-// }
-
 
 BOOST_AUTO_TEST_SUITE_END()
 

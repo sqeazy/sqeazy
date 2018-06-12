@@ -424,5 +424,3 @@ BOOST_FIXTURE_TEST_CASE( print_lz4_input_signed , signed_64elements)
 
 
 }
-
-// BOOST_AUTO_TEST_SUITE_END()

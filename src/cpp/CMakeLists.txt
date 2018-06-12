@@ -50,8 +50,14 @@ option(USE_CXX11_ABI "enable _GLIBCXX_USE_CXX11_ABI in GCC 5.0+" ON)
 option(WITH_EXPERIMENTAL "enable experimental code paths in sqeazy" OFF)
 option(WITH_TRACE_MSG "enable trace messages for debugging sqeazy (enables verbose messages)" OFF)
 option(WITH_VERBOSE "enable verbose messages for debugging sqeazy" OFF)
+option(WITH_FFMPEG "link to ffmpeg to support video encoding" OFF)
+
 if(${WITH_TRACE_MSG})
   set(WITH_VERBOSE ON)
+endif()
+
+if(${WITH_FFMPEG})
+  set(SQY_WITH_FFMPEG 1)
 endif()
 
 # trying to setup paths so this package can be picked up
@@ -103,6 +109,7 @@ check_cxx_compiler_flag("-Xclang -march=native" HAS_XCLANG_COMPILERFLAG)
 check_cxx_compiler_flag(-fvectorize HAS_CLANG_VECTORIZE_COMPILERFLAG)
 check_cxx_compiler_flag(-ffast-math HAS_FAST_MATH_COMPILERFLAG)
 check_cxx_compiler_flag(-Wall HAS_WALL_COMPILERFLAG)
+check_cxx_compiler_flag(-Wpadded HAS_WPADDED_COMPILERFLAG)
 check_cxx_compiler_flag(-Wfatal-errors HAS_WFATAL_ERRORS_COMPILERFLAG)
 check_cxx_compiler_flag(-Wno-unused-function HAS_WNO_UNUSED_FUNCTION_COMPILERFLAG)
 check_cxx_compiler_flag(-ggdb HAS_GGDB_COMPILERFLAG)
@@ -135,6 +142,10 @@ check_cxx_compiler_flag(-Wno-overflow HAS_WNOOVERFLOW_COMPILERFLAG)
 #C/C++ specific flags
 #for GCC
 IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.9")
+    MESSAGE(FATAL_ERROR "++ GCC ${CMAKE_CXX_COMPILER_VERSION} is not supported, please use any major version >=4.9!")
+  endif()
+
   if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "5.0")
     set(USE_CXX11_ABI ON)
   endif()
@@ -170,6 +181,11 @@ if(HAS_WALL_COMPILERFLAG)
   add_definitions(-Wall)
 endif()
 
+
+# if(HAS_WPADDED_COMPILERFLAG)
+#   add_definitions(-Wpadded)
+# endif()
+
 if(HAS_WFATAL_ERRORS_COMPILERFLAG)
   add_definitions(-Wfatal-errors)
 endif()
@@ -198,7 +214,7 @@ if(ALLCAPITAL_BUILD_TYPE STREQUAL DEBUG)
   if(HAS_GGDB3_COMPILERFLAG)
     add_definitions(-ggdb3)
   endif()
-  
+
   if(NOT MSVC)
     add_definitions(-DSQY_TRACE=1)
     add_definitions(-D_SQY_DEBUG_=1)
@@ -385,33 +401,33 @@ set(HDF5_NEW_FINDMODULE False)
 IF(# EXISTS ${HDF5_ROOT} AND
     IS_DIRECTORY "${HDF5_ROOT}")
 
-	set($ENV{HDF5_ROOT} ${HDF5_ROOT})
-	set($ENV{HDF5_DIR} ${HDF5_ROOT})
-	set(HDF5_DIR ${HDF5_ROOT})
-	set($ENV{HDF5_ROOT_DIR_HINT} ${HDF5_ROOT})
+    set($ENV{HDF5_ROOT} ${HDF5_ROOT})
+    set($ENV{HDF5_DIR} ${HDF5_ROOT})
+    set(HDF5_DIR ${HDF5_ROOT})
+    set($ENV{HDF5_ROOT_DIR_HINT} ${HDF5_ROOT})
 
-	if(EXISTS ${HDF5_ROOT}/share/cmake/FindHDF5.cmake)
-		message(STATUS "found embedded share/cmake/FindHDF5.cmake in ${HDF5_ROOT}, adding it to CMAKE_MODULE_PATH")
-		list(APPEND CMAKE_MODULE_PATH "${HDF5_ROOT}/share/cmake")
-		list(APPEND CMAKE_PREFIX_PATH "${HDF5_ROOT}/share/cmake")
-		set(HDF5_NEW_FINDMODULE True)
-	endif()
+    if(EXISTS ${HDF5_ROOT}/share/cmake/FindHDF5.cmake)
+        message(STATUS "found embedded share/cmake/FindHDF5.cmake in ${HDF5_ROOT}, adding it to CMAKE_MODULE_PATH")
+        list(APPEND CMAKE_MODULE_PATH "${HDF5_ROOT}/share/cmake")
+        list(APPEND CMAKE_PREFIX_PATH "${HDF5_ROOT}/share/cmake")
+        set(HDF5_NEW_FINDMODULE True)
+    endif()
 
-	if(EXISTS ${HDF5_ROOT}/cmake/FindHDF5.cmake AND IS_DIRECTORY ${HDF5_ROOT}/cmake)
-		message(STATUS "found embedded cmake/FindHDF5.cmake in ${HDF5_ROOT}, adding it to CMAKE_MODULE_PATH")
-		list(APPEND CMAKE_MODULE_PATH "${HDF5_ROOT}/cmake")
-		list(APPEND CMAKE_PREFIX_PATH "${HDF5_ROOT}/cmake")
-		set(HDF5_NEW_FINDMODULE True)
-	endif()
+    if(EXISTS ${HDF5_ROOT}/cmake/FindHDF5.cmake AND IS_DIRECTORY ${HDF5_ROOT}/cmake)
+        message(STATUS "found embedded cmake/FindHDF5.cmake in ${HDF5_ROOT}, adding it to CMAKE_MODULE_PATH")
+        list(APPEND CMAKE_MODULE_PATH "${HDF5_ROOT}/cmake")
+        list(APPEND CMAKE_PREFIX_PATH "${HDF5_ROOT}/cmake")
+        set(HDF5_NEW_FINDMODULE True)
+    endif()
 
-	if(IS_DIRECTORY ${HDF5_ROOT})
-		message(STATUS "calling FindHDF5 with ${HDF5_ROOT} (HDF5_NEW_FINDMODULE: ${HDF5_NEW_FINDMODULE})\n-- CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}\n-- CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
-	else()
-		message(FATAL_ERROR "calling FindHDF5 with non-existing ${HDF5_ROOT}")
-	endif()
+    if(IS_DIRECTORY ${HDF5_ROOT})
+        message(STATUS "calling FindHDF5 with ${HDF5_ROOT} (HDF5_NEW_FINDMODULE: ${HDF5_NEW_FINDMODULE})\n-- CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}\n-- CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
+    else()
+        message(FATAL_ERROR "calling FindHDF5 with non-existing ${HDF5_ROOT}")
+    endif()
 
 ELSE()
-	message(STATUS "HDF5_ROOT (${HDF5_ROOT}) not found")
+    message(STATUS "HDF5_ROOT (${HDF5_ROOT}) not found")
 ENDIF()
 
 
@@ -519,7 +535,7 @@ ELSE()
 ENDIF()
 
 #-------------------------------- FFMPEG       ---------------------------------
-
+if(WITH_FFMPEG)
 find_package(FFMPEG REQUIRED COMPONENTS avformat avcodec avutil swscale)
 IF(FFMPEG_FOUND)
   INCLUDE_DIRECTORIES(${FFMPEG_INCLUDE_DIRS})
@@ -532,7 +548,7 @@ IF(FFMPEG_FOUND)
 ELSE()
   MESSAGE(WARNING "++ FFMPEG not found!")
 ENDIF()
-
+endif(WITH_FFMPEG)
 
 #-------------------------------- TIFF       ---------------------------------
 
@@ -589,7 +605,7 @@ ENDIF(TIFF_FOUND)
 
 ################################## add source ##################################
 
-IF(Boost_FOUND AND HDF5_FOUND AND LZ4_FOUND AND FFMPEG_FOUND AND TIFF_FOUND)
+IF(Boost_FOUND AND HDF5_FOUND AND LZ4_FOUND AND TIFF_FOUND)
 
   #setup headers
   if(NOT IS_DIRECTORY ${PROJECT_BINARY_DIR}/inc)

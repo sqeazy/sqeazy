@@ -24,20 +24,6 @@ typedef ramp_fixture<(1 << 15)> default_ramp_fixture;
 
 BOOST_FIXTURE_TEST_SUITE( bitplane_reorder_16bit, default_cv_fixture )
 
-BOOST_AUTO_TEST_CASE( runs_on_data ){
-
-  sqeazy::bitswap_scheme<unsigned short,1>::static_encode(&input[0], &reference[0],input.size());
-
-  try{
-    BOOST_REQUIRE( reference[input.size()-1] == 0 );
-    BOOST_REQUIRE( reference[(input.size()-1)-(16)] != 0 );
-  }
-  catch(...){
-    std::copy(reference.begin(), reference.end(), std::ostream_iterator<unsigned short>(std::cout, " "));
-  }
-
-}
-
 BOOST_AUTO_TEST_CASE( vectorized_version_is_callable ){
 
   int rc = 0;
@@ -273,21 +259,6 @@ BOOST_AUTO_TEST_SUITE_END()
 typedef const_anyvalue_fixture<(1 << 8), 2, std::uint8_t> default_cv_fixture_8bit;
 
 BOOST_FIXTURE_TEST_SUITE( bitplane_reorder_8bit, default_cv_fixture_8bit )
-
-BOOST_AUTO_TEST_CASE( runs_on_data ){
-
-  sqeazy::bitswap_scheme<std::uint8_t,1>::static_encode(&input[0], &reference[0],input.size());
-
-  try{
-    BOOST_REQUIRE( reference[input.size()-1] == 0 );
-    BOOST_REQUIRE( reference[(input.size()-1)-(32)] != 0 );
-    BOOST_REQUIRE( reference[(input.size()-1)-(64)] == 0 );
-  }
-  catch(...){
-    std::copy(reference.begin(), reference.end(), std::ostream_iterator<std::uint8_t>(std::cout, " "));
-  }
-
-}
 
 BOOST_AUTO_TEST_CASE( vectorized_version_is_callable ){
 

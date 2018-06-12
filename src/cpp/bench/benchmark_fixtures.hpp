@@ -8,17 +8,13 @@
 #include <sstream>
 #include <random>
 
+
+#include "sqeazy_common.hpp"
 #include "traits.hpp"
 #include "benchmark/benchmark.h"
 
-#include "boost/align/aligned_allocator.hpp"
-
-//boost::alignment::aligned_allocator<uint16_t, 32>
 
 namespace sqeazy {
-
-  template <typename value_type>
-  using aligned_vector = std::vector<value_type, boost::alignment::aligned_allocator<value_type,32> >;
 
   namespace benchmark {
 
@@ -28,13 +24,14 @@ namespace sqeazy {
     struct dynamic_synthetic_data : public ::benchmark::Fixture
     {
 
-      aligned_vector<T> sinus_;
-      aligned_vector<T> embryo_;
-      aligned_vector<T> noisy_embryo_;
-      aligned_vector<T> output_;
+      sqeazy::vec_32algn_t<T> sinus_;
+      sqeazy::vec_32algn_t<T> embryo_;
+      sqeazy::vec_32algn_t<T> noisy_embryo_;
+      sqeazy::vec_32algn_t<T> output_;
 
       std::vector<std::size_t> shape_;
       std::size_t size_;
+      std::size_t nbytes_;
 
       void setup(std::size_t _size){
 
@@ -46,6 +43,7 @@ namespace sqeazy {
         shape_[sqeazy::row_major::z] = std::floor(_size/(shape_[sqeazy::row_major::y]*shape_[sqeazy::row_major::x]));
 
         size_ = std::accumulate(shape_.begin(), shape_.end(), 1, std::multiplies<std::size_t>());
+        nbytes_ = size_*sizeof(T);
 
         setup_from_size();
 
@@ -57,6 +55,7 @@ namespace sqeazy {
         shape_ = _shape;
 
         size_ = std::accumulate(shape_.begin(), shape_.end(), 1, std::multiplies<std::size_t>());
+        nbytes_ = size_*sizeof(T);
 
         setup_from_size();
 
@@ -131,7 +130,8 @@ namespace sqeazy {
         noisy_embryo_(),
         output_(),
         shape_(3,0),
-        size_()
+        size_(0),
+        nbytes_(0)
       {
 
         setup(1 << 16);
@@ -143,8 +143,8 @@ namespace sqeazy {
 
       void TearDown(const ::benchmark::State&) {  }
 
-      unsigned long data_in_byte() const {
-        return size_*sizeof(T);
+      unsigned long size_in_bytes() const {
+        return nbytes_;
       }
 
 
@@ -165,8 +165,8 @@ namespace sqeazy {
       static const unsigned long size = (1 << (cache_size_in_byte_as_exponent+1))/sizeof(T);
       static const unsigned long size_in_byte = sizeof(T)*size;
 
-      aligned_vector<T> sin_data;
-      aligned_vector<T> output_data;
+      sqeazy::vec_32algn_t<T> sin_data;
+      sqeazy::vec_32algn_t<T> output_data;
       std::vector<std::size_t> shape;
 
       std::size_t axis_length(int index = sqeazy::row_major::x ) const {
@@ -233,7 +233,7 @@ namespace sqeazy {
 
       }
 
-      unsigned long data_in_byte() const {
+      unsigned long size_in_bytes() const {
         return sin_data.size()*sizeof(T);
       }
 
@@ -245,7 +245,7 @@ namespace sqeazy {
               << _self.axis_length(sqeazy::row_major::x) <<"x"
               << _self.axis_length(sqeazy::row_major::y) <<"x"
               << _self.axis_length(sqeazy::row_major::z)
-              <<" uint16 = " << _self.data_in_byte()/(1<<20) << " MB";
+              <<" uint16 = " << _self.size_in_bytes()/(1<<20) << " MB";
         return _cout;
       }
 

@@ -301,7 +301,7 @@ struct incrementing_array
     output(len,0)
   {
 
-    for (int i = 0; i < len; ++i)
+    for (std::size_t i = 0; i < len; ++i)
       {
     input[i] = i;
       }
@@ -346,109 +346,6 @@ BOOST_AUTO_TEST_CASE( setbits_on_integertype )
   BOOST_CHECK(sqeazy::detail::setbits_of_integertype(zero, three, 15u, 2u) == 0x8000);
 }
 
-
-BOOST_AUTO_TEST_CASE( encoded_equals_by_hand_planewidth1 )
-{
-
-  int rv = bswap1_scheme::static_encode(&input[0], &output[0],input.size());
-
-
-  BOOST_CHECK(rv == 0);
-  for(unsigned i = 0;i<input.size();++i){
-
-    BOOST_CHECK_MESSAGE(output[i] == plane1_encoded_by_hand[i],
-            "bswap1_scheme::static_encode input["<< i <<"] = " <<  input[i]
-            <<  ",  output = " << output[i]
-            <<  ",  by_hand = " << plane1_encoded_by_hand[i] );
-  }
-
-}
-
-BOOST_AUTO_TEST_CASE( decode_encoded_by_hand_planewidth1 )
-{
-
-  int rv = bswap1_scheme::static_decode(&plane1_encoded_by_hand[0], &output[0],input.size());
-
-
-  BOOST_CHECK(rv == 0);
-  for(unsigned i = 0;i<input.size();++i){
-
-    BOOST_CHECK_MESSAGE(output[i] == input[i],
-            "bswap1_scheme::static_decode input["<< i <<"] = " <<  plane1_encoded_by_hand[i]
-            <<  ",  output = " << output[i]
-            <<  ",  expected = " << input[i] );
-  }
-
-}
-
-BOOST_AUTO_TEST_CASE( encoded_equals_by_hand_planewidth2 )
-{
-
-  int rv = bswap2_scheme::static_encode(&input[0], &output[0],input.size());
-
-
-  BOOST_CHECK(rv == 0);
-  for(unsigned i = 0;i<input.size();++i){
-
-    BOOST_CHECK_MESSAGE(output[i] == plane2_encoded_by_hand[i],
-            "bswap2_scheme::static_encode input["<< i <<"] = " <<  input[i]
-            <<  ",  output = " << output[i]
-            <<  ",  by_hand = " << plane2_encoded_by_hand[i] );
-  }
-
-}
-
-BOOST_AUTO_TEST_CASE( decode_encoded_by_hand_planewidth2 )
-{
-
-  int rv = bswap2_scheme::static_decode(&plane2_encoded_by_hand[0], &output[0],input.size());
-
-
-  BOOST_CHECK(rv == 0);
-  for(unsigned i = 0;i<input.size();++i){
-
-    BOOST_CHECK_MESSAGE(output[i] == input[i],
-            "bswap2_scheme::static_decode input["<< i <<"] = " <<  plane2_encoded_by_hand[i]
-            <<  ",  output = " << output[i]
-            <<  ",  expected = " << input[i] );
-  }
-
-}
-
-BOOST_AUTO_TEST_CASE( encoded_equals_by_hand_planewidth4 )
-{
-
-  int rv = bswap4_scheme::static_encode(&input[0], &output[0],input.size());
-
-
-  BOOST_CHECK(rv == 0);
-  for(unsigned i = 0;i<input.size();++i){
-
-    BOOST_CHECK_MESSAGE(output[i] == plane4_encoded_by_hand[i],
-            "bswap4_scheme::static_encode input["<< i <<"] = " <<  input[i]
-            <<  ",  output = " << output[i]
-            <<  ",  by_hand = " << plane4_encoded_by_hand[i] );
-  }
-
-}
-
-BOOST_AUTO_TEST_CASE( decode_encoded_by_hand_planewidth4 )
-{
-
-  int rv = bswap4_scheme::static_decode(&plane4_encoded_by_hand[0], &output[0],input.size());
-
-
-  BOOST_CHECK(rv == 0);
-  for(unsigned i = 0;i<input.size();++i){
-
-    BOOST_CHECK_MESSAGE(output[i] == input[i],
-            "bswap4_scheme::static_decode input["<< i <<"] = " <<  plane4_encoded_by_hand[i]
-            <<  ",  output = " << output[i]
-            <<  ",  expected = " << input[i] );
-  }
-
-}
-
 BOOST_AUTO_TEST_CASE( encoded_equals_by_hand_planewidth4_new_api )
 {
 
@@ -462,7 +359,7 @@ BOOST_AUTO_TEST_CASE( encoded_equals_by_hand_planewidth4_new_api )
   for(unsigned i = 0;i<input.size();++i){
 
     BOOST_CHECK_MESSAGE(output[i] == plane4_encoded_by_hand[i],
-            "bswap4_scheme::static_encode input["<< i <<"] = " <<  input[i]
+            "bswap4_scheme::encode input["<< i <<"] = " <<  input[i]
             <<  ",  output = " << output[i]
             <<  ",  by_hand = " << plane4_encoded_by_hand[i] );
   }
@@ -481,7 +378,7 @@ BOOST_AUTO_TEST_CASE( decode_encoded_by_hand_planewidth4_new_api )
   for(unsigned i = 0;i<input.size();++i){
 
     BOOST_CHECK_MESSAGE(output[i] == input[i],
-            "bswap4_scheme::static_decode input["<< i <<"] = " <<  plane4_encoded_by_hand[i]
+            "bswap4_scheme::decode input["<< i <<"] = " <<  plane4_encoded_by_hand[i]
             <<  ",  output = " << output[i]
             <<  ",  expected = " << input[i] );
   }
@@ -545,33 +442,3 @@ BOOST_AUTO_TEST_CASE( roundtrip_ramp_8 )
   BOOST_CHECK_EQUAL_COLLECTIONS(decoded.begin(), decoded.end(), expected.begin(), expected.end());
 }
 
-
-//BOOST_AUTO_TEST_SUITE_END()
-
-BOOST_AUTO_TEST_CASE( roundtrip_ramp_16 )
-{
-  using namespace sqeazy;
-
-  std::vector<unsigned> shape(3);
-  shape[0] = 7;
-  shape[1] = 9;
-  shape[2] = 11;
-
-  const unsigned long flat_size = std::accumulate(shape.begin(), shape.end(),1,std::multiplies<unsigned>());
-  std::vector<std::uint16_t> expected(flat_size);
-  for(unsigned i = 0;i<flat_size;++i)
-    expected[i] = static_cast<std::uint16_t>(i);
-
-  std::vector<std::uint16_t> compressed(expected);
-
-  int res = bswap1_scheme::static_encode(&expected[0], &compressed[0],flat_size);
-
-  BOOST_CHECK(!res);
-
-  std::vector<std::uint16_t> decoded(flat_size,0);
-
-  res = bswap1_scheme::static_decode(&compressed[0], &decoded[0] ,flat_size);
-
-  BOOST_CHECK(!res);
-  BOOST_CHECK_EQUAL_COLLECTIONS(decoded.begin(), decoded.end(), expected.begin(), expected.end());
-}

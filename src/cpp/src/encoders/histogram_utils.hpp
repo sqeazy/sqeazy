@@ -164,7 +164,7 @@ namespace sqeazy {
                 auto my_histo_itr   = &(*(histo_clones_itr+tid))[0];
 
                 for(;chunk_begin!=chunk_end;++chunk_begin)
-                    my_histo_itr[*chunk_begin]++;
+                    my_histo_itr[(std::uint32_t)*chunk_begin]++;
 
             }
 

@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_CASE( roundtrip ){
 
 }
 
-
+#ifdef SQY_WITH_FFMPEG
 BOOST_AUTO_TEST_CASE( flybrain_roundtrip_video_lz4 ){
 
   const std::string filter_name = "h264->lz4";
@@ -186,6 +186,7 @@ BOOST_AUTO_TEST_CASE( flybrain_roundtrip_video_lz4 ){
 
 
 }
+#endif
 
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -304,7 +305,6 @@ BOOST_AUTO_TEST_CASE( roundtrip_lz4 ){
 BOOST_AUTO_TEST_CASE( roundtrip ){
 
   const unsigned long data_bytes = size_in_byte;
-  long length = data_bytes;
 
   std::vector<size_t> shape(dims.begin(), dims.end());
 
@@ -316,17 +316,11 @@ BOOST_AUTO_TEST_CASE( roundtrip ){
   char* encoded_end = pipe.encode(constant_cube.data(),
                   intermediate.data(),
                   shape);
-    // SQY_PipelineEncode_UI16(default_filter_name.c_str(),
-              //                  (const char*)&constant_cube[0],
-              //                  &ldims[0],
-              //                  dims.size(),
-              //                  (char*)&compressed[0],
-              //                  &length);
 
   BOOST_REQUIRE(encoded_end!=nullptr);
-  length = encoded_end - intermediate.data();
+  auto length = std::distance(intermediate.data(),encoded_end);
 
-  BOOST_CHECK_LT(length,max_encoded_size);
+  BOOST_CHECK_LE(length,max_encoded_size);
 
   int rvalue = pipe.decode(intermediate.data(),
                incrementing_cube.data(),
@@ -352,7 +346,7 @@ BOOST_AUTO_TEST_SUITE( tricky_pipelines )
 
 BOOST_AUTO_TEST_CASE( roundtrip_quantiser ){
 
-  av_register_all();
+
 
   std::vector<size_t> shape(3,128);
   shape.front() *= 2;
@@ -405,7 +399,7 @@ BOOST_AUTO_TEST_CASE( roundtrip_quantiser ){
 
 BOOST_AUTO_TEST_CASE( roundtrip_quantiser2file ){
 
-  av_register_all();
+
 
   std::vector<size_t> shape(3,128);
   shape.front() *= 2;
@@ -456,6 +450,7 @@ BOOST_AUTO_TEST_CASE( roundtrip_quantiser2file ){
 
 }
 
+#ifdef SQY_WITH_FFMPEG
 BOOST_AUTO_TEST_CASE( roundtrip_quantiser_h264 ){
 
   av_register_all();
@@ -562,6 +557,26 @@ BOOST_AUTO_TEST_CASE( roundtrip_quantiser2file_h264 ){
                   outputdata.data()+len-10, outputdata.data()+len);
   BOOST_REQUIRE_EQUAL_COLLECTIONS(inputdata.data(), inputdata.data()+len,
                   outputdata.data(), outputdata.data()+len);
+
+}
+
+#endif
+
+BOOST_AUTO_TEST_SUITE_END()
+
+
+
+
+
+static const std::string bug_github59_filter_name = "bitswap1->lz(accel=8)";//lz should be lz4
+
+BOOST_AUTO_TEST_SUITE( bugs )
+
+BOOST_AUTO_TEST_CASE( github59 ){
+
+  BOOST_REQUIRE(!sqeazy::dypeline<std::uint16_t>::can_be_built_from(bug_github59_filter_name));
+
+
 
 }
 BOOST_AUTO_TEST_SUITE_END()

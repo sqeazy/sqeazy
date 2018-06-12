@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE( selects_correct_plane_in_z )
 
     for(unsigned num = 0; num < face_size; ++num) {
         constant_cube[num] = front_data(rng);
-	constant_cube[size-face_size+num] = back_data(rng);
+    constant_cube[size-face_size+num] = back_data(rng);
     }
 
     std::vector<unsigned short> face(face_size);
@@ -86,59 +86,6 @@ BOOST_AUTO_TEST_CASE( crops_correct_values )
 
 }
 
-BOOST_AUTO_TEST_CASE( free_mean_var )
-{
-    boost::random::mt19937 rng;
-    boost::random::normal_distribution<float> norm(32,4);
-
-    for(unsigned num = 0; num < size; ++num) {
-        to_play_with[num] = norm(rng);
-    }
-
-    float mean = 0;
-    float var = 0;
-    sqeazy::remove_estimated_background_scheme<value_type>::mean_and_var(to_play_with.begin(),
-            to_play_with.end(),
-            mean,
-            var
-                                                                 );
-
-    BOOST_CHECK_CLOSE(mean,32.f,2);
-    BOOST_CHECK_CLOSE(var,4.f,4);
-
-
-
-}
-
-
-BOOST_AUTO_TEST_CASE( stamp_removal )
-{
-
-    std::fill(constant_cube.begin(), constant_cube.end(), 0);
-    constant_cube[constant_cube.size()/2] = 1 << 14;
-    float input_sum = std::accumulate(constant_cube.begin(), constant_cube.end(),0);
-
-    typedef sqeazy::cube_neighborhood<3> nb_t;
-
-    for(int i = 0; i<3; ++i) {
-        BOOST_CHECK_EQUAL(sqeazy::offset_begin_on_axis<nb_t>(i), -1);
-        BOOST_CHECK_EQUAL(sqeazy::offset_end_on_axis<nb_t>(i), 2);
-    }
-
-    int rcode = sqeazy::flatten_to_neighborhood_scheme<value_type>::static_encode(&constant_cube[0],
-                &to_play_with[0], dims, 42);
-
-
-    float sum = std::accumulate(to_play_with.begin(), to_play_with.end(),0);
-    BOOST_CHECK_EQUAL(rcode, 0);
-    BOOST_CHECK_EQUAL(sum, 0);
-    BOOST_CHECK_NE(sum, input_sum);
-
-
-
-
-}
-
 BOOST_AUTO_TEST_CASE( stamp_removal_newapi )
 {
 
@@ -156,58 +103,18 @@ BOOST_AUTO_TEST_CASE( stamp_removal_newapi )
     std::vector<std::size_t> shape(dims.begin(), dims.end());
     sqeazy::flatten_to_neighborhood_scheme<value_type> flatten(42);
     auto end = flatten.encode(&constant_cube[0],
-			      &to_play_with[0],
-			      shape);
-    
+                  &to_play_with[0],
+                  shape);
+
     BOOST_CHECK(end!=nullptr);
 
     float sum = std::accumulate(to_play_with.begin(), to_play_with.end(),0);
-    
+
     BOOST_CHECK_EQUAL(sum, 0);
     BOOST_CHECK_NE(sum, input_sum);
 
-
-
-
 }
 
-
-BOOST_AUTO_TEST_CASE( stamp_removal_fraction )
-{
-
-    std::fill(constant_cube.begin(), constant_cube.end(), 0);
-    std::fill(incrementing_cube.begin(), incrementing_cube.end(), 0);
-
-    unsigned central_index = 3*axis_length*axis_length + 3*axis_length +3;
-    constant_cube[central_index] = 1 << 14;
-    incrementing_cube[central_index] = 1 << 14;
-    incrementing_cube[central_index - 1] = 1 << 14;
-    incrementing_cube[central_index + 1] = 1 << 14;
-    incrementing_cube[central_index - 8] = 1 << 14;
-    incrementing_cube[central_index + 8] = 1 << 14;
-    incrementing_cube[central_index - 64] = 1 << 14;
-    incrementing_cube[central_index + 64] = 1 << 14;
-
-    int rcode = sqeazy::flatten_to_neighborhood_scheme<value_type >::static_encode(&constant_cube[0],
-                &to_play_with[0], dims, 42);
-
-    BOOST_CHECK_EQUAL(rcode, 0);
-    BOOST_CHECK_EQUAL(to_play_with[central_index], 0);
-
-    rcode = sqeazy::flatten_to_neighborhood_scheme<value_type,sqeazy::cube_neighborhood<3> >::static_encode(&incrementing_cube[0],
-            &to_play_with[0], dims, 42, 6/(26.f));
-
-    BOOST_CHECK_EQUAL(rcode, 0);
-    BOOST_CHECK_EQUAL(to_play_with[central_index], 0);
-
-    rcode = sqeazy::flatten_to_neighborhood_scheme<value_type,sqeazy::cube_neighborhood<3> >::static_encode(&incrementing_cube[0],
-            &to_play_with[0], dims, 42, 22/(26.f));
-
-    BOOST_CHECK_EQUAL(rcode, 0);
-    BOOST_CHECK_MESSAGE(to_play_with[central_index] != 0, "flatten_to_neighborhood did not keep intensity of interest");
-
-
-}
 
 BOOST_AUTO_TEST_CASE( stamp_removal_fraction_newapi )
 {
@@ -228,26 +135,26 @@ BOOST_AUTO_TEST_CASE( stamp_removal_fraction_newapi )
     std::vector<std::size_t> shape(dims.begin(), dims.end());
     sqeazy::flatten_to_neighborhood_scheme<value_type> fraction_default(42);
     auto end = fraction_default.encode(&constant_cube[0],
-				       &to_play_with[0],
-				       shape);
+                       &to_play_with[0],
+                       shape);
 
     BOOST_CHECK(end!=nullptr);
     BOOST_CHECK_EQUAL(to_play_with[central_index], 0);
 
     sqeazy::flatten_to_neighborhood_scheme<value_type,sqeazy::cube_neighborhood<3> > fraction_a(42,6/(26.f));
-    
+
     end = fraction_a.encode(&incrementing_cube[0],
-			    &to_play_with[0],
-			    shape);
+                &to_play_with[0],
+                shape);
 
     BOOST_CHECK(end!=nullptr);
     BOOST_CHECK_EQUAL(to_play_with[central_index], 0);
 
     sqeazy::flatten_to_neighborhood_scheme<value_type,sqeazy::cube_neighborhood<3> > fraction_b(42, 22/(26.f));
     end = fraction_b.encode(&incrementing_cube[0],
-			  &to_play_with[0],
-			  shape);
-    
+              &to_play_with[0],
+              shape);
+
     BOOST_CHECK(end!=nullptr);
     BOOST_CHECK_MESSAGE(to_play_with[central_index] != 0, "flatten_to_neighborhood did not keep intensity of interest");
 

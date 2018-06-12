@@ -355,19 +355,20 @@ BOOST_AUTO_TEST_CASE( shift_left_by_9_all ){
 
 BOOST_AUTO_TEST_CASE( versus_default_first_128 ){
 
-  int ret1 = sqeazy::detail::sse_bitplane_reorder_encode<1>(&input[0], &output[0], 128);
-  int ret2 = sqeazy::detail::scalar_bitplane_reorder_encode<1>(&input[0], &reference[0], 128);
+  const unsigned n_el = 128;
+  int ret1 = sqeazy::detail::sse_bitplane_reorder_encode<1>(&input[0], &output[0], n_el);
+  int ret2 = sqeazy::detail::scalar_bitplane_reorder_encode<1>(&input[0], &reference[0], n_el);
 
 
   BOOST_REQUIRE(ret1 == ret2);
 
-  for(unsigned i = 0;i<128;++i){
+  for(unsigned i = 0;i<n_el;++i){
 
     try{
       BOOST_REQUIRE(output[i] == reference[i]);
     }
     catch(...){
-      std::cerr << "[versus_default_first_128] " << i << " / "<< 128<<" item does not match "
+      std::cerr << "[versus_default_first_128] " << i << " / "<< n_el<<" item does not match "
         << "scalar :" <<  output[i] << ", "
         << "sse    :" <<  reference[i]
         << "\n";

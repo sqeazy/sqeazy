@@ -398,73 +398,70 @@ task upload_bundle(type:Exec) {
 
 }
 
-task fetch_version{
+
+task fetch_version {
+
+    description 'download all known libsqeazy* bundles from bintray'
+    group bundle_group
 
     def bdir = file(build_dir)
     def download_dir = file(build_dir+'/distribution/')
 
     doFirst{
-        if(!bdir.exists()){
-            println "creating "+bdir
-            bdir.mkdir()
+    if(!bdir.exists()){
+        bdir.mkdir()
         }
 
-        if(!download_dir.exists()){
-            println "creating "+download_dir
-            download_dir.mkdir()
+    if(!download_dir.exists()){
+        download_dir.mkdir()
         }
     }
-
-    supported_platforms.each { String plat ->
-                              def tgt_file = new File(download_dir.absolutePath+'/'+'sqeazy_bundle_'+plat+'.zip')
-
-                              doLast {
-            download {
-                src 'https://dl.bintray.com/sqeazy/sqeazy/'+plat+'/'+project.version+'/sqeazy_bundle.zip'
-                dest tgt_file
-                onlyIfNewer true
-            }
-        }
-
-                              outputs.file(tgt_file)
-
-
-    }
-
-
     outputs.dir(download_dir)
+
+    def last_valid_version = "0.5.2"     //TODO: this should be project.version at best; add a check which one is available online
+
+    def version_to_fetch = project.hasProperty("version_to_fetch") ? version_to_fetch : last_valid_version
+    
+    supported_platforms.each {
+        String plat ->
+
+        def tgt_file = file(download_dir.toString()+'/sqeazy_bundle_'+plat+'.zip')
+        download
+        {
+            src 'https://dl.bintray.com/sqeazy/sqeazy/'+plat+'/'+version_to_fetch+'/sqeazy_bundle.zip'
+            dest new File(tgt_file.toString())
+            onlyIfNewer true
+        }
+        outputs.files(tgt_file.toString())
+    }
 
 }
 
-task unpack_for_bake {
 
-    inputs.dir(dist_dir)
+task unpack_for_bake(type : Copy) {
 
-    def lib_dir = file(dist_dir + '/lib')
-    doFirst
-    {
+    description 'unpack libsqeazy* bundles from bintray to '+dist_dir
+    group bundle_group
+
+
+    def lib_dir = file(build_dir+'/distribution/lib')
+
+    doFirst{
         if(!lib_dir.exists()){
             lib_dir.mkdir()
         }
-
     }
-    outputs.dir(lib_dir)
 
-    def ftree = fileTree(dist_dir).include('*.zip')
-    ftree.each{
-        File zfile ->
+    supported_platforms.each{
+        String plat ->
 
-        doLast {
-            copy {
-                from zipTree(zfile)
-                into lib_dir
-            }
+        def infile = file(build_dir+"/distribution/sqeazy_bundle_"+plat+".zip")
+        inputs.files(infile)
 
-         }
-     }
+        from zipTree(infile)
+        into lib_dir
 
-    supported_platforms.each{ String plat ->
-                             outputs.files(dist_dir+"/"+plat+"/sqeazy.h")
+        outputs.files(lib_dir.toString()+"/"+plat+"/sqeazy.h")
     }
 }
 
@@ -485,8 +482,7 @@ task bake_bindings(type:JavaExec) {
     bundled_headers.add(dist_dir+"/"+plat+"/sqeazy.h")
   }
 
-    inputs.files(sqeazy_header)
-    inputs.files(bundled_headers)
+  inputs.files sqeazy_header, bundled_headers
 
 
   workingDir '.'
