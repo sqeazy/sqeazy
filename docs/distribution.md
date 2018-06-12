@@ -150,7 +150,7 @@ Obtain the source from [here](https://github.com/lz4/lz4). Then go to the `contr
 ```
 mkdir build
 cd build 
-cmake -DBUILD_SHARED_LIBS=OFF -DPOSITION_INDEPDENT_CODE=ON ..
+cmake -DBUILD_SHARED_LIBS=OFF -DLZ4_POSITION_INDEPENDENT_LIB=ON ..
 ```
 
 ## Build 
