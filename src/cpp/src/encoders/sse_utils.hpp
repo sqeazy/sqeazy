@@ -10,6 +10,7 @@
 #include <cassert>
 
 #include <mmintrin.h>
+#include <emmintrin.h>
 #include <xmmintrin.h>
 #include <smmintrin.h>
 
@@ -202,17 +203,36 @@ namespace sqeazy {
       }
     };
 
+
+	__m128i populate(int _nbits) {
+		__m128i value;
+#ifndef WIN32
+		__m64 temp = _mm_set_pi32(int(0), _nbits);
+		value = _mm_set1_epi64(temp);
+#else
+		__m64 temp;
+		std::uint32_t* temp_ptr = (std::uint32_t*)&temp;
+		temp_ptr[0] = _nbits;
+		std::uint32_t* block_ptr = (std::uint32_t*)&value;
+		for (int i = 0; i < 4; ++i) {
+			block_ptr[i] = temp_ptr[i % 2];
+		}
+#endif
+		return value;
+	}
     ////////////////////////////////////////////////// SHIFT LEFT     //////////////////////////////////////////////////
     template<typename daughter_t, typename value_t>
     struct shift_base {
 
       const int n_bits;
-      const __m128i n_bits_block;
+	  const __m128i n_bits_block;
 
       shift_base(int _nbits = 1):
         n_bits(_nbits),
-        n_bits_block(_mm_set1_epi64(_mm_set_pi32(0,_nbits)))
+        n_bits_block(populate(_nbits))
         {
+
+
         }
 
 
@@ -298,7 +318,7 @@ namespace sqeazy {
 
       typedef shift_base<shift_left_m128i<std::int32_t>, std::int32_t> base_t;
 
-      shift_left_m128i(uint nbits = 1):
+      shift_left_m128i(std::uint32_t nbits = 1):
         base_t(nbits){}
 
       template <typename size_type>
@@ -316,7 +336,7 @@ namespace sqeazy {
 
       typedef shift_base<shift_left_m128i<std::uint64_t>, std::uint64_t> base_t;
 
-      shift_left_m128i(uint nbits = 1):
+      shift_left_m128i(std::uint32_t nbits = 1):
         base_t(nbits){}
 
       template <typename size_type>
