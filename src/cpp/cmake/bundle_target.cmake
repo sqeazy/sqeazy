@@ -189,7 +189,7 @@ function(BUNDLE tgt destdir)
 
   ## treat ffmpeg dependencies in a special way
   if(UNIX)
-    if( ${FFMPEG_USE_STATIC_LIBS})
+    if( ${FFMPEG_USE_STATIC_LIBS} EQUAL ${WITH_FFMPEG} )
 
 
       if(NOT SQY_MUST_INCLUDE_LIBS)
@@ -295,7 +295,7 @@ function(BUNDLE tgt destdir)
       # if(NOT EXTRA_LIBM_NOT_NEEDED)
       #   LIST (APPEND FFMPEG_LIBRARIES m)
       # endif()
-    endif(${FFMPEG_USE_STATIC_LIBS})
+    endif(${FFMPEG_USE_STATIC_LIBS} EQUAL ${WITH_FFMPEG})
 
     ## many/most Linux OS deploy their static libraries being compiled with -fPIE
     ## it doesn't make too much sense to try and include them for the distribution of libsqeazy

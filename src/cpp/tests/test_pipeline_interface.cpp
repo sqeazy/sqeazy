@@ -124,6 +124,8 @@ BOOST_AUTO_TEST_SUITE_END()
 
 static const std::string tricky_filter_name = "quantiser->h264";
 
+#ifdef SQY_WITH_FFMPEG
+
 BOOST_AUTO_TEST_SUITE( video_codecs )
 
 BOOST_AUTO_TEST_CASE( roundtrip ){
@@ -241,3 +243,4 @@ BOOST_AUTO_TEST_CASE( quantiser_only ){
 
 }
 BOOST_AUTO_TEST_SUITE_END()
+#endif
