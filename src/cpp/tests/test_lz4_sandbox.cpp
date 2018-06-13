@@ -4,6 +4,7 @@
 #include <numeric>
 #include <vector>
 #include <iostream>
+#include <cstring>
 #include "array_fixtures.hpp"
 #include "encoders/lz4.hpp"
 
@@ -24,18 +25,28 @@ namespace lz4sandbox {
   char* compress_as_frame(const char* input, const char* input_end, char* _out){
 
     char* value = nullptr;
-    LZ4F_preferences_t lz4_prefs = {
-        { LZ4F_max256KB, //commonly L2 size on Intel platforms
+    // LZ4F_preferences_t lz4_prefs = {
+    //     { LZ4F_max256KB, //commonly L2 size on Intel platforms
+    //       LZ4F_blockLinked,
+    //       LZ4F_noContentChecksum,
+    //       LZ4F_frame,
+    //       0 /* content size unknown */,
+    //       0 /* no dictID */ ,
+    //       LZ4F_noBlockChecksum },
+    //     5,   /* compression level */
+    //     0,   /* autoflush */
+    //     { 0, 0, 0, 0 },  /* reserved, must be set to 0 */
+    //   };
+    LZ4F_preferences_t lz4_prefs;
+    std::memset(&lz4_prefs,0,sizeof(lz4_prefs));
+    lz4_prefs.frameInfo = { LZ4F_max256KB, //commonly L2 size on Intel platforms
           LZ4F_blockLinked,
           LZ4F_noContentChecksum,
           LZ4F_frame,
           0 /* content size unknown */,
           0 /* no dictID */ ,
-          LZ4F_noBlockChecksum },
-        5,   /* compression level */
-        0,   /* autoflush */
-        { 0, 0, 0, 0 },  /* reserved, must be set to 0 */
-      };
+          LZ4F_noBlockChecksum } ;
+    lz4_prefs.compressionLevel = 5;
 
     const auto n_input_bytes = std::distance(input,input_end);
 
@@ -404,13 +415,8 @@ BOOST_AUTO_TEST_CASE( null_prefs_5Bytes )
 
 BOOST_AUTO_TEST_CASE( prefs_256kB )
 {
-  const LZ4F_preferences_t kPrefs = {
-    { LZ4F_max256KB, LZ4F_blockLinked, LZ4F_noContentChecksum, LZ4F_frame,
-      0 /* unknown content size */, 0 /* no dictID */ , LZ4F_noBlockChecksum },
-    0,   /* compression level; 0 == default */
-    0,   /* autoflush */
-    { 0, 0, 0, 0 },  /* reserved, must be set to 0 */
-};
+  LZ4F_preferences_t kPrefs;
+  std::memset(&kPrefs,0,sizeof(kPrefs));
 
   const int nbytes = 64 << 10;
 
