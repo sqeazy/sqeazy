@@ -25,7 +25,7 @@ BOOST_AUTO_TEST_CASE( one_step_serial_encode )
                           LZ4F_noBlockChecksum };
   lz4_prefs.compressionLevel = 9;
   lz4_prefs.autoFlush = 0;
-  sqeazy::lz4::wrap<decltype(lz4_prefs)>::favorDecSpeed_initialisation(lz4_prefs,0);  LZ4F_preferences_t lz4_prefs;
+  sqeazy::lz4::wrap<decltype(lz4_prefs)>::favorDecSpeed_initialisation(lz4_prefs,0);
 
 
   auto exp_bytes = LZ4F_compressBound(size_in_byte, &lz4_prefs);
@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_CASE( two_step_serial_encode )
                           LZ4F_noBlockChecksum };
   lz4_prefs.compressionLevel = 9;
   lz4_prefs.autoFlush = 0;
-  sqeazy::lz4::wrap<decltype(lz4_prefs)>::favorDecSpeed_initialisation(lz4_prefs,0);  LZ4F_preferences_t lz4_prefs;
+  sqeazy::lz4::wrap<decltype(lz4_prefs)>::favorDecSpeed_initialisation(lz4_prefs,0);
 
   auto exp_bytes = LZ4F_compressBound(size_in_byte, &lz4_prefs);
   std::vector<char> encoded(exp_bytes);
