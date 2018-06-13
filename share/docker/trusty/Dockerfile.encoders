@@ -8,7 +8,7 @@ WORKDIR /build
 # Install lz4
 RUN git clone https://github.com/lz4/lz4.git && \
     cd lz4 && \
-#    git checkout v1.8.0 && \
+    git checkout v1.8.2 && \
     CFLAGS="-O3 -DNDEBUG -fPIC" PREFIX=/usr/ SHELL="/bin/bash -x" make -j8 install;
 
 # Install x264
