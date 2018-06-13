@@ -5,7 +5,6 @@
 #include "traits.hpp"
 
 #ifndef LZ4_VERSION_MAJOR
-#include "lz4_utils.hpp"
 #include "lz4frame.h"
 #endif
 
@@ -14,12 +13,47 @@
 #include <cstdint>
 #include <algorithm>
 #include <iostream>
+#include <type_traits>
 
 namespace sqeazy {
 
     namespace lz4 {
 
         typedef typename sqeazy::twice_as_wide<std::size_t>::type local_size_type;
+
+
+        template <typename T, typename = int>
+        struct with_favordecspeed : std::false_type { };
+
+        template <typename T>
+        struct with_favordecspeed <T, decltype((void) T::favorDecSpeed, 0)> : std::true_type { };
+
+//for lz4 1.8.1.2 and older
+        template <typename T, typename = int>
+        struct wrap  {
+
+            static void favorDecSpeed_initialisation(T& prefs, std::uint32_t value){
+
+                std::fill(prefs.reserved, prefs.reserved + 4,0u);
+
+            }
+
+
+
+        };
+
+        template <typename T>
+        struct wrap <T, decltype((void) T::favorDecSpeed, 0)> {
+
+            static void favorDecSpeed_initialisation(T& prefs,std::uint32_t value){
+
+                prefs.favorDecSpeed = value;
+                std::fill(prefs.reserved, prefs.reserved + 3,0u);
+
+            }
+
+        };
+
 
 
         struct closest_blocksize {
