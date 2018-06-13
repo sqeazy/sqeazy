@@ -22,11 +22,13 @@ build-utils: Dockerfile.utils build-base
 build-shared: build-utils build-encoders
 	docker build --build-arg SQY_VERSION=$(SQY_VERSION) -t sqy/trusty/shared:$(SQY_VERSION) .
 
-build: build-static build-shared
-#	docker build --build-arg SQY_VERSION=$(SQY_VERSION) -t sqy/trusty/base -f Dockerfile.base .
-#	docker build --build-arg SQY_VERSION=$(SQY_VERSION) -t sqy/trusty/encoders-static -f Dockerfile.encoders-static .
-#	docker build --build-arg SQY_VERSION=$(SQY_VERSION) -t sqy/trusty/static-utils -f Dockerfile.static-utils .
-#	docker build --build-arg SQY_VERSION=$(SQY_VERSION) -t sqy/trusty/static-deployment -f Dockerfile .
+#when the shared library container is built, we want to update the one on dockerhub right away
+to_dockerhub : build-shared
+	docker tag sqy/trusty/shared:$(SQY_VERSION) psteinb/sqy-on-trusty:$(SQY_VERSION)
+	docker tag sqy/trusty/shared:$(SQY_VERSION) psteinb/sqy-on-trusty:latest
+	docker push psteinb/sqy-on-trusty
+
+build: build-static to_dockerhub
 
 run-base: build-base
 	docker run -it --rm sqy/trusty/base:$(SQY_VERSION) bash
@@ -44,7 +46,3 @@ run-static: build-static
 run: build-shared
 	docker run -e ORG_GRADLE_PROJECT_bintray_user=psteinb -e ORG_GRADLE_PROJECT_bintray_key=${MY_BINTRAY_KEY} -it --rm sqy/trusty/shared:$(SQY_VERSION)
 
-to_dockerhub : build-shared
-	docker tag sqy/trusty/shared:$(SQY_VERSION) psteinb/sqy-on-trusty:$(SQY_VERSION)
-	docker tag sqy/trusty/shared:$(SQY_VERSION) psteinb/sqy-on-trusty:latest
-	docker push psteinb/sqy-on-trusty
