@@ -19,8 +19,6 @@
 #include "lz4frame.h"
 #endif
 
-template< bool B, class T = void >
-using enable_if_t = typename std::enable_if<B,T>::type;
 
 namespace sqeazy
 {
@@ -112,7 +110,7 @@ namespace sqeazy
         lz4_prefs.compressionLevel = acceleration;
         lz4_prefs.autoFlush = 0;
 
-        sqeazy::lz4::wrap<LZ4F_preferences_t>::favorDecSpeed_initialisation(lz4_prefs,0);
+        sqeazy::lz4::wrap<decltype(lz4_prefs)>::favorDecSpeed_initialisation(lz4_prefs,0);
       }
 
 

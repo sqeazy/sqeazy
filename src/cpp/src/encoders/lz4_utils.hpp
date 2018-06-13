@@ -28,7 +28,8 @@ namespace sqeazy {
         template <typename T>
         struct with_favordecspeed <T, decltype((void) T::favorDecSpeed, 0)> : std::true_type { };
 
-//for lz4 1.8.1.2 and older
+
+        //for lz4 1.8.1.2 and older
         template <typename T, typename = int>
         struct wrap  {
 
