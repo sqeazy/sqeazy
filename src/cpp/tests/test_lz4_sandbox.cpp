@@ -417,6 +417,13 @@ BOOST_AUTO_TEST_CASE( prefs_256kB )
 {
   LZ4F_preferences_t kPrefs;
   std::memset(&kPrefs,0,sizeof(kPrefs));
+  kPrefs.frameInfo = { LZ4F_max256KB, //commonly L2 size on Intel platforms
+          LZ4F_blockLinked,
+          LZ4F_noContentChecksum,
+          LZ4F_frame,
+          0 /* content size unknown */,
+          0 /* no dictID */ ,
+          LZ4F_noBlockChecksum } ;
 
   const int nbytes = 64 << 10;
 
