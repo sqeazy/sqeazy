@@ -208,7 +208,9 @@ namespace sqeazy {
 		__m128i value;
 #ifndef WIN32
 		__m64 temp = _mm_set_pi32(int(0), _nbits);
+		//creates [int(0), _nbits]
 		value = _mm_set1_epi64(temp);
+		//creates [int(0), _nbits, int(0), _nbits]
 #else
 		__m64 temp;
 		std::uint32_t* temp_ptr = (std::uint32_t*)&temp;
