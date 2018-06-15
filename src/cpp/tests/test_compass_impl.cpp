@@ -1,5 +1,6 @@
 #define BOOST_TEST_MODULE TEST_COMPASS
 #define BOOST_TEST_MAIN
+#include "compass_fixture.hpp" //needs to go first as on Windows with MSVS2017 it would throw an error because of double inclusion of WinSock.h 
 #include "boost/test/included/unit_test.hpp"
 
 #include <vector>
@@ -8,7 +9,7 @@
 #include <algorithm>
 
 #include "compass.hpp"
-#include "compass_fixture.hpp"
+
 
 BOOST_AUTO_TEST_SUITE( compass_fundamentals )
 
