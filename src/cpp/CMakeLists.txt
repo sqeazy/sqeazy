@@ -101,6 +101,7 @@ string(TOUPPER "${CMAKE_BUILD_TYPE}" ALLCAPITAL_BUILD_TYPE)
 
 check_cxx_compiler_flag(-Wl,-Bsymbolic HAS_BSYMBOLIC_COMPILERFLAG)
 check_cxx_compiler_flag(-ftree-vectorize HAS_GCC_TREE_VECTORIZE_COMPILERFLAG)
+check_cxx_compiler_flag(-fno-omit-frame-pointer HAS_NO_OMIT_FRAMEPOINTER_COMPILERFLAG)
 check_cxx_compiler_flag(-march=native HAS_MARCH_NATIVE_COMPILERFLAG)
 check_cxx_compiler_flag(-march=x86-64 HAS_MARCH_GENERIC_COMPILERFLAG)
 check_cxx_compiler_flag(-mtune=generic HAS_MTUNE_GENERIC_COMPILERFLAG)
@@ -127,6 +128,13 @@ check_cxx_compiler_flag(-mssse3 HAS_MSSSE3_COMPILERFLAG)
 check_cxx_compiler_flag(-static-libgcc HAS_STATIC_LIBGCC_COMPILERFLAG)
 check_cxx_compiler_flag(-static-libstdc++ HAS_STATIC_LIBSTDC++_COMPILERFLAG)
 check_cxx_compiler_flag(-static-libc++ HAS_STATIC_LIBC++_COMPILERFLAG)
+
+set(CMAKE_REQUIRED_LIBRARIES "-fsanitize=address")
+set(CMAKE_REQUIRED_FLAGS "-fsanitize=address")
+check_cxx_compiler_flag(-fsanitize=address HAS_SANITIZE_ADDRESS_COMPILERFLAG)
+set(CMAKE_REQUIRED_LIBRARIES "")
+set(CMAKE_REQUIRED_FLAGS "")
+
 
 check_cxx_compiler_flag(/arch:SSE HAS_ARCH_SSE_COMPILERFLAG)
 check_cxx_compiler_flag(/arch:SSE2 HAS_ARCH_SSE2_COMPILERFLAG)
@@ -161,6 +169,8 @@ IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
     if(HAS_GGDB3_COMPILERFLAG)
       add_definitions(-ggdb3)
     endif()
+
+
   endif()
 
   # if(ALLCAPITAL_BUILD_TYPE STREQUAL RELWDBG OR ALLCAPITAL_BUILD_TYPE STREQUAL RELWITHDEBINFO)
@@ -222,6 +232,17 @@ if(ALLCAPITAL_BUILD_TYPE STREQUAL DEBUG)
     add_definitions(/DSQY_TRACE=1)
     add_definitions(/D_SQY_DEBUG_=1)
   endif()
+
+  if(NOT (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC))
+    if(HAS_SANITIZE_ADDRESS_COMPILERFLAG)
+      add_definitions(-fsanitize=address)
+      set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+      if(HAS_NO_OMIT_FRAMEPOINTER_COMPILERFLAG)
+        add_definitions(-fno-omit-frame-pointer)
+      endif()
+    endif()
+  endif()
+
 endif()
 
 
