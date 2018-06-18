@@ -316,7 +316,7 @@ BOOST_AUTO_TEST_CASE (anything_goes_in_literals_to_pairs) {
 BOOST_AUTO_TEST_CASE (verbatim_literal_last_ref) {
 
   std::string sep = "->";
-
+  //"step_i->step_ii(option=1)->step_iii(option1=true,option2=false)->step_iv(junk=<verbatim>),->,'./[],->./</verbatim>)"
   boost::string_ref ref(verbatim_literal_last);
 
   boost::string_ref sep_ref(sep);
@@ -340,7 +340,7 @@ BOOST_AUTO_TEST_CASE (verbatim_literal_last_ref) {
   BOOST_CHECK_EQUAL(parsed_map["step_iii"]["option2"], "false");
 
   BOOST_CHECK_EQUAL(parsed_map["step_iv"].size(), 1);
-  BOOST_CHECK(parsed_map["step_iv"].find("junk") != parsed_map["step_iii"].end());
+  BOOST_CHECK(parsed_map["step_iv"].find("junk") != parsed_map["step_iv"].end());
 
 }
 
@@ -370,8 +370,8 @@ BOOST_AUTO_TEST_CASE (serialized_longs_test) {
   BOOST_CHECK_EQUAL(parsed_map["step2"]["option"], "1");
 
   BOOST_REQUIRE_EQUAL(parsed_map["step3"].size(), 2);
-  BOOST_REQUIRE(parsed_map["step3"].find("junk") != parsed_map["step2"].end());
-  BOOST_REQUIRE(parsed_map["step3"].find("option2") != parsed_map["step2"].end());
+  BOOST_REQUIRE(parsed_map["step3"].find("junk") != parsed_map["step3"].end());
+  BOOST_REQUIRE(parsed_map["step3"].find("option2") != parsed_map["step3"].end());
 
   boost::string_ref step3_junk = parsed_map["step3"]["junk"];
   BOOST_CHECK_GT(step3_junk.size(), 0u);
