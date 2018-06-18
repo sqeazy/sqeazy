@@ -204,37 +204,29 @@ namespace sqeazy {
     };
 
 
-	__m128i populate(int _nbits) {
-		__m128i value;
-#ifndef WIN32
-		__m64 temp = _mm_set_pi32(int(0), _nbits);
-		//creates [int(0), _nbits]
-		value = _mm_set1_epi64(temp);
-		//creates [int(0), _nbits, int(0), _nbits]
+	void populate(__m128i& value, std::uint32_t _nbits) {
+
+#ifndef _MSC_VER
+      value = _mm_set_epi32(0, _nbits, 0, _nbits);
 #else
-		__m64 temp;
-		std::uint32_t* temp_ptr = (std::uint32_t*)&temp;
-		temp_ptr[0] = _nbits;
-		std::uint32_t* block_ptr = (std::uint32_t*)&value;
-		for (int i = 0; i < 4; ++i) {
-			block_ptr[i] = temp_ptr[i % 2];
-		}
+		std::uint64_t* block_ptr = reinterpret_cast<std::uint64_t*>(&value);
+        std::fill(block_ptr,block_ptr+2,(std::uint64_t)_nbits);
 #endif
-		return value;
+
 	}
     ////////////////////////////////////////////////// SHIFT LEFT     //////////////////////////////////////////////////
     template<typename daughter_t, typename value_t>
     struct shift_base {
 
       const int n_bits;
-	  const __m128i n_bits_block;
+	  __m128i n_bits_block;
 
       shift_base(int _nbits = 1):
         n_bits(_nbits),
-        n_bits_block(populate(_nbits))
+        n_bits_block()
         {
 
-
+          populate(n_bits_block,_nbits);
         }
 
 

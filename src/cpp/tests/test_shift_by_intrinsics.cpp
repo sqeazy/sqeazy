@@ -69,12 +69,16 @@ BOOST_FIXTURE_TEST_SUITE( shift_16_bits_any_value, default_128bit_fixture )
 
 BOOST_AUTO_TEST_CASE(populate)
 {
-  auto res = sqeazy::detail::populate(42);
-  std::uint32_t *resptr = (std::uint32_t *) &res;
-  BOOST_REQUIRE(resptr[0] == 42);
-  BOOST_REQUIRE(resptr[1] == 0);
-  BOOST_REQUIRE(resptr[2] == 42);
-  BOOST_REQUIRE(resptr[3] == 0);
+  __m128i block;
+  sqeazy::detail::populate(block,42);
+  const std::uint32_t *resptr = (const std::uint32_t *) &block;
+  for( int i = 0;i < 4;++i)
+    BOOST_TEST_MESSAGE("[populate] item " << i << " " << resptr[i]);
+
+  BOOST_REQUIRE(resptr[0] == 42u);
+  BOOST_REQUIRE(resptr[1] == 0u);
+  BOOST_REQUIRE(resptr[2] == 42u);
+  BOOST_REQUIRE(resptr[3] == 0u);
 
 }
 
