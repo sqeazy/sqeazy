@@ -28,8 +28,8 @@ BOOST_AUTO_TEST_CASE( default_constructs ){
 
 BOOST_AUTO_TEST_CASE( constructs_with_payload ){
 
-  sqeazy::quantiser<uint16_t,uint8_t> shrinker(embryo_.data(),
-                           embryo_.data()+embryo_.num_elements());
+  sqeazy::quantiser<uint16_t,uint8_t> shrinker{embryo_.data(),
+                           embryo_.data()+embryo_.num_elements()};
   BOOST_CHECK_NE(shrinker.sum_,0);
 
 }
