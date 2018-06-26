@@ -11,6 +11,12 @@
 #include <vector>
 #include <array>
 
+#ifdef _OPENMP
+#include "omp.h"
+typedef typename std::make_signed<std::size_t>::type omp_size_type;//boiler plate required for MS VS 14 2015 OpenMP implementation
+#else
+typedef std::size_t omp_size_type;//boiler plate required for MS VS 14 2015 OpenMP implementation
+#endif
 //#include "encoders/quantiser_scheme_impl.hpp"
 namespace sqeazy
 {
@@ -129,8 +135,8 @@ struct quantiser
   typedef compressed_type compressed_t;
   typedef raw_type raw_t;
 
-  int nthreads_;
   std::array<float, max_raw_> weights_;
+  int nthreads_;
 
   template <typename weight_functor_t = weighters::none>
   quantiser(const raw_type *_begin = nullptr, const raw_type *_end = nullptr, int _nt = 1, weight_functor_t _weight_functor = weighters::none())
