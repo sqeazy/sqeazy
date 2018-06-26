@@ -156,6 +156,9 @@ target_link_libraries(test_dynamic_stage_factory_impl ${OpenMP++_LIBRARIES} ${Bo
 add_executable(test_quantiser_impl test_quantiser_impl.cpp)
 target_link_libraries(test_quantiser_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES})
 
+add_executable(run_stack_overflow run_stack_overflow.cpp)
+target_link_libraries(run_stack_overflow ${OpenMP++_LIBRARIES})
+
 add_executable(test_histogram_fill test_histogram_fill.cpp)
 target_link_libraries(test_histogram_fill ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES})
 

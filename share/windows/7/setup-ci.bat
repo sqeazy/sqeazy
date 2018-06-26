@@ -22,8 +22,8 @@ SET "HDF5_ROOT=%SW_ROOT%\hdf5\1.8.17"
 :: SET "FFMPEG_ROOT=%SW_ROOT%\ffmpeg\3.0.2-static"
 
 SET "LZ4_ROOT=%SW_ROOT%\lz4\1.8.2"
-:: SET "BOOST_ROOT=%SW_ROOT%\boost\1_59_0_static"
-SET "BOOST_ROOT=%SW_ROOT%\boost\1_67_0"
+
+SET "BOOST_ROOT=%SW_ROOT%\boost\1_66_0"
 
 SET "FFMPEG_ROOT=%SW_ROOT%\vcpkg\repo\packages\ffmpeg4sqy_x64-windows-static"
 SET "X264_ROOT=%SW_ROOT%\x264\master-static"
