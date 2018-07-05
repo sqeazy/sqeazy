@@ -28,7 +28,7 @@ namespace sqeazy
 
       static_assert(std::is_integral<T>::value, "[dense_histo] input type is not integral");
       static const std::size_t n_possible_values = (1 << (sizeof(T) * CHAR_BIT));
-      typedef std::array<std::uint32_t, n_possible_values> type;
+      typedef std::vector<std::uint32_t> type;
     };
 
     template <typename iter_type> auto serial_fill_histogram(iter_type _begin, iter_type _end) -> typename dense_histo<typename std::iterator_traits<iter_type>::value_type>::type
@@ -36,8 +36,8 @@ namespace sqeazy
       using value_t = typename std::iterator_traits<iter_type>::value_type;
       using histo_t = typename dense_histo<value_t>::type;
 
-      histo_t histo;
-      histo.fill(std::uint32_t(0));
+      histo_t histo(dense_histo<value_t>::n_possible_values, std::uint32_t(0));
+      //histo.fill(std::uint32_t(0));
 
       for(; _begin != _end; ++_begin)
       {
@@ -130,19 +130,21 @@ struct quantiser
   static const char lut_field_separator = ':';
 
   long sum_;
-  std::array<std::uint32_t, max_raw_> histo_;
+  //std::array<std::uint32_t, max_raw_> histo_;
+  std::vector<std::uint32_t> histo_;
 
   typedef compressed_type compressed_t;
   typedef raw_type raw_t;
 
-  std::array<float, max_raw_> weights_;
+  std::vector<float> weights_;
+  //std::array<float, max_raw_> weights_;
   int nthreads_;
 
   template <typename weight_functor_t = weighters::none>
   quantiser(const raw_type *_begin = nullptr, const raw_type *_end = nullptr, int _nt = 1, weight_functor_t _weight_functor = weighters::none())
       : sum_(0)
-      , histo_()
-      , weights_()
+      , histo_(max_raw_,0)
+      , weights_(max_raw_,0)
       , nthreads_(_nt)
   {
     std::cout << "constructor: " << histo_.size() << ", " << weights_.size() << ", sum " << sum_ << "\n";
@@ -161,9 +163,11 @@ struct quantiser
     std::cout << "reset [1]: " << histo_.size() << ", " << weights_.size() << ", sum " << sum_ << "\n";
     std::cout << "reset [2]: " << histo_[0] << ", " << weights_[0] << "\t" << *(histo_.data() + histo_.size() - 1) << ", " << *(weights_.data() + weights_.size() - 1) << "\n";
 
-    histo_.fill(0.f);
+    //histo_.fill(0.f);
+    std::fill(histo_.begin(), histo_.end(), 0);
     sum_ = 0;
-    weights_.fill(1.f);
+    std::fill(weights_.begin(), weights_.end(), 1.f);
+    //weights_.fill(1.f);
 
     std::cout << "reset [3]: " << histo_[0] << ", " << weights_[0] << "\t" << *(histo_.data() + histo_.size() - 1) << ", " << *(weights_.data() + weights_.size() - 1) << "\n";
     
