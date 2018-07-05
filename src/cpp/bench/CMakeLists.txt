@@ -84,6 +84,9 @@ target_link_libraries(benchmark_lz4_scheme_impl ${OpenMP++_LIBRARIES} ${Boost_LI
 add_executable(benchmark_histogram_utils benchmark_histogram_utils.cpp)
 target_link_libraries(benchmark_histogram_utils ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 
+add_executable(benchmark_histogram_heap_vs_stack benchmark_histogram_heap_vs_stack.cpp)
+target_link_libraries(benchmark_histogram_heap_vs_stack ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+
 add_executable(benchmark_pipeline_construction benchmark_pipeline_construction.cpp)
 target_link_libraries(benchmark_pipeline_construction ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
 

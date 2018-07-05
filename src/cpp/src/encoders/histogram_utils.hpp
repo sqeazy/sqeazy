@@ -4,6 +4,8 @@
 
 #include <array>
 #include <iterator>
+#include <numeric>
+#include <cmath>
 
 #include "sqeazy_common.hpp"
 
