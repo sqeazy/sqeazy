@@ -144,6 +144,7 @@ check_cxx_compiler_flag(/arch:AVX2 HAS_ARCH_AVX2_COMPILERFLAG)
 check_cxx_compiler_flag(/Oi HAS_OI_COMPILERFLAG)
 check_cxx_compiler_flag(/Ot HAS_Ot_COMPILERFLAG)
 check_cxx_compiler_flag(/O2 HAS_O2_COMPILERFLAG)
+check_cxx_compiler_flag(/F64000000 HAS_F_COMPILERFLAG)
 check_cxx_compiler_flag(/w HAS_NO_WARNINGS) #if given to cl.exe, no output will be printed to the console
 check_cxx_compiler_flag(/W1 HAS_VS_W1_WARNINGS) #see https://msdn.microsoft.com/en-us/library/thxezb7y.aspx for details
 check_cxx_compiler_flag(-Wno-overflow HAS_WNOOVERFLOW_COMPILERFLAG)
@@ -220,6 +221,7 @@ endif()
 if(HAS_VS_W1_WARNINGS)
   add_definitions(/W1)
 endif()
+
 
 if(ALLCAPITAL_BUILD_TYPE STREQUAL DEBUG)
   if(HAS_GGDB3_COMPILERFLAG)
@@ -305,6 +307,10 @@ endif()
 
 if(${HAS_ARCH_AVX_COMPILERFLAG})
 add_definitions(/arch:AVX)
+endif()
+
+if(${HAS_F_COMPILERFLAG})
+  add_definitions(/F64000000)
 endif()
 
 #TODO: look into preference of libc++ over other std libraries
