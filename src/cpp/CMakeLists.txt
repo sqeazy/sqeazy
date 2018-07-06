@@ -144,7 +144,7 @@ check_cxx_compiler_flag(/arch:AVX2 HAS_ARCH_AVX2_COMPILERFLAG)
 check_cxx_compiler_flag(/Oi HAS_OI_COMPILERFLAG)
 check_cxx_compiler_flag(/Ot HAS_Ot_COMPILERFLAG)
 check_cxx_compiler_flag(/O2 HAS_O2_COMPILERFLAG)
-check_cxx_compiler_flag(/F64000000 HAS_F_COMPILERFLAG)
+
 check_cxx_compiler_flag(/w HAS_NO_WARNINGS) #if given to cl.exe, no output will be printed to the console
 check_cxx_compiler_flag(/W1 HAS_VS_W1_WARNINGS) #see https://msdn.microsoft.com/en-us/library/thxezb7y.aspx for details
 check_cxx_compiler_flag(-Wno-overflow HAS_WNOOVERFLOW_COMPILERFLAG)
@@ -174,18 +174,6 @@ IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
 
 
   endif()
-
-  # if(ALLCAPITAL_BUILD_TYPE STREQUAL RELWDBG OR ALLCAPITAL_BUILD_TYPE STREQUAL RELWITHDEBINFO)
-  #   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO -O2 -ggdb)
-
-  #   if(HAS_GGDB_COMPILERFLAG)
-  #     add_definitions(-ggdb)
-  #   endif()
-
-  #   if(HAS_O3_COMPILERFLAG)
-  #     add_definitions(-O2)
-  #   endif()
-  # endif()
 
 ENDIF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
 
@@ -309,10 +297,6 @@ if(${HAS_ARCH_AVX_COMPILERFLAG})
 add_definitions(/arch:AVX)
 endif()
 
-if(${HAS_F_COMPILERFLAG})
-  add_definitions(/F64000000)
-endif()
-
 #TODO: look into preference of libc++ over other std libraries
 IF( CMAKE_GENERATOR STREQUAL Xcode )
     SET( CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++11" )
@@ -337,11 +321,6 @@ IF(WITH_EXPERIMENTAL)
 else(WITH_EXPERIMENTAL)
   add_definitions(-D_SQY_X_=0)
 endif(WITH_EXPERIMENTAL)
-
-#the following shouldn't be needed due to CMAKE_CXX_STANDARD variable
-#check_cxx_compiler_flag(-std=c++11 HAS_CPP11_COMPILERFLAG)
-
-#lz4 is needed for the entire project, so let's include it here
 
 
 if(${BUNDLE_SQEAZY})
