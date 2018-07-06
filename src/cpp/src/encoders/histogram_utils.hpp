@@ -2,8 +2,10 @@
 #define HISTOGRAM_UTILS_H
 
 
-#include <array>
+#include <vector>
 #include <iterator>
+#include <numeric>
+#include <cmath>
 
 #include "sqeazy_common.hpp"
 
@@ -17,159 +19,124 @@ namespace sqeazy {
 
             static_assert(std::is_integral<T>::value,"[dense_histo] input type is not integral");
             static const std::size_t n_possible_values = (1 << (sizeof(T)*CHAR_BIT));
-            typedef std::array<std::uint32_t,n_possible_values> type;
+            static const std::size_t size = n_possible_values;
+            typedef std::vector<std::uint32_t> type;
 
 
         };
 
-        template <typename iter_type>
-        auto serial_fill_histogram(iter_type _begin,
-                                   iter_type _end
-            ) -> typename dense_histo<typename std::iterator_traits<iter_type>::value_type>::type
-        {
-
-            using histo_t = typename dense_histo<typename std::iterator_traits<iter_type>::value_type>::type;
-
-            histo_t histo;
-            histo.fill(0u);
-
-            for(;_begin!=_end;++_begin){
-                histo[*_begin]++;
-            }
-
-            return histo;
-        }
-
-        template <typename iter_type>
-        auto parallel_fill_histogram(iter_type _begin,
-                                     iter_type _end,
-                                     int nthreads = 1
-            ) -> typename dense_histo<typename std::iterator_traits<iter_type>::value_type>::type
-        {
-            using histo_t = typename dense_histo<typename std::iterator_traits<iter_type>::value_type>::type;
-
-            histo_t histo;
-            histo.fill(0u);
-
-            std::vector<histo_t> histo_clones(nthreads, histo);
-            auto histo_clones_itr = histo_clones.data();
-            const auto len = std::distance(_begin,_end);
-            const omp_size_type chunk_size = (len + nthreads - 1)/nthreads;
+        namespace serial {
 
 
-            //mapping the partitions of [_begin, _end) to histo_clones
-#pragma omp parallel                            \
-    shared( histo_clones_itr )                  \
-    firstprivate( _begin, _end, chunk_size )    \
-    num_threads(nthreads)
-            {
-                auto tid            = omp_get_thread_num();
-                auto chunk_begin    = _begin + tid*chunk_size;
-                auto chunk_end      = chunk_begin + chunk_size >= _end ? _end : chunk_begin + chunk_size;
-                auto my_histo_itr   = &(*(histo_clones_itr+tid))[0];
-
-                for(;chunk_begin!=chunk_end;++chunk_begin)
-                    my_histo_itr[*chunk_begin]++;
-
-            }
-
-            auto histo_itr = histo.data();
-            const omp_size_type histo_len = histo.size();
-            const omp_size_type n_clones = histo_clones.size();
-
-#pragma omp parallel for                        \
-    shared(histo_itr )                          \
-    firstprivate( histo_clones_itr, n_clones )  \
-    num_threads(nthreads)
-            for(omp_size_type idx = 0;idx<histo_len;idx++){
-                for(omp_size_type clone = 0;clone<n_clones;++clone){
-                    *(histo_itr + idx) += (histo_clones_itr+clone)->data()[idx];
-                }
-
-            }
-
-            return histo;
-
-        }
-
-        /**
+/**
          *  \brief fill the histogram represented by _bins sequentially with the value counts/frequency observed in [_begin,_end); it is assumed that _bins yields a linear range of range(0,max_value(*_begin))
          *
          *  \param _begin input iterator pointing to element 0 of the values to histogram (const iterators allowed)
          *  \param _end input iterator pointing to the last+1 element of the values to histogram (const iterators allowed)
-         *  \param _bins input iterator of the histogram bins (assumed to yield a linear range of range(0,max_value(*_begin)))
+         *  \param _histo input iterator of the histogram bins (assumed to yield a linear range of range(0,max_value(*_begin)))
          *  \return void
          */
-        template <typename iter_type, typename bin_iter_type>
-        void dense_serial_fill_histogram(iter_type _begin,
-                                         iter_type _end,
-                                         bin_iter_type _bins
-            )
+        template <typename iter_type,
+                  typename histo_iter_type>
+        histo_iter_type fill_histogram(iter_type _begin,
+                                       iter_type _end,
+                                       histo_iter_type _histo)
+
         {
 
-            // typedef typename std::iterator_traits<iter_type>::value_type value_type;
-            // static const std::uint32_t n_possible_values = (1 << (sizeof(value_type)*CHAR_BIT));
+            using value_t = typename std::iterator_traits<iter_type>::value_type;
+            auto len = dense_histo< value_t >::size;
 
             for(;_begin!=_end;++_begin){
-                *(_bins + *_begin)+=1;
+                *(_histo+*_begin) +=1;
             }
 
-            return;
+            return _histo + len;
         }
 
-        /**
-         *  \brief fill the histogram represented by _bins concurrently with the value counts/frequency observed in [_begin,_end); it is assumed that _bins yields a linear range of range(0,max_value(*_begin))
+
+            /**
+         *  \brief create-initialize the histogram sequentially with the value counts/frequency observed in [_begin,_end)
          *
          *  \param _begin input iterator pointing to element 0 of the values to histogram (const iterators allowed)
          *  \param _end input iterator pointing to the last+1 element of the values to histogram (const iterators allowed)
-         *  \param _bins input iterator of the histogram bins (assumed to yield a linear range of range(0,max_value(*_begin)))
-         *  \param nthreads number of threads to use
-         *  \return void
+         *  \return std::vector yielding the value counts in [0,max_value(*_begin))]
          */
-        template <typename iter_type, typename bin_iter_type>
-        void dense_parallel_fill_histogram(iter_type _begin,
-                                           iter_type _end,
-                                           bin_iter_type _bins,
-                                           int nthreads = 1
-            )
+        template <typename iter_type>
+        auto create_histogram(iter_type _begin,
+                                   iter_type _end
+            ) -> typename dense_histo<typename std::iterator_traits<iter_type>::value_type>::type
         {
 
-            if(nthreads == 1)
-                return dense_serial_fill_histogram(_begin, _end, _bins);
+            using value_t = typename std::iterator_traits<iter_type>::value_type;
+            using histo_t = typename dense_histo<typename std::iterator_traits<iter_type>::value_type>::type;
+            auto size = dense_histo< value_t >::size;
 
-            if(nthreads <= 0)
-                nthreads = std::thread::hardware_concurrency();
+            histo_t histo(size, 0u);
 
-            typedef typename std::iterator_traits<iter_type>::value_type value_type;
+            fill_histogram(_begin,_end,histo.begin());
 
-            using histo_t = typename dense_histo<value_type>::type;
-            histo_t histo;
-            histo.fill(0u);
+            return histo;
+        }
 
-            std::vector<histo_t> histo_clones(nthreads, histo);
-            auto histo_clones_itr = histo_clones.data();
-            const auto len = std::distance(_begin,_end);
-            const omp_size_type chunk_size = (len + nthreads - 1)/nthreads;
+    }; // serial
+
+        namespace parallel {
 
 
-            //mapping the partitions of [_begin, _end) to histo_clones
+
+            /**
+             *  \brief fill the histogram represented by _bins concurrently with the value counts/frequency observed in [_begin,_end); it is assumed that _bins yields a linear range of range(0,max_value(*_begin))
+             *
+             *  \param _begin input iterator pointing to element 0 of the values to histogram (const iterators allowed)
+             *  \param _end input iterator pointing to the last+1 element of the values to histogram (const iterators allowed)
+             *  \param _bins input iterator of the histogram bins (assumed to yield a linear range of range(0,max_value(*_begin)))
+             *  \param nthreads number of threads to use
+             *  \return void
+             */
+            template <typename iter_type, typename bin_iter_type>
+            bin_iter_type fill_histogram(iter_type _begin,
+                                iter_type _end,
+                                bin_iter_type _bins,
+                                int nthreads = 1
+                )
+            {
+
+                if(nthreads == 1)
+                    return serial::fill_histogram(_begin, _end, _bins);
+
+                if(nthreads <= 0)
+                    nthreads = std::thread::hardware_concurrency();
+
+                typedef typename std::iterator_traits<iter_type>::value_type value_type;
+
+                using histo_t = typename dense_histo<value_type>::type;
+                histo_t histo(_bins,_bins + dense_histo<value_type>::size);
+
+                std::vector<histo_t> histo_clones(nthreads, histo);
+                auto histo_clones_itr = histo_clones.data();
+                const auto len = std::distance(_begin,_end);
+                const omp_size_type chunk_size = (len + nthreads - 1)/nthreads;
+
+
+                //mapping the partitions of [_begin, _end) to histo_clones
 #pragma omp parallel                            \
     shared( histo_clones_itr )                  \
     firstprivate( _begin, _end, chunk_size )    \
     num_threads(nthreads)
-            {
-                auto tid            = omp_get_thread_num();
-                auto chunk_begin    = _begin + tid*chunk_size;
-                auto chunk_end      = chunk_begin + chunk_size >= _end ? _end : chunk_begin + chunk_size;
-                auto my_histo_itr   = &(*(histo_clones_itr+tid))[0];
+                {
+                    auto tid            = omp_get_thread_num();
+                    auto chunk_begin    = _begin + tid*chunk_size;
+                    auto chunk_end      = chunk_begin + chunk_size >= _end ? _end : chunk_begin + chunk_size;
+                    auto my_histo_itr   = &(*(histo_clones_itr+tid))[0];
 
-                for(;chunk_begin!=chunk_end;++chunk_begin)
-                    my_histo_itr[(std::uint32_t)*chunk_begin]++;
+                    for(;chunk_begin!=chunk_end;++chunk_begin)
+                        my_histo_itr[(std::uint32_t)*chunk_begin]++;
 
-            }
+                }
 
-            const omp_size_type histo_len = histo.size();
-            const omp_size_type n_clones = histo_clones.size();
+                const omp_size_type histo_len = histo.size();
+                const omp_size_type n_clones = histo_clones.size();
 
 #pragma omp parallel for                        \
     shared( _bins )                             \
@@ -182,9 +149,29 @@ namespace sqeazy {
 
             }
 
-            return ;
+            return _bins + histo.size();
 
         }
+
+            template <typename iter_type>
+        auto create_histogram(iter_type _begin,
+                              iter_type _end,
+                              int nthreads = 1
+            ) -> typename dense_histo<typename std::iterator_traits<iter_type>::value_type>::type
+        {
+            using value_t = typename std::iterator_traits<iter_type>::value_type;
+            using histo_t = typename dense_histo<typename std::iterator_traits<iter_type>::value_type>::type;
+            auto size = dense_histo< value_t >::size;
+
+            histo_t histo(size, 0u);
+
+            parallel::fill_histogram(_begin,_end,histo.begin(),nthreads);
+
+            return histo;
+
+        }
+
+        };
 
 
         /**

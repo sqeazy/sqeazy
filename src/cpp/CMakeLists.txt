@@ -6,7 +6,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
 PROJECT(sqeazy VERSION ${SQEAZY_VERSION} LANGUAGES CXX)
 
 # this project is C++11
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
@@ -101,6 +101,7 @@ string(TOUPPER "${CMAKE_BUILD_TYPE}" ALLCAPITAL_BUILD_TYPE)
 
 check_cxx_compiler_flag(-Wl,-Bsymbolic HAS_BSYMBOLIC_COMPILERFLAG)
 check_cxx_compiler_flag(-ftree-vectorize HAS_GCC_TREE_VECTORIZE_COMPILERFLAG)
+check_cxx_compiler_flag(-fno-omit-frame-pointer HAS_NO_OMIT_FRAMEPOINTER_COMPILERFLAG)
 check_cxx_compiler_flag(-march=native HAS_MARCH_NATIVE_COMPILERFLAG)
 check_cxx_compiler_flag(-march=x86-64 HAS_MARCH_GENERIC_COMPILERFLAG)
 check_cxx_compiler_flag(-mtune=generic HAS_MTUNE_GENERIC_COMPILERFLAG)
@@ -128,13 +129,22 @@ check_cxx_compiler_flag(-static-libgcc HAS_STATIC_LIBGCC_COMPILERFLAG)
 check_cxx_compiler_flag(-static-libstdc++ HAS_STATIC_LIBSTDC++_COMPILERFLAG)
 check_cxx_compiler_flag(-static-libc++ HAS_STATIC_LIBC++_COMPILERFLAG)
 
+set(CMAKE_REQUIRED_LIBRARIES "-fsanitize=address")
+set(CMAKE_REQUIRED_FLAGS "-fsanitize=address")
+check_cxx_compiler_flag(-fsanitize=address HAS_SANITIZE_ADDRESS_COMPILERFLAG)
+set(CMAKE_REQUIRED_LIBRARIES "")
+set(CMAKE_REQUIRED_FLAGS "")
+
+
 check_cxx_compiler_flag(/arch:SSE HAS_ARCH_SSE_COMPILERFLAG)
 check_cxx_compiler_flag(/arch:SSE2 HAS_ARCH_SSE2_COMPILERFLAG)
 check_cxx_compiler_flag(/arch:AVX HAS_ARCH_AVX_COMPILERFLAG)
+check_cxx_compiler_flag(/bigobj HAS_BIGOBJ_COMPILERFLAG)
 check_cxx_compiler_flag(/arch:AVX2 HAS_ARCH_AVX2_COMPILERFLAG)
 check_cxx_compiler_flag(/Oi HAS_OI_COMPILERFLAG)
 check_cxx_compiler_flag(/Ot HAS_Ot_COMPILERFLAG)
 check_cxx_compiler_flag(/O2 HAS_O2_COMPILERFLAG)
+
 check_cxx_compiler_flag(/w HAS_NO_WARNINGS) #if given to cl.exe, no output will be printed to the console
 check_cxx_compiler_flag(/W1 HAS_VS_W1_WARNINGS) #see https://msdn.microsoft.com/en-us/library/thxezb7y.aspx for details
 check_cxx_compiler_flag(-Wno-overflow HAS_WNOOVERFLOW_COMPILERFLAG)
@@ -161,19 +171,9 @@ IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
     if(HAS_GGDB3_COMPILERFLAG)
       add_definitions(-ggdb3)
     endif()
+
+
   endif()
-
-  # if(ALLCAPITAL_BUILD_TYPE STREQUAL RELWDBG OR ALLCAPITAL_BUILD_TYPE STREQUAL RELWITHDEBINFO)
-  #   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO -O2 -ggdb)
-
-  #   if(HAS_GGDB_COMPILERFLAG)
-  #     add_definitions(-ggdb)
-  #   endif()
-
-  #   if(HAS_O3_COMPILERFLAG)
-  #     add_definitions(-O2)
-  #   endif()
-  # endif()
 
 ENDIF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
 
@@ -210,6 +210,7 @@ if(HAS_VS_W1_WARNINGS)
   add_definitions(/W1)
 endif()
 
+
 if(ALLCAPITAL_BUILD_TYPE STREQUAL DEBUG)
   if(HAS_GGDB3_COMPILERFLAG)
     add_definitions(-ggdb3)
@@ -221,7 +222,21 @@ if(ALLCAPITAL_BUILD_TYPE STREQUAL DEBUG)
   else()
     add_definitions(/DSQY_TRACE=1)
     add_definitions(/D_SQY_DEBUG_=1)
+	if(HAS_BIGOBJ_COMPILERFLAG)
+	add_definitions(/bigobj)
+	ENDIF()
   endif()
+
+  if(NOT (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC))
+    if(HAS_SANITIZE_ADDRESS_COMPILERFLAG)
+      add_definitions(-fsanitize=address)
+      set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+      if(HAS_NO_OMIT_FRAMEPOINTER_COMPILERFLAG)
+        add_definitions(-fno-omit-frame-pointer)
+      endif()
+    endif()
+  endif()
+
 endif()
 
 
@@ -306,11 +321,6 @@ IF(WITH_EXPERIMENTAL)
 else(WITH_EXPERIMENTAL)
   add_definitions(-D_SQY_X_=0)
 endif(WITH_EXPERIMENTAL)
-
-#the following shouldn't be needed due to CMAKE_CXX_STANDARD variable
-#check_cxx_compiler_flag(-std=c++11 HAS_CPP11_COMPILERFLAG)
-
-#lz4 is needed for the entire project, so let's include it here
 
 
 if(${BUNDLE_SQEAZY})

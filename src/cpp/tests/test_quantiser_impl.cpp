@@ -28,8 +28,8 @@ BOOST_AUTO_TEST_CASE( default_constructs ){
 
 BOOST_AUTO_TEST_CASE( constructs_with_payload ){
 
-  sqeazy::quantiser<uint16_t,uint8_t> shrinker(embryo_.data(),
-                           embryo_.data()+embryo_.num_elements());
+  sqeazy::quantiser<uint16_t,uint8_t> shrinker{embryo_.data(),
+                           embryo_.data()+embryo_.num_elements()};
   BOOST_CHECK_NE(shrinker.sum_,0);
 
 }
@@ -319,7 +319,7 @@ BOOST_AUTO_TEST_CASE( write_to_string ){
        << ".log";
 
   sqeazy::quantiser<uint16_t,uint8_t> shrinker(embryo_.data(),
-                           embryo_.data() + embryo_.num_elements());
+                                               embryo_.data() + embryo_.num_elements());
 
   std::string lut = shrinker.lut_to_string(shrinker.lut_decode_);
 
@@ -332,21 +332,26 @@ BOOST_AUTO_TEST_CASE( write_to_string ){
   decltype(shrinker.lut_decode_) lut_decode;
   sqeazy::quantiser<uint16_t,uint8_t> other;
   other.lut_from_string(lut,lut_decode);
+
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(lut_decode.begin(),
+                                  lut_decode.begin()+10,
+                                  shrinker.lut_decode_.begin(),
+                                  shrinker.lut_decode_.begin()+ 10);
+
+
   other.decode(lut_decode,
                &encoded[0],
                encoded.size(),
                &reconstructed[0]);
 
+  BOOST_REQUIRE_EQUAL_COLLECTIONS(reconstructed.begin(),
+                                  reconstructed.begin()+10,
+                                  embryo_.data(),
+                                  embryo_.data()+ 10);
 
-  // shrinker.lut_from_string(lut,lut_decode);
-
-  // shrinker.decode(lut_decode,
-  //         &encoded[0],
-  //         encoded.size(),
-  //         &reconstructed[0]);
 
   BOOST_REQUIRE_EQUAL_COLLECTIONS(reconstructed.begin(), reconstructed.end(),embryo_.data(),
-                  embryo_.data()+ embryo_.num_elements());
+                                  embryo_.data()+ embryo_.num_elements());
 
 }
 

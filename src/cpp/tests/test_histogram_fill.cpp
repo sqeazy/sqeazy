@@ -12,7 +12,6 @@
 
 
 #include "volume_fixtures.hpp"
-
 #include "encoders/histogram_utils.hpp"
 
 
@@ -21,7 +20,7 @@ BOOST_FIXTURE_TEST_SUITE( serial_fill, sqeazy::volume_fixture<uint16_t> )
 
 BOOST_AUTO_TEST_CASE( works_with_pointers ){
 
-  auto serial_histo = sqeazy::detail::serial_fill_histogram(embryo_.data(), embryo_.data()+embryo_.num_elements());
+  auto serial_histo = sqeazy::detail::serial::create_histogram(embryo_.data(), embryo_.data()+embryo_.size());
 
   auto sum = std::accumulate(serial_histo.begin(), serial_histo.end(), 0);
 
@@ -36,7 +35,7 @@ BOOST_AUTO_TEST_CASE( ramp ){
   for( std::uint16_t& el : data)
     el = c++ % 32;
 
-  auto histo = sqeazy::detail::serial_fill_histogram(data.begin(), data.end());
+  auto histo = sqeazy::detail::serial::create_histogram(data.begin(), data.end());
 
   auto sum = std::accumulate(histo.begin(), histo.end(), 0);
 
@@ -61,8 +60,8 @@ BOOST_AUTO_TEST_CASE( ramp_with_1_thread ){
   for( std::uint16_t& el : data)
     el = c++ % 32;
 
-  auto serial_histo = sqeazy::detail::serial_fill_histogram(data.begin(), data.end());
-  auto parallel_histo = sqeazy::detail::parallel_fill_histogram(data.begin(), data.end(),1);
+  auto serial_histo = sqeazy::detail::serial::create_histogram(data.begin(), data.end());
+  auto parallel_histo = sqeazy::detail::parallel::create_histogram(data.begin(), data.end(),1);
 
   std::size_t serial_sum = std::accumulate(serial_histo.begin(), serial_histo.end(), 0);
   std::size_t parallel_sum = std::accumulate(parallel_histo.begin(), parallel_histo.end(), 0);
@@ -79,8 +78,8 @@ BOOST_AUTO_TEST_CASE( ramp_with_2_threads ){
   for( std::uint16_t& el : data)
     el = c++ % 32;
 
-  auto serial_histo = sqeazy::detail::serial_fill_histogram(data.begin(), data.end());
-  auto parallel_histo = sqeazy::detail::parallel_fill_histogram(data.begin(), data.end(),2);
+  auto serial_histo = sqeazy::detail::serial::create_histogram(data.begin(), data.end());
+  auto parallel_histo = sqeazy::detail::parallel::create_histogram(data.begin(), data.end(),2);
 
   std::size_t serial_sum = std::accumulate(serial_histo.begin(), serial_histo.end(), 0);
   std::size_t parallel_sum = std::accumulate(parallel_histo.begin(), parallel_histo.end(), 0);

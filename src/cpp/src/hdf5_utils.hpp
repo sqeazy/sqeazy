@@ -408,21 +408,21 @@ namespace sqeazy {
       //dataset not present in file
       if(!this->has_h5_item(_dname)){
 
-    std::cerr << "[sqeazy::h5_file, "<< __FILE__":"<< __LINE__<<"]\t"
-          << "requested dataset " << _dname << " not found in "<< path_.string() << "\n";
-    return value;
+        std::cerr << "[sqeazy::h5_file, "<< __FILE__":"<< __LINE__<<"]\t"
+                  << "requested dataset " << _dname << " not found in "<< path_.string() << "\n";
+        return value;
       }
 
 
       try {
-    value = H5::DataSet(this->file_->openDataSet( _dname.c_str() ));
+        value = H5::DataSet(this->file_->openDataSet( _dname.c_str() ));
       }
       catch(H5::DataSetIException & error){
-    error;//placeholder
-    return value;
+        error;//placeholder
+        return value;
       }
       catch(H5::Exception & error){
-    return value;
+        return value;
       }
 
       return value;

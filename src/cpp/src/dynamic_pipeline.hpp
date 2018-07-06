@@ -655,7 +655,7 @@ namespace sqeazy
           return nullptr;
         }
 
-        auto compressed_size = std::distance(_out,encoded_end);
+        std::size_t compressed_size = std::distance(_out,encoded_end);
         if(tail_filters_.size()){
 
           outgoing_t* casted_temp = reinterpret_cast<outgoing_t*>(temp.get());

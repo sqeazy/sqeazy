@@ -15,18 +15,18 @@ BOOST_FIXTURE_TEST_SUITE( isolated_util_encode16, uint16_cube_of_8 )
 BOOST_AUTO_TEST_CASE( one_step_serial_encode )
 {
 
-  LZ4F_preferences_t lz4_prefs = {
-    { sqeazy::lz4::closest_blocksize::of(64), //commonly L2 size on Intel platforms
-          LZ4F_blockLinked,
-          LZ4F_noContentChecksum,
-          LZ4F_frame,
-          0 /* content size unknown */,
-          0 /* no dictID */ ,
-          LZ4F_noBlockChecksum },
-        9,   /* compression level */
-        0,   /* autoflush */
-        { 0, 0, 0, 0 },  /* reserved, must be set to 0 */
-      };
+  LZ4F_preferences_t lz4_prefs;
+  lz4_prefs.frameInfo = { sqeazy::lz4::closest_blocksize::of(64), //commonly L2 size on Intel platforms
+                          LZ4F_blockLinked,
+                          LZ4F_noContentChecksum,
+                          LZ4F_frame,
+                          0 /* content size unknown */,
+                          0 /* no dictID */ ,
+                          LZ4F_noBlockChecksum };
+  lz4_prefs.compressionLevel = 9;
+  lz4_prefs.autoFlush = 0;
+  sqeazy::lz4::wrap<decltype(lz4_prefs)>::favorDecSpeed_initialisation(lz4_prefs,0);
+
 
   auto exp_bytes = LZ4F_compressBound(size_in_byte, &lz4_prefs);
   std::vector<char> encoded(exp_bytes);
@@ -47,18 +47,17 @@ BOOST_AUTO_TEST_CASE( one_step_serial_encode )
 BOOST_AUTO_TEST_CASE( two_step_serial_encode )
 {
 
-  LZ4F_preferences_t lz4_prefs = {
-    { sqeazy::lz4::closest_blocksize::of(64), //commonly L2 size on Intel platforms
-      LZ4F_blockLinked,
-      LZ4F_noContentChecksum,
-      LZ4F_frame,
-      0 /* content size unknown */,
-      0 /* no dictID */ ,
-      LZ4F_noBlockChecksum },
-    9,   /* compression level */
-    0,   /* autoflush */
-    { 0, 0, 0, 0 },  /* reserved, must be set to 0 */
-  };
+  LZ4F_preferences_t lz4_prefs;
+  lz4_prefs.frameInfo = { sqeazy::lz4::closest_blocksize::of(64), //commonly L2 size on Intel platforms
+                          LZ4F_blockLinked,
+                          LZ4F_noContentChecksum,
+                          LZ4F_frame,
+                          0 /* content size unknown */,
+                          0 /* no dictID */ ,
+                          LZ4F_noBlockChecksum };
+  lz4_prefs.compressionLevel = 9;
+  lz4_prefs.autoFlush = 0;
+  sqeazy::lz4::wrap<decltype(lz4_prefs)>::favorDecSpeed_initialisation(lz4_prefs,0);
 
   auto exp_bytes = LZ4F_compressBound(size_in_byte, &lz4_prefs);
   std::vector<char> encoded(exp_bytes);
@@ -80,19 +79,17 @@ BOOST_AUTO_TEST_CASE( two_step_serial_encode )
 BOOST_AUTO_TEST_CASE( one_step_encode_parallel )
 {
 
-  LZ4F_preferences_t lz4_prefs = {
-    { sqeazy::lz4::closest_blocksize::of(64), //commonly L2 size on Intel platforms
-          LZ4F_blockLinked,
-          LZ4F_noContentChecksum,
-          LZ4F_frame,
-          0 /* content size unknown */,
-          0 /* no dictID */ ,
-          LZ4F_noBlockChecksum },
-        9,   /* compression level */
-        0,   /* autoflush */
-        { 0, 0, 0, 0 },  /* reserved, must be set to 0 */
-      };
-
+  LZ4F_preferences_t lz4_prefs;
+  lz4_prefs.frameInfo = { sqeazy::lz4::closest_blocksize::of(64), //commonly L2 size on Intel platforms
+                          LZ4F_blockLinked,
+                          LZ4F_noContentChecksum,
+                          LZ4F_frame,
+                          0 /* content size unknown */,
+                          0 /* no dictID */ ,
+                          LZ4F_noBlockChecksum };
+  lz4_prefs.compressionLevel = 9;
+  lz4_prefs.autoFlush = 0;
+  sqeazy::lz4::wrap<decltype(lz4_prefs)>::favorDecSpeed_initialisation(lz4_prefs,0);
   auto exp_bytes = LZ4F_compressBound(size_in_byte/2, &lz4_prefs);
   BOOST_REQUIRE_GT(2*exp_bytes,LZ4F_compressBound(size_in_byte, &lz4_prefs));
 
@@ -115,19 +112,17 @@ BOOST_AUTO_TEST_CASE( one_step_encode_parallel )
 BOOST_AUTO_TEST_CASE( two_step_encode_parallel )
 {
 
-  LZ4F_preferences_t lz4_prefs = {
-    { sqeazy::lz4::closest_blocksize::of(64), //commonly L2 size on Intel platforms
-          LZ4F_blockLinked,
-          LZ4F_noContentChecksum,
-          LZ4F_frame,
-          0 /* content size unknown */,
-          0 /* no dictID */ ,
-          LZ4F_noBlockChecksum },
-        9,   /* compression level */
-        0,   /* autoflush */
-        { 0, 0, 0, 0 },  /* reserved, must be set to 0 */
-      };
-
+  LZ4F_preferences_t lz4_prefs;
+  lz4_prefs.frameInfo = { sqeazy::lz4::closest_blocksize::of(64), //commonly L2 size on Intel platforms
+                          LZ4F_blockLinked,
+                          LZ4F_noContentChecksum,
+                          LZ4F_frame,
+                          0 /* content size unknown */,
+                          0 /* no dictID */ ,
+                          LZ4F_noBlockChecksum };
+  lz4_prefs.compressionLevel = 9;
+  lz4_prefs.autoFlush = 0;
+  sqeazy::lz4::wrap<decltype(lz4_prefs)>::favorDecSpeed_initialisation(lz4_prefs,0);
   auto exp_bytes = LZ4F_compressBound(size_in_byte/4, &lz4_prefs);
   BOOST_REQUIRE_GT(4*exp_bytes,LZ4F_compressBound(size_in_byte, &lz4_prefs));
 

@@ -7,6 +7,11 @@
 #include <limits>
 #include <cstdint>
 
+#if defined(__clang__) || defined (__GNUC__)
+# define ATTRIBUTE_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
+#else
+# define ATTRIBUTE_NO_SANITIZE_ADDRESS
+#endif
 
 namespace sqeazy {
 
@@ -33,12 +38,14 @@ namespace sqeazy {
                 return msg.str();
             }
 
+
             template <typename weights_iter_type>
-            void transform(weights_iter_type _out,
+            ATTRIBUTE_NO_SANITIZE_ADDRESS void transform(weights_iter_type _out,
                            weights_iter_type _out_end ,
                            omp_size_type _offset = 0,
                            int _nthreads = 1
                 ) const {
+                //REMOVED from address sanitizer as gcc 7.3's asan triggers on these functions while llvm/clang 5.0.0 doesn't
 
                 const omp_size_type len = std::distance(_out, _out_end);
 
@@ -107,12 +114,13 @@ namespace sqeazy {
             }
 
 
-
+            /* perform output = output.index(current) ** exponent */
             template <typename weights_iter_type>
-            void transform(weights_iter_type _out,
+            ATTRIBUTE_NO_SANITIZE_ADDRESS void transform(weights_iter_type _out,
                            weights_iter_type _out_end ,
                            int _nthreads = 1
                 ) const {
+                //REMOVED from address sanitizer as gcc 7.3's asan triggers on these functions while llvm/clang 5.0.0 doesn't
 
                 const omp_size_type len = std::distance(_out, _out_end);
 
@@ -126,14 +134,27 @@ namespace sqeazy {
                 return ;
             }
 
-            template <typename weights_iter_type, typename ref_iter_type>
+            /* perform output = ref ** exponent ?? */
+            template <typename weights_iter_type,
+                      typename ref_iter_type>
             void transform(weights_iter_type _out,
                            weights_iter_type _out_end ,
                            ref_iter_type _ref,
                            int _nthreads = 1
                 ) const {
 
-                this->transform(_out,_out_end,_nthreads);
+                this->transform(_out, _out_end, _nthreads);
+
+                /*
+                const omp_size_type len = std::distance(_out, _out_end);
+
+#pragma omp parallel for                        \
+     shared(_out )                               \
+     num_threads(_nthreads)
+                for(omp_size_type i = 0;i<len;++i){
+                    *(_out + i) = std::pow(*(_ref + i),exponent);
+                }
+                */
                 return ;
             }
         };

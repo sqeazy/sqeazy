@@ -224,16 +224,16 @@ namespace sqeazy {
   static inline double psnr(it_type _lbegin, it_type _lend,
                             it2_type _rbegin){
 
-
-    typedef decltype(*_lbegin) item_t;
+    using item_t = typename std::iterator_traits<it_type>::value_type;
+    //typedef decltype(*_lbegin) item_t;
     typedef decltype(*_rbegin) item2_t;
 
     static_assert(sizeof(item_t)==sizeof(item2_t),"[sqeazy::psnr] types of different width received");
 
     double mse = sqeazy::mse(_lbegin, _lend, _rbegin);
 
-    const size_t max = ~0;
-    const double offset = 20*std::log((item_t)max);
+    const size_t local_max = ~0;
+    const double offset = std::log((item_t)local_max)*20;
     double psnr = offset - 10*std::log(mse);
 
     return psnr;
