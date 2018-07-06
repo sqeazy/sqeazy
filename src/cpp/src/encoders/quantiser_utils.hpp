@@ -1,13 +1,13 @@
 #ifndef __QUANTISER_UTILS_HPP__
 #define __QUANTISER_UTILS_HPP__
 
+#include <vector>
 #include <map>
 #include <cmath>
 #include <algorithm>
 #include <functional>
 #include <numeric>
 #include <limits>
-#include <array>
 #include <cstdint>
 #include <typeinfo>
 #include <type_traits>
@@ -29,9 +29,9 @@ namespace sqeazy {
 
     static const std::size_t max_size_from = 1 << (sizeof(raw_type)*CHAR_BIT);
 
-    std::array<compressed_type, max_size_from> lut_;
+    const std::vector<compressed_type>& lut_;//max_size_from
 
-    applyLUT(const std::array<compressed_type, max_size_from>& _lut):
+    applyLUT(const std::vector<compressed_type>& _lut):
       lut_(_lut){
     };
 
@@ -61,12 +61,12 @@ namespace sqeazy {
     static const char lut_field_separator = ':';
 
     long sum_;
-    std::array<std::uint32_t, max_raw_> histo_;
-    std::array<float, max_raw_> weights_;
-    std::array<float, max_raw_> importance_;
+    std::vector<std::uint32_t>   histo_;// max_raw_
+    std::vector<float>           weights_;// max_raw_
+    std::vector<float>           importance_;// max_raw_
 
-    typedef std::array<compressed_type, max_raw_> lut_encode_t;
-    typedef std::array<raw_type, max_compressed_> lut_decode_t;
+    typedef std::vector<compressed_type> lut_encode_t;//max_raw_
+    typedef std::vector<raw_type> lut_decode_t; //max_compressed_
     typedef compressed_type compressed_t;
     typedef raw_type raw_t;
 
@@ -81,11 +81,11 @@ namespace sqeazy {
               weight_functor_t _weight_functor = weighters::none()
               ) :
       sum_(0),
-      histo_(),
-      weights_(),
-      importance_(),
-      lut_encode_(),
-      lut_decode_(),
+      histo_(max_raw_,0),
+      weights_(max_raw_,1.f),
+      importance_(max_raw_,0.f),
+      lut_encode_(max_raw_,compressed_type(0)),
+      lut_decode_(max_compressed_,raw_type(0)),
       nthreads_(_nt)
       {
 
@@ -98,12 +98,13 @@ namespace sqeazy {
 
     void reset() {
 
-      histo_.fill(0.f);
       sum_ = 0;
-      weights_.fill(1.f);
-      importance_.fill(0.f);
-      lut_encode_.fill(0);
-      lut_decode_.fill(0);
+
+      std::fill(histo_.begin(),histo_.end(),0);
+      std::fill(weights_   .begin(),weights_   .end(),1.f);
+      std::fill(importance_.begin(),importance_.end(),0.);
+      std::fill(lut_encode_.begin(),lut_encode_.end(),0);
+      std::fill(lut_decode_.begin(),lut_decode_.end(),0);
 
     }
 
@@ -142,11 +143,7 @@ namespace sqeazy {
 
     void computeHistogram(const raw_type* _begin, const raw_type* _end){
 
-
-      if(n_threads() == 1)
-        this->histo_ = detail::serial_fill_histogram(_begin, _end);
-      else
-        this->histo_ = detail::parallel_fill_histogram(_begin, _end, n_threads());
+      detail::parallel::fill_histogram(_begin, _end, histo_.begin(), n_threads());
 
       //TODO: does it make sense to acc the histo_ with (n>1) threads if the histo fits into L2?
       sum_ = std::accumulate(histo_.begin(), histo_.end(),0);
@@ -501,11 +498,13 @@ namespace sqeazy {
     }
 
     //could this be replaced by a stream operator overload?
-    void lut_from_file(const std::string& _path, std::array<raw_type, max_compressed_>& _lut){
+    void lut_from_file(const std::string& _path, std::vector<raw_type>& _lut){
 
       std::ifstream lutf(_path,std::ios::in);
 
-      //TODO: safeguard received ill-defined luts!
+      if(_lut.size()!=max_compressed_)
+        _lut.resize(max_compressed_);
+
       raw_type val;
       uint32_t counter = 0;
       while (lutf >> val)
@@ -527,8 +526,12 @@ namespace sqeazy {
     //could this be replaced by a stream operator overload?
     //TODO: perhaps very slow
     void lut_from_string(const std::string& _lut_as_string,
-                         std::array<raw_type, max_compressed_>& _lut)
+                         std::vector<raw_type>& _lut //, max_compressed_
+      )
       {
+
+        if(_lut.size()!=max_compressed_)
+          _lut.resize(max_compressed_);
 
         parsing::verbatim_to_range(_lut_as_string,_lut.begin(),_lut.end());
         return ;
@@ -550,7 +553,7 @@ namespace sqeazy {
                 raw_type* _output){
 
 
-      std::array<raw_type, max_compressed_> loaded_lut_decode_;
+      std::vector<raw_type> loaded_lut_decode_(max_compressed_,0);
       lut_from_file(_path,loaded_lut_decode_);
 
       if(!std::accumulate(loaded_lut_decode_.begin(), loaded_lut_decode_.end(),0)){
@@ -586,14 +589,15 @@ namespace sqeazy {
        \retval
 
     */
-    void decode(const std::array<raw_type, max_compressed_>& _lut_decode,
+    void decode(const std::vector<raw_type>& _lut_decode,//max_compressed
                 const compressed_type* _input,
                 const size_t& _in_nelems,
                 raw_type* _output){
 
-
-      // std::array<raw_type, max_compressed_> loaded_lut_decode_;
-      // lut_from_file(_path,loaded_lut_decode_);
+      if(_lut_decode.size() != max_compressed_){
+        std::cerr << "received decoding lut size "<< _lut_decode.size() <<", but expected "<< max_compressed_ <<"!\n";
+        return;
+      }
 
       if(!std::accumulate(_lut_decode.begin(), _lut_decode.end(),0)){
         std::cerr << "incoming lut does not contain any data!\n";
@@ -625,26 +629,26 @@ namespace sqeazy {
       return nthreads_;
     }
 
-    const std::array<int, quantiser::max_raw_>* get_histogram() const {
+    const std::vector<int>* get_histogram() const {
       return &histo_;
 
     }
 
-    const std::array<float, quantiser::max_raw_>* get_weights() const {
+    const std::vector<float>* get_weights() const {
       return &weights_;
 
     }
 
-    const std::array<float, quantiser::max_raw_>* get_importance() const {
+    const std::vector<float>* get_importance() const {
       return &importance_;
 
     }
 
-    const std::array<raw_type, max_compressed_>* get_decode_lut() const {
+    const std::vector<raw_type>* get_decode_lut() const {
       return &lut_decode_;
     }
 
-    const std::array<compressed_type, max_raw_>* get_encode_lut() const {
+    const std::vector<compressed_type>* get_encode_lut() const {
       return &lut_encode_;
     }
 
