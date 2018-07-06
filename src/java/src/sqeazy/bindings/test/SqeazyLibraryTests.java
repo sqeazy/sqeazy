@@ -58,7 +58,7 @@ public class SqeazyLibraryTests
 		assertTrue(lCompresssedBufferLength < lSourceBytes.getValidBytes());
 
 		assertEquals(	0,
-						SqeazyLibrary.SQY_Pipeline_Decompressed_Length(lCompressedBytes,
+						SqeazyLibrary.SQY_Decompressed_Length(lCompressedBytes,
 																	   lPointerToDestinationLength));
 
 		assertEquals(	lBufferLength,
