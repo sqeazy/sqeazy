@@ -25,6 +25,51 @@
 */
 SQY_FUNCTION_PREFIX int SQY_Header_Size(const char* src, long* length);
 
+
+/*
+  SQY_Decompressed_NDims - Detect the number of dimensions contained in blob
+
+  Search for the sqy header in src and save its length in Byte in lenght
+
+  src 					: LZ4 compressed buffer (externally allocated & filled)
+  num					: (in) size of src in bytes
+                          (out) scalar that tells the number of
+
+  Returns 0 if success, another code if there was an error (error codes provided below)
+
+*/
+SQY_FUNCTION_PREFIX int SQY_Decompressed_NDims(const char* src, long* num);
+
+/*
+  SQY_Decompressed_Shape - Detect length of header stored in src.
+
+  Search for the sqy header in src and save its length in Byte in lenght
+
+  src 					: LZ4 compressed buffer (externally allocated & filled)
+  shape					: (in) array of longs where first item describes the size of src
+                               (array must be allocated to number of dimensions prior to this call)
+                          (out) array holding the shape of the decoded volume in units of pixel/voxel
+
+  Returns 0 if success, another code if there was an error (error codes provided below)
+
+*/
+SQY_FUNCTION_PREFIX int SQY_Decompressed_Shape(const char* src, long* shape);
+
+/*
+  SQY_Decompressed_Sizeof - Pixel size in bytes
+
+  Search for the sqy header in src and save its length in Byte in lenght
+
+  src 					: LZ4 compressed buffer (externally allocated & filled)
+  shape					: (in) pointer to long which describes the length of src
+                          (out) array holding the shape of the decoded volume in units of pixel/voxel
+
+  Returns 0 if success, another code if there was an error (error codes provided below)
+
+*/
+SQY_FUNCTION_PREFIX int SQY_Decompressed_Sizeof(const char* src, long* shape);
+
+
 /*
 	SQY_Version_Triple - store version.
 
@@ -97,16 +142,16 @@ SQY_FUNCTION_PREFIX int SQY_Pipeline_Max_Compressed_Length_UI16(const char* pipe
 SQY_FUNCTION_PREFIX int SQY_Pipeline_Max_Compressed_Length_3D_UI16(const char* pipeline,long* shape, unsigned shape_size, long* length);
 
 /*
-	SQY_Pipeline_Decompressed_Length - Extracts the size of the decompressed buffer from the first 8 Byte of data
+	SQY_Decompressed_Length - Extracts the size of the decompressed buffer from the first 8 Byte of data
 
 	data					: buffer that contains the compressed data as output by SQY_PipelineEncode
-	length					: (in) length in bytes of incoming data buffer
-						  (out) extracted length in bytes of decompressed buffer to be output by SQY_PipelineDecode called on data
+	length					: (in)  length in bytes of incoming data buffer
+                              (out) extracted length in bytes of decompressed buffer to be output by SQY_PipelineDecode called on data
 
 	Returns 0 if success, another code if there was an error (error codes provided below)
 */
 
-SQY_FUNCTION_PREFIX int SQY_Pipeline_Decompressed_Length(const char* data, long *length);
+SQY_FUNCTION_PREFIX int SQY_Decompressed_Length(const char* data, long *length);
 
 /*
 	SQY_PipelineDecode_UI16 - Decompress using Pipeline.

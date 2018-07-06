@@ -82,11 +82,99 @@ BOOST_AUTO_TEST_CASE( decompressed_length ){
   BOOST_CHECK_LT(std::size_t(length),compressed.size());
 
 
-  rvalue = SQY_Pipeline_Decompressed_Length(&compressed[0],
+  rvalue = SQY_Decompressed_Length(&compressed[0],
                         &length);
 
   BOOST_CHECK_EQUAL(rvalue, 0);
   BOOST_CHECK_EQUAL(std::size_t(length), data_bytes);
+
+}
+
+BOOST_AUTO_TEST_CASE( decompressed_ndims ){
+
+  const unsigned long data_bytes = size_in_byte;
+  long length = data_bytes;
+  std::vector<long> ldims(dims.begin(), dims.end());
+  SQY_Pipeline_Max_Compressed_Length_3D_UI16(default_filter_name.c_str(),
+                         &ldims[0],
+                         dims.size(),
+                         &length);
+  std::vector<char> compressed(length,0);
+  int rvalue = SQY_PipelineEncode_UI16(default_filter_name.c_str(),
+                                       (const char*)&constant_cube[0],
+                                       &ldims[0],
+                                       dims.size(),
+                                       (char*)&compressed[0],
+                                       &length,
+                                       1);
+  BOOST_CHECK_EQUAL(rvalue, 0);
+  BOOST_CHECK_LT(std::size_t(length),compressed.size());
+
+
+  rvalue = SQY_Decompressed_NDims(&compressed[0],
+                                  &length);
+
+  BOOST_CHECK_EQUAL(rvalue, 0);
+  BOOST_CHECK_EQUAL(std::size_t(length), 3);
+
+}
+
+BOOST_AUTO_TEST_CASE( decompressed_shape ){
+
+  const unsigned long data_bytes = size_in_byte;
+  long length = data_bytes;
+  std::vector<long> ldims(dims.begin(), dims.end());
+  SQY_Pipeline_Max_Compressed_Length_3D_UI16(default_filter_name.c_str(),
+                         &ldims[0],
+                         dims.size(),
+                         &length);
+  std::vector<char> compressed(length,0);
+  int rvalue = SQY_PipelineEncode_UI16(default_filter_name.c_str(),
+                                       (const char*)&constant_cube[0],
+                                       &ldims[0],
+                                       dims.size(),
+                                       (char*)&compressed[0],
+                                       &length,
+                                       1);
+  BOOST_CHECK_EQUAL(rvalue, 0);
+  BOOST_CHECK_LT(std::size_t(length),compressed.size());
+
+  std::array<long,3> shape;
+  rvalue = SQY_Decompressed_Shape(&compressed[0],
+                                  shape.data());
+
+  BOOST_CHECK_EQUAL(rvalue, 0);
+  BOOST_CHECK_EQUAL(shape.front(), ldims.front());
+  BOOST_CHECK_EQUAL(shape.back(), ldims.back());
+
+
+}
+
+BOOST_AUTO_TEST_CASE( decompressed_sizeof ){
+
+  const unsigned long data_bytes = size_in_byte;
+  long length = data_bytes;
+  std::vector<long> ldims(dims.begin(), dims.end());
+  SQY_Pipeline_Max_Compressed_Length_3D_UI16(default_filter_name.c_str(),
+                         &ldims[0],
+                         dims.size(),
+                         &length);
+  std::vector<char> compressed(length,0);
+  int rvalue = SQY_PipelineEncode_UI16(default_filter_name.c_str(),
+                                       (const char*)&constant_cube[0],
+                                       &ldims[0],
+                                       dims.size(),
+                                       (char*)&compressed[0],
+                                       &length,
+                                       1);
+  BOOST_CHECK_EQUAL(rvalue, 0);
+  BOOST_CHECK_LT(std::size_t(length),compressed.size());
+
+  rvalue = SQY_Decompressed_Sizeof(&compressed[0],&length);
+
+  BOOST_CHECK_EQUAL(rvalue, 0);
+  BOOST_CHECK_EQUAL(length, sizeof(constant_cube[0]));
+
 
 }
 

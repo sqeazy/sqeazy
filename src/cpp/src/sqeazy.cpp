@@ -21,6 +21,43 @@ int SQY_Header_Size(const char* src, long *srclength){
   return 0;
 }
 
+int SQY_Decompressed_NDims(const char* data,
+                           long *num){
+
+  int value =0;
+
+  sqy::header hdr(data,data+(*num));
+
+  *num = hdr.shape()->size();
+  return value;
+}
+
+int SQY_Decompressed_Shape(const char* data,
+                           long *shape){
+
+  int value =0;
+
+  sqy::header hdr(data,data+shape[0]);
+
+  for(std::size_t i = 0;i<hdr.shape()->size();++i)
+    shape[i] = hdr.shape()->at(i);
+
+  return value;
+}
+
+int SQY_Decompressed_Sizeof(const char* data,
+                           long *Sizeof){
+
+  int value =0;
+
+  sqy::header hdr(data,data+(*Sizeof));
+
+  *Sizeof = hdr.sizeof_header_type();
+
+  return value;
+}
+
+
 int SQY_Version_Triple(int* version){
 
   version[0] = sqeazy_global_version_major;
@@ -109,8 +146,8 @@ int SQY_Pipeline_Max_Compressed_Length_3D_UI16(const char* pipeline,
 
 }
 
-int SQY_Pipeline_Decompressed_Length(const char* data,
-                     long *length){
+int SQY_Decompressed_Length(const char* data,
+                            long *length){
 
   int value =0;
 
