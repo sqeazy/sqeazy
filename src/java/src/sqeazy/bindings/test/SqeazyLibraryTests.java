@@ -65,6 +65,12 @@ public class SqeazyLibraryTests
 						lPointerToDestinationLength.getCLong());
 
 		final Pointer<Byte> lDecodedBytes = Pointer.allocateBytes(lBufferLength);
+		final Pointer<CLong> lValueHolder = Pointer.allocateCLong();
+		lValueHolder.setCLong((long) (lCompresssedBufferLength));
+
+		assertEquals(	0,
+						SqeazyLibrary.SQY_Decompressed_Sizeof(lCompressedBytes,lValueHolder));
+		assertEquals(	2, lValueHolder.getLong());
 
 		assertEquals(	0,
 						SqeazyLibrary.SQY_PipelineDecode_UI16(lCompressedBytes,
