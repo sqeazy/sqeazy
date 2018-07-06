@@ -42,7 +42,7 @@ namespace sqeazy {
         shape_[sqeazy::row_major::y] = shape_[sqeazy::row_major::x];
         shape_[sqeazy::row_major::z] = std::floor(_size/(shape_[sqeazy::row_major::y]*shape_[sqeazy::row_major::x]));
 
-        size_ = std::accumulate(shape_.begin(), shape_.end(), 1, std::multiplies<std::size_t>());
+        size_ = std::accumulate(shape_.begin(), shape_.end(), std::size_t(1), std::multiplies<std::size_t>());
         nbytes_ = size_*sizeof(T);
 
         setup_from_size();
@@ -74,7 +74,7 @@ namespace sqeazy {
         output_.resize(size_);
 
 
-        static const T     maxv  = .5f*std::numeric_limits<T>::max();
+        static const T maxv = (std::numeric_limits<T>::max)() * 0.5;
 
         //sinus_
         unsigned index = 0;
@@ -84,7 +84,7 @@ namespace sqeazy {
 
         std::random_device rd;
         std::mt19937 gen(rd());
-        const T signal_intensity_ = std::numeric_limits<T>::max()*.6;
+        const T signal_intensity_ = (std::numeric_limits<T>::max)()*.6;
         std::exponential_distribution<> dis(1.f/(.01f*signal_intensity_));
 
         for(uint32_t idx = 0;idx < noisy_embryo_.size();++idx)
@@ -175,7 +175,7 @@ namespace sqeazy {
 
       void fill_self(){
 
-        static const T maxv = .25f*std::numeric_limits<T>::max();
+        static const T maxv = .25f*(std::numeric_limits<T>::max)();
 
         unsigned index = 0;
         for( T& _element : sin_data ){
