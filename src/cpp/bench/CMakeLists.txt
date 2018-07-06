@@ -8,15 +8,15 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/include)
 #ATTENTION:
 #boost unit test framework has some defects if we wanna bind against shared and/or static libs
 ##that's why we bind against the dynamic loaded libraries primarily
-SET(Boost_USE_STATIC_LIBS OFF)
-FIND_PACKAGE (Boost 1.55 COMPONENTS regex filesystem serialization program_options REQUIRED QUIET)
-if(Boost_FOUND)
-    MESSAGE("++ [tests] Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES} : ${Boost_LIBRARIES}")
-    INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-    link_directories(${Boost_LIBRARY_DIRS})
-else(Boost_FOUND)
-    MESSAGE(FATAL_ERROR "++ Boost not found!")
-endif(Boost_FOUND)
+# SET(Boost_USE_STATIC_LIBS OFF)
+# FIND_PACKAGE (Boost 1.55 COMPONENTS regex filesystem serialization program_options REQUIRED QUIET)
+# if(Boost_FOUND)
+#     MESSAGE("++ [tests] Boost found at ${Boost_LIBRARY_DIR} ${Boost_LIBRARIES} : ${Boost_LIBRARIES}")
+#     INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+#     link_directories(${Boost_LIBRARY_DIRS})
+# else(Boost_FOUND)
+#     MESSAGE(FATAL_ERROR "++ Boost not found!")
+# endif(Boost_FOUND)
 
 set(SQY_LIB ${PROJECT_NAME})
 
@@ -104,7 +104,7 @@ target_link_libraries(benchmark_chunked_statistics ${OpenMP++_LIBRARIES} ${Boost
 
 IF(TIFF_FOUND)
 add_executable(dump_benchmark_datasets dump_benchmark_datasets.cpp)
-target_link_libraries(dump_benchmark_datasets ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${TIFF_LIBRARY} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY})
+target_link_libraries(dump_benchmark_datasets ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY} ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${TIFF_LIBRARY} )
 ENDIF()
 
 IF(FFMPEG_FOUND)
