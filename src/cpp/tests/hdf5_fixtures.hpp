@@ -57,7 +57,8 @@ struct helpers_fixture
     {
       bfs::path search_path = here;
       search_path /= "tests";
-      bool found = helpers::find_file(search_path, tfile_basename, tpath);
+      // bool found =
+        helpers::find_file(search_path, tfile_basename, tpath);
     }
 
     if(!bfs::exists(tpath))

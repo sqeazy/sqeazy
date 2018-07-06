@@ -159,8 +159,6 @@ namespace sqeazy {
                               int nthreads = 1
             ) -> typename dense_histo<typename std::iterator_traits<iter_type>::value_type>::type
         {
-
-
             using value_t = typename std::iterator_traits<iter_type>::value_type;
             using histo_t = typename dense_histo<typename std::iterator_traits<iter_type>::value_type>::type;
             auto size = dense_histo< value_t >::size;
