@@ -209,7 +209,7 @@ namespace sqeazy {
         void add_from_image(ItrT _image_begin, ItrT _image_end) {
             num_entries += _image_end - _image_begin;
 
-            sqeazy::detail::dense_parallel_fill_histogram(_image_begin, _image_end, bins.data(), nthreads);
+            sqeazy::detail::parallel::fill_histogram(_image_begin, _image_end, bins.data(), nthreads);
 
         }
 
@@ -236,7 +236,7 @@ namespace sqeazy {
 
             std::fill(bins.begin(), bins.end(),0);
 
-            sqeazy::detail::dense_parallel_fill_histogram(_image_begin, _image_end, bins.data(), nthreads);
+            sqeazy::detail::parallel::fill_histogram(_image_begin, _image_end, bins.data(), nthreads);
 
             fill_stats();
 
