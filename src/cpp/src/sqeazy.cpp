@@ -141,14 +141,16 @@ int SQY_PipelineEncode_UI16(const char* pipeline,
   return value;
 }
 
-int SQY_Pipeline_Max_Compressed_Length_UI8(const char* pipeline,long* length){
+int SQY_Pipeline_Max_Compressed_Length_UI8(const char* pipeline,
+                                           long pipeline_length,
+                                           long* length){
 
   int value =1;
 
-  if(!sqy::dypeline<std::uint8_t>::can_be_built_from(pipeline))
+  if(!sqy::dypeline<std::uint8_t>::can_be_built_from(pipeline,pipeline+pipeline_length))
     return value;
 
-  auto received_pipeline = sqy::dypeline<std::uint8_t>::from_string(pipeline);
+  auto received_pipeline = sqy::dypeline<std::uint8_t>::from_string(pipeline,pipeline+pipeline_length);
 
   if(!received_pipeline.size()){
     std::cerr << "[sqeazy]\t received " << received_pipeline.name() << "pipeline of size 0, cannot compite Max_Compressed_Length\n";
@@ -161,14 +163,14 @@ int SQY_Pipeline_Max_Compressed_Length_UI8(const char* pipeline,long* length){
 }
 
 
-int SQY_Pipeline_Max_Compressed_Length_UI16(const char* pipeline,long* length){
+int SQY_Pipeline_Max_Compressed_Length_UI16(const char* pipeline,long pipeline_length,long* length){
 
   int value =1;
 
-  if(!sqy::dypeline<std::uint16_t>::can_be_built_from(pipeline))
+  if(!sqy::dypeline<std::uint16_t>::can_be_built_from(pipeline,pipeline+pipeline_length))
     return value;
 
-  auto received_pipeline = sqy::dypeline<std::uint16_t>::from_string(pipeline);
+  auto received_pipeline = sqy::dypeline<std::uint16_t>::from_string(pipeline,pipeline+pipeline_length);
 
   if(!received_pipeline.size()){
     std::cerr << "[sqeazy]\t received " << received_pipeline.name() << "pipeline of size 0, cannot compite Max_Compressed_Length\n";
@@ -181,17 +183,18 @@ int SQY_Pipeline_Max_Compressed_Length_UI16(const char* pipeline,long* length){
 }
 
 int SQY_Pipeline_Max_Compressed_Length_3D_UI16(const char* pipeline,
-                           long* shape,
-                           unsigned shape_size,
-                           long* length){
+                                               long* shape,
+                                               unsigned shape_size,
+                                               long* length){
 
   int value = 1;
-  if(!sqy::dypeline<std::uint16_t>::can_be_built_from(pipeline))
+  const std::size_t pipelength = *length;
+  if(!sqy::dypeline<std::uint16_t>::can_be_built_from(pipeline,pipeline+pipelength))
     return value;
 
   std::uintmax_t size_in_byte = sizeof(std::uint16_t)*std::accumulate(shape,shape+shape_size,1,std::multiplies<long>());
 
-  auto received_pipeline = sqy::dypeline<std::uint16_t>::from_string(pipeline);
+  auto received_pipeline = sqy::dypeline<std::uint16_t>::from_string(pipeline,pipeline+pipelength);
 
   if(!received_pipeline.size()){
     std::cerr << "[sqeazy]\t received " << received_pipeline.name() << "pipeline of size 0, cannot compite Max_Compressed_Length\n";
@@ -209,12 +212,13 @@ int SQY_Pipeline_Max_Compressed_Length_3D_UI8(const char* pipeline,
                                                long* length){
 
   int value = 1;
-  if(!sqy::dypeline<std::uint8_t>::can_be_built_from(pipeline))
+  const std::size_t pipelength = *length;
+  if(!sqy::dypeline<std::uint8_t>::can_be_built_from(pipeline,pipeline+pipelength))
     return value;
 
   std::uintmax_t size_in_byte = sizeof(std::uint8_t)*std::accumulate(shape,shape+shape_size,1,std::multiplies<long>());
 
-  auto received_pipeline = sqy::dypeline<std::uint8_t>::from_string(pipeline);
+  auto received_pipeline = sqy::dypeline<std::uint8_t>::from_string(pipeline,pipeline+pipelength);
 
   if(!received_pipeline.size()){
     std::cerr << "[sqeazy]\t received " << received_pipeline.name() << "pipeline of size 0, cannot compite Max_Compressed_Length\n";

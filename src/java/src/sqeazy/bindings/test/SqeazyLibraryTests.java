@@ -59,7 +59,7 @@ public class SqeazyLibraryTests
 
 		assertEquals(	0,
 						SqeazyLibrary.SQY_Decompressed_Length(lCompressedBytes,
-																	   lPointerToDestinationLength));
+															  lPointerToDestinationLength));
 
 		assertEquals(	lBufferLength,
 						lPointerToDestinationLength.getCLong());
@@ -191,7 +191,9 @@ public class SqeazyLibraryTests
 	
 			final Pointer<CLong> lMaxEncodedBytes = Pointer.allocateCLong();
 			lMaxEncodedBytes.setCLong(lBufferLengthInByte);
-			assertEquals(0,SqeazyLibrary.SQY_Pipeline_Max_Compressed_Length_UI16(bPipelineName,lMaxEncodedBytes));
+
+			final long bPipelineName_Length = lPipeline.length();
+			assertEquals(0,SqeazyLibrary.SQY_Pipeline_Max_Compressed_Length_UI16(bPipelineName,bPipelineName_Length,lMaxEncodedBytes));
 
 			final long nil = 0;
 			assertEquals( true, lMaxEncodedBytes.get().longValue()>nil);

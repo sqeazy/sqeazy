@@ -33,7 +33,7 @@ SQY_FUNCTION_PREFIX int SQY_Header_Size(const char* src, long* length);
 
   src 					: LZ4 compressed buffer (externally allocated & filled)
   num					: (in) size of src in bytes
-                          (out) scalar that tells the number of
+                          (out) scalar that tells the number of dimensions of the data described by src
 
   Returns 0 if success, another code if there was an error (error codes provided below)
 
@@ -61,13 +61,13 @@ SQY_FUNCTION_PREFIX int SQY_Decompressed_Shape(const char* src, long* shape);
   Search for the sqy header in src and save its length in Byte in lenght
 
   src 					: LZ4 compressed buffer (externally allocated & filled)
-  shape					: (in) pointer to long which describes the length of src
-                          (out) array holding the shape of the decoded volume in units of pixel/voxel
+  Sizeof				: (in) pointer to long which describes the length of src
+                          (out) pointer to long which returns the number of bytes per pixel
 
   Returns 0 if success, another code if there was an error (error codes provided below)
 
 */
-SQY_FUNCTION_PREFIX int SQY_Decompressed_Sizeof(const char* src, long* shape);
+SQY_FUNCTION_PREFIX int SQY_Decompressed_Sizeof(const char* src, long* Sizeof);
 
 
 /*
@@ -150,20 +150,25 @@ SQY_FUNCTION_PREFIX int SQY_PipelineEncode_UI16(const char* pipeline,
 	SQY_Pipeline_Max_Compressed_Length - Calculates the maximum size of the output buffer from Pipeline compression
 
 	pipeline				: pipeline name
-	length 					: (in) length in bytes of decompressed buffer
-						  (out) maximum length in bytes of compressed buffer
+    pipeline_length         : number of bytes in <pipeline>
+	length 					: (in) length of data buffer in bytes
+                              (out) maximum length of compressed buffer in bytes
 
 	Returns 0 if success, another code if there was an error (error codes provided below)
 */
-SQY_FUNCTION_PREFIX int SQY_Pipeline_Max_Compressed_Length_UI8(const char* pipeline,long* length);
+SQY_FUNCTION_PREFIX int SQY_Pipeline_Max_Compressed_Length_UI8(const char* pipeline,
+                                                               long pipeline_length,
+                                                               long* length);
 
 /*
 	SQY_Pipeline_Max_Compressed_Length - Calculates the maximum size of the output buffer from Pipeline compression
 
 	pipeline				: pipeline name
 	shape					: (in) shape of the incoming nD dataset
-	shape_size				: (in) number of items in shape
-	length 					: (out) maximum length in bytes of compressed buffer
+	shape_size				: (in) number of items in shape, i.e. the number of dimensions which shape describes
+    length 					: pointer to long
+                              (in) number of bytes in <pipeline>
+                              (out) maximum length in bytes of compressed buffer
 
 	Returns 0 if success, another code if there was an error (error codes provided below)
 */
@@ -176,12 +181,13 @@ SQY_FUNCTION_PREFIX int SQY_Pipeline_Max_Compressed_Length_3D_UI8(const char* pi
 	SQY_Pipeline_Max_Compressed_Length - Calculates the maximum size of the output buffer from Pipeline compression
 
 	pipeline				: pipeline name
-	length 					: (in) length in bytes of decompressed buffer
-						  (out) maximum length in bytes of compressed buffer
+	pipeline_length         : number of bytes in <pipeline>
+	length 					: (in) length of pipeline buffer in bytes
+                              (out) maximum length of compressed buffer in bytes
 
 	Returns 0 if success, another code if there was an error (error codes provided below)
 */
-SQY_FUNCTION_PREFIX int SQY_Pipeline_Max_Compressed_Length_UI16(const char* pipeline,long* length);
+SQY_FUNCTION_PREFIX int SQY_Pipeline_Max_Compressed_Length_UI16(const char* pipeline,long pipeline_length,long* length);
 
 /*
 	SQY_Pipeline_Max_Compressed_Length - Calculates the maximum size of the output buffer from Pipeline compression
@@ -189,7 +195,9 @@ SQY_FUNCTION_PREFIX int SQY_Pipeline_Max_Compressed_Length_UI16(const char* pipe
 	pipeline				: pipeline name
 	shape					: (in) shape of the incoming nD dataset
 	shape_size				: (in) number of items in shape
-	length 					: (out) maximum length in bytes of compressed buffer
+	length 					: pointer to long
+                              (in) number of bytes in <pipeline>
+                              (out) maximum length in bytes of compressed buffer
 
 	Returns 0 if success, another code if there was an error (error codes provided below)
 */
