@@ -67,6 +67,44 @@ int SQY_Version_Triple(int* version){
   return 0;
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Pipeline interface
+int SQY_PipelineEncode_UI8(const char* pipeline,
+                            const char* src,
+                            long* shape,
+                            unsigned shape_size ,
+                            char* dst,
+                            long* dstlength,
+                            int nthreads)
+{
+
+  int value =1;
+  if(!sqy::dypeline<std::uint8_t>::can_be_built_from(pipeline))
+    return value;
+
+
+  std::vector<std::size_t> shape_(shape, shape+shape_size);
+  auto pipe = sqy::dypeline<std::uint8_t>::from_string(pipeline);
+  if(pipe.empty()){
+    std::cerr << "[sqeazy]\t received " << pipe.name() << "pipeline of size 0, cannot encode buffer\n";
+    return value;
+  }
+
+  pipe.set_n_threads(nthreads);
+
+  char* encoded_end = pipe.encode(reinterpret_cast<const std::uint8_t*>(src),
+                                  dst,
+                                  shape_);
+
+  if(!encoded_end)
+    return value;
+  else
+    value = 0;
+
+  *dstlength = encoded_end - dst;
+  return value;
+}
+
 int SQY_PipelineEncode_UI16(const char* pipeline,
                             const char* src,
                             long* shape,
@@ -103,7 +141,26 @@ int SQY_PipelineEncode_UI16(const char* pipeline,
   return value;
 }
 
-//NOT IMPLEMENTED YET
+int SQY_Pipeline_Max_Compressed_Length_UI8(const char* pipeline,long* length){
+
+  int value =1;
+
+  if(!sqy::dypeline<std::uint8_t>::can_be_built_from(pipeline))
+    return value;
+
+  auto received_pipeline = sqy::dypeline<std::uint8_t>::from_string(pipeline);
+
+  if(!received_pipeline.size()){
+    std::cerr << "[sqeazy]\t received " << received_pipeline.name() << "pipeline of size 0, cannot compite Max_Compressed_Length\n";
+    return value;
+  }
+
+  *length = received_pipeline.max_encoded_size(*length);
+  return 0;
+
+}
+
+
 int SQY_Pipeline_Max_Compressed_Length_UI16(const char* pipeline,long* length){
 
   int value =1;
@@ -146,6 +203,66 @@ int SQY_Pipeline_Max_Compressed_Length_3D_UI16(const char* pipeline,
 
 }
 
+int SQY_Pipeline_Max_Compressed_Length_3D_UI8(const char* pipeline,
+                                               long* shape,
+                                               unsigned shape_size,
+                                               long* length){
+
+  int value = 1;
+  if(!sqy::dypeline<std::uint8_t>::can_be_built_from(pipeline))
+    return value;
+
+  std::uintmax_t size_in_byte = sizeof(std::uint8_t)*std::accumulate(shape,shape+shape_size,1,std::multiplies<long>());
+
+  auto received_pipeline = sqy::dypeline<std::uint8_t>::from_string(pipeline);
+
+  if(!received_pipeline.size()){
+    std::cerr << "[sqeazy]\t received " << received_pipeline.name() << "pipeline of size 0, cannot compite Max_Compressed_Length\n";
+    return value;}
+
+  *length = received_pipeline.max_encoded_size(size_in_byte);
+
+  return 0;
+
+}
+
+bool SQY_Pipeline_Possible_UI16(const char* pipeline_string){
+
+  bool value = false;
+
+  value = sqy::dypeline<std::uint16_t>::can_be_built_from(pipeline_string);
+
+  return value;
+
+}
+
+bool SQY_Pipeline_Possible_UI8(const char* pipeline_string){
+
+  bool value = false;
+
+  value = sqy::dypeline<std::uint8_t>::can_be_built_from(pipeline_string);
+
+  return value;
+
+}
+
+
+bool SQY_Pipeline_Possible(const char* pipeline_string, int sizeofpixel){
+
+  bool value = false;
+
+  if( sizeofpixel == 2){
+    value = sqy::dypeline<std::uint16_t>::can_be_built_from(pipeline_string);}
+  else{
+    if( sizeofpixel == 1){
+      value = sqy::dypeline<std::uint8_t>::can_be_built_from(pipeline_string);
+    }
+  }
+
+  return value;
+
+}
+
 int SQY_Decompressed_Length(const char* data,
                             long *length){
 
@@ -157,10 +274,12 @@ int SQY_Decompressed_Length(const char* data,
   return value;
 }
 
-int SQY_PipelineDecode_UI16(const char* src, long srclength, char* dst, int nthreads){
+int SQY_Decode_UI16(const char* src, long srclength, char* dst, int nthreads){
   int value =1;
 
   sqy::header hdr(src,src+(srclength));
+  std::vector<std::size_t> inshape_  = {std::size_t(srclength)};
+  std::vector<std::size_t> outshape_(hdr.shape()->begin(),hdr.shape()->end());
 
   if(!sqy::dypeline<std::uint16_t>::can_be_built_from(hdr.pipeline())){
     std::cerr << "[sqeazy]\t" << hdr.pipeline() << " cannot be build with this version of sqeazy\n";
@@ -174,8 +293,6 @@ int SQY_PipelineDecode_UI16(const char* src, long srclength, char* dst, int nthr
     std::cerr << "[sqeazy]\t received " << pipe.name() << "pipeline of size 0, no decoding possible\n";
     return value;}
 
-  std::vector<std::size_t> inshape_  = {std::size_t(srclength)};
-  std::vector<std::size_t> outshape_(hdr.shape()->begin(),hdr.shape()->end());
 
   value = pipe.decode(src,
               reinterpret_cast<std::uint16_t*>(dst),
@@ -185,15 +302,37 @@ int SQY_PipelineDecode_UI16(const char* src, long srclength, char* dst, int nthr
   return value;
 }
 
-bool SQY_Pipeline_Possible(const char* pipeline_string){
+int SQY_Decode_UI8(const char* src, long srclength, char* dst, int nthreads){
+  int value =1;
 
-  bool value = false;
+  sqy::header hdr(src,src+(srclength));
+  std::vector<std::size_t> inshape_  = {std::size_t(srclength)};
+  std::vector<std::size_t> outshape_(hdr.shape()->begin(),hdr.shape()->end());
 
-  value = sqy::dypeline<std::uint16_t>::can_be_built_from(pipeline_string);
+  if(!sqy::dypeline<std::uint8_t>::can_be_built_from(hdr.pipeline())){
+    std::cerr << "[sqeazy]\t" << hdr.pipeline() << " cannot be build with this version of sqeazy\n";
+    return value;
+  }
+
+  auto pipe = sqy::dypeline<std::uint8_t>::from_string(hdr.pipeline());
+  pipe.set_n_threads(nthreads);
+
+  if(!pipe.size()){
+    std::cerr << "[sqeazy]\t received " << pipe.name() << "pipeline of size 0, no decoding possible\n";
+    return value;}
+
+
+  value = pipe.decode(src,
+                      reinterpret_cast<std::uint8_t*>(dst),
+                      inshape_,
+                      outshape_);
 
   return value;
-
 }
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+// H5 interface
 
 int SQY_h5_query_sizeof(const char* fname,
             const char* dname,

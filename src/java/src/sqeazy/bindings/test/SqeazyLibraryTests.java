@@ -73,7 +73,7 @@ public class SqeazyLibraryTests
 		assertEquals(	2, lValueHolder.getLong());
 
 		assertEquals(	0,
-						SqeazyLibrary.SQY_PipelineDecode_UI16(lCompressedBytes,
+						SqeazyLibrary.SQY_Decode_UI16(lCompressedBytes,
 															  lCompresssedBufferLength,
 															  lDecodedBytes,
 															  1));
@@ -186,7 +186,7 @@ public class SqeazyLibraryTests
 																		lWidth);
 	
 			assertEquals(	true,
-							SqeazyLibrary.SQY_Pipeline_Possible(bPipelineName)
+							SqeazyLibrary.SQY_Pipeline_Possible(bPipelineName,2)
 				);
 	
 			final Pointer<CLong> lMaxEncodedBytes = Pointer.allocateCLong();
@@ -217,7 +217,7 @@ public class SqeazyLibraryTests
 
 			final Pointer<Byte> bDestShort = lDestShort.as(Byte.class);
 			assertEquals(0,
-						 SqeazyLibrary.SQY_PipelineDecode_UI16(bCompressedData,
+						 SqeazyLibrary.SQY_Decode_UI16(bCompressedData,
 															   lEncodedBytes.getCLong(),
 															   bDestShort,
 															   1)

@@ -90,6 +90,37 @@ SQY_FUNCTION_PREFIX int SQY_Version_Triple(int* version);
 
 	Compresses the source buffer into the destination buffer using Pipeline.
 	The destination buffer should be a bit larger than the source buffer
+	in case the compressed buffer requires more space.
+	ATTENTION: The output buffer contains a sqy only header!
+
+	pipeline				: pipeline name
+	src 					: contiguous array of voxels (externally allocated)
+	shape     				: shape of the nD construct given as src (in units of unsigned int 8-bit)
+	shape_size     				: number of items in shape
+	dst 					: Pipeline compressed buffer (already allocated)
+	dstlength 				: length in bytes of externally allocated destination buffer (needs to give the length of dst in Bytes),
+							  modified by function call to reflect the effective
+                              compressed buffer length after the call.
+    nthreads                : set the number of threads allowed for the entire pipeline.
+
+	Returns 0 if success, another code if there was an error (error codes provided below)
+
+			error 1 -  destination buffer is not large enough
+
+*/
+SQY_FUNCTION_PREFIX int SQY_PipelineEncode_UI8(const char* pipeline,
+                                                const char* src,
+                                                long* shape,
+                                                unsigned shape_size ,
+                                                char* dst,
+                                                long* dstlength,
+                                                int nthreads);
+
+/*
+	SQY_PipelineEncode - Compress using Pipeline.
+
+	Compresses the source buffer into the destination buffer using Pipeline.
+	The destination buffer should be a bit larger than the source buffer
 	in case the compressed buffer requires more space. 
 	ATTENTION: The output buffer contains a sqy only header!
 
@@ -117,6 +148,31 @@ SQY_FUNCTION_PREFIX int SQY_PipelineEncode_UI16(const char* pipeline,
                                                 int nthreads);
 
 
+/*
+	SQY_Pipeline_Max_Compressed_Length - Calculates the maximum size of the output buffer from Pipeline compression
+
+	pipeline				: pipeline name
+	length 					: (in) length in bytes of decompressed buffer
+						  (out) maximum length in bytes of compressed buffer
+
+	Returns 0 if success, another code if there was an error (error codes provided below)
+*/
+SQY_FUNCTION_PREFIX int SQY_Pipeline_Max_Compressed_Length_UI8(const char* pipeline,long* length);
+
+/*
+	SQY_Pipeline_Max_Compressed_Length - Calculates the maximum size of the output buffer from Pipeline compression
+
+	pipeline				: pipeline name
+	shape					: (in) shape of the incoming nD dataset
+	shape_size				: (in) number of items in shape
+	length 					: (out) maximum length in bytes of compressed buffer
+
+	Returns 0 if success, another code if there was an error (error codes provided below)
+*/
+SQY_FUNCTION_PREFIX int SQY_Pipeline_Max_Compressed_Length_3D_UI8(const char* pipeline,
+                                                                   long* shape,
+                                                                   unsigned shape_size,
+                                                                   long* length);
 
 /*
 	SQY_Pipeline_Max_Compressed_Length - Calculates the maximum size of the output buffer from Pipeline compression
@@ -139,14 +195,53 @@ SQY_FUNCTION_PREFIX int SQY_Pipeline_Max_Compressed_Length_UI16(const char* pipe
 
 	Returns 0 if success, another code if there was an error (error codes provided below)
 */
-SQY_FUNCTION_PREFIX int SQY_Pipeline_Max_Compressed_Length_3D_UI16(const char* pipeline,long* shape, unsigned shape_size, long* length);
+SQY_FUNCTION_PREFIX int SQY_Pipeline_Max_Compressed_Length_3D_UI16(const char* pipeline,
+                                                                   long* shape,
+                                                                   unsigned shape_size,
+                                                                   long* length);
+
+
 
 /*
-	SQY_Decompressed_Length - Extracts the size of the decompressed buffer from the first 8 Byte of data
+	SQY_Pipeline_Possible_UI16 - check if pipeline string can be used to build pipeline from, 16-bit input data is assumed.
+
+	pipeline_string				: string that describes the pipeline ('->' delimited)
+
+	Returns true if success, false if not!
+
+*/
+SQY_FUNCTION_PREFIX bool SQY_Pipeline_Possible_UI16(const char* pipeline_string);
+
+/*
+  SQY_Pipeline_Possible_UI16 - check if pipeline string can be used to build pipeline from, 8-bit input data is assumed.
+
+  pipeline_string				: string that describes the pipeline ('->' delimited)
+
+  Returns true if success, false if not!
+
+*/
+SQY_FUNCTION_PREFIX bool SQY_Pipeline_Possible_UI8(const char* pipeline_string);
+
+
+/*
+  SQY_Pipeline_Possible - check if pipeline string can be used to build pipeline from
+
+  By default 16-bit input data is assumed.
+
+  pipeline_string				: string that describes the pipeline ('->' delimited)
+  sizeofpixel                 : sizeof pixel type, e.g. grayscale 16-bit = 2 bytes, grayscale 8-bit = 1 byte
+
+  Returns true if success, false if not!
+
+*/
+SQY_FUNCTION_PREFIX bool SQY_Pipeline_Possible(const char* pipeline_string, int sizeofpixel);
+
+/*
+	SQY_Decompressed_Length - Extracts the size of the decompressed buffer from the contained pipeline description
 
 	data					: buffer that contains the compressed data as output by SQY_PipelineEncode
 	length					: (in)  length in bytes of incoming data buffer
-                              (out) extracted length in bytes of decompressed buffer to be output by SQY_PipelineDecode called on data
+                              (out) number of bytes of decompressed buffer to be output by SQY_Decode_UI16 called on data; any sizeof of the decompressed volume is already taken into account
 
 	Returns 0 if success, another code if there was an error (error codes provided below)
 */
@@ -154,40 +249,48 @@ SQY_FUNCTION_PREFIX int SQY_Pipeline_Max_Compressed_Length_3D_UI16(const char* p
 SQY_FUNCTION_PREFIX int SQY_Decompressed_Length(const char* data, long *length);
 
 /*
-	SQY_PipelineDecode_UI16 - Decompress using Pipeline.
+	SQY_Decode_UI16 - Decompress using Pipeline, assuming output buffer is a uint16 typed memory location
 
-	Decompresses the source buffer into the destination buffer using Pipeline.
-	The destination buffer should be allocated externally. The first 8 bytes of 
-	the source buffer are not part of the Pipeline compressed buffer but indicate the
-	length of the original uncompressed buffer.
-	The necessary buffer length can be obtained by calling SQY_PipelineLength. 
+	Decompresses the source buffer into the destination buffer using a contained Pipeline.
+	The destination buffer should be allocated externally. The necessary buffer length can be
+    obtained by calling SQY_PipelineLength.
 
 	pipeline				: pipeline name
 	src 					: Pipeline compressed buffer (externally allocated)
 	srclength 				: length in bytes of compressed buffer
-	dst 					: contiguous array of voxels 
+	dst 					: contiguous array of voxels, assumed to be 16-bit data behind a char* pointer
 							  (externally allocated, length from SQY_Pipeline_Decompressed_Length)
     nthreads                : set the number of threads allowed for the entire pipeline.
 
 	Returns 0 if success, another code if there was an error (error codes provided below)
 
 */
-SQY_FUNCTION_PREFIX int SQY_PipelineDecode_UI16(const char* src,
-                                                long srclength,
-                                                char* dst,
-                                                int nthreads);
+SQY_FUNCTION_PREFIX int SQY_Decode_UI16(const char* src,
+                                        long srclength,
+                                        char* dst,
+                                        int nthreads);
 
 /*
-	SQY_Pipeline_Possible - check if pipeline string can be used to build pipeline from
+	SQY_Decode_UI8 - Decompress using Pipeline, assuming output buffer is a uint8 typed memory location
 
-	By default 16-bit input data is assumed.
+	Decompresses the source buffer into the destination buffer using a contained Pipeline.
+	The destination buffer should be allocated externally. The necessary buffer length can be
+    obtained by calling SQY_PipelineLength.
 
-	pipeline_string				: string that describes the pipeline ('->' delimited)
+	pipeline				: pipeline name
+	src 					: Pipeline compressed buffer (externally allocated)
+	srclength 				: length in bytes of compressed buffer
+	dst 					: contiguous array of voxels, assumed to be 8-bit data behind a char* pointer
+							  (externally allocated, length from SQY_Pipeline_Decompressed_Length)
+    nthreads                : set the number of threads allowed for the entire pipeline.
 
-	Returns true if success, false if not!
+	Returns 0 if success, another code if there was an error (error codes provided below)
 
 */
-SQY_FUNCTION_PREFIX bool SQY_Pipeline_Possible(const char* pipeline_string);
+SQY_FUNCTION_PREFIX int SQY_Decode_UI8(const char* src,
+                                        long srclength,
+                                        char* dst,
+                                        int nthreads);
 
 ///////////////////////////////////////////////////////////////////////////////////
 // HDF5 filter definition
