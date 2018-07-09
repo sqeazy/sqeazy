@@ -52,12 +52,16 @@ endif()
 
 add_test(NAME hdf5_interface COMMAND test_hdf5_interface)
 set_tests_properties(hdf5_interface PROPERTIES ENVIRONMENT "HDF5_PLUGIN_PATH=${PROJECT_BINARY_DIR}/src")
+
 if(WIN32)
 set_tests_properties(hdf5_interface PROPERTIES ENVIRONMENT "PATH=%PATH%;${PROJECT_BINARY_DIR}/src/${CMAKE_BUILD_TYPE}")
 set_tests_properties(hdf5_interface PROPERTIES ENVIRONMENT "LIBRARY_PATH=%LIBRARY_PATH%;${PROJECT_BINARY_DIR}/src/${CMAKE_BUILD_TYPE}")
-else()
+set_tests_properties(pipeline_interface PROPERTIES ENVIRONMENT "PATH=%PATH%;${PROJECT_BINARY_DIR}/src/${CMAKE_BUILD_TYPE}")
+set_tests_properties(pipeline_interface PROPERTIES ENVIRONMENT "LIBRARY_PATH=%LIBRARY_PATH%;${PROJECT_BINARY_DIR}/src/${CMAKE_BUILD_TYPE}")
+else(WIN32)
 set_tests_properties(hdf5_interface PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${PROJECT_BINARY_DIR}/src")
-endif()
+set_tests_properties(pipeline_interface PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${PROJECT_BINARY_DIR}/src")
+endif(WIN32)
 
 add_test(NAME algorithms_impl COMMAND test_algorithms_impl)
 
