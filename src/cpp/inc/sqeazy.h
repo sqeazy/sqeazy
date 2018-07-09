@@ -71,9 +71,7 @@ SQY_FUNCTION_PREFIX int SQY_Decompressed_Sizeof(const char* src, long* shape);
 
 
 /*
-	SQY_Version_Triple - store version.
-
-	Just store the version of sqeazy used. (NB: gives dummy values right now)
+	SQY_Version_Triple - store version of sqeazy into 3-element in array.
 
 	version					: 3 element int array that holds the sqeazy version
 
