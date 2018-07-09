@@ -21,6 +21,8 @@ def project_root = file(".").absolutePath
 def native_build_dir = './build/cpp'
 def build_dir = './build'
 def dist_dir = build_dir+"/distribution"
+def native_build_type = project.hasProperty("sqy_build_type") ? sqy_build_type : "Release"
+
 def native_source_dir = './src/cpp'
 def native_static_lib = ""
 def native_shared_lib = ""
@@ -57,7 +59,6 @@ def jnaerator_platform = {
 
 def build_cmake_args = {
 
-    def native_build_type = project.hasProperty("sqy_build_type") ? sqy_build_type : "Release"
     def sqy_x = project.hasProperty("sqy_experimental") ? sqy_experimental : "0"
     def sqy_v = project.hasProperty("sqy_verbose") ? sqy_verbose : "0"
     def sqy_trace = project.hasProperty("sqy_trace_msg") ? sqy_trave_msg : "0"
@@ -213,9 +214,9 @@ task make(type:Exec) {
        path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake.exe"
     //executable project_root+'\\run_cmake_build.bat'
 
-    commandLine 'cmd', '/c', path_to_cmake_app,'--build','.','--target','ALL_BUILD','--config','Release'
+    commandLine 'cmd', '/c', path_to_cmake_app,'--build','.','--target','ALL_BUILD','--config',native_build_type
 
-    outputs.file '.\\build\\cpp\\src\\libsqeazy.dll'
+    outputs.file '.\\build\\cpp\\src\\'+native_build_type+'\\sqeazy.dll' //'.\\build\\cpp\\src\\libsqeazy.dll'
       }
       else if (Os.isFamily(Os.FAMILY_MAC))
   {
@@ -311,7 +312,7 @@ task make_bundle(type:Exec) {
         path_to_cmake_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "cmake.exe"
         outputs.file '.\\build\\cpp\\bundle\\libsqeazy.dll'
 
-        commandLine 'cmd', '/c', path_to_cmake_app,'--build','.','--target',bundle_group,'--config','Release'
+        commandLine 'cmd', '/c', path_to_cmake_app,'--build','.','--target',bundle_group,'--config',native_build_type
 
     }
 
@@ -561,7 +562,7 @@ task java_bindings(type:JavaExec) {
 
 
   if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-    inputs.files './src/cpp/inc/sqeazy.h', './build/cpp/src/libsqeazy.dll'
+    inputs.files './src/cpp/inc/sqeazy.h', './build/cpp/src/'+native_build_type+'/sqeazy.dll'
   }
   else if (Os.isFamily(Os.FAMILY_MAC))
   {
@@ -582,7 +583,7 @@ task java_bindings(type:JavaExec) {
 
   if (Os.isFamily(Os.FAMILY_WINDOWS)) {
 
-    libsqeazy_file = file( native_build_dir + "/src/libsqeazy.dll" )
+    libsqeazy_file = file( native_build_dir + "/src/"+native_build_type+"/sqeazy.dll" )
     sqeazy_header = file( native_source_dir + "/inc/sqeazy.h" )
 
   }
@@ -633,7 +634,13 @@ task ctest(type:Exec) {
 
   if (Os.isFamily(Os.FAMILY_WINDOWS))
       {
-    executable 'ctest.exe -C Release'
+          def path_to_ctest_app = project.hasProperty("cmake_app_path") ? cmake_app_path : "ctest.exe"
+          if(path_to_ctest_app.contains("cmake.exe")){
+            path_to_ctest_app = path_to_cmake_app.replace("cmake.exe","ctest.exe")
+          }
+           
+        commandLine 'cmd', '/c', path_to_ctest_app,'-C',native_build_type
+    
       }
       else if (Os.isFamily(Os.FAMILY_MAC))
   {
@@ -663,7 +670,7 @@ task sqeazy_available << {
 
   if (Os.isFamily(Os.FAMILY_WINDOWS))
       {
-    assert file("./build/cpp/src/libsqeazy.dll").exists()
+    assert file("./build/cpp/src/"+native_build_type+"/sqeazy.dll").exists()
       }
       else if (Os.isFamily(Os.FAMILY_MAC))
   {
