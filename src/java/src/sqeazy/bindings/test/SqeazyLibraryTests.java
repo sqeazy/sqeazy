@@ -70,7 +70,7 @@ public class SqeazyLibraryTests
 
 		assertEquals(	0,
 						SqeazyLibrary.SQY_Decompressed_Sizeof(lCompressedBytes,lValueHolder));
-		assertEquals(	2, lValueHolder.getLong());
+		assertEquals(	2, lValueHolder.getCLong());
 
 		assertEquals(	0,
 						SqeazyLibrary.SQY_Decode_UI16(lCompressedBytes,
@@ -214,8 +214,8 @@ public class SqeazyLibraryTests
 															   1)
 				);
 
-			assertTrue(lEncodedBytes.getLong()>nil);
-			assertTrue(lEncodedBytes.getLong()<lBufferLengthInByte);
+			assertTrue(lEncodedBytes.getCLong()>nil);
+			assertTrue(lEncodedBytes.getCLong()<lBufferLengthInByte);
 
 			final Pointer<Byte> bDestShort = lDestShort.as(Byte.class);
 			assertEquals(0,
