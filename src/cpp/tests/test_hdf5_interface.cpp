@@ -313,7 +313,7 @@ BOOST_AUTO_TEST_CASE( write_compressed_data ){
   BOOST_REQUIRE_GT(bfs::file_size(no_filter_path),0u);
 
   long size = data.size_in_byte;
-  SQY_Pipeline_Max_Compressed_Length_UI16("lz4",&size);
+  SQY_Pipeline_Max_Compressed_Length_UI16("lz4",3,&size);
   std::vector<char> compressed(size);
 
   std::vector<long> ldims(data.dims.begin(), data.dims.end());

@@ -58,16 +58,22 @@ public class SqeazyLibraryTests
 		assertTrue(lCompresssedBufferLength < lSourceBytes.getValidBytes());
 
 		assertEquals(	0,
-						SqeazyLibrary.SQY_Pipeline_Decompressed_Length(lCompressedBytes,
-																	   lPointerToDestinationLength));
+						SqeazyLibrary.SQY_Decompressed_Length(lCompressedBytes,
+															  lPointerToDestinationLength));
 
 		assertEquals(	lBufferLength,
 						lPointerToDestinationLength.getCLong());
 
 		final Pointer<Byte> lDecodedBytes = Pointer.allocateBytes(lBufferLength);
+		final Pointer<CLong> lValueHolder = Pointer.allocateCLong();
+		lValueHolder.setCLong((long) (lCompresssedBufferLength));
 
 		assertEquals(	0,
-						SqeazyLibrary.SQY_PipelineDecode_UI16(lCompressedBytes,
+						SqeazyLibrary.SQY_Decompressed_Sizeof(lCompressedBytes,lValueHolder));
+		assertEquals(	2, lValueHolder.getCLong());
+
+		assertEquals(	0,
+						SqeazyLibrary.SQY_Decode_UI16(lCompressedBytes,
 															  lCompresssedBufferLength,
 															  lDecodedBytes,
 															  1));
@@ -180,12 +186,14 @@ public class SqeazyLibraryTests
 																		lWidth);
 	
 			assertEquals(	true,
-							SqeazyLibrary.SQY_Pipeline_Possible(bPipelineName)
+							SqeazyLibrary.SQY_Pipeline_Possible(bPipelineName,2)
 				);
 	
 			final Pointer<CLong> lMaxEncodedBytes = Pointer.allocateCLong();
 			lMaxEncodedBytes.setCLong(lBufferLengthInByte);
-			assertEquals(0,SqeazyLibrary.SQY_Pipeline_Max_Compressed_Length_UI16(bPipelineName,lMaxEncodedBytes));
+
+			final long bPipelineName_Length = lPipeline.length();
+			assertEquals(0,SqeazyLibrary.SQY_Pipeline_Max_Compressed_Length_UI16(bPipelineName,bPipelineName_Length,lMaxEncodedBytes));
 
 			final long nil = 0;
 			assertEquals( true, lMaxEncodedBytes.get().longValue()>nil);
@@ -206,12 +214,12 @@ public class SqeazyLibraryTests
 															   1)
 				);
 
-			assertTrue(lEncodedBytes.getLong()>nil);
-			assertTrue(lEncodedBytes.getLong()<lBufferLengthInByte);
+			assertTrue(lEncodedBytes.getCLong()>nil);
+			assertTrue(lEncodedBytes.getCLong()<lBufferLengthInByte);
 
 			final Pointer<Byte> bDestShort = lDestShort.as(Byte.class);
 			assertEquals(0,
-						 SqeazyLibrary.SQY_PipelineDecode_UI16(bCompressedData,
+						 SqeazyLibrary.SQY_Decode_UI16(bCompressedData,
 															   lEncodedBytes.getCLong(),
 															   bDestShort,
 															   1)

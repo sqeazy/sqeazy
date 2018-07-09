@@ -51,8 +51,19 @@ add_test(NAME compass_impl COMMAND test_compass_impl)
 endif()
 
 add_test(NAME hdf5_interface COMMAND test_hdf5_interface)
-add_test(NAME algorithms_impl COMMAND test_algorithms_impl)
 set_tests_properties(hdf5_interface PROPERTIES ENVIRONMENT "HDF5_PLUGIN_PATH=${PROJECT_BINARY_DIR}/src")
+
+if(WIN32)
+set_tests_properties(hdf5_interface PROPERTIES ENVIRONMENT "PATH=%PATH%;${PROJECT_BINARY_DIR}/src/${CMAKE_BUILD_TYPE}")
+set_tests_properties(hdf5_interface PROPERTIES ENVIRONMENT "LIBRARY_PATH=%LIBRARY_PATH%;${PROJECT_BINARY_DIR}/src/${CMAKE_BUILD_TYPE}")
+set_tests_properties(pipeline_interface PROPERTIES ENVIRONMENT "PATH=%PATH%;${PROJECT_BINARY_DIR}/src/${CMAKE_BUILD_TYPE}")
+set_tests_properties(pipeline_interface PROPERTIES ENVIRONMENT "LIBRARY_PATH=%LIBRARY_PATH%;${PROJECT_BINARY_DIR}/src/${CMAKE_BUILD_TYPE}")
+else(WIN32)
+set_tests_properties(hdf5_interface PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${PROJECT_BINARY_DIR}/src")
+set_tests_properties(pipeline_interface PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${PROJECT_BINARY_DIR}/src")
+endif(WIN32)
+
+add_test(NAME algorithms_impl COMMAND test_algorithms_impl)
 
 #TODO: not used by sqeazy yet and constantly gave problems on OSX
 #add_test(NAME huffman_utils_impl COMMAND test_huffman_utils_impl)
