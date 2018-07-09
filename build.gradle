@@ -419,7 +419,7 @@ task fetch_version {
     }
     outputs.dir(download_dir)
 
-    def last_valid_version = "0.6.1"     //TODO: this should be project.version at best; add a check which one is available online
+    def last_valid_version = "0.7.0"     //TODO: this should be project.version at best; add a check which one is available online
 
     def version_to_fetch = project.hasProperty("force_version") ? force_version : last_valid_version
     
