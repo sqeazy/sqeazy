@@ -146,7 +146,7 @@ BOOST_AUTO_TEST_CASE (input_type) {
   BOOST_CHECK_EQUAL(empty_step.input_type(),"");
 
   sqy::dynamic_pipeline<int> working_pipe = {adder_sptr,square_sptr};
-  BOOST_CHECK_EQUAL(working_pipe.input_type(),typeid(int).name());
+  BOOST_CHECK_EQUAL(working_pipe.input_type(),sqeazy::header_utils::represent<int>::as_string());
 
 }
 
@@ -156,7 +156,7 @@ BOOST_AUTO_TEST_CASE (output_type) {
   BOOST_CHECK_EQUAL(empty_step.output_type(),"");
 
   sqy::dynamic_pipeline<int> working_pipe = {adder_sptr,square_sptr};
-  BOOST_CHECK_EQUAL(working_pipe.output_type(),typeid(int).name());
+  BOOST_CHECK_EQUAL(working_pipe.output_type(),sqeazy::header_utils::represent<int>::as_string());
 
 }
 

@@ -2,7 +2,6 @@
 #define _HEVC_HPP_
 #include <cstdint>
 #include <string>
-#include <typeinfo>
 #include <type_traits>
 
 
@@ -212,7 +211,7 @@ namespace sqeazy {
 
     std::string output_type() const final override {
 
-      return typeid(compressed_type).name();
+      return sqeazy::header_utils::represent<compressed_type>::as_string();
 
     }
 

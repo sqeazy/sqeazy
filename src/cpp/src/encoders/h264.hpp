@@ -2,7 +2,6 @@
 #define _H264_HPP_
 #include <cstdint>
 #include <string>
-#include <typeinfo>
 
 #include "sqeazy_common.hpp"
 #include "traits.hpp"
@@ -36,6 +35,7 @@ extern "C" {
 //#include "h264_scheme_impl.hpp"
 #include "ffmpeg_video_encode_impl.hpp"
 #include "string_parsers.hpp"
+#include "header_utils.hpp"
 
 
 
@@ -217,7 +217,7 @@ namespace sqeazy {
 
     std::string output_type() const final override {
 
-      return typeid(compressed_type).name();
+      return sqeazy::header_utils::represent<compressed_type>::as_string();
 
     }
 

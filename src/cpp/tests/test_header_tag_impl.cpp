@@ -3,7 +3,6 @@
 #include "boost/test/included/unit_test.hpp"
 
 #include <numeric>
-#include <typeinfo>
 #include <vector>
 #include <iostream>
 #include <sstream>

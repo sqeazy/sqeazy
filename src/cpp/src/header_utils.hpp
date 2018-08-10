@@ -3,10 +3,11 @@
 
 #include <string>
 #include <cstdint>
+#include <map>
 
 namespace sqeazy
 {
-    namespace header
+    namespace header_utils
     {
 
         template <typename T>
@@ -40,17 +41,17 @@ namespace sqeazy
 
             static std::map<std::string,std::uint32_t> type_size_map;
 
-            type_size_map[sqeazy::header::represent<std::int16_t>::as_string()] = sizeof(std::int16_t);
-            type_size_map[sqeazy::header::represent<std::uint16_t>::as_string()] = sizeof(std::uint16_t);
+            type_size_map[sqeazy::header_utils::represent<std::int16_t>::as_string()] = sizeof(std::int16_t);
+            type_size_map[sqeazy::header_utils::represent<std::uint16_t>::as_string()] = sizeof(std::uint16_t);
 
-            type_size_map[sqeazy::header::represent<std::int8_t>::as_string()] = sizeof(std::int8_t);
-            type_size_map[sqeazy::header::represent<std::uint8_t>::as_string()] = sizeof(std::uint8_t);
+            type_size_map[sqeazy::header_utils::represent<std::int8_t>::as_string()] = sizeof(std::int8_t);
+            type_size_map[sqeazy::header_utils::represent<std::uint8_t>::as_string()] = sizeof(std::uint8_t);
 
-            type_size_map[sqeazy::header::represent<std::int32_t>::as_string()] = sizeof(std::int32_t);
-            type_size_map[sqeazy::header::represent<std::uint32_t>::as_string()] = sizeof(std::uint32_t);
+            type_size_map[sqeazy::header_utils::represent<std::int32_t>::as_string()] = sizeof(std::int32_t);
+            type_size_map[sqeazy::header_utils::represent<std::uint32_t>::as_string()] = sizeof(std::uint32_t);
 
-            type_size_map[sqeazy::header::represent<std::int64_t>::as_string()] = sizeof(std::int64_t);
-            type_size_map[sqeazy::header::represent<std::uint64_t>::as_string()] = sizeof(std::uint64_t);
+            type_size_map[sqeazy::header_utils::represent<std::int64_t>::as_string()] = sizeof(std::int64_t);
+            type_size_map[sqeazy::header_utils::represent<std::uint64_t>::as_string()] = sizeof(std::uint64_t);
 
             auto found = type_size_map.find(_lit);
             if(found!=type_size_map.end())

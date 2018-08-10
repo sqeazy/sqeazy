@@ -53,11 +53,11 @@ BOOST_AUTO_TEST_CASE( static_type_instance_works ){
 
 BOOST_AUTO_TEST_CASE( runtime_type_instance_works ){
 
-  BOOST_CHECK_NO_THROW(sqeazy::hdf5_runtime_dtype::instance(typeid(std::int16_t).name()));
-  BOOST_CHECK_NO_THROW(sqeazy::hdf5_runtime_dtype::instance(typeid(std::uint16_t).name()));
+  BOOST_CHECK_NO_THROW(sqeazy::hdf5_runtime_dtype::instance(sqeazy::header_utils::represent<std::uint16_t>::as_string()));
+  BOOST_CHECK_NO_THROW(sqeazy::hdf5_runtime_dtype::instance(sqeazy::header_utils::represent<std::int16_t>::as_string() ));
 
-  BOOST_CHECK(sqeazy::hdf5_runtime_dtype::instance(typeid(std::int16_t).name()).getSize() == 2);
-  BOOST_CHECK(sqeazy::hdf5_runtime_dtype::instance(typeid(std::uint16_t).name()).getSize() == 2);
+  BOOST_CHECK(sqeazy::hdf5_runtime_dtype::instance(sqeazy::header_utils::represent<std::uint16_t>::as_string()).getSize() == 2);
+  BOOST_CHECK(sqeazy::hdf5_runtime_dtype::instance(sqeazy::header_utils::represent<std::int16_t>::as_string() ).getSize() == 2);
 
 }
 

@@ -1,13 +1,14 @@
 #ifndef _DYNAMIC_STAGE_H_
 #define _DYNAMIC_STAGE_H_
 
-#include <typeinfo>
 #include <iostream>
 #include <memory>
 #include <vector>
 #include <numeric>
 #include <algorithm>
 #include <sstream>
+
+#include "header_utils.hpp"
 
 namespace sqeazy{
 
@@ -25,7 +26,7 @@ namespace sqeazy{
     virtual ~stage() {}
 
     virtual std::string input_type() const {
-      return typeid(raw_t).name();
+      return sqeazy::header_utils::represent<raw_t>::as_string();
     };
 
     virtual std::string output_type() const = 0;

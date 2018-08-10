@@ -129,7 +129,7 @@ struct set_to :  public sqy::filter<T> {
 
   std::string output_type() const final override {
 
-    return typeid(compressed_type).name();
+    return sqeazy::header_utils::represent<compressed_type>::as_string();
 
   }
 
@@ -210,13 +210,13 @@ struct add_one :  public sqy::filter<T> {
 
   std::string input_type() const override {
 
-    return typeid(raw_type).name();
+    return sqeazy::header_utils::represent<raw_type>::as_string();
 
   }
 
   std::string output_type() const override {
 
-    return typeid(compressed_type).name();
+    return sqeazy::header_utils::represent<compressed_type>::as_string();
 
   }
 
@@ -280,13 +280,13 @@ struct square :  public sqy::filter<T> {
 
   std::string input_type() const override {
 
-    return typeid(raw_type).name();
+    return sqeazy::header_utils::represent<raw_type>::as_string();
 
   }
 
   std::string output_type() const override {
 
-    return typeid(compressed_type).name();
+    return sqeazy::header_utils::represent<compressed_type>::as_string();
 
   }
 
@@ -357,16 +357,15 @@ struct sum_up :  public sqy::sink<T> {
 
   ~sum_up(){};
 
-
   std::string input_type() const override {
 
-    return typeid(raw_type).name();
+    return sqeazy::header_utils::represent<raw_type>::as_string();
 
   }
 
   std::string output_type() const override {
 
-    return typeid(compressed_type).name();
+    return sqeazy::header_utils::represent<compressed_type>::as_string();
 
   }
 
@@ -458,16 +457,15 @@ struct high_bits :  public sqy::sink<T> {
 
   ~high_bits(){};
 
-
   std::string input_type() const override {
 
-    return typeid(raw_type).name();
+    return sqeazy::header_utils::represent<raw_type>::as_string();
 
   }
 
   std::string output_type() const override {
 
-    return typeid(compressed_type).name();
+    return sqeazy::header_utils::represent<compressed_type>::as_string();
 
   }
 

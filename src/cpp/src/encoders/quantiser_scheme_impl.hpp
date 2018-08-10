@@ -10,7 +10,6 @@
 #include <array>
 #include <utility>
 #include <cstdint>
-#include <typeinfo>
 #include <type_traits>
 #include <fstream>
 #include <iomanip>
@@ -139,7 +138,7 @@ namespace sqeazy {
 
     std::string output_type() const final override {
 
-      return typeid(compressed_type).name();
+      return sqeazy::header_utils::represent<compressed_type>::as_string();
 
     }
 
