@@ -84,6 +84,9 @@ target_link_libraries(test_sqeazy_utils_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRA
 add_executable(test_sqeazy_header_impl test_sqeazy_header_impl.cpp)
 target_link_libraries(test_sqeazy_header_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES})
 
+add_executable(test_pixel_type_impl test_pixel_type_impl.cpp)
+target_link_libraries(test_pixel_type_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES})
+
 add_executable(test_header_tag_impl test_header_tag_impl.cpp)
 target_link_libraries(test_header_tag_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES})
 
