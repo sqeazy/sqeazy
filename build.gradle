@@ -239,7 +239,7 @@ task make(type:Exec) {
 }
 
 // cmake task:
-task cmake_4_bundle(type:Exec) {
+task cmake_os_bundle(type:Exec) {
 
     description 'invoke cmake to build sqeazy bundle in '+native_build_dir
     group bundle_group
@@ -297,9 +297,9 @@ task cmake_4_bundle(type:Exec) {
 
 // TODO: check if we can use multiple threads and forward that to make/cmake
 // make task:
-task make_bundle(type:Exec) {
+task make_os_bundle(type:Exec) {
 
-    description 'use cmake to bundle libsqeazy.* and all first order dependencies'
+    description 'use cmake to bundle libsqeazy.*/sqy on this OS'
     group bundle_group
 
     inputs.dir file(native_build_dir).absolutePath
@@ -340,7 +340,7 @@ task make_bundle(type:Exec) {
 
 }
 
-task zip_bundle(type:Zip) {
+task zip_os_bundle(type:Zip) {
 
     description 'zip the libsqeazy.* bundle'
     group bundle_group
@@ -364,12 +364,12 @@ task zip_bundle(type:Zip) {
     outputs.files outputs_exp
 }
 
-task upload_bundle(type:Exec) {
+task upload_os_bundle(type:Exec) {
 
-  description 'upload the libsqeazy* bundle to bintray for the current platform'
+  description 'upload the zipped libsqeazy* bundle to bintray for the current platform'
   group bundle_group
 
-  inputs.files zip_bundle.outputs.files
+  inputs.files zip_os_bundle.outputs.files
   def outputs_exp = file(native_build_dir+'/bundle/').absolutePath
   workingDir outputs_exp
 
@@ -387,22 +387,22 @@ task upload_bundle(type:Exec) {
   }
 
   def arch = jnaerator_platform()
-  def fname = file(zip_bundle.outputs.files[0]).getName()
+  def fname = file(zip_os_bundle.outputs.files[0]).getName()
   def url = 'https://api.bintray.com/content/sqeazy/sqeazy/'+arch+'/'+project.version+'/'+arch+'/'+project.version+'/'+fname+'?publish=1'
 
   if(project.hasProperty('bintray_user') && project.hasProperty('bintray_key') ){
     args '-T'+fname,'-u'+project.bintray_user+':'+project.bintray_key, url
   }
   else {
-    println 'bintray_user and bintray_key not found, unable to create URL in upload_bundle'
+    println 'bintray_user and bintray_key not found, unable to create URL in upload_os_bundle'
   }
 
 }
 
 
-task fetch_version {
+task pull_bintray_bundles {
 
-    description 'download all known libsqeazy* bundles from bintray'
+    description 'download all known libsqeazy* bundles from bintray for current version'
     group bundle_group
 
     def bdir = file(build_dir)
@@ -439,7 +439,7 @@ task fetch_version {
 }
 
 
-task unpack_for_bake(type : Copy) {
+task unpack_bintray_bundles(type : Copy) {
 
     description 'unpack libsqeazy* bundles from bintray to '+dist_dir
     group bundle_group
@@ -468,7 +468,7 @@ task unpack_for_bake(type : Copy) {
 
 
 // Build java bindings base on all
-task bake_bindings(type:JavaExec) {
+task bind_local_bundles(type:JavaExec) {
 
   description 'use libsqeazy* bundles in '+dist_dir+' to build a fat jnaerator jar'
   group bundle_group
@@ -530,7 +530,7 @@ task bake_bindings(type:JavaExec) {
   outputs.file "build/sqeazy.jar"
 }
 
-task advertise_pie(type: Copy) {
+task unpack_local_bundles(type: Copy) {
 
   description 'unpack build/sqeazy.jar to distribution '+dist_dir+' directory'
   group bundle_group
@@ -540,7 +540,7 @@ task advertise_pie(type: Copy) {
 
 }
 
-task finish_pie(type: Jar) {
+task merge_local_bundles(type: Jar) {
 
   description 'collect contents of '+dist_dir+' (most likely native libs from all supported platforms) and put them in a common .jar file'
   group bundle_group
@@ -720,27 +720,27 @@ compileJava.dependsOn java_bindings
 test.dependsOn compileJava
 
 //bundle native libraries for bintray upload
-cmake_4_bundle.dependsOn create_build_dir
-make_bundle.dependsOn cmake_4_bundle
-zip_bundle.dependsOn make_bundle
-upload_bundle.dependsOn zip_bundle
+cmake_os_bundle.dependsOn create_build_dir
+make_os_bundle.dependsOn cmake_os_bundle
+zip_os_bundle.dependsOn make_os_bundle
+upload_os_bundle.dependsOn zip_os_bundle
 
 
-//fetch all bintray entries for specified version and build the sqeazy pie
-unpack_for_bake.dependsOn fetch_version
-bake_bindings.dependsOn unpack_for_bake
-advertise_pie.dependsOn bake_bindings
-finish_pie.dependsOn advertise_pie
+//fetch all bintray entries for specified version and build the sqeazy pie to deploy to bintray
+unpack_bintray_bundles.dependsOn pull_bintray_bundles
+bind_local_bundles.dependsOn unpack_bintray_bundles
+unpack_local_bundles.dependsOn bind_local_bundles
+merge_local_bundles.dependsOn unpack_local_bundles
 
-assemble.dependsOn.remove("finish_pie")
-assemble.dependsOn.remove("avertise_pie")
-assemble.dependsOn.remove("bake_bindings")
-assemble.dependsOn.remove("unpack_for_bake")
+assemble.dependsOn.remove("merge_local_bundles")
+assemble.dependsOn.remove("unpack_local_bundles")
+assemble.dependsOn.remove("bind_local_bundles")
+assemble.dependsOn.remove("unpack_bintray_bundles")
 
-check.dependsOn.remove("finish_pie")
-check.dependsOn.remove("avertise_pie")
-check.dependsOn.remove("bake_bindings")
-check.dependsOn.remove("unpack_for_bake")
+check.dependsOn.remove("merge_local_bundles")
+check.dependsOn.remove("unpack_local_bundles")
+check.dependsOn.remove("bind_local_bundles")
+check.dependsOn.remove("unpack_bintray_bundles")
 
 
 //***********************************************************************************
@@ -833,7 +833,7 @@ group = 'net.sqeazy'
 artifacts {
   archives sourcesJar
   archives javadocJar
-  archives finish_pie
+  archives merge_local_bundles
 }
 
 publishing {
@@ -849,7 +849,7 @@ publishing {
     SqeazyPie(MavenPublication) {
 
       groupId group
-      artifact finish_pie
+      artifact merge_local_bundles
       version project.version
       pom.withXml {
         asNode().appendNode('description', 'sqeazy jar that contains sqy for win64, darwin_universal and linux_x64')
