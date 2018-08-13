@@ -5,13 +5,13 @@
 #include <cstdint>
 #include <future>
 #include <string>
-#include <typeinfo>
 
 #include "sqeazy_common.hpp"
 #include "traits.hpp"
 
 #include "dynamic_stage.hpp"
 #include "string_parsers.hpp"
+#include "header_utils.hpp"
 
 // TODO: what if lz4 is not available??
 #ifndef LZ4_VERSION_MAJOR
@@ -341,7 +341,7 @@ namespace sqeazy
 
     ~lz4_scheme(){};
 
-    std::string output_type() const final override { return typeid(compressed_type).name(); }
+    std::string output_type() const final override { return sqeazy::header_utils::represent<compressed_type>::as_string(); }
 
     bool is_compressor() const final override { return sink<T>::is_compressor; }
   };

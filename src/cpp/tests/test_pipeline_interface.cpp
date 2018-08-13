@@ -121,7 +121,6 @@ BOOST_AUTO_TEST_CASE( decompressed_length ){
 
 BOOST_AUTO_TEST_CASE( decompressed_ndims ){
 
-  const unsigned long data_bytes = size_in_byte;
   long length = default_filter_name.size();
   std::vector<long> ldims(dims.begin(), dims.end());
   SQY_Pipeline_Max_Compressed_Length_3D_UI8(default_filter_name.c_str(),
@@ -150,7 +149,6 @@ BOOST_AUTO_TEST_CASE( decompressed_ndims ){
 
 BOOST_AUTO_TEST_CASE( decompressed_shape ){
 
-  const unsigned long data_bytes = size_in_byte;
   long length = default_filter_name.size();
   std::vector<long> ldims(dims.begin(), dims.end());
   SQY_Pipeline_Max_Compressed_Length_3D_UI8(default_filter_name.c_str(),
@@ -181,7 +179,6 @@ BOOST_AUTO_TEST_CASE( decompressed_shape ){
 
 BOOST_AUTO_TEST_CASE( decompressed_sizeof ){
 
-  const unsigned long data_bytes = size_in_byte;
   long length = default_filter_name.size();
   std::vector<long> ldims(dims.begin(), dims.end());
   SQY_Pipeline_Max_Compressed_Length_3D_UI8(default_filter_name.c_str(),
@@ -209,7 +206,6 @@ BOOST_AUTO_TEST_CASE( decompressed_sizeof ){
 
 BOOST_AUTO_TEST_CASE( roundtrip ){
 
-  const unsigned long data_bytes = size_in_byte;
   long length = default_filter_name.size();
   std::vector<long> ldims(dims.begin(), dims.end());
   SQY_Pipeline_Max_Compressed_Length_3D_UI8(default_filter_name.c_str(),
@@ -303,7 +299,6 @@ BOOST_AUTO_TEST_CASE( decompressed_length ){
 
 BOOST_AUTO_TEST_CASE( decompressed_ndims ){
 
-  const unsigned long data_bytes = size_in_byte;
   long length = default_filter_name.size();
   std::vector<long> ldims(dims.begin(), dims.end());
   SQY_Pipeline_Max_Compressed_Length_3D_UI16(default_filter_name.c_str(),
@@ -332,7 +327,6 @@ BOOST_AUTO_TEST_CASE( decompressed_ndims ){
 
 BOOST_AUTO_TEST_CASE( decompressed_shape ){
 
-  const unsigned long data_bytes = size_in_byte;
   long length = default_filter_name.size();
   std::vector<long> ldims(dims.begin(), dims.end());
   SQY_Pipeline_Max_Compressed_Length_3D_UI16(default_filter_name.c_str(),
@@ -363,7 +357,6 @@ BOOST_AUTO_TEST_CASE( decompressed_shape ){
 
 BOOST_AUTO_TEST_CASE( decompressed_sizeof ){
 
-  const unsigned long data_bytes = size_in_byte;
   long length = default_filter_name.size();
   std::vector<long> ldims(dims.begin(), dims.end());
   SQY_Pipeline_Max_Compressed_Length_3D_UI16(default_filter_name.c_str(),
@@ -391,7 +384,6 @@ BOOST_AUTO_TEST_CASE( decompressed_sizeof ){
 
 BOOST_AUTO_TEST_CASE( roundtrip ){
 
-  const unsigned long data_bytes = size_in_byte;
   long length = default_filter_name.size();
   std::vector<long> ldims(dims.begin(), dims.end());
   SQY_Pipeline_Max_Compressed_Length_3D_UI16(default_filter_name.c_str(),
@@ -437,7 +429,6 @@ BOOST_AUTO_TEST_CASE( roundtrip ){
                      1.,
                      std::multiplies<size_t>());
 
-  const unsigned long data_bytes = len*sizeof(std::uint16_t);
   long length = tricky_filter_name.size();
 
   std::vector<std::uint16_t> inputdata(len,1);
@@ -495,7 +486,6 @@ BOOST_AUTO_TEST_CASE( quantiser_only ){
                      1.,
                      std::multiplies<size_t>());
 
-  const unsigned long data_bytes = len*sizeof(std::uint16_t);
   long length = filter_name.size();
 
   std::vector<std::uint16_t> inputdata(len,1);

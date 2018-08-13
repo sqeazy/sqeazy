@@ -18,7 +18,6 @@
 #include <string>
 #include <initializer_list>
 #include <cstdint>
-#include <typeinfo>
 #include <stdexcept>
 #include <type_traits>
 #include <future>

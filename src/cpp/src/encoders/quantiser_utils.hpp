@@ -9,7 +9,6 @@
 #include <numeric>
 #include <limits>
 #include <cstdint>
-#include <typeinfo>
 #include <type_traits>
 #include <fstream>
 #include <iomanip>
@@ -17,6 +16,7 @@
 #include "traits.hpp"
 #include "string_parsers.hpp"
 #include "sqeazy_common.hpp"
+#include "header_utils.hpp"
 #include "histogram_utils.hpp"
 
 #include "quantiser_weighters.hpp"
@@ -658,9 +658,9 @@ namespace sqeazy {
 
       quant_log << "[sqeazy::quantiser] \t"
                 << sizeof(raw_type)*CHAR_BIT << "bit "
-                << typeid(raw_type).name() << " -> "
+                << sqeazy::header_utils::represent<raw_type>::as_string() << " -> "
                 << sizeof(compressed_type)*CHAR_BIT << "bit "
-                << typeid(compressed_type).name();
+                << sqeazy::header_utils::represent<compressed_type>::as_string();
 
       float importanceSum = std::accumulate(importance_.begin(),importance_.end(),0.);
       float bucketSize = importanceSum/max_compressed_;

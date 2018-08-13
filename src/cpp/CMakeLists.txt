@@ -357,8 +357,10 @@ find_package(OpenMP++ REQUIRED)
 if(${OPENMP_CXX_FOUND})
   #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP++_FLAGS}")
   add_definitions(${OpenMP_CXX_FLAGS})
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP++_FLAGS}")
-  MESSAGE(STATUS "[sqy] appended openmp flags: ${OpenMP++_FLAGS}")
+  if(NOT UNIX)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP++_FLAGS}")
+    MESSAGE(STATUS "[sqy] appended openmp exe_linker flags: ${OpenMP++_FLAGS}")
+  endif()
 ENDIF()
 
 #-------------------------------- LZ4          ---------------------------------

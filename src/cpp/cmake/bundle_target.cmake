@@ -331,6 +331,8 @@ function(BUNDLE tgt destdir)
 
   set_property(TARGET bundle_${tgt} PROPERTY LINK_FLAGS ${TGT_LDFLAGS})
   message("++ [BUNDLE] link bundle ${tgt} to : ${DEPS_FNAME_LIST}")
+
   target_link_libraries(bundle_${tgt} ${DEPS_FNAME_LIST})
+
 
 endfunction(BUNDLE)

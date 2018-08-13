@@ -8,7 +8,6 @@
 #include <cmath>
 #include <vector>
 #include <set>
-#include <typeinfo>
 #include "boost/filesystem.hpp"
 #include "boost/static_assert.hpp"
 
@@ -18,6 +17,7 @@ namespace bfs = boost::filesystem;
 
 #include "sqeazy_h5_filter.hpp"
 #include "sqeazy_hdf5_impl.hpp"
+#include "header_utils.hpp"
 
 namespace H5{
   std::string get_ds_name(const H5::DataSet& _ds)
@@ -188,12 +188,12 @@ namespace sqeazy {
 
     static void fill(map_t& _map){
 
-      _map[typeid(short).name()] = &hdf5_compiletime_dtype<short>::instance;
-      _map[typeid(unsigned short).name()] = &hdf5_compiletime_dtype<unsigned short>::instance;
-      _map[typeid(char).name()] = &hdf5_compiletime_dtype<char>::instance;
-      _map[typeid(unsigned char).name()] = &hdf5_compiletime_dtype<unsigned char>::instance;
-      _map[typeid(int).name()] = &hdf5_compiletime_dtype<int>::instance;
-      _map[typeid(unsigned int).name()] = &hdf5_compiletime_dtype<unsigned int>::instance;
+      _map[sqeazy::header_utils::represent<short>::as_string()] = &hdf5_compiletime_dtype<short>::instance;
+      _map[sqeazy::header_utils::represent<unsigned short>::as_string()] = &hdf5_compiletime_dtype<unsigned short>::instance;
+      _map[sqeazy::header_utils::represent<char>::as_string()] = &hdf5_compiletime_dtype<char>::instance;
+      _map[sqeazy::header_utils::represent<unsigned char>::as_string()] = &hdf5_compiletime_dtype<unsigned char>::instance;
+      _map[sqeazy::header_utils::represent<int>::as_string()] = &hdf5_compiletime_dtype<int>::instance;
+      _map[sqeazy::header_utils::represent<unsigned int>::as_string()] = &hdf5_compiletime_dtype<unsigned int>::instance;
 
     }
 

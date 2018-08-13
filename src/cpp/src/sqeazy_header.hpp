@@ -10,7 +10,6 @@
 #include <sstream>
 #include <map>
 #include <stdexcept>
-#include <typeinfo>
 #include <cstdint>
 #include <iterator>
 
@@ -20,15 +19,16 @@
 #include <boost/utility/string_ref.hpp>
 
 #include "sqeazy_common.hpp"
+#include "sqeazy_definitions.h" //created by cmake
 #include "string_shapers.hpp"
+#include "header_utils.hpp"
 
-#include "sqeazy_definitions.h"
 
 namespace bpt = boost::property_tree;
 
 namespace sqeazy {
 
-  template <typename iter>
+   template <typename iter>
   static inline bool ends_with(iter begin, iter end, const std::string& _match){
 
     const std::size_t len = std::distance(begin,end);
@@ -42,24 +42,6 @@ namespace sqeazy {
     return value;
   }
 
-  static unsigned sizeof_typeinfo(const std::string& _lit) {
-
-    static std::map<std::string,int> type_size_map;
-    type_size_map[typeid(short).name()] = sizeof(short);
-    type_size_map[typeid(unsigned short).name()] = sizeof(unsigned short);
-    type_size_map[typeid(char).name()] = sizeof(char);
-    type_size_map[typeid(unsigned char).name()] = sizeof(unsigned char);
-    type_size_map[typeid(int).name()] = sizeof(int);
-    type_size_map[typeid(unsigned int).name()] = sizeof(unsigned int);
-    type_size_map[typeid(long).name()] = sizeof(long);
-    type_size_map[typeid(unsigned long).name()] = sizeof(unsigned long);
-
-    std::map<std::string,int>::const_iterator found = type_size_map.find(_lit);
-    if(found!=type_size_map.end())
-      return found->second;
-    else
-      return 0;
-  }
 
 
   struct header {
@@ -109,7 +91,7 @@ namespace sqeazy {
       header_(""),
       raw_shape_(0),
       pipeline_(""),
-      raw_type_name_(typeid(void).name()),
+      raw_type_name_(sqeazy::header_utils::represent<void>::as_string()),
       compressed_size_byte_(0)
     {
     }
@@ -176,10 +158,7 @@ namespace sqeazy {
       // created if it doesn't exist.
       tree.put("pipename", _pipe_name);
 
-      std::string raw_type_name = typeid(raw_type).name();
-      auto space_pos = raw_type_name.find(" ");
-      if (space_pos != std::string::npos)
-        raw_type_name.replace(space_pos, 1, "_");
+      std::string raw_type_name = sqeazy::header_utils::represent<raw_type>::as_string();
 
       tree.put("raw.type", raw_type_name);
       tree.put("raw.rank",_dims.size());
@@ -199,7 +178,7 @@ namespace sqeazy {
 
       // Write property tree to XML file
       bpt::write_json(json_stream, tree);
-      json_stream << header::header_end_delim;
+      json_stream << sqeazy::header::header_end_delim;
 
       std::string stripped = json_stream.str();
 
@@ -223,7 +202,7 @@ namespace sqeazy {
       header_(""),
       raw_shape_(_dims.begin(), _dims.end()),
       pipeline_(_pipe_name),
-      raw_type_name_(typeid(value_type).name()),
+      raw_type_name_(sqeazy::header_utils::represent<value_type>::as_string()),
       compressed_size_byte_(_payload_bytes)
     {
 
@@ -251,7 +230,7 @@ namespace sqeazy {
       header_(""),
       raw_shape_(1, _raw_in_byte),
       pipeline_(_pipe_name),
-      raw_type_name_(typeid(value_type).name()),
+      raw_type_name_(sqeazy::header_utils::represent<value_type>::as_string()),
       compressed_size_byte_(_payload_bytes)
     {
 
@@ -319,7 +298,7 @@ namespace sqeazy {
 
       if(!valid_header(_begin,header_end_ptr)){
         std::ostringstream msg;
-        msg << "[header::unpack]\t received header: \n\t";
+        msg << "[sqeazy::header::unpack]\t received header: \n\t";
         std::copy(_begin,header_end_ptr,std::ostreambuf_iterator<char>(msg));
         msg <<"\n does not comply expected format\n";
         throw std::runtime_error(msg.str().c_str());
@@ -339,16 +318,13 @@ namespace sqeazy {
       }
       catch (std::exception &e){
         std::stringstream msg;
-        std::cerr << "[header::unpack]\t received header: \n\t>>"<< hdr << "<<\n"
+        std::cerr << "[sqeazy::header::unpack]\t received header: \n\t>>"<< hdr << "<<\n"
                   << "cannot create property tree from JSON\nreason: " <<  e.what() << "\n";
         return header(value);
       }
 
       value.pipeline_ = tree.get("pipename", "");
-      value.raw_type_name_ = tree.get("raw.type", typeid(void).name());
-
-      if (value.raw_type_name_.find("_") != std::string::npos)
-        value.raw_type_name_.replace(value.raw_type_name_.find("_"), 1, " ");
+      value.raw_type_name_ = tree.get("raw.type", sqeazy::header_utils::represent<void>::as_string());
 
       unsigned rank = tree.get("raw.rank", (unsigned)0);//TODO: could be replaced by (tend - tbegin)
       value.raw_shape_.reserve(rank);
@@ -381,7 +357,7 @@ namespace sqeazy {
       header_(""),
       raw_shape_(0),
       pipeline_(""),
-      raw_type_name_(typeid(void).name()),
+      raw_type_name_(sqeazy::header_utils::represent<void>::as_string()),
       compressed_size_byte_(0){
 
 
@@ -404,7 +380,7 @@ namespace sqeazy {
       header_(""),
       raw_shape_(0),
       pipeline_(""),
-      raw_type_name_(typeid(void).name()),
+      raw_type_name_(sqeazy::header_utils::represent<void>::as_string()),
       compressed_size_byte_(0){
 
 
@@ -493,7 +469,7 @@ namespace sqeazy {
 
     unsigned long raw_size_byte() const {
 
-      unsigned long size_of_type = sizeof_typeinfo(raw_type_name_);
+      unsigned long size_of_type = sqeazy::header_utils::sizeof_typeinfo(raw_type_name_);
       if(!header_.empty()) {
         unsigned found_size_byte = sizeof_header_type();
         if(found_size_byte && found_size_byte!=size_of_type)
@@ -519,7 +495,7 @@ namespace sqeazy {
       if(header_.empty())
         return value;
 
-      value = sizeof_typeinfo(raw_type_name_);
+      value = sqeazy::header_utils::sizeof_typeinfo(raw_type_name_);
       return value;
     }
 

@@ -159,16 +159,16 @@ The following assumes that you installed all dependencies as described above
 
 ### using gradle
 
--  does the setup, build and upload of bundled sqeazy to bintray
+-  does the setup, build and upload of bundled sqeazy to bintray for the current operating system
 
 ```
-gradle upload_bundle -Pboost_path=<boost_static_path>  -Ptiff_path=<tiff_static_path> -Pffmpeg_path=<ffmpeg_static_path> -Plz4_path=<lz4_static_path> -Phdf5_path=<hdf5_static_path> -Pcmake_app_path=<path_to_cmake_if_nonstandard>
+gradle upload_os_bundle -Pboost_path=<boost_static_path>  -Ptiff_path=<tiff_static_path> -Pffmpeg_path=<ffmpeg_static_path> -Plz4_path=<lz4_static_path> -Phdf5_path=<hdf5_static_path> -Pcmake_app_path=<path_to_cmake_if_nonstandard>
 ```
 
--  collects/downloads the binaries of all supported platforms of libsqeazy and builds a jar from them
+-  after you did the above on all supported operating systems, the following collects/downloads the binaries of all supported platforms of libsqeazy and builds a jar from them
 
 ```
-gradle finish_pie -Pboost_path=<boost_static_path>  -Ptiff_path=<tiff_static_path> -Pffmpeg_path=<ffmpeg_static_path> -Plz4_path=<lz4_static_path> -Phdf5_path=<hdf5_static_path> -Pcmake_app_path=<path_to_cmake_if_nonstandard>
+gradle merge_local_bundles -Pboost_path=<boost_static_path>  -Ptiff_path=<tiff_static_path> -Pffmpeg_path=<ffmpeg_static_path> -Plz4_path=<lz4_static_path> -Phdf5_path=<hdf5_static_path> -Pcmake_app_path=<path_to_cmake_if_nonstandard>
 ```
 - uploads fat jar to bintray
 
@@ -180,7 +180,7 @@ gradle bintrayUpload
 
 ### Linux 
 
-* Fedora 25
+* Fedora 27
 * CentOS 7.1
 * Ubuntu 14.04, Ubuntu 16.04
 

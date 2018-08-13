@@ -22,11 +22,18 @@ if(NOT WIN32)
   set(LIBS2LINK ${LIBS2LINK} ${OpenMP++_LIBRARIES})
 endif()
 
-target_link_libraries(${PROJECT_NAME} ${LIBS2LINK})
+if(BUNDLE_SQEAZY OR ${BUNDLE_SQEAZY})
+  set_target_properties(${PROJECT_NAME} PROPERTIES LINK_SEARCH_START_STATIC ON)
+  target_link_libraries(${PROJECT_NAME} ${LIBS2LINK})
+  set_target_properties(${PROJECT_NAME} PROPERTIES LINK_SEARCH_END_STATIC ON)
+else()
+  target_link_libraries(${PROJECT_NAME} ${LIBS2LINK})
+endif()
+
 message("++ [src] libsqeazy deps: ${LIBS2LINK}")
 
 if(HAS_BSYMBOLIC_COMPILERFLAG AND UNIX AND NOT APPLE)
-  set_property(TARGET ${PROJECT_NAME} APPEND_STRING PROPERTY LINK_FLAGS "-Wl,-Bsymbolic")
+  set_property(TARGET ${PROJECT_NAME} APPEND_STRING PROPERTY LINK_FLAGS " -Wl,-Bsymbolic")
 endif()
 
 if(${WITH_FFMPEG} EQUAL (DEFINED ${FFMPEG_USE_STATIC_LIBS}))
@@ -50,10 +57,18 @@ set_target_properties(sqy PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED YES)
 set_target_properties(sqy PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set(LIBS2LINKAPP ${LIBS2LINK} ${TIFF_LIB_FOR_SQY})
 
-target_link_libraries(sqy ${LIBS2LINKAPP})
+
+if(BUNDLE_SQEAZY OR ${BUNDLE_SQEAZY})
+  set_target_properties(sqy PROPERTIES LINK_SEARCH_START_STATIC ON)
+  target_link_libraries(sqy ${LIBS2LINKAPP})
+  set_target_properties(sqy PROPERTIES LINK_SEARCH_END_STATIC ON)
+else()
+  target_link_libraries(sqy ${LIBS2LINKAPP})
+endif()
+
 
 if(HAS_BSYMBOLIC_COMPILERFLAG AND UNIX AND NOT APPLE)
-  set_property(TARGET sqy APPEND_STRING PROPERTY LINK_FLAGS "-Wl,-Bsymbolic")
+  set_property(TARGET sqy APPEND_STRING PROPERTY LINK_FLAGS " -Wl,-Bsymbolic ")
 endif()
 
 if(${WITH_FFMPEG} EQUAL (DEFINED ${FFMPEG_USE_STATIC_LIBS}))
@@ -69,27 +84,28 @@ endif()
 ########################################### DEPLOYMENT LIBSQY ######################################################
 if(BUNDLE_SQEAZY OR ${BUNDLE_SQEAZY})
 
-  #TODO: checkout this link https://stackoverflow.com/questions/16991225/cmake-and-static-linking
-  set(STATIC_LIB_FLAGS "LIBGCC;LIBSTDC++;LIBC++")
-  foreach(_flag IN LISTS STATIC_LIB_FLAGS)
-    string(TOLOWER "-static-${_flag}" _lower_flag)
-    if(HAS_STATIC_${_flag}_COMPILERFLAG)
-      if(${CMAKE_CXX_COMPILER_ID} MATCHES GNU)
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${_lower_flag}")
-      endif()
-      add_definitions(${_lower_flag})
-    endif()
-  endforeach()
-
   include(${PROJECT_SOURCE_DIR}/cmake/bundle_target.cmake)
-
   set(BUNDLE_DIR ${PROJECT_BINARY_DIR}/bundle CACHE STRING "directory to put sqeazy bundle into")
   set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES ${BUNDLE_DIR})
 
   bundle(${PROJECT_NAME} ${BUNDLE_DIR})
   bundle(sqy ${BUNDLE_DIR})
 
-  add_custom_target(bundle DEPENDS bundle_${PROJECT_NAME} bundle_sqy)
+    #TODO: checkout this link https://stackoverflow.com/questions/16991225/cmake-and-static-linking
+  set(STATIC_LIB_FLAGS "LIBGCC;LIBSTDC++;LIBC++")
+  foreach(_flag IN LISTS STATIC_LIB_FLAGS)
+    string(TOLOWER "-static-${_flag}" _lower_flag)
+    if(HAS_STATIC_${_flag}_COMPILERFLAG)
+      if(${CMAKE_CXX_COMPILER_ID} MATCHES GNU)
+        set_property(TARGET bundle_${PROJECT_NAME} APPEND_STRING PROPERTY LINK_FLAGS " ${_lower_flag} " )
+        set_property(TARGET bundle_${PROJECT_NAME} APPEND_STRING PROPERTY COMPILE_FLAGS " ${_lower_flag} " )
 
+        set_property(TARGET bundle_sqy APPEND_STRING PROPERTY LINK_FLAGS " ${_lower_flag} " )
+        set_property(TARGET bundle_sqy APPEND_STRING PROPERTY COMPILE_FLAGS " ${_lower_flag} " )
+      endif()
+    endif()
+  endforeach()
+
+  add_custom_target(bundle DEPENDS bundle_${PROJECT_NAME} bundle_sqy)
   set_target_properties(bundle PROPERTIES EXCLUDE_FROM_ALL TRUE)
 endif()

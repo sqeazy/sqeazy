@@ -3,7 +3,6 @@
 #include "boost/test/included/unit_test.hpp"
 
 #include <numeric>
-#include <typeinfo>
 #include <vector>
 #include <iostream>
 #include <sstream>
@@ -94,7 +93,7 @@ BOOST_AUTO_TEST_CASE( encode_header_correct_typeid )
   if (received.find("_") != std::string::npos)
       received.replace(received.find("_"),1," ");
 #endif
-  BOOST_CHECK_EQUAL(received,typeid(value_type).name());
+  BOOST_CHECK_EQUAL(received,sqeazy::header_utils::represent<value_type>::as_string());
 
 }
 
@@ -144,12 +143,12 @@ BOOST_AUTO_TEST_CASE( encode_header_correct_num_dims )
 
   std::string header = sqeazy::header::pack<value_type>(dims);
   std::string type_id = sqeazy::header::unpack_type(header.c_str(),header.size());
-  std::string expected = typeid(value_type).name();
+  std::string expected = sqeazy::header_utils::represent<value_type>::as_string();
   BOOST_CHECK_EQUAL(type_id,expected);
 
   header = sqeazy::header::pack<int>(dims);
   type_id = sqeazy::header::unpack_type(header.c_str(),header.size());
-  expected = typeid(int).name();
+  expected = sqeazy::header_utils::represent<int>::as_string();
   BOOST_CHECK_EQUAL(type_id,expected);
 
 }
@@ -204,7 +203,7 @@ BOOST_AUTO_TEST_CASE( type_name )
   sqeazy::header expected(value_type(),dims,"no_pipeline",1024);
   std::string hdr = expected.str();
   std::string rec = sqeazy::header::unpack_type(&hdr[0],hdr.size());
-  std::string exp = typeid(value_type).name();
+  std::string exp = sqeazy::header_utils::represent<value_type>::as_string();
 
   BOOST_CHECK(!rec.empty());
 
