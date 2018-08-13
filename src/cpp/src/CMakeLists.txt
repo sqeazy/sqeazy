@@ -75,12 +75,8 @@ if(BUNDLE_SQEAZY OR ${BUNDLE_SQEAZY})
   set(BUNDLE_DIR ${PROJECT_BINARY_DIR}/bundle CACHE STRING "directory to put sqeazy bundle into")
   set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES ${BUNDLE_DIR})
 
-  set(CMAKE_LINK_SEARCH_START_STATIC ON)
-
   bundle(${PROJECT_NAME} ${BUNDLE_DIR})
   bundle(sqy ${BUNDLE_DIR})
-
-  set(CMAKE_LINK_SEARCH_START_STATIC OFF)
 
     #TODO: checkout this link https://stackoverflow.com/questions/16991225/cmake-and-static-linking
   set(STATIC_LIB_FLAGS "LIBGCC;LIBSTDC++;LIBC++")
