@@ -23,10 +23,13 @@ build-shared: build-utils build-encoders
 	docker build --build-arg SQY_VERSION=$(SQY_VERSION) -t sqy/trusty/shared:$(SQY_VERSION) .
 
 #when the shared library container is built, we want to update the one on dockerhub right away
-to_dockerhub : build-shared
-	docker tag sqy/trusty/shared:$(SQY_VERSION) psteinb/sqy-on-trusty:$(SQY_VERSION)
-	docker tag sqy/trusty/shared:$(SQY_VERSION) psteinb/sqy-on-trusty:latest
-	docker push psteinb/sqy-on-trusty
+to_dockerhub : build-shared build-static
+	docker tag sqy/trusty/shared:$(SQY_VERSION) psteinb/sqeazy-testing:$(SQY_VERSION)
+	docker tag sqy/trusty/shared:$(SQY_VERSION) psteinb/sqeazy-testing:latest
+	docker push psteinb/sqeazy-testing
+	docker tag sqy/trusty/static:$(SQY_VERSION) psteinb/sqeazy:$(SQY_VERSION)
+	docker tag sqy/trusty/static:$(SQY_VERSION) psteinb/sqeazy:latest
+	docker push psteinb/sqeazy
 
 build: build-static to_dockerhub
 

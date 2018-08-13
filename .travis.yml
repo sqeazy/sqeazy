@@ -7,12 +7,12 @@ services:
 
 before_install:
 - lsb_release -a
-- docker pull psteinb/sqy-on-trusty
+- docker pull psteinb/sqeazy-testing
 - docker ps -a
 
 script:
 - pwd #/home/travis/build/sqeazy/sqeazy
 - ls -lrth
-- docker run psteinb/sqy-on-trusty lsb_release -a
-- docker run -v /home/travis/build/sqeazy/sqeazy:/build psteinb/sqy-on-trusty ls /build
-- docker run -v /home/travis/build/sqeazy/sqeazy:/build psteinb/sqy-on-trusty gradle clean test
+- docker run psteinb/sqeazy-testing lsb_release -a
+- docker run -v /home/travis/build/sqeazy/sqeazy:/build psteinb/sqeazy-testing ls /build
+- docker run -v /home/travis/build/sqeazy/sqeazy:/build psteinb/sqeazy-testing gradle clean test
