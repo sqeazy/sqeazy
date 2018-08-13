@@ -85,8 +85,6 @@ endif()
 if(BUNDLE_SQEAZY OR ${BUNDLE_SQEAZY})
 
   include(${PROJECT_SOURCE_DIR}/cmake/bundle_target.cmake)
-  #/usr/local/bin/c++  -DNDEBUG -D_GLIBCXX_USE_CXX11_ABI=1 -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE -D_SQY_X_=0 -Dbundle_sqeazy_EXPORTS -I/build/sqeazy/build/cpp/inc -I/build/sqeazy/src/cpp/src/. -I/build/sqeazy/src/cpp/src/verbs -I/build/sqeazy/src/cpp/src/encoders  -DNDEBUG -Ofast -fPIC   -Wall -Wfatal-errors -Wno-unused-function -Wno-overflow -Ofast -ftree-vectorize -march=x86-64 -mtune=generic -msse -msse2 -msse3 -mssse3 -msse4 -msse4.1 -msse4.2 -ffast-math -fopenmp -fopenmp -static-libgcc -static-libstdc++ -std=gnu++14 -o CMakeFiles/bundle_sqeazy.dir/sqeazy.cpp.o -c /build/sqeazy/src/cpp/src/sqeazy.cpp
-  #/usr/local/bin/c++ -fPIC -DNDEBUG -Ofast -Wl,-Bsymbolic -shared -Wl,-soname,libsqeazy.so -o ../bundle/libsqeazy.so CMakeFiles/bundle_sqeazy.dir/sqeazy.cpp.o -Wl,-rpath,./ -Wl,-Bstatic -llz4 -lhdf5_cpp -lhdf5 -Wl,-Bdynamic -ldl -lm -Wl,-Bstatic -lboost_program_options -lboost_regex -lboost_filesystem -lboost_system -lboost_serialization -lgomp -Wl,-Bdynamic -lz -lpthread
   set(BUNDLE_DIR ${PROJECT_BINARY_DIR}/bundle CACHE STRING "directory to put sqeazy bundle into")
   set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES ${BUNDLE_DIR})
 
