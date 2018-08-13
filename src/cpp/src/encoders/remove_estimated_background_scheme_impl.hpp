@@ -70,15 +70,14 @@ namespace sqeazy {
 
     compressed_type* encode( const raw_type* _input, compressed_type* _output, const std::vector<std::size_t>& _shape) override final {
 
-      std::vector<raw_type> darkest_face;
-      extract_darkest_face((const raw_type*)_input, _shape, darkest_face);
-
-      sqeazy::histogram<raw_type> t;
-      t.add_from_image(darkest_face.begin(), darkest_face.end());
+      auto supports = extract_darkest_face_supports((const raw_type*)_input,
+                                                    _shape,
+                                                    0.99f,
+                                                    this->n_threads());
 
       std::size_t input_length = std::accumulate(_shape.begin(), _shape.end(), 1, std::multiplies<std::size_t>());
 
-      const float reduce_by = t.calc_support(.99f);
+      const float reduce_by = *std::min_element(supports.cbegin(),supports.cend());
 
 #ifdef _SQY_VERBOSE_
       std::cout << "[SQY_VERBOSE] remove_estimated_background ";
@@ -86,22 +85,22 @@ namespace sqeazy {
         std::cout << _shape[i] << ((_shape[i]!=_shape.back()) ? "x" : ", ");
       }
 
-      std::cout << " darkest face: backgr_estimate = " << reduce_by << "\n";
-      t.fill_stats();
-      std::cout << "[SQY_VERBOSE] " << histogram<raw_type>::print_header() << "\n[SQY_VERBOSE] " << t << "\n";
+      std::cout << " darkest face estimate = " << reduce_by << "\n";
 
 #endif
 
       if(_output) {
+        //TODO: removed flatten_to_neighborhood for now as it exposed critically bad cache behavior
         //copies the input to output, skipping pixels that have a neighborhood complying criteria
-        flatten_to_neighborhood_scheme<raw_type> flatten(reduce_by,.5);
-        //flatten_to_neighborhood_scheme<raw_type>::static_encode(_input, _output, _shape, reduce_by);
-        flatten.encode(_input, _output, _shape);
+        // flatten_to_neighborhood_scheme<raw_type> flatten(reduce_by,.5);
+        // flatten.set_n_threads(this->n_threads());
+        // flatten.encode(_input, _output, _shape);
+
         //set those pixels to 0 that fall below reduce_by
         remove_background_scheme<raw_type> reduce(reduce_by);
-        reduce.encode(_output, _output,  input_length);//do it inplace!
+        reduce.set_n_threads(this->n_threads());
 
-        //remove_background_scheme<raw_type>::static_encode_inplace(_output, input_length, reduce_by);
+        reduce.encode(_input, _output,  input_length);
       }
       else {
         std::cerr << "WARNING ["<< name() <<"::encode]\t inplace operation not supported\n";
