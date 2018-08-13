@@ -6,6 +6,10 @@
 #include "neighborhood_utils.hpp"
 #include "hist_impl.hpp"
 
+#ifdef _OPENMP
+#include "omp.h"
+#endif
+
 #include <limits>
 #include <climits>
 #include <iostream>
@@ -37,16 +41,20 @@ namespace sqeazy {
 
 
     const index_type frame_size = _dims[row_major::y]*_dims[row_major::x];
-    float* value_ptr = value.data();
+    float* results_ptr = value.data();
+    const size_type* shape = _dims.data();
 
     //faces with z,  i.e. z = const (y & x vary)
     size_type indices[2] = {0,_dims[row_major::z]-1};
 
-//#pragma omp parallel for firstprivate(_input, indices, _dims) num_threads(nthreads) shared(value_ptr)
+#pragma omp parallel for \
+  shared(results_ptr) \
+  firstprivate(_input, indices, shape) \
+  num_threads(nthreads)
     for(int i = 0;i < 2;++i ) {
 
       auto z_idx = indices[i];
-      if(!(z_idx < _dims[row_major::z])){
+      if(!(z_idx < shape[row_major::z])){
         continue;
       }
 
@@ -57,33 +65,36 @@ namespace sqeazy {
 
       temp_histo.add_from_image(begin, end);
 
-      value_ptr[i] = temp_histo.calc_support(_support);
+      results_ptr[i] = temp_histo.calc_support(_support);
     }
 
-    indices[1] = _dims[row_major::y]-1;
+    indices[1] = shape[row_major::y]-1;
 
     //faces with y,  i.e. y = const (x varies, z = {1,mid,last} to sample cache efficient)
-//    #pragma omp parallel for firstprivate(_input, indices, _dims) num_threads(nthreads) shared(value_ptr)
+#pragma omp parallel for                        \
+  shared(results_ptr) \
+  firstprivate(_input, indices, shape) \
+  num_threads(nthreads)
     for(int i = 0;i < 2;++i ) {
 
       auto y_idx = indices[i];
-      if(!(y_idx < _dims[row_major::y])){
+      if(!(y_idx < shape[row_major::y])){
         continue;
       }
 
       sqeazy::histogram<raw_type> temp_histo;
-      const size_type z_offsets[3] = {1,_dims[row_major::z]/2,_dims[row_major::z]-1};
+      const size_type z_offsets[3] = {1,shape[row_major::z]/2,shape[row_major::z]-2};
 
       for(size_type z_idx : z_offsets)
       {
-        index_type input_index = z_idx*(frame_size)+y_idx*_dims[row_major::x];
+        index_type input_index = z_idx*(frame_size)+y_idx*shape[row_major::x];
         const raw_type* begin = _input + input_index;
-        const raw_type* end = begin + _dims[row_major::x];
+        const raw_type* end = begin + shape[row_major::x];
 
         temp_histo.add_from_image(begin, end);
       }
 
-      value_ptr[i+2] = temp_histo.calc_support(_support);
+      results_ptr[i+2] = temp_histo.calc_support(_support);
     }
 
     return value;
