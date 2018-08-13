@@ -22,11 +22,18 @@ if(NOT WIN32)
   set(LIBS2LINK ${LIBS2LINK} ${OpenMP++_LIBRARIES})
 endif()
 
-target_link_libraries(${PROJECT_NAME} ${LIBS2LINK})
+if(BUNDLE_SQEAZY OR ${BUNDLE_SQEAZY})
+  set_target_properties(${PROJECT_NAME} PROPERTIES LINK_SEARCH_START_STATIC ON)
+  target_link_libraries(${PROJECT_NAME} ${LIBS2LINK})
+  set_target_properties(${PROJECT_NAME} PROPERTIES LINK_SEARCH_END_STATIC ON)
+else()
+  target_link_libraries(${PROJECT_NAME} ${LIBS2LINK})
+endif()
+
 message("++ [src] libsqeazy deps: ${LIBS2LINK}")
 
 if(HAS_BSYMBOLIC_COMPILERFLAG AND UNIX AND NOT APPLE)
-  set_property(TARGET ${PROJECT_NAME} APPEND_STRING PROPERTY LINK_FLAGS "-Wl,-Bsymbolic")
+  set_property(TARGET ${PROJECT_NAME} APPEND_STRING PROPERTY LINK_FLAGS " -Wl,-Bsymbolic")
 endif()
 
 if(${WITH_FFMPEG} EQUAL (DEFINED ${FFMPEG_USE_STATIC_LIBS}))
@@ -50,10 +57,18 @@ set_target_properties(sqy PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED YES)
 set_target_properties(sqy PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set(LIBS2LINKAPP ${LIBS2LINK} ${TIFF_LIB_FOR_SQY})
 
-target_link_libraries(sqy ${LIBS2LINKAPP})
+
+if(BUNDLE_SQEAZY OR ${BUNDLE_SQEAZY})
+  set_target_properties(sqy PROPERTIES LINK_SEARCH_START_STATIC ON)
+  target_link_libraries(sqy ${LIBS2LINKAPP})
+  set_target_properties(sqy PROPERTIES LINK_SEARCH_END_STATIC ON)
+else()
+  target_link_libraries(sqy ${LIBS2LINKAPP})
+endif()
+
 
 if(HAS_BSYMBOLIC_COMPILERFLAG AND UNIX AND NOT APPLE)
-  set_property(TARGET sqy APPEND_STRING PROPERTY LINK_FLAGS "-Wl,-Bsymbolic")
+  set_property(TARGET sqy APPEND_STRING PROPERTY LINK_FLAGS " -Wl,-Bsymbolic ")
 endif()
 
 if(${WITH_FFMPEG} EQUAL (DEFINED ${FFMPEG_USE_STATIC_LIBS}))
