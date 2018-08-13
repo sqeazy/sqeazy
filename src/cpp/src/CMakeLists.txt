@@ -75,8 +75,12 @@ if(BUNDLE_SQEAZY OR ${BUNDLE_SQEAZY})
   set(BUNDLE_DIR ${PROJECT_BINARY_DIR}/bundle CACHE STRING "directory to put sqeazy bundle into")
   set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES ${BUNDLE_DIR})
 
+  set(CMAKE_LINK_SEARCH_START_STATIC ON)
+
   bundle(${PROJECT_NAME} ${BUNDLE_DIR})
   bundle(sqy ${BUNDLE_DIR})
+
+  set(CMAKE_LINK_SEARCH_START_STATIC OFF)
 
     #TODO: checkout this link https://stackoverflow.com/questions/16991225/cmake-and-static-linking
   set(STATIC_LIB_FLAGS "LIBGCC;LIBSTDC++;LIBC++")
@@ -84,10 +88,11 @@ if(BUNDLE_SQEAZY OR ${BUNDLE_SQEAZY})
     string(TOLOWER "-static-${_flag}" _lower_flag)
     if(HAS_STATIC_${_flag}_COMPILERFLAG)
       if(${CMAKE_CXX_COMPILER_ID} MATCHES GNU)
-        message(STATUS "adding ${_lower_flag} t bundle_* targets")
+        message(STATUS "adding ${_lower_flag} to bundle_${PROJECT_NAME} targets")
         set_target_properties(bundle_${PROJECT_NAME} PROPERTIES LINK_FLAGS "${_lower_flag}")
         set_target_properties(bundle_${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "${_lower_flag}")
 
+        message(STATUS "adding ${_lower_flag} to bundle_sqy targets")
         set_target_properties(bundle_sqy PROPERTIES LINK_FLAGS "${_lower_flag}")
         set_target_properties(bundle_sqy PROPERTIES COMPILE_FLAGS "${_lower_flag}")
       endif()
@@ -95,6 +100,5 @@ if(BUNDLE_SQEAZY OR ${BUNDLE_SQEAZY})
   endforeach()
 
   add_custom_target(bundle DEPENDS bundle_${PROJECT_NAME} bundle_sqy)
-
   set_target_properties(bundle PROPERTIES EXCLUDE_FROM_ALL TRUE)
 endif()
