@@ -18,6 +18,22 @@ typedef sqeazy::array_fixture<unsigned short> uint16_cube_of_8;
 
 BOOST_FIXTURE_TEST_SUITE( extract_face, uint16_cube_of_8 )
 
+BOOST_AUTO_TEST_CASE( success_with_supports )
+{
+    size_t face_size = uint16_cube_of_8::axis_length*uint16_cube_of_8::axis_length;
+    std::vector<unsigned short> face(face_size);
+    std::fill(face.begin(), face.end(), 0);
+    const value_type* input = &constant_cube[0];
+    std::vector<std::uint32_t> shape = dims;
+    auto supports = sqeazy::extract_darkest_face_supports(input, shape);
+
+    BOOST_CHECK_EQUAL(supports.empty(),false);
+
+    for( float val : supports ){
+        BOOST_CHECK_CLOSE(val, constant_cube.front(),.1f);
+    }
+}
+
 BOOST_AUTO_TEST_CASE( success )
 {
 
