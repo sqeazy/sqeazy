@@ -24,7 +24,8 @@ namespace sqeazy {
      */
     static const void extract_darkest_face(const raw_type* _input,
                                            const std::vector<size_type>& _dims,
-                                           std::vector<raw_type>& _darkest_face) {
+                                           std::vector<raw_type>& _darkest_face,
+                                           int nthreads = 1) {
 
       typedef typename add_unsigned<typename twice_as_wide<size_type>::type >::type index_type;
 
@@ -46,7 +47,7 @@ namespace sqeazy {
       }
       std::cout << "\n";
 #endif
-      //faces with z
+      //faces with z,  i.e. z = const (y & x vary)
       const size_type indices[2] = {0,_dims[row_major::z]-1};
       size_type z_idx = 0;
 
@@ -84,29 +85,34 @@ namespace sqeazy {
         }
       }
 
-      //faces with y
-      std::vector<raw_type> face(_dims[2]*_dims[row_major::z]);
-      for(size_type y_idx = 0; y_idx < _dims[1]; y_idx+=(_dims[1]-1)) {
+      //faces with y, i.e. y = const (z & x vary)
+      std::vector<size_type> z_planes = {1,_dims[row_major::z]/2,_dims[row_major::z]-1};
+      std::vector<raw_type> face(_dims[row_major::x]*z_planes.size());
+
+      for(size_type y_idx = 0; y_idx < _dims[row_major::y]; y_idx+=(_dims[row_major::y]-1)) {
 
         running_histo.clear();
 
-        for(size_type z_idx = 0; z_idx < _dims[row_major::z]; ++z_idx) {
-          input_index = z_idx*(frame_size)+y_idx*_dims[2];
-          std::copy(_input + input_index, _input+input_index+_dims[2], face.begin() + (z_idx*_dims[2]));
-          running_histo.add_from_image(_input + input_index, _input+input_index+_dims[2]);
+        auto face_itr = face.begin();
+        for(size_type z_idx : z_planes) {
+          input_index = z_idx*(frame_size)+y_idx*_dims[row_major::x];
+          face_itr = std::copy(_input + input_index,
+                               _input+input_index+_dims[row_major::x],
+                               face_itr);
+          running_histo.add_from_image(_input + input_index, _input+input_index+_dims[row_major::x]);
 
         }
 
         temp = running_histo.calc_support();
 #ifdef _SQY_VERBOSE_
         running_histo.fill_stats();
-        std::cout << "[SQY_VERBOSE]\t face y = " << y_idx << " / "<< _dims[1] << " , support = " << temp << ", mean = " << running_histo.calc_mean() << "\n";
+        std::cout << "[SQY_VERBOSE]\t face y = " << y_idx << " / "<< _dims[row_major::y] << " , support = " << temp << ", mean = " << running_histo.calc_mean() << "\n";
 
 #endif
 
         if(temp < support) {
-          if(_darkest_face.size()<(size_t)(_dims[row_major::x]*_dims[row_major::z]))
-            _darkest_face.resize(_dims[row_major::x]*_dims[row_major::z]);
+          if(_darkest_face.size()<face.size())
+            _darkest_face.resize(face.size());
           //FIXME: do we really need to copy the face out?
           std::copy(face.begin(), face.end(),_darkest_face.begin());
 
