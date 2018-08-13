@@ -180,7 +180,7 @@ gradle bintrayUpload
 
 ### Linux 
 
-* Fedora 25
+* Fedora 27
 * CentOS 7.1
 * Ubuntu 14.04, Ubuntu 16.04
 
