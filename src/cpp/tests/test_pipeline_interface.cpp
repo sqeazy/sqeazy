@@ -1,10 +1,12 @@
 #define BOOST_TEST_MODULE TEST_PIPELINE_INTERFACE
 #define BOOST_TEST_MAIN
+
 #include "boost/test/included/unit_test.hpp"
 #include <numeric>
 #include <vector>
 #include <iostream>
 #include <string>
+#include <array>
 
 #include "boost/filesystem.hpp"
 #include "array_fixtures.hpp"
@@ -166,7 +168,8 @@ BOOST_AUTO_TEST_CASE( decompressed_shape ){
   BOOST_CHECK_EQUAL(rvalue, 0);
   BOOST_CHECK_LT(std::size_t(length),compressed.size());
 
-  std::array<long,3> shape;shape.fill(length);
+  std::array<long,3> shape;
+  shape.fill(length);
   rvalue = SQY_Decompressed_Shape(&compressed[0],
                                   shape.data());
 
