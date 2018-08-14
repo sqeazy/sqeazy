@@ -104,7 +104,19 @@ if(BUNDLE_SQEAZY OR ${BUNDLE_SQEAZY})
         set_property(TARGET bundle_sqy APPEND_STRING PROPERTY COMPILE_FLAGS " ${_lower_flag} " )
       endif()
     endif()
+
+
   endforeach()
+
+  if(${CMAKE_CXX_COMPILER_ID} MATCHES Clang)
+    if(HAS_STDLIB_LIBC++_COMPILERFLAG)
+      set_property(TARGET bundle_${PROJECT_NAME} APPEND_STRING PROPERTY LINK_FLAGS " -stdlib=libc++ -static " )
+      set_property(TARGET bundle_${PROJECT_NAME} APPEND_STRING PROPERTY COMPILE_FLAGS " -stdlib=libc++ " )
+
+      set_property(TARGET bundle_sqy APPEND_STRING PROPERTY LINK_FLAGS " -stdlib=libc++ " )
+      set_property(TARGET bundle_sqy APPEND_STRING PROPERTY COMPILE_FLAGS " -stdlib=libc++ " )
+    endif()
+  endif()
 
   add_custom_target(bundle DEPENDS bundle_${PROJECT_NAME} bundle_sqy)
   set_target_properties(bundle PROPERTIES EXCLUDE_FROM_ALL TRUE)
