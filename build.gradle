@@ -441,7 +441,7 @@ task pull_bintray_bundles {
         }
     }
 
-    def last_valid_version = "0.7.1"     //TODO: this should be project.version at best; add a check which one is available online
+    def last_valid_version = "0.7.2"     //TODO: this should be project.version at best; add a check which one is available online
     def version_to_fetch = project.hasProperty("force_version") ? force_version : last_valid_version
 
     supported_platforms.each {
