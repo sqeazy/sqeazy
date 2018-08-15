@@ -657,62 +657,67 @@ task create_os_jar(type:JavaExec) {
 
     classpath = files('tools/jnaerator-0.13-SNAPSHOT-shaded.jar')
     //http://stackoverflow.com/questions/29530261/how-to-use-jnaerator-with-multiple-dynamic-libraries-under-one-header/29549769#29549769
+    def sqeazy_header = native_build_dir + "/inc/sqeazy.h"
+    inputs.files sqeazy_header
 
-    def plat = jnaerator_platform()
-    def sqy_libs = fileTree(native_build_dir).include('**/libsqeazy.*')
-    def sqeazy_header = file( native_build_dir + "/inc/sqeazy.h" )
-    def bundled_headers = [dist_dir+"/"+plat+"/sqeazy.h"]
+    doFirst {
+        def plat = jnaerator_platform()
+        def sqy_libs = fileTree(native_build_dir).include('**/libsqeazy.*')
+        def bundled_headers = [dist_dir+"/"+plat+"/sqeazy.h"]
 
-    inputs.files sqeazy_header, sqy_libs
 
-    workingDir '.'
 
-    main = 'com.ochafik.lang.jnaerator.JNAerator'
+        workingDir '.'
 
-    //start with head of jnaerator args
-    def plat_flags = ['-library','sqeazy',
-                      '-f',
-                      '-o',dist_dir,
-                      '-rootPackage','src',
-                      '-package','sqeazy.bindings'// ,
-                      // '-dependencies','avcodec,avformat,avutil,hdf5,hdf5_cpp,hdf5_hl,boost_filesystem,boost_system,lz4,swscale'
-    ]
+        main = 'com.ochafik.lang.jnaerator.JNAerator'
 
-    //adding platform identifiers
-    def tree_clone = fileTree(native_build_dir+"/bundle").include('*sqeazy.*').exclude('sqeazy.h').exclude('*.lib')
-    def results = tree_clone.getFiles()
+        //start with head of jnaerator args
+        def plat_flags = ['-library','sqeazy',
+                          '-f',
+                          '-o',dist_dir,
+                          '-rootPackage','src',
+                          '-package','sqeazy.bindings'// ,
+                          // '-dependencies','avcodec,avformat,avutil,hdf5,hdf5_cpp,hdf5_hl,boost_filesystem,boost_system,lz4,swscale'
+        ]
 
-    if(results.size()>0){
-        plat_flags << ("-arch")
-        plat_flags << (plat)
-        plat_flags << results.join(",")
-    } else {
-        tree_clone = fileTree(native_build_dir+"/src").include('*sqeazy.*').exclude('sqeazy.h').exclude('*.lib')
-        results = tree_clone.getFiles()
-        plat_flags << ("-arch")
-        plat_flags << (plat)
-        plat_flags << results.join(",")
+        //adding platform identifiers
+        def tree_clone = fileTree(native_build_dir+"/bundle").include('*sqeazy.*').exclude('sqeazy.h').exclude('*.lib')
+        def results = tree_clone.getFiles()
+
+        if(results.size()>0){
+            plat_flags << ("-arch")
+            plat_flags << (plat)
+            plat_flags << results.join(",")
+        } else {
+            tree_clone = fileTree(native_build_dir+"/src").include('*sqeazy.*').exclude('sqeazy.h').exclude('*.lib')
+            results = tree_clone.getFiles()
+            plat_flags << ("-arch")
+            plat_flags << (plat)
+            plat_flags << results.join(",")
+        }
+
+
+        //add the tail
+        [
+            '-runtime','BridJ',
+            '-mode','StandaloneJar',
+            //'-mode','Directory',
+            '-jar','build/sqeazy.jar',
+            file(sqeazy_header).absolutePath
+        ].each{ String tail -> plat_flags << tail }
+
+        args plat_flags
+
+        println "::\t"+args
+
+
+        if (Os.isFamily(Os.FAMILY_MAC))
+        {
+            environment DYLD_LIBRARY_PATH : "${System.env.BOOST_ROOT}/lib"
+        }
     }
 
-
-    //add the tail
-    [
-        '-runtime','BridJ',
-        '-mode','StandaloneJar',
-        //'-mode','Directory',
-        '-jar','build/sqeazy.jar',
-        sqeazy_header.absolutePath
-    ].each{ String tail -> plat_flags << tail }
-
-    args plat_flags
-
-    println "::\t"+args
     outputs.file "build/sqeazy.jar"
-
-    if (Os.isFamily(Os.FAMILY_MAC))
-    {
-        environment DYLD_LIBRARY_PATH : "${System.env.BOOST_ROOT}/lib"
-    }
 }
 
 // make task:
@@ -872,7 +877,6 @@ dependencies
   compile group: 'commons-lang', name: 'commons-lang', version: '2.6'
   compile group: 'commons-io', name: 'commons-io', version: '2.4'
   compile group: 'org.apache.commons', name: 'commons-math3', version: '3.4.1'
-  compile group: 'com.nativelibs4java', name: 'bridj', version: '0.7.0'
   compile group: 'junit', name: 'junit', version: '4.+'
 
   testCompile group: 'junit', name: 'junit', version: '4.+'
