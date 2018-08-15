@@ -11,7 +11,9 @@ COPY --from=utils /usr/ /usr/
 WORKDIR /build
 
 # build sqeazy
-RUN git clone https://github.com/sqeazy/sqeazy.git
+RUN git clone https://github.com/sqeazy/sqeazy.git \
+    cd sqeazy
+    git remote add psteinb https://github.com/psteinb/sqeazy.git
 
 # Run app.py when the container launches
 CMD ["bash"]
