@@ -42,10 +42,7 @@ run-encoders-static: build-encoders-static
 run-static: build-static
 	docker run -e ORG_GRADLE_PROJECT_bintray_user=psteinb -e ORG_GRADLE_PROJECT_bintray_key=${MY_BINTRAY_KEY} -it --rm sqy/trusty/static:$(SQY_VERSION)
 
-run-static: build-static
-	docker run -e ORG_GRADLE_PROJECT_bintray_user=psteinb -e ORG_GRADLE_PROJECT_bintray_key=${MY_BINTRAY_KEY} -it --rm sqy/trusty/static:$(SQY_VERSION)
-
-
 run: build-shared
 	docker run -e ORG_GRADLE_PROJECT_bintray_user=psteinb -e ORG_GRADLE_PROJECT_bintray_key=${MY_BINTRAY_KEY} -it --rm sqy/trusty/shared:$(SQY_VERSION)
 
+run-shared: run
