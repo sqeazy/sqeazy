@@ -5,6 +5,7 @@
 #include "traits.hpp"
 #include "neighborhood_utils.hpp"
 #include "hist_impl.hpp"
+#include "compass.hpp"
 
 #ifdef _OPENMP
 #include "omp.h"
@@ -41,6 +42,8 @@ namespace sqeazy {
 
 
     const index_type frame_size = _dims[row_major::y]*_dims[row_major::x];
+    index_type frame_portion = frame_size > compass::runtime::size::cache::level(2) ? compass::runtime::size::cache::level(2)*.75 : frame_size ;
+
     float* results_ptr = value.data();
     const size_type* shape = _dims.data();
 
@@ -61,7 +64,7 @@ namespace sqeazy {
       sqeazy::histogram<raw_type> temp_histo;
       index_type input_index = z_idx*(frame_size);
       const raw_type* begin = _input + input_index;
-      const raw_type* end = begin + frame_size;
+      const raw_type* end = begin + frame_portion;
 
       temp_histo.add_from_image(begin, end);
 
