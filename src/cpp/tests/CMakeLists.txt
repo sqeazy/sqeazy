@@ -57,6 +57,42 @@ target_link_libraries(test_diff_scheme_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRAR
 add_executable(test_bitswap_scheme_impl test_bitswap_scheme_impl.cpp)
 target_link_libraries(test_bitswap_scheme_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES})
 
+if(USE_BITSHUFFLE)
+
+  set(BITSHUFFLE_SOURCE_PATH ${PROJECT_BINARY_DIR}/third-party/bitshuffle)
+
+  file(DOWNLOAD "https://raw.githubusercontent.com/psteinb/bitshuffle/cmake_support/src/bitshuffle_internals.h" ${BITSHUFFLE_SOURCE_PATH}/bitshuffle_internals.h SHOW_PROGRESS)
+  file(DOWNLOAD "https://raw.githubusercontent.com/psteinb/bitshuffle/cmake_support/src/bitshuffle_core.h" ${BITSHUFFLE_SOURCE_PATH}/bitshuffle_core.h SHOW_PROGRESS)
+  file(DOWNLOAD "https://raw.githubusercontent.com/psteinb/bitshuffle/cmake_support/src/bitshuffle_core.c" ${BITSHUFFLE_SOURCE_PATH}/bitshuffle_core.c SHOW_PROGRESS)
+  file(DOWNLOAD "https://raw.githubusercontent.com/psteinb/bitshuffle/cmake_support/src/iochain.h" ${BITSHUFFLE_SOURCE_PATH}/iochain.h SHOW_PROGRESS)
+  file(DOWNLOAD "https://raw.githubusercontent.com/psteinb/bitshuffle/cmake_support/src/iochain.c" ${BITSHUFFLE_SOURCE_PATH}/iochain.c SHOW_PROGRESS)
+
+  #set(BITSHUFFLE_SOURCE_PATH ${PROJECT_SOURCE_DIR}/third-party/bitshuffle)
+
+  # add_library(bitshuffle STATIC ${BITSHUFFLE_SOURCE_PATH}/bitshuffle_core.c ${BITSHUFFLE_SOURCE_PATH}/iochain.c)
+  # target_include_directories(bitshuffle PRIVATE ${BITSHUFFLE_SOURCE_PATH})
+  # set_target_properties(bitshuffle PROPERTIES
+  #   LANGUAGE C
+  #   LINKER_LANGUAGE C)
+
+  # add_executable(test_bitshuffle_scheme_impl test_bitshuffle_scheme_impl.cpp)
+  # target_link_libraries(test_bitshuffle_scheme_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} bitshuffle)
+  # target_compile_definitions(test_bitshuffle_scheme_impl PUBLIC -DSQEAZY_HAS_BITSHUFFLE=1)
+  # target_include_directories(test_bitshuffle_scheme_impl PRIVATE ${BITSHUFFLE_SOURCE_PATH})
+
+  add_library(bitshuffle OBJECT ${BITSHUFFLE_SOURCE_PATH}/bitshuffle_core.c ${BITSHUFFLE_SOURCE_PATH}/iochain.c)
+  target_include_directories(bitshuffle PRIVATE ${BITSHUFFLE_SOURCE_PATH})
+  set_target_properties(bitshuffle PROPERTIES
+    LANGUAGE C
+    LINKER_LANGUAGE C)
+
+  add_executable(test_bitshuffle_scheme_impl test_bitshuffle_scheme_impl.cpp $<TARGET_OBJECTS:bitshuffle>)
+  target_link_libraries(test_bitshuffle_scheme_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES})
+  target_compile_definitions(test_bitshuffle_scheme_impl PUBLIC -DSQEAZY_HAS_BITSHUFFLE=1)
+  target_include_directories(test_bitshuffle_scheme_impl PRIVATE ${BITSHUFFLE_SOURCE_PATH})
+
+endif()
+
 add_executable(test_bitplane_reorder_impl test_bitplane_reorder_impl.cpp)
 target_link_libraries(test_bitplane_reorder_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES})
 
