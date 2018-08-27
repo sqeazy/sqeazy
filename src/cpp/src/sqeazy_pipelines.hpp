@@ -18,7 +18,7 @@
 #endif
 
 #ifdef SQY_WITH_BITSHUFFLE
-#include "encoders/bitshuffle_scheme.hpp"
+#include "encoders/bitshuffle_scheme_impl.hpp"
 #endif
 
 #include "dynamic_pipeline.hpp"
