@@ -44,7 +44,7 @@ SET (SQEAZY_VENDOR_NAME "Max Planck Institute of Molecular Cell Biology and Gene
 SET (SQEAZY_VENDOR_URL "www.mpi-cbg.de")
 SET (SQEAZY_ID "${SQEAZY_VENDOR_ID}.${PROJECT_NAME}")
 
-option(USE_BITSHUFFLE "add bitshuffle scheme based on https://github.com/kiyo-masui/bitshuffle" OFF)
+option(USE_BITSHUFFLE "add bitshuffle scheme based on https://github.com/kiyo-masui/bitshuffle" ON)
 option(BUNDLE_SQEAZY "compile sqeazy ready for bundling" OFF)
 option(WITH_MARCH_NATIVE "compile sqeazy for the currently found hardware" OFF)
 option(USE_CXX11_ABI "enable _GLIBCXX_USE_CXX11_ABI in GCC 5.0+" ON)
