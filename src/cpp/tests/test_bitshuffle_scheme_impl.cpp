@@ -2,6 +2,7 @@
 #define BOOST_TEST_MAIN
 #include "boost/test/included/unit_test.hpp"
 #include <cstdint>
+#include <iterator>
 #include <numeric>
 #include <vector>
 #include <iostream>
@@ -14,79 +15,388 @@ typedef sqeazy::array_fixture<std::uint16_t> uint16_cube_of_8;
 typedef sqeazy::array_fixture<std::uint8_t> uint8_cube_of_8;
 
 
-struct incrementing_array
-{
-  std::vector<std::uint16_t> input;
-  std::vector<std::uint16_t> plane1_encoded_by_hand;
-  std::vector<std::uint16_t> plane2_encoded_by_hand;
-  std::vector<std::uint16_t> plane4_encoded_by_hand;
-  std::vector<std::uint16_t> output;
+BOOST_FIXTURE_TEST_SUITE( encode_decode_loop_16bit, uint16_cube_of_8 )
 
-  static constexpr std::size_t len  = 16;
-
-  incrementing_array():
-    input(len,0),
-    plane1_encoded_by_hand(len,0),
-    plane2_encoded_by_hand(len,0),
-    plane4_encoded_by_hand(len,0),
-    output(len,0)
-  {
-
-    for (std::size_t i = 0; i < len; ++i)
-      {
-    input[i] = i;
-      }
-
-    plane1_encoded_by_hand[12] = 0xff;// = 255
-    plane1_encoded_by_hand[13] = 0xf0f;// = 3855
-    plane1_encoded_by_hand[14] = 0x3333;// = 13107
-    plane1_encoded_by_hand[15] = 0x5555;// = 21845
-
-  }
-
-
-};
-
-BOOST_FIXTURE_TEST_SUITE( encode_decode_loop_16bit, incrementing_array )
-
-BOOST_AUTO_TEST_CASE( encoded_equals_by_hand )
+BOOST_AUTO_TEST_CASE( roundtrip )
 {
 
   std::vector<std::size_t> shape(3,1);
-  shape.front() = input.size();
-  sqeazy::bitshuffle_scheme<std::uint16_t> swap_it;
-  auto end = swap_it.encode(&input[0], &output[0],shape);
+  shape.front() = 32 * (1 << 10);
+
+  constant_cube.resize(shape.front());
+  std::iota(constant_cube.begin(),constant_cube.end(),0);
+  to_play_with.resize(constant_cube.size());
+
+  sqeazy::bitshuffle_scheme<std::uint16_t> shuffle;
+  auto end = shuffle.encode(&constant_cube[0], &to_play_with[0],shape);
 
 
   BOOST_CHECK(end != nullptr);
-  for(unsigned i = 0;i<input.size();++i){
 
-    BOOST_CHECK_MESSAGE(output[i] == plane4_encoded_by_hand[i],
-            "bswap4_scheme::encode input["<< i <<"] = " <<  input[i]
-            <<  ",  output = " << output[i]
-            <<  ",  by_hand = " << plane4_encoded_by_hand[i] );
-  }
+  auto items_processed = std::distance(static_cast<const std::uint16_t*>(to_play_with.data()),
+                                       static_cast<const std::uint16_t*>(end));
+  BOOST_CHECK_NE(items_processed,0);
+  BOOST_CHECK_EQUAL(items_processed,to_play_with.size());
+
+  auto decoded = constant_cube;
+  std::fill(decoded.begin(), decoded.end(),0);
+  auto dec = shuffle.decode(to_play_with.data(), decoded.data(),shape);
+
+  BOOST_CHECK(dec == 0);
+  BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(),constant_cube.end(),
+                                decoded.begin(),decoded.end());
 
 }
 
-// BOOST_AUTO_TEST_CASE( decode_encoded_by_hand_planewidth4_new_api )
-// {
-//   std::vector<std::size_t> shape(3,1);
-//   shape.front() = input.size();
-//   bswap4_scheme swap_it;
-//   int rv = swap_it.decode(&plane4_encoded_by_hand[0], &output[0],shape);
+BOOST_AUTO_TEST_CASE( roundtrip_odd )
+{
+
+  std::vector<std::size_t> shape(3,1);
+  shape.front() = 32 * (1 << 10);
+  shape.front() += 1;
+
+  constant_cube.resize(shape.front());
+  std::iota(constant_cube.begin(),constant_cube.end(),0);
+  to_play_with.resize(constant_cube.size());
+
+  sqeazy::bitshuffle_scheme<std::uint16_t> shuffle;
+  auto end = shuffle.encode(&constant_cube[0], &to_play_with[0],shape);
 
 
-//   BOOST_CHECK(rv == 0);
-//   for(unsigned i = 0;i<input.size();++i){
+  BOOST_CHECK(end != nullptr);
 
-//     BOOST_CHECK_MESSAGE(output[i] == input[i],
-//             "bswap4_scheme::decode input["<< i <<"] = " <<  plane4_encoded_by_hand[i]
-//             <<  ",  output = " << output[i]
-//             <<  ",  expected = " << input[i] );
-//   }
+  auto items_processed = std::distance(static_cast<const std::uint16_t*>(to_play_with.data()),
+                                       static_cast<const std::uint16_t*>(end));
+  BOOST_CHECK_NE(items_processed,0);
+  BOOST_CHECK_EQUAL(items_processed,to_play_with.size());
 
-// }
+  auto decoded = constant_cube;
+  std::fill(decoded.begin(), decoded.end(),0);
+  auto dec = shuffle.decode(to_play_with.data(), decoded.data(),shape);
 
+  BOOST_CHECK(dec == 0);
+  BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(),constant_cube.end(),
+                                decoded.begin(),decoded.end());
+
+}
+
+BOOST_AUTO_TEST_CASE( roundtrip_prime )
+{
+
+  std::vector<std::size_t> shape(3,1);
+  shape.front() = 32003;
+
+  constant_cube.resize(shape.front());
+  std::iota(constant_cube.begin(),constant_cube.end(),0);
+  to_play_with.resize(constant_cube.size());
+
+  sqeazy::bitshuffle_scheme<std::uint16_t> shuffle;
+  auto end = shuffle.encode(&constant_cube[0], &to_play_with[0],shape);
+
+
+  BOOST_CHECK(end != nullptr);
+
+  auto items_processed = std::distance(static_cast<const std::uint16_t*>(to_play_with.data()),
+                                       static_cast<const std::uint16_t*>(end));
+  BOOST_CHECK_NE(items_processed,0);
+  BOOST_CHECK_EQUAL(items_processed,to_play_with.size());
+
+  auto decoded = constant_cube;
+  std::fill(decoded.begin(), decoded.end(),0);
+  auto dec = shuffle.decode(to_play_with.data(), decoded.data(),shape);
+
+  BOOST_CHECK(dec == 0);
+  BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(),constant_cube.end(),
+                                decoded.begin(),decoded.end());
+
+}
+
+BOOST_AUTO_TEST_CASE( roundtrip_two_threads )
+{
+
+  std::vector<std::size_t> shape(3,1);
+  shape.front() = 32 * (1 << 10);
+
+  constant_cube.resize(shape.front());
+  std::iota(constant_cube.begin(),constant_cube.end(),0);
+  to_play_with.resize(constant_cube.size());
+
+  sqeazy::bitshuffle_scheme<std::uint16_t> shuffle;shuffle.set_n_threads(2);
+  auto end = shuffle.encode(&constant_cube[0], &to_play_with[0],shape);
+
+
+  BOOST_CHECK(end != nullptr);
+
+  auto items_processed = std::distance(static_cast<const std::uint16_t*>(to_play_with.data()),
+                                       static_cast<const std::uint16_t*>(end));
+  BOOST_CHECK_NE(items_processed,0);
+  BOOST_CHECK_EQUAL(items_processed,to_play_with.size());
+
+  auto decoded = constant_cube;
+  std::fill(decoded.begin(), decoded.end(),0);
+  auto dec = shuffle.decode(to_play_with.data(), decoded.data(),shape);
+
+  BOOST_CHECK(dec == 0);
+  BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(),constant_cube.end(),
+                                decoded.begin(),decoded.end());
+
+}
+
+BOOST_AUTO_TEST_CASE( roundtrip_odd_2threads )
+{
+
+  std::vector<std::size_t> shape(3,1);
+  shape.front() = 32 * (1 << 10);
+  shape.front() += 1;
+
+  constant_cube.resize(shape.front());
+  std::iota(constant_cube.begin(),constant_cube.end(),0);
+  to_play_with.resize(constant_cube.size());
+
+  sqeazy::bitshuffle_scheme<std::uint16_t> shuffle;shuffle.set_n_threads(2);
+  auto end = shuffle.encode(&constant_cube[0], &to_play_with[0],shape);
+
+
+  BOOST_CHECK(end != nullptr);
+
+  auto items_processed = std::distance(static_cast<const std::uint16_t*>(to_play_with.data()),
+                                       static_cast<const std::uint16_t*>(end));
+  BOOST_CHECK_NE(items_processed,0);
+  BOOST_CHECK_EQUAL(items_processed,to_play_with.size());
+
+  auto decoded = constant_cube;
+  std::fill(decoded.begin(), decoded.end(),0);
+  auto dec = shuffle.decode(to_play_with.data(), decoded.data(),shape);
+
+  BOOST_CHECK(dec == 0);
+  BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(),constant_cube.end(),
+                                decoded.begin(),decoded.end());
+
+}
+
+BOOST_AUTO_TEST_CASE( roundtrip_prime_two_threads )
+{
+
+  std::vector<std::size_t> shape(3,1);
+  shape.front() = 32003;
+
+  constant_cube.resize(shape.front());
+  std::iota(constant_cube.begin(),constant_cube.end(),0);
+  to_play_with.resize(constant_cube.size());
+
+  sqeazy::bitshuffle_scheme<std::uint16_t> shuffle;shuffle.set_n_threads(2);
+  auto end = shuffle.encode(&constant_cube[0], &to_play_with[0],shape);
+
+
+  BOOST_CHECK(end != nullptr);
+
+  auto items_processed = std::distance(static_cast<const std::uint16_t*>(to_play_with.data()),
+                                       static_cast<const std::uint16_t*>(end));
+  BOOST_CHECK_NE(items_processed,0);
+  BOOST_CHECK_EQUAL(items_processed,to_play_with.size());
+
+  auto decoded = constant_cube;
+  std::fill(decoded.begin(), decoded.end(),0);
+  auto dec = shuffle.decode(to_play_with.data(), decoded.data(),shape);
+
+  BOOST_CHECK(dec == 0);
+  BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(),constant_cube.end(),
+                                decoded.begin(),decoded.end());
+
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE( encode_decode_loop_8bit, uint8_cube_of_8 )
+
+
+
+BOOST_AUTO_TEST_CASE( roundtrip )
+{
+
+  std::vector<std::size_t> shape(3,1);
+  shape.front() = 32 * (1 << 10);
+
+  constant_cube.resize(shape.front());
+  std::iota(constant_cube.begin(),constant_cube.end(),0);
+  to_play_with.resize(constant_cube.size());
+
+  sqeazy::bitshuffle_scheme<std::uint8_t> shuffle;
+  auto end = shuffle.encode(&constant_cube[0], &to_play_with[0],shape);
+
+
+  BOOST_CHECK(end != nullptr);
+
+  auto items_processed = std::distance(static_cast<const std::uint8_t*>(to_play_with.data()),
+                                       static_cast<const std::uint8_t*>(end));
+  BOOST_CHECK_NE(items_processed,0);
+  BOOST_CHECK_EQUAL(items_processed,to_play_with.size());
+
+  auto decoded = constant_cube;
+  std::fill(decoded.begin(), decoded.end(),0);
+  auto dec = shuffle.decode(to_play_with.data(), decoded.data(),shape);
+
+  BOOST_CHECK(dec == 0);
+  BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(),constant_cube.end(),
+                                decoded.begin(),decoded.end());
+
+}
+
+BOOST_AUTO_TEST_CASE( roundtrip_odd )
+{
+
+  std::vector<std::size_t> shape(3,1);
+  shape.front() = 32 * (1 << 10);
+  shape.front() += 1;
+
+  constant_cube.resize(shape.front());
+  std::iota(constant_cube.begin(),constant_cube.end(),0);
+  to_play_with.resize(constant_cube.size());
+
+  sqeazy::bitshuffle_scheme<std::uint8_t> shuffle;
+  auto end = shuffle.encode(&constant_cube[0], &to_play_with[0],shape);
+
+
+  BOOST_CHECK(end != nullptr);
+
+  auto items_processed = std::distance(static_cast<const std::uint8_t*>(to_play_with.data()),
+                                       static_cast<const std::uint8_t*>(end));
+  BOOST_CHECK_NE(items_processed,0);
+  BOOST_CHECK_EQUAL(items_processed,to_play_with.size());
+
+  auto decoded = constant_cube;
+  std::fill(decoded.begin(), decoded.end(),0);
+  auto dec = shuffle.decode(to_play_with.data(), decoded.data(),shape);
+
+  BOOST_CHECK(dec == 0);
+  BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(),constant_cube.end(),
+                                decoded.begin(),decoded.end());
+
+}
+
+BOOST_AUTO_TEST_CASE( roundtrip_prime )
+{
+
+  std::vector<std::size_t> shape(3,1);
+  shape.front() = 32003;
+
+  constant_cube.resize(shape.front());
+  std::iota(constant_cube.begin(),constant_cube.end(),0);
+  to_play_with.resize(constant_cube.size());
+
+  sqeazy::bitshuffle_scheme<std::uint8_t> shuffle;
+  auto end = shuffle.encode(&constant_cube[0], &to_play_with[0],shape);
+
+
+  BOOST_CHECK(end != nullptr);
+
+  auto items_processed = std::distance(static_cast<const std::uint8_t*>(to_play_with.data()),
+                                       static_cast<const std::uint8_t*>(end));
+  BOOST_CHECK_NE(items_processed,0);
+  BOOST_CHECK_EQUAL(items_processed,to_play_with.size());
+
+  auto decoded = constant_cube;
+  std::fill(decoded.begin(), decoded.end(),0);
+  auto dec = shuffle.decode(to_play_with.data(), decoded.data(),shape);
+
+  BOOST_CHECK(dec == 0);
+  BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(),constant_cube.end(),
+                                decoded.begin(),decoded.end());
+
+}
+
+BOOST_AUTO_TEST_CASE( roundtrip_two_threads )
+{
+
+  std::vector<std::size_t> shape(3,1);
+  shape.front() = 32 * (1 << 10);
+
+  constant_cube.resize(shape.front());
+  std::iota(constant_cube.begin(),constant_cube.end(),0);
+  to_play_with.resize(constant_cube.size());
+
+  sqeazy::bitshuffle_scheme<std::uint8_t> shuffle;shuffle.set_n_threads(2);
+  auto end = shuffle.encode(&constant_cube[0], &to_play_with[0],shape);
+
+
+  BOOST_CHECK(end != nullptr);
+
+  auto items_processed = std::distance(static_cast<const std::uint8_t*>(to_play_with.data()),
+                                       static_cast<const std::uint8_t*>(end));
+  BOOST_CHECK_NE(items_processed,0);
+  BOOST_CHECK_EQUAL(items_processed,to_play_with.size());
+
+  auto decoded = constant_cube;
+  std::fill(decoded.begin(), decoded.end(),0);
+  auto dec = shuffle.decode(to_play_with.data(), decoded.data(),shape);
+
+  BOOST_CHECK(dec == 0);
+  BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(),constant_cube.end(),
+                                decoded.begin(),decoded.end());
+
+}
+
+BOOST_AUTO_TEST_CASE( roundtrip_odd_2threads )
+{
+
+  std::vector<std::size_t> shape(3,1);
+  shape.front() = 32 * (1 << 10);
+  shape.front() += 1;
+
+  constant_cube.resize(shape.front());
+  std::iota(constant_cube.begin(),constant_cube.end(),0);
+  to_play_with.resize(constant_cube.size());
+
+  sqeazy::bitshuffle_scheme<std::uint8_t> shuffle;shuffle.set_n_threads(2);
+  auto end = shuffle.encode(&constant_cube[0], &to_play_with[0],shape);
+
+
+  BOOST_CHECK(end != nullptr);
+
+  auto items_processed = std::distance(static_cast<const std::uint8_t*>(to_play_with.data()),
+                                       static_cast<const std::uint8_t*>(end));
+  BOOST_CHECK_NE(items_processed,0);
+  BOOST_CHECK_EQUAL(items_processed,to_play_with.size());
+
+  auto decoded = constant_cube;
+  std::fill(decoded.begin(), decoded.end(),0);
+  auto dec = shuffle.decode(to_play_with.data(), decoded.data(),shape);
+
+  BOOST_CHECK(dec == 0);
+  BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(),constant_cube.end(),
+                                decoded.begin(),decoded.end());
+
+}
+
+BOOST_AUTO_TEST_CASE( roundtrip_prime_two_threads )
+{
+
+  std::vector<std::size_t> shape(3,1);
+  shape.front() = 32003;
+
+  constant_cube.resize(shape.front());
+  std::iota(constant_cube.begin(),constant_cube.end(),0);
+  to_play_with.resize(constant_cube.size());
+
+  sqeazy::bitshuffle_scheme<std::uint8_t> shuffle;shuffle.set_n_threads(2);
+  auto end = shuffle.encode(&constant_cube[0], &to_play_with[0],shape);
+
+
+  BOOST_CHECK(end != nullptr);
+
+  auto items_processed = std::distance(static_cast<const std::uint8_t*>(to_play_with.data()),
+                                       static_cast<const std::uint8_t*>(end));
+  BOOST_CHECK_NE(items_processed,0);
+  BOOST_CHECK_EQUAL(items_processed,to_play_with.size());
+
+  auto decoded = constant_cube;
+  std::fill(decoded.begin(), decoded.end(),0);
+  auto dec = shuffle.decode(to_play_with.data(), decoded.data(),shape);
+
+  BOOST_CHECK(dec == 0);
+  BOOST_CHECK_EQUAL_COLLECTIONS(constant_cube.begin(),constant_cube.end(),
+                                decoded.begin(),decoded.end());
+
+}
 
 BOOST_AUTO_TEST_SUITE_END()

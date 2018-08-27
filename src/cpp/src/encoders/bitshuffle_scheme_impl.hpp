@@ -91,10 +91,10 @@ namespace sqeazy {
 
     compressed_type* encode( const raw_type* _input, compressed_type* _output, std::size_t _length) override final {
 
-      std::size_t encoded = bshuf_bitshuffle_nthreads(_input, _output, _length,
+      std::size_t encoded_bytes = bshuf_bitshuffle_nthreads(_input, _output, _length,
                                                       sizeof(in_type),block_size, this->n_threads());
-      if(encoded)
-        return _output+(encoded);
+      if(encoded_bytes)
+        return _output+(encoded_bytes/sizeof(compressed_type));
       else
         return nullptr;
 
