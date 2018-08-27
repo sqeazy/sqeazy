@@ -46,13 +46,14 @@ namespace sqeazy {
 
     float* results_ptr = value.data();
     const size_type* shape = _dims.data();
-
+    std::vector<sqeazy::histogram<raw_type>> hists(2);
+    sqeazy::histogram<raw_type>* hists_ptr = hists.data();
     //faces with z,  i.e. z = const (y & x vary)
     size_type indices[2] = {0,_dims[row_major::z]-1};
 
 #pragma omp parallel for \
   shared(results_ptr) \
-  firstprivate(_input, indices, shape) \
+  firstprivate(_input, indices, shape, hists_ptr)         \
   num_threads(nthreads)
     for(int i = 0;i < 2;++i ) {
 
@@ -61,14 +62,15 @@ namespace sqeazy {
         continue;
       }
 
-      sqeazy::histogram<raw_type> temp_histo;
       index_type input_index = z_idx*(frame_size);
       const raw_type* begin = _input + input_index;
       const raw_type* end = begin + frame_portion;
 
-      temp_histo.add_from_image(begin, end);
+      hists_ptr[i].add_from_image(begin, end);
 
-      results_ptr[i] = temp_histo.calc_support(_support);
+      results_ptr[i] = hists_ptr[i].calc_support(_support);
+
+      hists_ptr[i].clear();
     }
 
     indices[1] = shape[row_major::y]-1;
@@ -76,7 +78,7 @@ namespace sqeazy {
     //faces with y,  i.e. y = const (x varies, z = {1,mid,last} to sample cache efficient)
 #pragma omp parallel for                        \
   shared(results_ptr) \
-  firstprivate(_input, indices, shape) \
+  firstprivate(_input, indices, shape, hists_ptr)         \
   num_threads(nthreads)
     for(int i = 0;i < 2;++i ) {
 
@@ -85,7 +87,6 @@ namespace sqeazy {
         continue;
       }
 
-      sqeazy::histogram<raw_type> temp_histo;
       const size_type z_offsets[3] = {1,shape[row_major::z]/2,shape[row_major::z]-2};
 
       for(size_type z_idx : z_offsets)
@@ -94,10 +95,10 @@ namespace sqeazy {
         const raw_type* begin = _input + input_index;
         const raw_type* end = begin + shape[row_major::x];
 
-        temp_histo.add_from_image(begin, end);
+        hists_ptr[i].add_from_image(begin, end);
       }
 
-      results_ptr[i+2] = temp_histo.calc_support(_support);
+      results_ptr[i+2] = hists_ptr[i].calc_support(_support);
     }
 
     return value;
