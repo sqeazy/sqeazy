@@ -368,9 +368,13 @@ if(USE_BITSHUFFLE)
 
   add_library(bitshuffle OBJECT ${BITSHUFFLE_SOURCE_PATH}/bitshuffle_core.c ${BITSHUFFLE_SOURCE_PATH}/iochain.c)
   target_include_directories(bitshuffle PRIVATE ${BITSHUFFLE_SOURCE_PATH})
+
   set_target_properties(bitshuffle PROPERTIES
     LANGUAGE C
     LINKER_LANGUAGE C)
+
+  set_target_properties(bitshuffle PROPERTIES
+    POSITION_INDEPENDENT_CODE ON)
 
 endif()
 
