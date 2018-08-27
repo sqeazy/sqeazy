@@ -81,7 +81,13 @@ target_link_libraries(benchmark_quantiser_scheme_impl ${OpenMP++_LIBRARIES} ${Bo
 add_executable(benchmark_lz4_scheme_impl benchmark_lz4_scheme_impl.cpp)
 target_link_libraries(benchmark_lz4_scheme_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY} ${LZ4_LIBRARY})
 
-add_executable(benchmark_full_pipeline_impl benchmark_full_pipeline_impl.cpp)
+if(USE_BITSHUFFLE)
+  add_executable(benchmark_full_pipeline_impl benchmark_full_pipeline_impl.cpp $<TARGET_OBJECTS:bitshuffle>)
+  target_compile_definitions(benchmark_full_pipeline_impl PRIVATE -DSQY_WITH_BITSHUFFLE=1)
+else()
+  add_executable(benchmark_full_pipeline_impl benchmark_full_pipeline_impl.cpp)
+
+endif()
 target_link_libraries(benchmark_full_pipeline_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES} ${googlebenchmark_LIBRARY} ${googlebenchmark_AUX_LIBRARY} ${LZ4_LIBRARY})
 
 add_executable(benchmark_histogram_utils benchmark_histogram_utils.cpp)

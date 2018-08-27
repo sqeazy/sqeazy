@@ -9,7 +9,7 @@ typedef sqeazy::benchmark::static_synthetic_data<> static_default_fixture;
 typedef sqeazy::benchmark::dynamic_synthetic_data<> dynamic_default_fixture;
 
 static const std::string default_lossless = "bitswap1->lz4";
-static const std::string default_lossy = "rmestbkrd->bitswap1->lz4";
+static const std::string default_lossy = "rmestbkrd->bitshuffle->lz4";
 
 
 

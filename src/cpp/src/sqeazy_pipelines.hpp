@@ -17,6 +17,10 @@
 #include "encoders/hevc.hpp"
 #endif
 
+#ifdef SQY_WITH_BITSHUFFLE
+#include "encoders/bitshuffle_scheme.hpp"
+#endif
+
 #include "dynamic_pipeline.hpp"
 #include "dynamic_stage_factory.hpp"
 
@@ -28,7 +32,10 @@ namespace sqeazy {
   using filters_factory = stage_factory<
     diff_scheme<T>,
     bitswap_scheme<T>,
-    remove_background_scheme<T>,
+#ifdef SQY_WITH_BITSHUFFLE
+    bitshuffle_scheme<T>,
+#endif
+      remove_background_scheme<T>,
     flatten_to_neighborhood_scheme<T>,
     remove_estimated_background_scheme<T>,
     raster_reorder_scheme<T>,
@@ -52,10 +59,13 @@ namespace sqeazy {
   using tail_filters_factory = stage_factory<
     diff_scheme<T>,
     bitswap_scheme<T>,
-    #ifdef SQY_WITH_FFMPEG
+#ifdef SQY_WITH_BITSHUFFLE
+    bitshuffle_scheme<T>,
+#endif
+#ifdef SQY_WITH_FFMPEG
     h264_scheme<T>,
     hevc_scheme<T>,
-    #endif
+#endif
     lz4_scheme<T>,
     raster_reorder_scheme<T>,
     tile_shuffle_scheme<T>,
