@@ -51,9 +51,8 @@ namespace sqeazy {
 
         if(config_map.size()){
           auto f_itr = config_map.find("block_size");
-          std::size_t found = 0;
           if(f_itr!=config_map.end())
-            found = std::stoi(f_itr->second);
+            block_size = std::stoi(f_itr->second);
         }
 
 
