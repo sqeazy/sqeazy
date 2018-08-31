@@ -33,16 +33,22 @@ to_dockerhub : build-shared build-static
 
 build: build-static to_dockerhub
 
+pull-testing:
+	docker pull psteinb/sqeazy-testing:$(SQY_VERSION)
+
+pull-static:
+	docker pull psteinb/sqeazy:$(SQY_VERSION)
+
 run-base: build-base
 	docker run -it --rm sqy/trusty/base:$(SQY_VERSION) bash
 
-run-encoders-static: build-encoders-static
-	docker run -it --rm sqy/trusty/encoders-static:$(SQY_VERSION) bash
+# run-encoders-static: build-encoders-static
+# 	docker run -it --rm sqy/trusty/encoders-static:$(SQY_VERSION) bash
 
-run-static: build-static
-	docker run -e ORG_GRADLE_PROJECT_bintray_user=psteinb -e ORG_GRADLE_PROJECT_bintray_key=${MY_BINTRAY_KEY} -it --rm sqy/trusty/static:$(SQY_VERSION)
+run-static: pull-static
+	docker run -e ORG_GRADLE_PROJECT_bintray_user=psteinb -e ORG_GRADLE_PROJECT_bintray_key=${MY_BINTRAY_KEY} -it --rm psteinb/sqeazy:$(SQY_VERSION)
 
-run: build-shared
-	docker run -e ORG_GRADLE_PROJECT_bintray_user=psteinb -e ORG_GRADLE_PROJECT_bintray_key=${MY_BINTRAY_KEY} -it --rm sqy/trusty/shared:$(SQY_VERSION)
+run: pull-testing
+	docker run -e ORG_GRADLE_PROJECT_bintray_user=psteinb -e ORG_GRADLE_PROJECT_bintray_key=${MY_BINTRAY_KEY} -it --rm psteinb/sqeazy-testing:$(SQY_VERSION)
 
 run-shared: run
