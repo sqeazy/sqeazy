@@ -39,25 +39,7 @@ RUN apt-get -qq update && \
             gcc \
             flex;
 
-ENV GCC_VERSION 7.2.0
-
-ENV GPG_KEYS \
-# 1024D/745C015A 1999-11-09 Gerald Pfeifer <gerald@pfeifer.com>
-    B215C1633BCA0477615F1B35A5B3A004745C015A \
-# 1024D/B75C61B8 2003-04-10 Mark Mitchell <mark@codesourcery.com>
-    B3C42148A44E6983B3E4CC0793FA9B1AB75C61B8 \
-# 1024D/902C9419 2004-12-06 Gabriel Dos Reis <gdr@acm.org>
-    90AA470469D3965A87A5DCB494D03953902C9419 \
-# 1024D/F71EDF1C 2000-02-13 Joseph Samuel Myers <jsm@polyomino.org.uk>
-    80F98B2E0DAB6C8281BDF541A7C8C3B2F71EDF1C \
-# 2048R/FC26A641 2005-09-13 Richard Guenther <richard.guenther@gmail.com>
-    7F74F97C103468EE5D750B583AB00996FC26A641 \
-# 1024D/C3C45C06 2004-04-21 Jakub Jelinek <jakub@redhat.com>
-    33C235A34C46AA3FFB293709A328C3A2C3C45C06
-RUN set -ex; \
-    for key in $GPG_KEYS; do \
-        gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
-    done
+ENV GCC_VERSION 8.2.0
 
 RUN set -ex; \
     \
@@ -69,12 +51,12 @@ RUN set -ex; \
     apt-get install -y --no-install-recommends $buildDeps; \
     rm -r /var/lib/apt/lists/*; \
     \
-    curl -fSL "http://ftpmirror.gnu.org/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.xz" -o gcc.tar.xz; \
-    curl -fSL "http://ftpmirror.gnu.org/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.xz.sig" -o gcc.tar.xz.sig; \
-    gpg --batch --verify gcc.tar.xz.sig gcc.tar.xz; \
+    curl -fSL "ftp://ftp.gwdg.de/pub/misc/gcc/releases/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.xz" -o gcc-$GCC_VERSION.tar.xz; \
+    curl -fSL "ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-8.2.0/sha512.sum" -o sha512.sum; \
+    grep xz sha512.sum|sha512sum -c ;\
     mkdir -p /usr/src/gcc; \
-    tar -xf gcc.tar.xz -C /usr/src/gcc --strip-components=1; \
-    rm gcc.tar.xz*;
+    tar -xf gcc-$GCC_VERSION.tar.xz -C /usr/src/gcc --strip-components=1; \
+    rm -v gcc-$GCC_VERSION.tar.xz*;
 
 RUN cd /usr/src/gcc; \
     ./contrib/download_prerequisites; \
@@ -109,11 +91,11 @@ RUN set -ex; \
 
 RUN apt remove -y libgomp1 gcc g++ libstdc++-4.8-dev;
 
-RUN wget --no-check-certificate http://www.nasm.us/pub/nasm/releasebuilds/2.13.01/nasm-2.13.01.tar.bz2 && \
-    tar xf nasm-2.13.01.tar.bz2 && \
-    cd nasm-2.13.01 && \
+RUN wget --no-check-certificate http://www.nasm.us/pub/nasm/releasebuilds/2.14rc15/nasm-2.14rc15.tar.bz2 && \
+    tar xf nasm-2.14rc15.tar.bz2 && \
+    cd nasm-2.14rc15 && \
     ./configure --prefix=/usr/ && make -j8 && make install && \
-    cd .. && rm -rf nasm-2.13.01;
+    cd .. && rm -rf nasm-2.14rc15;
 
 RUN wget --no-check-certificate https://cmake.org/files/v3.9/cmake-3.9.3-Linux-x86_64.tar.gz && \
     tar xf cmake-3.9.3-Linux-x86_64.tar.gz -C /usr/ --strip-components=1 && \
@@ -124,11 +106,11 @@ RUN git clone https://github.com/yasm/yasm.git && cd yasm && \
     cmake -DCMAKE_INSTALL_PREFIX=/usr/ .. && make -j8 && make install && \
     cd /build && rm -vrf yasm;
 
-RUN wget --no-check-certificate https://services.gradle.org/distributions/gradle-4.0.2-bin.zip && \
-    unzip gradle-4.0.2-bin.zip && \
-    cd gradle-4.0.2 && \
+RUN wget --no-check-certificate https://services.gradle.org/distributions/gradle-4.9-bin.zip && \
+    unzip gradle-4.9-bin.zip && \
+    cd gradle-4.9 && \
     cp -r bin /usr/ && cp -r lib /usr/ && \
-    cd /build && rm -rf gradle-4.0.2;
+    cd /build && rm -rf gradle-4.9;
 
 # gcc installs .so files in /usr/local/lib64...
 RUN set -ex; \
