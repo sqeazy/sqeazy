@@ -629,7 +629,7 @@ namespace sqeazy {
       return nthreads_;
     }
 
-    const std::vector<int>* get_histogram() const {
+    const std::vector<std::uint32_t>* get_histogram() const {
       return &histo_;
 
     }

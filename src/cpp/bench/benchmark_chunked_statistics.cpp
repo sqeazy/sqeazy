@@ -81,7 +81,7 @@ void chunked_mean(in_t _begin, in_t _end,
   if(_nthreads == 1){
     for(std::size_t c = 0;c < nchunks;++c){
       auto beg = _begin+(c*_chunksize);
-      auto lend = (c+1)*_chunksize > len ? _end : (_begin+(c+1)*_chunksize);
+      auto lend = ((c+1)*_chunksize > (std::size_t)len) ? _end : (_begin+(c+1)*_chunksize);
 
       _values[c] = std::accumulate(beg,
                                    lend,
@@ -95,9 +95,9 @@ void chunked_mean(in_t _begin, in_t _end,
     auto results = _values.data();
 
 #pragma omp parallel for schedule(static) private(_begin,results) num_threads(_nthreads)
-      for(omp_size_type c=0; c<nchunks; c++){
+    for(omp_size_type c=0; c<(omp_size_type)nchunks; c++){
         auto beg = _begin+(c*_chunksize);
-        auto lend = (c+1)*_chunksize > len ? _end : (_begin+(c+1)*_chunksize);
+        auto lend = ((c+1)*_chunksize > (std::size_t)len) ? _end : (_begin+(c+1)*_chunksize);
         results[c] = std::accumulate(beg,
                                      lend,
                                      mean_t(0),

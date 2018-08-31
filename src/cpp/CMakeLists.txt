@@ -3,7 +3,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
 
 
 # project name
-PROJECT(sqeazy VERSION ${SQEAZY_VERSION} LANGUAGES CXX)
+PROJECT(sqeazy VERSION ${SQEAZY_VERSION} LANGUAGES CXX C)
 
 # this project is C++11
 set(CMAKE_CXX_STANDARD 14)
@@ -44,6 +44,7 @@ SET (SQEAZY_VENDOR_NAME "Max Planck Institute of Molecular Cell Biology and Gene
 SET (SQEAZY_VENDOR_URL "www.mpi-cbg.de")
 SET (SQEAZY_ID "${SQEAZY_VENDOR_ID}.${PROJECT_NAME}")
 
+option(USE_BITSHUFFLE "add bitshuffle scheme based on https://github.com/kiyo-masui/bitshuffle" ON)
 option(BUNDLE_SQEAZY "compile sqeazy ready for bundling" OFF)
 option(WITH_MARCH_NATIVE "compile sqeazy for the currently found hardware" OFF)
 option(USE_CXX11_ABI "enable _GLIBCXX_USE_CXX11_ABI in GCC 5.0+" ON)
@@ -354,6 +355,30 @@ get_directory_property( DirDefs DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITION
 MESSAGE(STATUS "COMPILE_DEFINITIONS      : ${DirDefs}")
 
 ################################# DEPENDENCIES #################################
+#-------------------------------- Bitshuffle      ---------------------------------
+if(USE_BITSHUFFLE)
+
+  set(BITSHUFFLE_SOURCE_PATH ${PROJECT_BINARY_DIR}/third-party/bitshuffle)
+
+  file(DOWNLOAD "https://raw.githubusercontent.com/psteinb/bitshuffle/cmake_support/src/bitshuffle_internals.h" ${BITSHUFFLE_SOURCE_PATH}/bitshuffle_internals.h SHOW_PROGRESS)
+  file(DOWNLOAD "https://raw.githubusercontent.com/psteinb/bitshuffle/cmake_support/src/bitshuffle_core.h" ${BITSHUFFLE_SOURCE_PATH}/bitshuffle_core.h SHOW_PROGRESS)
+  file(DOWNLOAD "https://raw.githubusercontent.com/psteinb/bitshuffle/cmake_support/src/bitshuffle_core.c" ${BITSHUFFLE_SOURCE_PATH}/bitshuffle_core.c SHOW_PROGRESS)
+  file(DOWNLOAD "https://raw.githubusercontent.com/psteinb/bitshuffle/cmake_support/src/iochain.h" ${BITSHUFFLE_SOURCE_PATH}/iochain.h SHOW_PROGRESS)
+  file(DOWNLOAD "https://raw.githubusercontent.com/psteinb/bitshuffle/cmake_support/src/iochain.c" ${BITSHUFFLE_SOURCE_PATH}/iochain.c SHOW_PROGRESS)
+
+  add_library(bitshuffle OBJECT ${BITSHUFFLE_SOURCE_PATH}/bitshuffle_core.c ${BITSHUFFLE_SOURCE_PATH}/iochain.c)
+  target_include_directories(bitshuffle PRIVATE ${BITSHUFFLE_SOURCE_PATH})
+
+  set_target_properties(bitshuffle PROPERTIES
+    LANGUAGE C
+    LINKER_LANGUAGE C)
+
+  set_target_properties(bitshuffle PROPERTIES
+    POSITION_INDEPENDENT_CODE ON)
+
+endif()
+
+
 #-------------------------------- OpenMP          ---------------------------------
 find_package(OpenMP++ REQUIRED)
 

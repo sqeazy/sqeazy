@@ -57,6 +57,16 @@ target_link_libraries(test_diff_scheme_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRAR
 add_executable(test_bitswap_scheme_impl test_bitswap_scheme_impl.cpp)
 target_link_libraries(test_bitswap_scheme_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES})
 
+
+if(USE_BITSHUFFLE)
+
+  add_executable(test_bitshuffle_scheme_impl test_bitshuffle_scheme_impl.cpp $<TARGET_OBJECTS:bitshuffle>)
+  target_link_libraries(test_bitshuffle_scheme_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES})
+  target_compile_definitions(test_bitshuffle_scheme_impl PUBLIC -DSQY_WITH_BITSHUFFLE=1)
+  target_include_directories(test_bitshuffle_scheme_impl PRIVATE ${BITSHUFFLE_SOURCE_PATH})
+
+endif()
+
 add_executable(test_bitplane_reorder_impl test_bitplane_reorder_impl.cpp)
 target_link_libraries(test_bitplane_reorder_impl ${OpenMP++_LIBRARIES} ${Boost_LIBRARIES})
 

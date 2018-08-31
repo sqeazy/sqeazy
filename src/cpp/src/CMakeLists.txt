@@ -2,6 +2,7 @@ INCLUDE_DIRECTORIES(.)
 INCLUDE_DIRECTORIES(verbs)
 INCLUDE_DIRECTORIES(encoders)
 
+
 IF(WIN32)
   #http://stackoverflow.com/a/25148990
   add_definitions(-DBOOST_ALL_NO_LIB)
@@ -9,7 +10,14 @@ ENDIF()
 
 #DYNAMIC LIBRARY
 SET(SQY_SRC_TARGETS ${PROJECT_NAME})
-add_library(${PROJECT_NAME} SHARED sqeazy.cpp)
+if(USE_BITSHUFFLE)
+  add_library(${PROJECT_NAME} SHARED sqeazy.cpp $<TARGET_OBJECTS:bitshuffle>)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE -DSQY_WITH_BITSHUFFLE=1)
+  target_include_directories(${PROJECT_NAME} PRIVATE ${BITSHUFFLE_SOURCE_PATH})
+else()
+  add_library(${PROJECT_NAME} SHARED sqeazy.cpp )
+endif()
+
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED YES)
 set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${PROJECT_BINARY_DIR}/inc/sqeazy.h;${PROJECT_BINARY_DIR}/inc/H5PLextern.h;${PROJECT_BINARY_DIR}/inc/sqeazy_h5_filter.hpp;${PROJECT_BINARY_DIR}/inc/sqeazy_definitions.h")
 
@@ -57,8 +65,14 @@ INSTALL(TARGETS ${SQY_SRC_TARGETS}
 
 ########################################### SQY ######################################################
 #if(NOT BUNDLE_SQEAZY OR NOT ${BUNDLE_SQEAZY})
-add_executable(sqy sqy.cpp)
 
+if(USE_BITSHUFFLE)
+  add_executable(sqy sqy.cpp $<TARGET_OBJECTS:bitshuffle>)
+  target_compile_definitions(sqy PRIVATE -DSQY_WITH_BITSHUFFLE=1)
+  target_include_directories(sqy PRIVATE ${BITSHUFFLE_SOURCE_PATH})
+else()
+  add_executable(sqy sqy.cpp)
+endif()
 
 set_target_properties(sqy PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED YES)
 
